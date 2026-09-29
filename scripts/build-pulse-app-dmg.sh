@@ -38,10 +38,14 @@ echo "-> patching GitHub URLs to $NEW_REPO ..."
 npx --yes asar extract "$APP/Contents/Resources/app.asar" "$BUILD/asar-out" >/dev/null 2>&1
 grep -rl "$OLD_ORG" "$BUILD/asar-out" | while IFS= read -r f; do
   perl -pi -e "s#\Q$OLD_ORG\E#$NEW_ORG#g" "$f"
+  perl -pi -e 's#https://portal\.anxiousresearchlab\.com/help#'"$NEW_REPO/issues"'#g' "$f"
+  perl -pi -e 's#https://discord\.gg/AnxiousResearchLab#'"$NEW_REPO/issues"'#g' "$f"
 done
 for f in "$APP/Contents/Resources/app.asar.unpacked/dist/electron-main.mjs" \
          "$APP/Contents/Resources/app.asar.unpacked/dist/assets/"*.js; do
   [ -f "$f" ] && perl -pi -e "s#\Q$OLD_ORG\E#$NEW_ORG#g" "$f"
+  [ -f "$f" ] && perl -pi -e 's#https://portal\.anxiousresearchlab\.com/help#'"$NEW_REPO/issues"'#g' "$f"
+  [ -f "$f" ] && perl -pi -e 's#https://discord\.gg/AnxiousResearchLab#'"$NEW_REPO/issues"'#g' "$f"
 done
 npx --yes asar pack "$BUILD/asar-out" "$APP/Contents/Resources/app.asar" >/dev/null 2>&1
 
