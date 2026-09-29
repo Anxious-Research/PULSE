@@ -7,9 +7,9 @@ __pycache__/
 *$py.class
 *.so
 .Python
-build/
+/build/
 develop-eggs/
-dist/
+/dist/
 downloads/
 eggs/
 .eggs/
@@ -48,6 +48,8 @@ ui-tui/dist/
 apps/desktop/dist/
 apps/desktop/release/
 web/dist/
+plugins/kanban/dashboard/dist/
+plugins/pulse-achievements/dashboard/dist/
 
 # OS & Editor files
 .DS_Store
