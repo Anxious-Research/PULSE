@@ -44,8 +44,9 @@ done
 for f in "$APP/Contents/Resources/app.asar.unpacked/dist/electron-main.mjs" \
          "$APP/Contents/Resources/app.asar.unpacked/dist/assets/"*.js; do
   [ -f "$f" ] && perl -pi -e "s#\Q$OLD_ORG\E#$NEW_ORG#g" "$f"
-  [ -f "$f" ] && perl -pi -e 's#https://portal\.anxiousresearchlab\.com/help#'"$NEW_REPO/issues"'#g' "$f"
+  [ -f "$f" ] && perl -pi -e 's#https://portal\.anxiousresearchlab\.com[A-Za-z0-9/._?=-]*#'"$NEW_REPO/issues"'#g' "$f"
   [ -f "$f" ] && perl -pi -e 's#https://discord\.gg/AnxiousResearchLab#'"$NEW_REPO/issues"'#g' "$f"
+  [ -f "$f" ] && perl -pi -e 's#discord\.gg/AnxiousResearchLab#'"$NEW_REPO/issues"'#g' "$f"
 done
 npx --yes asar pack "$BUILD/asar-out" "$APP/Contents/Resources/app.asar" >/dev/null 2>&1
 
