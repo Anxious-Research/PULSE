@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.png" alt="PULSE — Personal Unified Learning System for Engagement" width="100%">
+  <img src="assets/banner.png" alt="PULSE — Personal Unified Learning System for Engagement: sense · learn · connect · act" width="100%">
 </p>
 
 <p align="center">
@@ -11,15 +11,15 @@
   <a href="README.es.md"><img src="https://img.shields.io/badge/Lang-Español-3a4a6b?style=for-the-badge" alt="Español"></a>
 </p>
 
-# 🪐 PULSE
+# PULSE
 
-**Personal Unified Learning System for Engagement** — an autonomous agent in your orbit, built by [Anxious Research](https://github.com/Anxious-Research).
+**Personal Unified Learning System for Engagement** — the agent that learns as it works, built by [Anxious Research](https://github.com/Anxious-Research).
 
-PULSE is one agent core with many orbits: it chats in your terminal, answers from Telegram and Discord, runs on a schedule while you sleep, and remembers everything across sessions. It learns your world — building skills from experience, keeping memory alive, and pulling in past conversations when they matter.
+PULSE runs one continuous loop — **sense · learn · connect · act**. It hears you in the terminal and in chat, remembers everything across sessions, builds skills from experience, reaches any model or tool, and takes action on any machine. The more you use it, the sharper it gets.
 
 ---
 
-## 🛰 First orbit — install
+## Get set up
 
 ### macOS / Linux / WSL2
 
@@ -37,7 +37,7 @@ The installer provisions its own toolchain (Python 3.14, Node.js, ripgrep, FFmpe
 
 ```bash
 source ~/.bashrc    # or: source ~/.zshrc
-pulse               # say hello 🪐
+pulse               # say hello
 ```
 
 > **Desktop app:** grab `PULSE-Setup.dmg` from [Releases](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/releases), drag to Applications, open — it pulls the latest code from this repo and finishes setup itself.
@@ -48,41 +48,53 @@ pulse               # say hello 🪐
 
 ---
 
-## 📡 First signal — say something
+## Say hello
 
 ```bash
 pulse              # Interactive CLI — start a conversation
 pulse model        # Pick your LLM provider + model
-pulse tools        # Toggle capability orbits on/off
+pulse tools        # Toggle capabilities on/off
 pulse gateway      # Serve Telegram, Discord, Slack, WhatsApp, Signal, Email
 pulse setup        # Full setup wizard — keys, models, messaging, all at once
-pulse update       # Pull the latest signal from this repo
-pulse doctor       # Diagnose anything off-nominal
+pulse update       # Pull the latest from this repo
+pulse doctor       # Diagnose anything that feels wrong
 ```
 
 📖 **Reference:** every command documents itself — `pulse --help`, `pulse <command> --help`. Contributors start at [CONTRIBUTING.md](CONTRIBUTING.md), developers at [AGENTS.md](AGENTS.md).
 
 ---
 
-## 🌌 One core, many orbits
+## The loop: sense · learn · connect · act
 
-| Orbit | What it is |
-| ----- | ---------- |
-| 🖥 **Terminal** | Full TUI: multiline editing, slash-command autocomplete, history, interrupt-and-redirect, streaming tool output |
-| 💬 **Messaging** | One gateway process serves Telegram, Discord, Slack, WhatsApp, Signal, Email — voice memos transcribed, conversations continuous across platforms |
-| 🖱 **Desktop** | Native app with embedded terminal, dashboard, and Bot Mode chat |
-| 🌐 **Dashboard** | `pulse dashboard` — browser control plane for sessions, skills, cron, and config |
-| ⏰ **Scheduler** | Built-in cron: daily briefings, nightly backups, weekly audits — in plain language, delivered anywhere |
-| 🧠 **Memory** | Agent-curated memory with nudges, FTS5 session search with summaries, and a deepening model of you |
-| 🛠 **Skills** | The agent writes skills from experience and sharpens them on reuse ([agentskills.io](https://agentskills.io) compatible) |
-| 👥 **Delegation** | Isolated subagents for parallel workstreams; RPC scripts that collapse pipelines into zero-context turns |
-| 🖥 **Backends** | Local, Docker, SSH, Singularity, Modal, Daytona, Vercel Sandbox — idle environments hibernate to near-zero cost |
+**👂 Sense — hear everything, everywhere**
 
-Bring any model: OpenRouter, OpenAI, your own endpoint. Swap anytime with `pulse model` — no lock-in.
+| Surface | What it is |
+| ------- | ---------- |
+| Terminal | Full TUI: multiline editing, slash-command autocomplete, history, interrupt-and-redirect, streaming tool output |
+| Messaging | One gateway serves Telegram, Discord, Slack, WhatsApp, Signal, Email — voice memos transcribed, conversations continuous across platforms |
+| Desktop | Native app with embedded terminal, dashboard, and Bot Mode chat |
+| Dashboard | `pulse dashboard` — browser control plane for sessions, skills, schedules, and config |
+
+**🧠 Learn — get sharper every day**
+
+- **Memory that persists** — agent-curated memory with nudges, full-text session search with summaries, and a deepening model of you
+- **Skills that build themselves** — the agent writes skills from experience and refines them on reuse ([agentskills.io](https://agentskills.io) compatible)
+
+**🔗 Connect — any model, any tool, any machine**
+
+- **Models without lock-in** — OpenRouter, OpenAI, your own endpoint. Swap anytime with `pulse model`
+- **Tools via MCP** — connect any MCP server to extend what PULSE can reach
+- **Machines via backends** — local, Docker, SSH, Singularity, Modal, Daytona, Vercel Sandbox. Idle environments hibernate to near-zero cost
+
+**⚡ Act — do the work, on schedule, in parallel**
+
+- **Schedules** — built-in cron in plain language: daily briefings, nightly backups, weekly audits, delivered anywhere
+- **Delegation** — isolated subagents for parallel workstreams; RPC scripts that collapse pipelines into zero-context turns
+- **Research-ready** — batch trajectory generation and compression for training the next generation of tool-calling models
 
 ---
 
-## 🔑 Your keys, your server
+## Your keys, your server
 
 No accounts, no subscriptions, no third-party portal. Your API keys live in your own `~/.pulse/.env`, and updates come straight from this repo:
 
@@ -100,7 +112,7 @@ python3 portal/server.py   # serves install.sh + version feed — see portal/REA
 
 ---
 
-## 🔄 Terminal ↔ messaging map
+## Terminal ↔ messaging map
 
 Both doors lead to the same agent. Slash commands work on either side:
 
@@ -117,7 +129,7 @@ Both doors lead to the same agent. Slash commands work on either side:
 
 ---
 
-## 📚 Onboard reference
+## Reference
 
 | Area | Where |
 | ---- | ----- |
@@ -131,7 +143,7 @@ Both doors lead to the same agent. Slash commands work on either side:
 
 ---
 
-## 🧳 Coming from OpenClaw?
+## Coming from OpenClaw?
 
 `pulse setup` detects `~/.openclaw` and offers to import everything — persona, memories, skills, allowlists, messaging settings, allowlisted API keys:
 
@@ -141,13 +153,13 @@ pulse claw migrate --dry-run   # preview first, commit later
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the test environment and verification commands.
 
 ---
 
-## 📻 Ground control
+## Get help
 
 - 🐛 [Issues](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues)
 - 📚 [Skills Hub](https://agentskills.io)
@@ -158,4 +170,4 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the test environment 
 
 MIT — see [LICENSE](LICENSE).
 
-Built by [Anxious Research](https://github.com/Anxious-Research). 🪐
+Built by [Anxious Research](https://github.com/Anxious-Research).
