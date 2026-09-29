@@ -103,6 +103,20 @@ def source_frontends(project_root: Path) -> tuple[str, ...]:
     return tuple(name for name in ("ui-tui", "web") if (project_root / name / "package.json").is_file())
 
 
+def _sync_desktop_release_channel(project_root: Path) -> None:
+    """Fetch the prebuilt desktop UI when it cannot be built from source.
+
+    No-op (silent) without a bundled app install; best-effort otherwise —
+    desktop_release_sync never raises.
+    """
+    from pulse_cli import desktop_release_sync as _drs
+    if _drs.bundled_app_path() is None:
+        return
+    from pulse_cli.update_stage import publish_stage
+    publish_stage("Checking the desktop UI release channel")
+    print("  " + _drs.sync_bundled_desktop_ui(project_root))
+
+
 def build_update_products(project_root: Path, *, desktop: bool) -> None:
     """Prepare the selected union once; a failed product aborts the update."""
     # Both current updates and historical takeover reach this in a fresh target
@@ -112,6 +126,11 @@ def build_update_products(project_root: Path, *, desktop: bool) -> None:
 
     _install_configured_features_missing_deps(project_root)
     frontends = source_frontends(project_root)
+    if not frontends and not desktop:
+        # No source-buildable products — but a bundled desktop app may still
+        # track the UI release channel (built UI, no local source to rebuild).
+        _sync_desktop_release_channel(project_root)
+        return
     if not frontends:
         return
     env = source_build_env(explicit=True)
@@ -135,6 +154,8 @@ def build_update_products(project_root: Path, *, desktop: bool) -> None:
         # A current release/ can still sit beside a stale installed copy (an earlier
         # update rebuilt but never installed); healing must not wait for the next build.
         _refresh_installed_desktop_apps(project_root / "apps/desktop")
+    else:
+        _sync_desktop_release_channel(project_root)
     # A configured memory provider that no longer ships in core is installed from the
     # catalog for every profile home sharing this venv (config, data and tool names
     # unchanged). The update must finish even if the migration blows up.

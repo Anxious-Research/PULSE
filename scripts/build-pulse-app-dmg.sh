@@ -67,6 +67,11 @@ if [ -L "$PYLINK" ] && [[ "$(readlink "$PYLINK")" == /* ]]; then
   rm "$PYLINK"; ln -s ../../tools/python/bin/python3 "$PYLINK"
 fi
 
+echo "-> stamping UI manifest (ties the bundled UI to this commit)..."
+UI_COMMIT="$(cd "$REPO_ROOT" && git rev-parse HEAD)"
+printf '{"commit":"%s","built_at":"%s"}\n' "$UI_COMMIT" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  > "$APP/Contents/Resources/ui-manifest.json"
+
 echo "-> codesigning (ad-hoc)..."
 xattr -cr "$APP" 2>/dev/null || true
 codesign --deep --force --sign - "$APP"
