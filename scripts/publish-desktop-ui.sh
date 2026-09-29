@@ -58,7 +58,8 @@ else
   echo "-> reusing release $TAG (id $REL_ID)"
 fi
 # Replace same-name assets so the fixed download URLs always serve fresh bytes.
-EXISTING="$(curl -fsSL "${AUTH[@]}" "$API/$REL_ID/assets?per_page=100" | python3 -c 'import json,sys; print("\n".join(f"{a[\"id\"]} {a[\"name\"]}" for a in json.load(sys.stdin)))')"
+EXISTING="$(curl -fsSL "${AUTH[@]}" "$API/$REL_ID/assets?per_page=100" | python3 -c 'import json,sys
+for a in json.load(sys.stdin): print(a["id"], a["name"])')"
 echo "$EXISTING" | while read -r aid aname; do
   case "$aname" in pulse-desktop-ui.tar.gz|ui-manifest.json)
     echo "-> deleting old asset $aname"; curl -fsSL -X DELETE "${AUTH[@]}" "$API/assets/$aid" -o /dev/null ;;
