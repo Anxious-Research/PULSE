@@ -37,7 +37,7 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 
-USER_AGENT = "pulse-agent/1.0 (reddit-reading skill; +https://github.com/AnxiousResearchLab/pulse-agent)"
+USER_AGENT = "pulse-agent/1.0 (reddit-reading skill; +https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-)"
 TIMEOUT = 25
 ATOM = {"a": "http://www.w3.org/2005/Atom"}
 WWW = "https://www.reddit.com"

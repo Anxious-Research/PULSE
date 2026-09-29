@@ -13,7 +13,7 @@ required_credential_files:
 metadata:
   pulse:
     tags: [Google, Gmail, Calendar, Drive, Sheets, Docs, Contacts, Email, OAuth]
-    homepage: https://github.com/AnxiousResearchLab/pulse-agent
+    homepage: https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-
     related_skills: [himalaya]
 ---
 

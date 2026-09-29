@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://pulse-agent.anxiousresearchlab.com/docs/"><img src="https://img.shields.io/badge/Docs-pulse--agent.anxiousresearchlab.com-FFD700?style=for-the-badge" alt="Documentation"></a>
   <a href="https://discord.gg/AnxiousResearchLab"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
-  <a href="https://github.com/AnxiousResearchLab/pulse-agent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
+  <a href="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
   <a href="https://anxiousresearchlab.com"><img src="https://img.shields.io/badge/Built%20by-Anxious%20Research-blueviolet?style=for-the-badge" alt="Built by Anxious Research Lab"></a>
   <a href="README.md"><img src="https://img.shields.io/badge/Lang-English-lightgrey?style=for-the-badge" alt="English"></a>
   <a href="README.ur-pk.md"><img src="https://img.shields.io/badge/Lang-اردو-green?style=for-the-badge" alt="اردو"></a>
@@ -177,8 +177,8 @@ PM 引导、Python 3.14 测试环境和规范验证命令见
 
 - 💬 [Discord](https://discord.gg/AnxiousResearchLab)
 - 📚 [技能中心](https://agentskills.io)
-- 🐛 [问题反馈](https://github.com/AnxiousResearchLab/pulse-agent/issues)
-- 💡 [讨论区](https://github.com/AnxiousResearchLab/pulse-agent/discussions)
+- 🐛 [问题反馈](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues)
+- 💡 [讨论区](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/discussions)
 - 🔌 [PulseClaw](https://github.com/AaronWong1999/pulseclaw) — 社区微信桥接：在同一微信账号上运行 Pulse Agent 和 OpenClaw。
 
 ---

@@ -58,7 +58,7 @@ git -C "$INSTALL" config user.name test
 printf 'print(1)\n' > "$INSTALL/module_name.py"
 git -C "$INSTALL" add -A
 git -C "$INSTALL" -c commit.gpgsign=false commit -qm initial
-git -C "$INSTALL" remote add origin https://github.com/AnxiousResearchLab/pulse-agent.git
+git -C "$INSTALL" remote add origin https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git
 HEAD_SHA="$(git -C "$INSTALL" rev-parse HEAD)"
 mkdir -p "$INSTALL/.pulse/bin" "$INSTALL/.pulse-runtime/python"
 # A fake launcher for the backup and profile-scoped gateway stop.
@@ -155,7 +155,7 @@ check $? "post exits 0"
 [ -f "$INSTALL/.pulse-runtime/python/interpreter.bin" ]; check $? "PM store restored"
 [ -d "$INSTALL/.git" ]; check $? "checkout restored"
 [ "$(git -C "$INSTALL" rev-parse HEAD)" = "$HEAD_SHA" ]; check $? "checkout HEAD restored"
-[ "$(git -C "$INSTALL" config --get remote.origin.url)" = "https://github.com/AnxiousResearchLab/pulse-agent.git" ]; check $? "origin remote restored"
+[ "$(git -C "$INSTALL" config --get remote.origin.url)" = "https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git" ]; check $? "origin remote restored"
 [ -f "$PULSE_DESKTOP_USER_DATA_DIR/connection.json" ]; check $? "userData connection.json restored"
 [ "$(git -C "$INSTALL" config --local --get-regexp 'insteadOf' 2>/dev/null | wc -l | tr -d ' ')" = 0 ]; check $? "no stale insteadOf left in the checkout"
 [ ! -f "$H/.skip_upstream_prompt" ]; check $? "upstream-prompt marker removed"

@@ -546,7 +546,7 @@ _OAUTH_SYSTEM_REPLACEMENTS = (
 )
 # The slug is rewritten only as a standalone prose word. Joined to a host, path, repo, mailbox
 # or quoted as an identifier (``pulse-agent.anxiousresearchlab.com``, ``~/.pulse/pulse-agent/venv``,
-# ``AnxiousResearchLab/pulse-agent``, ``skill_view(name='pulse-agent')``) it is an address the model
+# ``Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-``, ``skill_view(name='pulse-agent')``) it is an address the model
 # dereferences, and the rewritten form does not exist (#48860). The OPENING quote marks an
 # identifier; a sentence-final ``.`` or a possessive ``'s`` is prose.
 _OAUTH_SLUG_PATTERN = re.compile(r"""(?<![\w./:@'"`-])pulse-agent(?![\w/@-]|\.\w)""")

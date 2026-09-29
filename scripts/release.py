@@ -301,7 +301,7 @@ def get_pr_number(subject: str) -> str | None:
     return None
 
 
-def generate_changelog(commits, tag_name, semver, repo_url="https://github.com/AnxiousResearchLab/pulse-agent",
+def generate_changelog(commits, tag_name, semver, repo_url="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-",
                        prev_tag=None, first_release=False, no_changelog=False):
     """Generate markdown changelog from categorized commits."""
     lines = []

@@ -71,7 +71,7 @@ $script:BoundParams = $PSBoundParameters
 # Under iex, script scope is the caller's session and outlives a run; start
 # each run without the previous run's answer (see Set-LauncherUserPath).
 $script:BinDirOnCallerPath = $null
-$RepoUrl = if ($env:PULSE_REPO_URL) { $env:PULSE_REPO_URL } else { "https://github.com/AnxiousResearchLab/pulse-agent.git" }
+$RepoUrl = if ($env:PULSE_REPO_URL) { $env:PULSE_REPO_URL } else { "https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git" }
 
 # --- BEGIN GENERATED: bootstrap pins (scripts/gen-bootstrap-pins.py) ---
 # Derived from pm/lock.json. DO NOT EDIT BY HAND:

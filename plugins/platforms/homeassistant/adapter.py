@@ -80,7 +80,7 @@ def _connect_error_detail(exc: BaseException) -> str:
         return (
             f"{text} — macOS Local Network Privacy is blocking this launchd gateway from the LAN. "
             "Run `pulse gateway install` to regenerate the launchd job, then `pulse gateway restart`. "
-            "https://github.com/AnxiousResearchLab/pulse-agent/issues/71206"
+            "https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues/71206"
         )
     return text
 

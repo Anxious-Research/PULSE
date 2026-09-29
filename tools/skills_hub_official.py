@@ -38,7 +38,7 @@ class OptionalSkillSource(SkillSource):
 
     SOURCE_ID = "official"
     TRUST_LEVEL = "builtin"
-    OFFICIAL_REPO = "AnxiousResearchLab/pulse-agent"
+    OFFICIAL_REPO = "Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-"
     OPTIONAL_SKILLS_PREFIX = "optional-skills"
 
     _parse_frontmatter = staticmethod(_parse_frontmatter)

@@ -6,7 +6,7 @@ Usage (via cron with --no-agent):
     pulse cron create pulse-issues \\
       --schedule "*/5 * * * *" --no-agent \\
       --script "$PULSE_HOME/skills/devops/watchers/scripts/watch_github.py" \\
-      --script-args "--name pulse-issues --repo AnxiousResearchLab/pulse-agent --scope issues"
+      --script-args "--name pulse-issues --repo Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement- --scope issues"
 
 Set GITHUB_TOKEN (or GH_TOKEN) in the Pulse .env file
 (``${PULSE_HOME:-~/.pulse}/.env``) to avoid the 60 req/hr

@@ -29,9 +29,9 @@ load_dotenv()
 # Default datasets to sample from
 DEFAULT_DATASETS = [
     "AnxiousResearchLab/swe-terminus-agent-glm-kimi-minimax",
-    "AnxiousResearchLab/pulse-agent-megascience-sft1",
-    "AnxiousResearchLab/Pulse-Agent-Thinking-GLM-4.7-SFT2",
-    "AnxiousResearchLab/Pulse-Agent-Thinking-GLM-4.7-SFT1",
+    "Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement--megascience-sft1",
+    "Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement--Thinking-GLM-4.7-SFT2",
+    "Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement--Thinking-GLM-4.7-SFT1",
     "AnxiousResearchLab/terminal-tasks-glm-pulse-agent"
 ]
 

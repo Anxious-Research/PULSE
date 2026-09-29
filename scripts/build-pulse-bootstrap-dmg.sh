@@ -9,19 +9,19 @@
 # A friend who gets only the .app has no runtime -> missing dependencies.
 #
 # What this builds instead: a DMG containing a bootstrap installer that, on
-# the friend's Mac, clones YOUR repo and runs the same staged install Hermes
-# uses (prerequisites -> repository -> venv -> python-deps via pm ->
+# the friend's Mac, clones YOUR repo and runs the same staged install
+# (prerequisites -> repository -> venv -> python-deps via pm ->
 # products -> config). Dependencies install natively on their machine
 # through the runtime, exactly like `curl ... install.sh | bash`.
 #
 # Usage:
-#   PULSE_REPO_URL=https://github.com/<you>/pulse-agent.git \
+#   PULSE_REPO_URL=https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git \
 #     bash scripts/build-pulse-bootstrap-dmg.sh [--out PULSE-Setup.dmg]
 #
 # Requirements: macOS with hdiutil + create-dmg (brew install create-dmg)
 # or falls back to plain hdiutil.
 set -e
-REPO_URL="${PULSE_REPO_URL:-https://github.com/AnxiousResearchLab/pulse-agent.git}"
+REPO_URL="${PULSE_REPO_URL:-https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git}"
 OUT="${1:-}"
 [ "${1:-}" = "--out" ] && OUT="${2:-}"
 OUT="${OUT:-PULSE-Setup.dmg}"

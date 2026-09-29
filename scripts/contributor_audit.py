@@ -122,7 +122,7 @@ def gh_pr_list():
         result = subprocess.run(
             [
                 "gh", "pr", "list",
-                "--repo", "AnxiousResearchLab/pulse-agent",
+                "--repo", "Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-",
                 "--state", "merged",
                 "--json", "number,title,body,author,mergedAt",
                 "--limit", "300",

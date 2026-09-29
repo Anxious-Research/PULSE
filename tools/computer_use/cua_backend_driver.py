@@ -113,7 +113,7 @@ def _resolve_mcp_invocation(driver_cmd: str, *, timeout: float = 6.0) -> Tuple[s
     on older drivers or any discovery failure — the wrapper must not refuse to start over a failed discovery hop.
     ``--no-overlay`` appended when allowed.
 
-    Surface 8 of AnxiousResearchLab/pulse-agent#47072: instead of hardcoding ``["mcp"]`` we ask the driver itself
+    Surface 8 of Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-#47072: instead of hardcoding ``["mcp"]`` we ask the driver itself
     via ``cua-driver manifest`` (trycua/cua#1961). The manifest carries a stable ``mcp_invocation`` pointer
     with both ``command`` and ``args``, so a future cua-driver that renames or relocates the subcommand
     keeps working without a Pulse patch.

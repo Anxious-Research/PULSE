@@ -66,7 +66,7 @@ Watch a GitHub repo (set `GITHUB_TOKEN` in `${PULSE_HOME:-~/.pulse}/.env` to avo
 
 ```bash
 python $PULSE_HOME/skills/devops/watchers/scripts/watch_github.py \
-  --name pulse-issues --repo AnxiousResearchLab/pulse-agent --scope issues
+  --name pulse-issues --repo Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement- --scope issues
 ```
 
 Poll an arbitrary JSON API:

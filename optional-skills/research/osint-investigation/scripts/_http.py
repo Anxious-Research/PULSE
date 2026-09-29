@@ -13,7 +13,7 @@ import urllib.request
 
 DEFAULT_UA = (
     "pulse-osint-investigation/0.2 "
-    "(+https://github.com/AnxiousResearchLab/pulse-agent; "
+    "(+https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-; "
     "set PULSE_OSINT_UA env var to identify yourself per "
     "Wikimedia / SEC fair-use guidance)"
 )

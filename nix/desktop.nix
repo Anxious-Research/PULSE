@@ -202,7 +202,7 @@ stdenv.mkDerivation {
 
   meta = with lib; {
     description = "Native Electron desktop shell for Pulse Agent";
-    homepage = "https://github.com/AnxiousResearchLab/pulse-agent";
+    homepage = "https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-";
     license = licenses.mit;
     platforms = platforms.unix;
     mainProgram = "pulse-desktop";

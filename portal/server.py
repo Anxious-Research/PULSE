@@ -1,7 +1,7 @@
 """Anxious Portal — minimal install/update server for PULSE.
 
-Mirrors what Nous runs for Hermes:
-  GET /install.sh      -> serves pulse-agent/scripts/install.sh (with your REPO_URL baked)
+Mirrors the standard agent-portal pattern:
+  GET /install.sh      -> serves scripts/install.sh (with your REPO_URL baked)
   GET /install.ps1     -> serves pulse-agent/scripts/install.ps1
   GET /latest.json     -> {"version": "<latest tag>", "commit": "<sha>", "install_sh": "<url>/install.sh"}
   GET /               -> tiny landing page with install instructions
@@ -24,7 +24,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 PORT = int(os.environ.get("PORT", "8080"))
 PUBLIC_BASE = os.environ.get("PORTAL_PUBLIC_URL", "http://localhost:8080")
 REPO_URL = os.environ.get(
-    "PULSE_REPO_URL", "https://github.com/AnxiousResearchLab/pulse-agent.git"
+    "PULSE_REPO_URL", "https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git"
 )
 
 
@@ -82,9 +82,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
             )
         elif path == "/install.sh":
             raw = (REPO_ROOT / "scripts/install.sh").read_bytes()
-            # Bake this portal's repo URL in so clients clone from YOU, not Hermes/Nous.
+            # Bake this portal's repo URL in so clients clone from YOUR repo.
             raw = raw.replace(
-                b"https://github.com/AnxiousResearchLab/pulse-agent.git",
+                b"https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git",
                 REPO_URL.encode(),
             )
             self._send(raw, "text/x-shellscript")

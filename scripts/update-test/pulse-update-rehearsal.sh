@@ -29,8 +29,8 @@
 
 set -euo pipefail
 
-OFFICIAL_HTTPS="https://github.com/AnxiousResearchLab/pulse-agent.git"
-OFFICIAL_SSH="git@github.com:AnxiousResearchLab/pulse-agent.git"
+OFFICIAL_HTTPS="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git"
+OFFICIAL_SSH="git@github.com:Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git"
 DEFAULT_SOURCE="https://github.com/ethernet8023/pulse-agent.git"
 
 SUBCMD=""

@@ -36,7 +36,7 @@ jobs:
   live:
     name: Live provider canaries
     # Forks and PRs never see these secrets; only run where they exist.
-    if: github.repository == 'AnxiousResearchLab/pulse-agent'
+    if: github.repository == 'Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     # Only booleans at job level: the key VALUES are scoped to the one step that

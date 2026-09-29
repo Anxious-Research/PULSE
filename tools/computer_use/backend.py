@@ -94,7 +94,7 @@ class ActionResult:
     ``structuredContent`` leaves them ``None``, behavior unchanged.
 
     Beyond the transport-level ``ok`` flag, this carries cua-driver's structured action verdict so the model
-    can follow the documented verify → escalate ladder (AnxiousResearchLab/pulse-agent#67052).
+    can follow the documented verify → escalate ladder (Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-#67052).
     """
 
     ok: bool

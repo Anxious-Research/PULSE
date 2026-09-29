@@ -346,7 +346,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   meta = with lib; {
     description = "AI agent with advanced tool-calling capabilities";
-    homepage = "https://github.com/AnxiousResearchLab/pulse-agent";
+    homepage = "https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-";
     mainProgram = "pulse";
     license = licenses.mit;
     platforms = platforms.unix;

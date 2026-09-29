@@ -27,13 +27,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AnxiousResearchLab/Pulse-Agent.git"
+    "url": "git+https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/AnxiousResearchLab/Pulse-Agent/issues"
+    "url": "https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues"
   },
-  "homepage": "https://github.com/AnxiousResearchLab/Pulse-Agent#readme",
+  "homepage": "https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-#readme",
   "devDependencies": {
     "@eslint/js": "9.39.5",
     "eslint-plugin-perfectionist": "5.10.0",

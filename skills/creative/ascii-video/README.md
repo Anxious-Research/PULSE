@@ -2,7 +2,7 @@
 
 Renders any content as colored ASCII character video. Audio, video, images, text, or pure math in, MP4/GIF/PNG sequence out. Full RGB color per character cell, 1080p 24fps default. No GPU.
 
-Built for [Pulse Agent](https://github.com/AnxiousResearchLab/pulse-agent). Usable in any coding agent. Canonical source lives here; synced to [`AnxiousResearchLab/pulse-agent/skills/creative/ascii-video`](https://github.com/AnxiousResearchLab/pulse-agent/tree/main/skills/creative/ascii-video) via PR.
+Built for [Pulse Agent](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-). Usable in any coding agent. Canonical source lives here; synced to [`Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/skills/creative/ascii-video`](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/tree/main/skills/creative/ascii-video) via PR.
 
 ## What this is
 
