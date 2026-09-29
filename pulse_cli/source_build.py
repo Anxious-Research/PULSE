@@ -96,6 +96,10 @@ def source_frontends(project_root: Path) -> tuple[str, ...]:
     """The frontend workspaces this checkout carries. A source slice without them
     (python-only installs, the installer's acceptance fixture) has no products
     to build; it still publishes commands and runs the maintenance tail."""
+    # Frontends require apps/shared to build; skip them if it's missing
+    has_shared = (project_root / "apps/shared").is_dir()
+    if not has_shared:
+        return ()
     return tuple(name for name in ("ui-tui", "web") if (project_root / name / "package.json").is_file())
 
 
