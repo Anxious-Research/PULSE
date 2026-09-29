@@ -2,13 +2,9 @@
 
 > **Bundled with Pulse Agent.** Originally authored by [@PCinkusz](https://github.com/PCinkusz) at https://github.com/PCinkusz/pulse-achievements — vendored into `plugins/pulse-achievements/` so it ships with the dashboard out-of-the-box and stays in lockstep with Pulse feature changes. Upstream repo remains the staging ground for new badges and UI iteration.
 >
-> When Pulse is installed via the install script or cloned from source, this plugin auto-registers as a dashboard tab on first `pulse dashboard` launch. No separate install step. See [Built-in Plugins → pulse-achievements](../../website/docs/user-guide/features/built-in-plugins.md) in the main docs.
+> When Pulse is installed via the install script or cloned from source, this plugin auto-registers as a dashboard tab on first `pulse dashboard` launch. No separate install step. See the dashboard's built-in plugins tab.
 
 Achievement system for the Pulse Dashboard: collectible, tiered badges generated from real local Pulse session history.
-
-![Pulse Achievements dashboard](docs/assets/achievements-dashboard-hd.png)
-
-The screenshots use temporary demo tier data to show the full visual range. The plugin itself reads real local Pulse session history by default.
 
 > **Update notice (2026-04-29):** If you installed this plugin before today, update to the latest version. The achievements scan path was refactored for much faster warm loads (snapshot cache + incremental checkpoint scan).
 >
