@@ -26,7 +26,7 @@ Use `terminal` with the Python from a PM-prepared Pulse source checkout. The
 Pulse with raw pip or project-discovering `uv run`.
 
 From that checkout, first follow the isolated development-home setup in
-[Package Management](https://pulse-agent.anxiousresearchlab.com/docs/reference/package-management#developer-workflow),
+Package Management,
 then prepare the extra and reactivate before running the helper:
 
 ```bash

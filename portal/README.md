@@ -10,7 +10,7 @@
 
 ```bash
 PULSE_REPO_URL=https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git \
-PORTAL_PUBLIC_URL=https://pulse-agent.anxiousresearchlab.com \
+PORTAL_PUBLIC_URL=https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement- \
 python3 portal/server.py
 ```
 
@@ -23,7 +23,7 @@ curl -fsSL http://localhost:8080/latest.json
 
 ## Deploy
 
-Kahin bhi host karo (VPS / Render / Fly). DNS `pulse-agent.anxiousresearchlab.com`
+Kahin bhi host karo (VPS / Render / Fly). DNS `GitHub repo`
 ko isi server pe point karo. Wahi URL `scripts/install.sh` ke `REPO_URL`
 default aur DMG builder me use hota hai.
 

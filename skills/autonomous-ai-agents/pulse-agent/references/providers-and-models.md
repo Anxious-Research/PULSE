@@ -2,7 +2,7 @@
 
 Set via `pulse model` (picker) or `pulse setup`. 35+ provider profiles ship as
 plugins under `plugins/model-providers/`; user plugins of the same name override.
-Full docs: https://pulse-agent.anxiousresearchlab.com/docs/integrations/providers
+Full docs: https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/integrations/providers
 
 ### Providers
 

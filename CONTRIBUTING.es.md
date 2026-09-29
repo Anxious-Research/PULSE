@@ -45,7 +45,7 @@ Las habilidades incluidas (en `skills/`) se envían con cada instalación de Pul
 
 Si tu habilidad es oficial y útil pero no universalmente necesaria (ej., una integración de servicio de pago, una dependencia pesada), ponla en **`optional-skills/`** — se envía con el repositorio pero no está activada por defecto. Los usuarios pueden descubrirla a través de `pulse skills browse` (etiquetada como "oficial") e instalarla con `pulse skills install` (sin advertencia de terceros, confianza integrada).
 
-Si tu habilidad es especializada, contribuida por la comunidad o de nicho, es mejor para un **Skills Hub** — súbela a un registro de habilidades y compártela en el [Discord de Anxious Research Lab](https://discord.gg/AnxiousResearchLab). Los usuarios pueden instalarla con `pulse skills install`.
+Si tu habilidad es especializada, contribuida por la comunidad o de nicho, es mejor para un **Skills Hub** — súbela a un registro de habilidades y compártela en el [Discord de Anxious Research Lab](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues). Los usuarios pueden instalarla con `pulse skills install`.
 
 ---
 
@@ -179,7 +179,7 @@ pulse-agent/
 ├── skills/                   # Habilidades incluidas (copiadas a ~/.pulse/skills/ en la instalación)
 ├── optional-skills/          # Habilidades opcionales oficiales (descubribles vía hub, no activadas por defecto)
 ├── tests/                    # Suite de tests
-├── website/                  # Sitio de documentación (pulse-agent.anxiousresearchlab.com)
+├── website/                  # Sitio de documentación (GitHub repo)
 │
 ├── cli-config.yaml.example   # Configuración de ejemplo (copiada a ~/.pulse/config.yaml)
 └── AGENTS.md                 # Guía de desarrollo para asistentes de codificación IA
@@ -576,7 +576,7 @@ test(tools): añadir tests unitarios para file_operations
 
 ## Comunidad
 
-- **Discord**: [discord.gg/AnxiousResearchLab](https://discord.gg/AnxiousResearchLab) — para preguntas, mostrar proyectos y compartir habilidades
+- **Issues**: [GitHub issues](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues) — para preguntas, mostrar proyectos y compartir habilidades
 - **GitHub Discussions**: Para propuestas de diseño y discusiones de arquitectura
 - **Skills Hub**: Sube habilidades especializadas a un registro y compártelas con la comunidad
 

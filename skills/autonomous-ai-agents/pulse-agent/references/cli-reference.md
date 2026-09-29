@@ -1,7 +1,7 @@
 # Pulse CLI Reference
 
 Live sources when anything looks stale: `pulse --help`, `pulse <command> --help`,
-https://pulse-agent.anxiousresearchlab.com/docs/reference/cli-commands
+https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/reference/cli-commands
 
 ### Global Flags
 
@@ -79,7 +79,7 @@ pulse gateway run|install|start|stop|restart|status|setup
 ```
 
 20+ platforms: Telegram, Discord, Slack, WhatsApp (Baileys + Business Cloud API), iMessage (Photon — `pulse photon setup`), Signal, Email, SMS, Matrix, Mattermost, Teams, LINE, SimpleX, ntfy, Google Chat, Home Assistant, DingTalk, Feishu, WeCom, Weixin, API Server, Webhooks. Open WebUI connects via the API Server adapter. Most adapters ship under `plugins/platforms/`.
-Docs: https://pulse-agent.anxiousresearchlab.com/docs/user-guide/messaging/
+Docs: https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/user-guide/messaging/
 
 ### Sessions
 
@@ -142,10 +142,10 @@ Plugin- and provider-supplied subcommands (e.g. `pulse photon setup`) only appea
 
 | Looking for... | Location |
 |---|---|
-| Config options | `pulse config edit` · [Configuration docs](https://pulse-agent.anxiousresearchlab.com/docs/user-guide/configuration) |
-| Tools / toolsets | `pulse tools list` · [Tools reference](https://pulse-agent.anxiousresearchlab.com/docs/reference/tools-reference) |
-| Skills catalog | `pulse skills browse` · [Skills catalog](https://pulse-agent.anxiousresearchlab.com/docs/reference/skills-catalog) |
-| Provider setup | `pulse model` · [Providers guide](https://pulse-agent.anxiousresearchlab.com/docs/integrations/providers) |
-| Env variables | `pulse config env-path` · [Env vars reference](https://pulse-agent.anxiousresearchlab.com/docs/reference/environment-variables) |
+| Config options | `pulse config edit` · Configuration docs |
+| Tools / toolsets | `pulse tools list` · Tools reference |
+| Skills catalog | `pulse skills browse` · Skills catalog |
+| Provider setup | `pulse model` · Providers guide |
+| Env variables | `pulse config env-path` · Env vars reference |
 | Gateway logs | `~/.pulse/logs/gateway.log` (or `pulse logs`) |
 | Sessions | `pulse sessions browse` (reads state.db) |

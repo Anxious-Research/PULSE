@@ -33,7 +33,7 @@ Portal.
 Portal at `https://inference-api.anxiousresearchlab.com/v1` is an OpenAI-compatible
 inference endpoint. It accepts **bearer-token authentication only**: either
 
-1. **A static API key** from `portal.anxiousresearchlab.com → API Keys`, or
+1. **A static API key** from `GitHub repo → API Keys`, or
 2. **An x402-protocol payment header** (Solana USDC, beta, anonymous, per-request).
 
 There is **no general OAuth 2.0 authorization server**. There is no

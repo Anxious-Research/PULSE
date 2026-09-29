@@ -4,21 +4,21 @@
 
 # Pulse Agent ☤
 <p align="center">
-  <a href="https://pulse-agent.anxiousresearchlab.com/">Pulse Agent</a> | <a href="https://pulse-agent.anxiousresearchlab.com/">Pulse Desktop</a>
+  <a href="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-">Pulse Agent</a> | <a href="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-">Pulse Desktop</a>
 </p>
 <p align="center">
-  <a href="https://pulse-agent.anxiousresearchlab.com/docs/"><img src="https://img.shields.io/badge/Docs-pulse--agent.anxiousresearchlab.com-FFD700?style=for-the-badge" alt="Documentation"></a>
-  <a href="https://discord.gg/AnxiousResearchLab"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
+  <a href="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-"><img src="https://img.shields.io/badge/Docs-GitHub_repo-FFD700?style=for-the-badge" alt="Documentation"></a>
+  <a href="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues"><img src="https://img.shields.io/badge/Support-GitHub_issues-5865F2?style=for-the-badge&logo=github&logoColor=white" alt="Support"></a>
   <a href="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
-  <a href="https://anxiousresearchlab.com"><img src="https://img.shields.io/badge/Built%20by-Anxious%20Research-blueviolet?style=for-the-badge" alt="Built by Anxious Research Lab"></a>
+  <a href="https://github.com/Anxious-Research"><img src="https://img.shields.io/badge/Built%20by-Anxious%20Research-blueviolet?style=for-the-badge" alt="Built by Anxious Research"></a>
   <a href="README.zh-CN.md"><img src="https://img.shields.io/badge/Lang-中文-red?style=for-the-badge" alt="中文"></a>
   <a href="README.ur-pk.md"><img src="https://img.shields.io/badge/Lang-اردو-green?style=for-the-badge" alt="اردو"></a>
   <a href="README.es.md"><img src="https://img.shields.io/badge/Lang-Español-orange?style=for-the-badge" alt="Español"></a>
 </p>
 
-**The self-improving AI agent built by [Anxious Research Lab](https://anxiousresearchlab.com).** It's the only agent with a built-in learning loop — it creates skills from experience, improves them during use, nudges itself to persist knowledge, searches its own past conversations, and builds a deepening model of who you are across sessions. Run it on a $5 VPS, a GPU cluster, or serverless infrastructure that costs nearly nothing when idle. It's not tied to your laptop — talk to it from Telegram while it works on a cloud VM.
+**The self-improving AI agent built by [Anxious Research](https://github.com/Anxious-Research).** It's the only agent with a built-in learning loop — it creates skills from experience, improves them during use, nudges itself to persist knowledge, searches its own past conversations, and builds a deepening model of who you are across sessions. Run it on a $5 VPS, a GPU cluster, or serverless infrastructure that costs nearly nothing when idle. It's not tied to your laptop — talk to it from Telegram while it works on a cloud VM.
 
-Use any model you want — [Anxious Portal](https://portal.anxiousresearchlab.com), OpenRouter, OpenAI, your own endpoint, and [many others](https://pulse-agent.anxiousresearchlab.com/docs/integrations/providers). Switch with `pulse model` — no code changes, no lock-in.
+Use any model you want — OpenRouter, OpenAI, your own endpoint, and many others. Switch with `pulse model` — no code changes, no lock-in.
 
 <table>
 <tr><td><b>A real terminal interface</b></td><td>Full TUI with multiline editing, slash-command autocomplete, conversation history, interrupt-and-redirect, and streaming tool output.</td></tr>
@@ -37,7 +37,7 @@ Use any model you want — [Anxious Portal](https://portal.anxiousresearchlab.co
 ### Linux, macOS, WSL2
 
 ```bash
-curl -fsSL https://pulse-agent.anxiousresearchlab.com/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/main/scripts/install.sh | bash
 ```
 
 ### Windows (native, PowerShell)
@@ -47,16 +47,15 @@ curl -fsSL https://pulse-agent.anxiousresearchlab.com/install.sh | bash
 Run this in PowerShell:
 
 ```powershell
-iex (irm https://pulse-agent.anxiousresearchlab.com/install.ps1)
+iex (irm https://raw.githubusercontent.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/main/scripts/install.ps1)
 ```
 
 The source installer delegates Python 3.14, Node.js, npm, ripgrep, FFmpeg,
 and Python dependencies to PM. If Git is absent, it stages the verified Git
 for Windows archive in Pulse' tool store. It does not replace your system Git.
-See [installation methods](https://pulse-agent.anxiousresearchlab.com/docs/getting-started/installation)
-for the separate MSIX/App Installer package and its update ownership.
+Windows also ships as an MSIX/App Installer package with its own update ownership.
 
-> **Android / Termux:** A signed APT repository is available for aarch64 devices, with a `stable` channel (tagged releases) and a prerelease `canary` channel. The package includes Python, Node.js, and the TUI. Use the [Termux guide](https://pulse-agent.anxiousresearchlab.com/docs/getting-started/termux), not the desktop/server installer script.
+> **Android / Termux:** A signed APT repository is available for aarch64 devices, with a `stable` channel (tagged releases) and a prerelease `canary` channel. The package includes Python, Node.js, and the TUI. Use the Termux APT package (`pkg install pulse-agent`), not the desktop/server installer script.
 >
 > **Windows:** Native Windows is fully supported — the PowerShell one-liner above installs everything. If you'd rather use WSL2, the Linux command works there too. Native Windows install lives under `%LOCALAPPDATA%\pulse`; WSL2 installs under `~/.pulse` as on Linux.
 
@@ -119,26 +118,33 @@ pulse update       # Update to the latest version
 pulse doctor       # Diagnose any issues
 ```
 
-📖 **[Full documentation →](https://pulse-agent.anxiousresearchlab.com/docs/)**
+📖 **Docs:** run `pulse --help` or `pulse <command> --help`. Contributor setup lives in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
-## Skip the API-key collection — Anxious Portal
+## Bring your own keys — no portal account needed
 
-Pulse works with whatever provider you want — that's not changing. But if you'd rather not collect five separate API keys for the model, web search, image generation, TTS, and a cloud browser, **[Anxious Portal](https://portal.anxiousresearchlab.com)** covers all of them under one subscription:
-
-- **300+ models** — pick any of them with `/model <name>`
-- **Tool Gateway** — web search, image generation (FAL), text-to-speech (OpenAI), cloud browser (Browser Use), all routed through your sub. No extra accounts.
-
-One command from a fresh install:
+Pulse works with whatever provider you want. Add your keys once with the setup wizard:
 
 ```bash
-pulse setup --portal
+pulse setup        # interactive: providers, models, messaging
+pulse model        # switch provider/model anytime — no code changes, no lock-in
 ```
 
-That logs you in via OAuth, sets Anxious as your provider, and turns on the Tool Gateway. Check what's wired up any time with `pulse portal info`. Full details on the [Tool Gateway docs page](https://pulse-agent.anxiousresearchlab.com/docs/user-guide/features/tool-gateway).
+You can bring separate keys per tool (model, web search, image generation, TTS)
+whenever you want. Check what's wired up any time with `pulse status` and
+`pulse doctor`.
 
-You can still bring your own keys per-tool whenever you want — the gateway is per-backend, not all-or-nothing.
+## Self-hosted update server (your own portal)
+
+This repo ships its own install/update server — no third-party portal involved:
+
+```bash
+python3 portal/server.py   # serves install.sh + version feed, see portal/README.md
+```
+
+Point your friends at it (or at this repo's `scripts/install.sh`), and every
+install and `pulse update` syncs from YOUR infrastructure.
 
 ---
 
@@ -158,31 +164,31 @@ Pulse has two entry points: start the terminal UI with `pulse`, or run the gatew
 | Interrupt current work         | `Ctrl+C` or send a new message                | `/stop` or send a new message                                                    |
 | Platform-specific status       | `/platforms`                                  | `/status`, `/sethome`                                                            |
 
-For the full command lists, see the [CLI guide](https://pulse-agent.anxiousresearchlab.com/docs/user-guide/cli) and the [Messaging Gateway guide](https://pulse-agent.anxiousresearchlab.com/docs/user-guide/messaging).
+For the full command lists, run `pulse --help` or `pulse <command> --help`.
 
 ---
 
 ## Documentation
 
-All documentation lives at **[pulse-agent.anxiousresearchlab.com/docs](https://pulse-agent.anxiousresearchlab.com/docs/)**:
+Start with `pulse --help`. Contributor references: [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md), and the `skills/` directory:
 
 | Section                                                                                             | What's Covered                                             |
 | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| [Quickstart](https://pulse-agent.anxiousresearchlab.com/docs/getting-started/quickstart)                 | Install → setup → first conversation in 2 minutes          |
-| [CLI Usage](https://pulse-agent.anxiousresearchlab.com/docs/user-guide/cli)                              | Commands, keybindings, personalities, sessions             |
-| [Configuration](https://pulse-agent.anxiousresearchlab.com/docs/user-guide/configuration)                | Config file, providers, models, all options                |
-| [Messaging Gateway](https://pulse-agent.anxiousresearchlab.com/docs/user-guide/messaging)                | Telegram, Discord, Slack, WhatsApp, Signal, Home Assistant |
-| [Security](https://pulse-agent.anxiousresearchlab.com/docs/user-guide/security)                          | Command approval, DM pairing, container isolation          |
-| [Tools & Toolsets](https://pulse-agent.anxiousresearchlab.com/docs/user-guide/features/tools)            | 40+ tools, toolset system, terminal backends               |
-| [Skills System](https://pulse-agent.anxiousresearchlab.com/docs/user-guide/features/skills)              | Procedural memory, Skills Hub, creating skills             |
-| [Memory](https://pulse-agent.anxiousresearchlab.com/docs/user-guide/features/memory)                     | Persistent memory, user profiles, best practices           |
-| [MCP Integration](https://pulse-agent.anxiousresearchlab.com/docs/user-guide/features/mcp)               | Connect any MCP server for extended capabilities           |
-| [Cron Scheduling](https://pulse-agent.anxiousresearchlab.com/docs/user-guide/features/cron)              | Scheduled tasks with platform delivery                     |
-| [Context Files](https://pulse-agent.anxiousresearchlab.com/docs/user-guide/features/context-files)       | Project context that shapes every conversation             |
-| [Architecture](https://pulse-agent.anxiousresearchlab.com/docs/developer-guide/architecture)             | Project structure, agent loop, key classes                 |
-| [Contributing](https://pulse-agent.anxiousresearchlab.com/docs/developer-guide/contributing)             | Development setup, PR process, code style                  |
-| [CLI Reference](https://pulse-agent.anxiousresearchlab.com/docs/reference/cli-commands)                  | All commands and flags                                     |
-| [Environment Variables](https://pulse-agent.anxiousresearchlab.com/docs/reference/environment-variables) | Complete env var reference                                 |
+| Quickstart                 | Install → setup → first conversation in 2 minutes          |
+| CLI Usage                              | Commands, keybindings, personalities, sessions             |
+| Configuration                | Config file, providers, models, all options                |
+| Messaging Gateway                | Telegram, Discord, Slack, WhatsApp, Signal, Home Assistant |
+| Security                          | Command approval, DM pairing, container isolation          |
+| Tools & Toolsets            | 40+ tools, toolset system, terminal backends               |
+| Skills System              | Procedural memory, Skills Hub, creating skills             |
+| Memory                     | Persistent memory, user profiles, best practices           |
+| MCP Integration               | Connect any MCP server for extended capabilities           |
+| Cron Scheduling              | Scheduled tasks with platform delivery                     |
+| Context Files       | Project context that shapes every conversation             |
+| Architecture             | Project structure, agent loop, key classes                 |
+| Contributing             | Development setup, PR process, code style                  |
+| CLI Reference                  | All commands and flags                                     |
+| Environment Variables | Complete env var reference                                 |
 
 ---
 
@@ -218,17 +224,16 @@ See `pulse claw migrate --help` for all options, or use the `openclaw-migration`
 
 ## Contributing
 
-We welcome contributions! See the [Contributing Guide](https://pulse-agent.anxiousresearchlab.com/docs/developer-guide/contributing) for development setup, code style, and PR process.
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code style, and PR process.
 
-Start with the [PM developer workflow](website/docs/reference/package-management.md#developer-workflow)
-for activation, daily use, dependency changes, and leaving the environment.
-[Development Setup](CONTRIBUTING.md#development-setup) covers the separate test environment and verification commands.
+Start with [CONTRIBUTING.md](CONTRIBUTING.md#development-setup)
+for the test environment and verification commands.
 
 ---
 
 ## Community
 
-- 💬 [Discord](https://discord.gg/AnxiousResearchLab)
+- 🐛 [Issues](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues)
 - 📚 [Skills Hub](https://agentskills.io)
 - 🐛 [Issues](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues)
 - 🔌 [computer-use-linux](https://github.com/avifenesh/computer-use-linux) — Linux desktop-control MCP server for Pulse and other MCP hosts, with AT-SPI accessibility trees, Wayland/X11 input, screenshots, and compositor window targeting.
@@ -240,4 +245,4 @@ for activation, daily use, dependency changes, and leaving the environment.
 
 MIT — see [LICENSE](LICENSE).
 
-Built by [Anxious Research Lab](https://anxiousresearchlab.com).
+Built by [Anxious Research](https://github.com/Anxious-Research).

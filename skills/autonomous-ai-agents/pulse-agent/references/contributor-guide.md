@@ -1,6 +1,6 @@
 # Contributor Quick Reference
 
-For occasional contributors and PR authors. Full developer docs: https://pulse-agent.anxiousresearchlab.com/docs/developer-guide/
+For occasional contributors and PR authors. Full developer docs: https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/developer-guide/
 
 ### Project Layout
 
