@@ -127,7 +127,7 @@ describe('VersionDetails', () => {
 
     await waitFor(() => {
       expect(openExternal).toHaveBeenCalledWith(
-        'https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/commit/d233b6d7a9c5b79288e48dfb3b29e2ead106ac73'
+        'https://github.com/Anxious-Research/PULSE/commit/d233b6d7a9c5b79288e48dfb3b29e2ead106ac73'
       )
     })
     expect($previewTabs.get()).toHaveLength(0)

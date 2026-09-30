@@ -20,7 +20,7 @@ set -u
 # hygiene can't break the locked sync the way it used to before pm owned it.
 export UV_NO_CONFIG=1
 
-REPO_URL="${PULSE_REPO_URL:-https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git}"
+REPO_URL="${PULSE_REPO_URL:-https://github.com/Anxious-Research/PULSE.git}"
 BRANCH="main"
 INSTALL_COMMIT=""
 INSTALL_DIR="${PULSE_INSTALL_DIR:-}"

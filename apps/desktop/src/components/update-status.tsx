@@ -24,7 +24,7 @@ import {
   type UpdateTarget
 } from '@/store/updates'
 
-const RELEASE_NOTES_URL = 'https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/releases'
+const RELEASE_NOTES_URL = 'https://github.com/Anxious-Research/PULSE/releases'
 const INSTALLER_URL = 'https://pulse-agent.anxious-research.com/'
 
 export type UpdateStatusTone = 'idle' | 'available' | 'error' | 'unsupported'

@@ -8,7 +8,7 @@ import { DirectiveContent } from './directive-text'
 
 const desktopWindow = window as unknown as { pulseDesktop?: Window['pulseDesktop'] }
 
-const PR_URL = 'https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/pull/107950'
+const PR_URL = 'https://github.com/Anxious-Research/PULSE/pull/107950'
 
 function installDesktopBridge() {
   const openExternal = vi.fn().mockResolvedValue(undefined)

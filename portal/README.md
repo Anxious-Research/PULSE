@@ -9,8 +9,8 @@
 ## Run
 
 ```bash
-PULSE_REPO_URL=https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git \
-PORTAL_PUBLIC_URL=https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement- \
+PULSE_REPO_URL=https://github.com/Anxious-Research/PULSE.git \
+PORTAL_PUBLIC_URL=https://github.com/Anxious-Research/PULSE \
 python3 portal/server.py
 ```
 
@@ -30,7 +30,7 @@ default aur DMG builder me use hota hai.
 ## DMG (sahi tarika)
 
 ```bash
-PULSE_REPO_URL=https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git \
+PULSE_REPO_URL=https://github.com/Anxious-Research/PULSE.git \
   bash scripts/build-pulse-bootstrap-dmg.sh --out PULSE-Setup.dmg
 ```
 
@@ -43,7 +43,7 @@ Wahi standard staged-install flow hai.
 
 ```bash
 cd pulse-agent
-git remote add origin https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git
+git remote add origin https://github.com/Anxious-Research/PULSE.git
 git push -u origin main
 ```
 

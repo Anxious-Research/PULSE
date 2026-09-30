@@ -12,7 +12,7 @@ metadata:
     tags: [privacy, data-broker, opt-out, ccpa, gdpr, security, doxxing]
     category: security
     related_skills: [google-workspace, agentmail, himalaya, scrapling, osint-investigation]
-    homepage: https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-
+    homepage: https://github.com/Anxious-Research/PULSE
 ---
 
 # unbroker

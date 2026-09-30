@@ -83,7 +83,7 @@ pulse webhook subscribe todoist-pulse \
   --deliver telegram --deliver-chat-id "12345"
 ```
 
-Full filter syntax: https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/user-guide/messaging/webhooks#payload-filters
+Full filter syntax: https://github.com/Anxious-Research/PULSE/user-guide/messaging/webhooks#payload-filters
 
 ### List subscriptions
 ```bash

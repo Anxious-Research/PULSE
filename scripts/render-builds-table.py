@@ -57,7 +57,7 @@ from scripts.releases import handoff, r2, semver, stable, versioning  # noqa: E4
 
 MARKER = "<!-- PULSE_BUILDS_TABLE -->"
 END_MARKER = "<!-- /PULSE_BUILDS_TABLE -->"
-DEFAULT_REPO = "Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-"
+DEFAULT_REPO = "Anxious-Research/PULSE"
 
 # Asset name shapes (electron-builder artifactName in
 # apps/desktop/electron-builder.config.cjs):

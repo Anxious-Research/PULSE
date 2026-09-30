@@ -51,7 +51,7 @@ PAIRING_DIR = None
 # process (e.g. the ``pulse pairing`` CLI) re-imports this module later with the final environment already
 # in place, so it never observes the stale value -- the resulting asymmetry is what made pending pairing
 # codes issued by the gateway unrecoverable while CLI-side writes to the same directory kept working
-# (Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-#93449). ``_default_pairing_dir()`` below resolves this fresh on every call in
+# (Anxious-Research/PULSE#93449). ``_default_pairing_dir()`` below resolves this fresh on every call in
 # production. Tests patch this attribute directly to a concrete path for isolation (e.g.
 # ``patch("gateway.pairing.PAIRING_DIR", tmp_path)``); that continues to work unchanged, since a patched
 # (non-``None``) value takes precedence over recomputing.

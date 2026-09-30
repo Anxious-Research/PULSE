@@ -26,9 +26,9 @@ import { ExternalLink, Loader2Icon, Lock } from '@/lib/icons'
 import { $sendDiagnostics, confirmSendDiagnostics, dismissSendDiagnostics } from '@/store/send-diagnostics'
 
 const SUPPORT_LINKS = [
-  { key: 'github', url: 'https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues' },
+  { key: 'github', url: 'https://github.com/Anxious-Research/PULSE/issues' },
   { key: 'portal', url: 'https://portal.anxious-research.com/help' },
-  { key: 'discord', url: 'https://https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues' }
+  { key: 'discord', url: 'https://https://github.com/Anxious-Research/PULSE/issues' }
 ] as const
 
 export function SendDiagnosticsHost() {

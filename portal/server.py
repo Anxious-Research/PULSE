@@ -24,7 +24,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 PORT = int(os.environ.get("PORT", "8080"))
 PUBLIC_BASE = os.environ.get("PORTAL_PUBLIC_URL", "http://localhost:8080")
 REPO_URL = os.environ.get(
-    "PULSE_REPO_URL", "https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git"
+    "PULSE_REPO_URL", "https://github.com/Anxious-Research/PULSE.git"
 )
 
 
@@ -84,7 +84,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             raw = (REPO_ROOT / "scripts/install.sh").read_bytes()
             # Bake this portal's repo URL in so clients clone from YOUR repo.
             raw = raw.replace(
-                b"https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git",
+                b"https://github.com/Anxious-Research/PULSE.git",
                 REPO_URL.encode(),
             )
             self._send(raw, "text/x-shellscript")

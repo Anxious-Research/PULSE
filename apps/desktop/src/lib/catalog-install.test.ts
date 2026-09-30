@@ -20,8 +20,8 @@ describe('public catalog install links', () => {
     [{ name: 'pdf', source: 'Anthropic', identifier: 'anthropics/skills/skills/pdf' }, 'anthropics/skills/skills/pdf'],
     [{ name: 'pdf', source: 'optional' }, 'official/pdf'],
     [
-      { name: 'pdf', source: 'built-in', installIdentifier: 'Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/skills/productivity/pdf' },
-      'Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/skills/productivity/pdf'
+      { name: 'pdf', source: 'built-in', installIdentifier: 'Anxious-Research/PULSE/skills/productivity/pdf' },
+      'Anxious-Research/PULSE/skills/productivity/pdf'
     ],
     [
       { name: 'A name', source: 'future-source', identifier: 'provider/path?mode=one&two#readme' },

@@ -7,9 +7,9 @@
 # ہرمیس ایجنٹ ☤ (Pulse Agent)
 
 <p align="center">
-  <a href="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/"><img src="https://img.shields.io/badge/Docs-pulse--agent.anxiousresearchlab.com-FFD700?style=for-the-badge" alt="Documentation"></a>
-  <a href="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
-  <a href="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
+  <a href="https://github.com/Anxious-Research/PULSE/"><img src="https://img.shields.io/badge/Docs-pulse--agent.anxiousresearchlab.com-FFD700?style=for-the-badge" alt="Documentation"></a>
+  <a href="https://github.com/Anxious-Research/PULSE/issues"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
+  <a href="https://github.com/Anxious-Research/PULSE/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
   <a href="https://github.com/Anxious-Research"><img src="https://img.shields.io/badge/Built%20by-Anxious%20Research-blueviolet?style=for-the-badge" alt="Built by Anxious Research Lab"></a>
   <a href="README.md"><img src="https://img.shields.io/badge/Lang-English-lightgrey?style=for-the-badge" alt="English"></a>
   <a href="README.zh-CN.md"><img src="https://img.shields.io/badge/Lang-中文-red?style=for-the-badge" alt="中文"></a>
@@ -38,21 +38,21 @@
 <div dir="ltr">
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Anxious-Research/PULSE/main/scripts/install.sh | bash
 ```
 
 </div>
 
 ### ونڈوز (نیٹو، پاور شیل)
 
-> **توجہ فرمائیں:** مقامی ونڈوز (Native Windows) پر ہرمیس بغیر WSL کے چلتا ہے — CLI، گیٹ وے، TUI، اور ٹولز سب مقامی طور پر کام کرتے ہیں۔ اگر آپ WSL2 استعمال کرنا پسند کرتے ہیں، تو اوپر دی گئی لینکس/میک او ایس کی کمانڈ وہاں بھی کام کرے گی۔ کوئی مسئلہ نظر آیا؟ براہ کرم [مسائل (issues) درج کریں](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues)۔
+> **توجہ فرمائیں:** مقامی ونڈوز (Native Windows) پر ہرمیس بغیر WSL کے چلتا ہے — CLI، گیٹ وے، TUI، اور ٹولز سب مقامی طور پر کام کرتے ہیں۔ اگر آپ WSL2 استعمال کرنا پسند کرتے ہیں، تو اوپر دی گئی لینکس/میک او ایس کی کمانڈ وہاں بھی کام کرے گی۔ کوئی مسئلہ نظر آیا؟ براہ کرم [مسائل (issues) درج کریں](https://github.com/Anxious-Research/PULSE/issues)۔
 
 اسے پاور شیل (PowerShell) میں چلائیں:
 
 <div dir="ltr">
 
 ```powershell
-iex (irm https://raw.githubusercontent.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/main/scripts/install.ps1)
+iex (irm https://raw.githubusercontent.com/Anxious-Research/PULSE/main/scripts/install.ps1)
 ```
 
 </div>
@@ -221,9 +221,9 @@ PM اور Python 3.14 کے ٹیسٹ ماحول اور تصدیقی کمانڈز 
 
 ## کمیونٹی (Community)
 
-- 💬 [ڈسکارڈ (Discord)](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues)
+- 💬 [ڈسکارڈ (Discord)](https://github.com/Anxious-Research/PULSE/issues)
 - 📚 [سکلز ہب (Skills Hub)](https://agentskills.io)
-- 🐛 [مسائل (Issues)](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues)
+- 🐛 [مسائل (Issues)](https://github.com/Anxious-Research/PULSE/issues)
 - 🔌 [computer-use-linux](https://github.com/avifenesh/computer-use-linux) — ہرمیس اور دیگر MCP ہوسٹس کے لیے لینکس (Linux) ڈیسک ٹاپ کنٹرول MCP سرور، جس میں AT-SPI ایکسیسیبلٹی ٹریز، Wayland/X11 ان پٹ، سکرین شاٹس، اور کمپوزیٹر ونڈو ٹارگیٹنگ شامل ہے۔
 - 🔌 [PulseClaw](https://github.com/AaronWong1999/pulseclaw) — کمیونٹی وی چیٹ (WeChat) برج: ہرمیس ایجنٹ اور OpenClaw کو ایک ہی وی چیٹ اکاؤنٹ پر چلائیں۔
 

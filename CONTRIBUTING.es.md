@@ -45,7 +45,7 @@ Las habilidades incluidas (en `skills/`) se envían con cada instalación de Pul
 
 Si tu habilidad es oficial y útil pero no universalmente necesaria (ej., una integración de servicio de pago, una dependencia pesada), ponla en **`optional-skills/`** — se envía con el repositorio pero no está activada por defecto. Los usuarios pueden descubrirla a través de `pulse skills browse` (etiquetada como "oficial") e instalarla con `pulse skills install` (sin advertencia de terceros, confianza integrada).
 
-Si tu habilidad es especializada, contribuida por la comunidad o de nicho, es mejor para un **Skills Hub** — súbela a un registro de habilidades y compártela en el [Discord de Anxious Research Lab](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues). Los usuarios pueden instalarla con `pulse skills install`.
+Si tu habilidad es especializada, contribuida por la comunidad o de nicho, es mejor para un **Skills Hub** — súbela a un registro de habilidades y compártela en el [Discord de Anxious Research Lab](https://github.com/Anxious-Research/PULSE/issues). Los usuarios pueden instalarla con `pulse skills install`.
 
 ---
 
@@ -566,7 +566,7 @@ test(tools): añadir tests unitarios para file_operations
 
 ## Reportar Issues
 
-- Usa [GitHub Issues](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues)
+- Usa [GitHub Issues](https://github.com/Anxious-Research/PULSE/issues)
 - Incluye: SO, versión de Python, versión de Pulse (`pulse --version`), traza de error completa
 - Incluye pasos para reproducir
 - Verifica los issues existentes antes de crear duplicados
@@ -576,7 +576,7 @@ test(tools): añadir tests unitarios para file_operations
 
 ## Comunidad
 
-- **Issues**: [GitHub issues](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues) — para preguntas, mostrar proyectos y compartir habilidades
+- **Issues**: [GitHub issues](https://github.com/Anxious-Research/PULSE/issues) — para preguntas, mostrar proyectos y compartir habilidades
 - **GitHub Discussions**: Para propuestas de diseño y discusiones de arquitectura
 - **Skills Hub**: Sube habilidades especializadas a un registro y compártelas con la comunidad
 

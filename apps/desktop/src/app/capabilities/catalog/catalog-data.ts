@@ -43,7 +43,7 @@ export interface CatalogEntry {
 const DOCS_ORIGIN = 'https://pulse-agent.anxious-research.com'
 // The public domain redirects here without CORS headers on the redirect.
 // Use the docs' actual static host, not GitHub's API or repository endpoints.
-const CATALOG_BASE = 'https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-'  // no hosted catalog yet; fetchCatalog throws to its existing error path
+const CATALOG_BASE = 'https://github.com/Anxious-Research/PULSE'  // no hosted catalog yet; fetchCatalog throws to its existing error path
 const text = (value: unknown): string => (typeof value === 'string' ? value : '')
 const strings = (value: unknown): string[] => (Array.isArray(value) ? value.filter(v => typeof v === 'string') : [])
 

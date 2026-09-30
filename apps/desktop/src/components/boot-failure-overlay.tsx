@@ -431,7 +431,7 @@ export function BootFailureOverlay() {
       {
         key: 'discord',
         label: copy.cloudDownDiscord,
-        onClick: () => openExternalLink('https://https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues'),
+        onClick: () => openExternalLink('https://https://github.com/Anxious-Research/PULSE/issues'),
         variant: 'ghost'
       },
       { ...settingsAction, variant: 'ghost' }

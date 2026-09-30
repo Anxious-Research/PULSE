@@ -49,7 +49,7 @@ export const PROVIDER_GROUPS: ProviderPrefix[] = [
     prefix: 'PULSE_',
     name: 'Pulse Portal',
     description: 'Hosted Pulse & Pulse-trained models',
-    docsUrl: 'https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-',
+    docsUrl: 'https://github.com/Anxious-Research/PULSE',
     priority: 0
   },
   {

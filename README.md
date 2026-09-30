@@ -3,8 +3,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-4da3ff?style=for-the-badge" alt="License: MIT"></a>
-  <a href="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues"><img src="https://img.shields.io/badge/Support-GitHub_issues-ff9e45?style=for-the-badge&logo=github&logoColor=white" alt="Support"></a>
+  <a href="https://github.com/Anxious-Research/PULSE/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-4da3ff?style=for-the-badge" alt="License: MIT"></a>
+  <a href="https://github.com/Anxious-Research/PULSE/issues"><img src="https://img.shields.io/badge/Support-GitHub_issues-ff9e45?style=for-the-badge&logo=github&logoColor=white" alt="Support"></a>
   <a href="https://github.com/Anxious-Research"><img src="https://img.shields.io/badge/Built%20by-Anxious%20Research-8b7bff?style=for-the-badge" alt="Built by Anxious Research"></a>
   <a href="README.zh-CN.md"><img src="https://img.shields.io/badge/Lang-中文-3a4a6b?style=for-the-badge" alt="中文"></a>
   <a href="README.ur-pk.md"><img src="https://img.shields.io/badge/Lang-اردو-3a4a6b?style=for-the-badge" alt="اردو"></a>
@@ -24,13 +24,13 @@ PULSE runs one continuous loop — **sense · learn · connect · act**. It hear
 ### macOS / Linux / WSL2
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Anxious-Research/PULSE/main/scripts/install.sh | bash
 ```
 
 ### Windows (native PowerShell, no WSL needed)
 
 ```powershell
-iex (irm https://raw.githubusercontent.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/main/scripts/install.ps1)
+iex (irm https://raw.githubusercontent.com/Anxious-Research/PULSE/main/scripts/install.ps1)
 ```
 
 The installer provisions its own toolchain (Python 3.14, Node.js, ripgrep, FFmpeg) into an isolated tool store — your system stays untouched. Then:
@@ -40,7 +40,7 @@ source ~/.bashrc    # or: source ~/.zshrc
 pulse               # say hello
 ```
 
-> **Desktop app:** grab `PULSE-Setup.dmg` from [Releases](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/releases), drag to Applications, open — it pulls the latest code from this repo and finishes setup itself.
+> **Desktop app:** grab `PULSE-Setup.dmg` from [Releases](https://github.com/Anxious-Research/PULSE/releases), drag to Applications, open — it pulls the latest code from this repo and finishes setup itself.
 >
 > **Termux (Android):** `pkg install pulse-agent` (stable + canary channels for aarch64).
 >
@@ -161,7 +161,7 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the test environment 
 
 ## Get help
 
-- 🐛 [Issues](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues)
+- 🐛 [Issues](https://github.com/Anxious-Research/PULSE/issues)
 - 📚 [Skills Hub](https://agentskills.io)
 
 ---

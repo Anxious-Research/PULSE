@@ -177,7 +177,7 @@ async function locatePulse(ssh, remotePulsePath) {
     //   - version checking: `<python> --version` printed "Python x.y.z" instead of
     //     the Pulse version, and
     //   - capability probing: `<python> serve --help` failed entirely.
-    // See https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues/74411
+    // See https://github.com/Anxious-Research/PULSE/issues/74411
     return candidate
   }
 
@@ -237,7 +237,7 @@ async function locatePulse(ssh, remotePulsePath) {
 
   const err: any = new Error(
     'Pulse is not installed on the remote host (could not find a `pulse` executable). ' +
-      'Install it on the remote with:  curl -fsSL https://raw.githubusercontent.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/main/scripts/install.sh | sh  ' +
+      'Install it on the remote with:  curl -fsSL https://raw.githubusercontent.com/Anxious-Research/PULSE/main/scripts/install.sh | sh  ' +
       '— or set the Pulse path explicitly in the SSH connection settings.'
   )
 

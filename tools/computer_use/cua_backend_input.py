@@ -49,7 +49,7 @@ class _InputMixin:
         where the model didn't expect).
 
         Returns an ActionResult to short-circuit on refusal, or None to proceed. See
-        Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-#67052 phase B.
+        Anxious-Research/PULSE#67052 phase B.
         """
         if not delivery_mode or delivery_mode == "background":
             return None
@@ -95,7 +95,7 @@ class _InputMixin:
         # Tool is chosen by click_count only; `button` goes through click's enum (the driver rejects unknown
         # buttons). `right_click` / `middle_click` MCP tools are deprecated aliases and never invoked here.
         # Choose tool by click_count only — single-vs-double — and pass the button through to `click`'s
-        # `button` enum (Surface 5 of Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-#47072). cua-driver-rs gained an explicit
+        # `button` enum (Surface 5 of Anxious-Research/PULSE#47072). cua-driver-rs gained an explicit
         # `button: "left"|"right"|"middle"` arg on `click` in trycua/cua#1961 which rejects unknown buttons;
         # before that, `middle` was silently mapped to a left-click via name-routing through `right_click`.
         button_norm = (button or "left").lower()

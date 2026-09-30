@@ -172,7 +172,7 @@ _IMAGE_API_INTS = (
 _ATTRIBUTION_HEADERS = {
     "Content-Type": "application/json",
     # OpenRouter attribution headers (harmless against Anxious Portal).
-    "HTTP-Referer": "https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-",
+    "HTTP-Referer": "https://github.com/Anxious-Research/PULSE",
     "X-Title": "Pulse Agent",
 }
 

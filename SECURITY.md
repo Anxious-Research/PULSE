@@ -6,7 +6,7 @@ scope for vulnerability reports.
 
 ## 1. Reporting a Vulnerability
 
-Report privately via [GitHub Security Advisories](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/security/advisories/new)
+Report privately via [GitHub Security Advisories](https://github.com/Anxious-Research/PULSE/security/advisories/new)
 or **security@anxiousresearchlab.com**. Do not open public issues for
 security vulnerabilities. **Pulse Agent does not operate a bug
 bounty program.**

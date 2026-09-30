@@ -22,8 +22,8 @@
 # else a friend's first-run clone pulls stale code.
 set -e
 OLD_ORG="AnxiousResearchLab/pulse-agent"
-NEW_REPO="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git"
-NEW_ORG="Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-"
+NEW_REPO="https://github.com/Anxious-Research/PULSE.git"
+NEW_ORG="Anxious-Research/PULSE"
 OUT="${2:-}"
 [ "${1:-}" = "--out" ] && OUT="${2:-PULSE-Setup.dmg}"
 OUT="${OUT:-$HOME/Desktop/PULSE-Setup.dmg}"

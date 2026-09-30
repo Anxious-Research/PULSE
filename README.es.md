@@ -4,12 +4,12 @@
 
 # Pulse Agent ☤
 <p align="center">
-  <a href="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/">Pulse Agent</a> | <a href="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/">Pulse Desktop</a>
+  <a href="https://github.com/Anxious-Research/PULSE/">Pulse Agent</a> | <a href="https://github.com/Anxious-Research/PULSE/">Pulse Desktop</a>
 </p>
 <p align="center">
-  <a href="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/"><img src="https://img.shields.io/badge/Docs-pulse--agent.anxiousresearchlab.com-FFD700?style=for-the-badge" alt="Documentación"></a>
-  <a href="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
-  <a href="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/blob/main/LICENSE"><img src="https://img.shields.io/badge/Licencia-MIT-green?style=for-the-badge" alt="Licencia: MIT"></a>
+  <a href="https://github.com/Anxious-Research/PULSE/"><img src="https://img.shields.io/badge/Docs-pulse--agent.anxiousresearchlab.com-FFD700?style=for-the-badge" alt="Documentación"></a>
+  <a href="https://github.com/Anxious-Research/PULSE/issues"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
+  <a href="https://github.com/Anxious-Research/PULSE/blob/main/LICENSE"><img src="https://img.shields.io/badge/Licencia-MIT-green?style=for-the-badge" alt="Licencia: MIT"></a>
   <a href="https://github.com/Anxious-Research"><img src="https://img.shields.io/badge/Creado%20por-Anxious%20Research-blueviolet?style=for-the-badge" alt="Creado por Anxious Research Lab"></a>
   <a href="README.md"><img src="https://img.shields.io/badge/Lang-English-blue?style=for-the-badge" alt="English"></a>
   <a href="README.zh-CN.md"><img src="https://img.shields.io/badge/Lang-中文-red?style=for-the-badge" alt="中文"></a>
@@ -37,17 +37,17 @@ Usa cualquier modelo que quieras — Anxious Portal, [OpenRouter](https://openro
 ### Linux, macOS, WSL2
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Anxious-Research/PULSE/main/scripts/install.sh | bash
 ```
 
 ### Windows (nativo, PowerShell)
 
-> **Nota:** En Windows nativo, Pulse funciona sin WSL — la CLI, el gateway, la TUI y las herramientas funcionan de forma nativa. Si prefieres usar WSL2, el comando de Linux/macOS de arriba también funciona allí. ¿Encontraste un error? Por favor [crea un issue](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues).
+> **Nota:** En Windows nativo, Pulse funciona sin WSL — la CLI, el gateway, la TUI y las herramientas funcionan de forma nativa. Si prefieres usar WSL2, el comando de Linux/macOS de arriba también funciona allí. ¿Encontraste un error? Por favor [crea un issue](https://github.com/Anxious-Research/PULSE/issues).
 
 Ejecuta esto en PowerShell:
 
 ```powershell
-iex (irm https://raw.githubusercontent.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/main/scripts/install.ps1)
+iex (irm https://raw.githubusercontent.com/Anxious-Research/PULSE/main/scripts/install.ps1)
 ```
 
 El instalador de código fuente usa PM para Python 3.14, Node.js, npm,
@@ -190,9 +190,9 @@ de verificación están en [Development Setup](CONTRIBUTING.md#development-setup
 
 ## Comunidad
 
-- 💬 [Discord](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues)
+- 💬 [Discord](https://github.com/Anxious-Research/PULSE/issues)
 - 📚 [Skills Hub](https://agentskills.io)
-- 🐛 [Issues](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues)
+- 🐛 [Issues](https://github.com/Anxious-Research/PULSE/issues)
 - 🔌 [computer-use-linux](https://github.com/avifenesh/computer-use-linux) — Servidor MCP de control de escritorio Linux para Pulse y otros hosts MCP, con árboles de accesibilidad AT-SPI, entrada Wayland/X11, capturas de pantalla y targeting de ventanas del compositor.
 - 🔌 [PulseClaw](https://github.com/AaronWong1999/pulseclaw) — Puente WeChat comunitario: Ejecuta Pulse Agent y OpenClaw en la misma cuenta de WeChat.
 

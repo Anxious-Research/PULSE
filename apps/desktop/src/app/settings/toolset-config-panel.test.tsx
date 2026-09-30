@@ -754,7 +754,7 @@ describe('ToolsetConfigPanel', () => {
         flow: 'device_code',
         session_id: 'sess-1',
         user_code: 'PULSE-1234',
-        verification_url: 'https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues',
+        verification_url: 'https://github.com/Anxious-Research/PULSE/issues',
         poll_interval: 5,
         expires_in: 600
       })
@@ -782,7 +782,7 @@ describe('ToolsetConfigPanel', () => {
 
         await waitFor(() => expect(startOAuthLogin).toHaveBeenCalledWith('pulse'))
         expect(openSpy).toHaveBeenCalledWith(
-          'https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues',
+          'https://github.com/Anxious-Research/PULSE/issues',
           '_blank',
           'noopener,noreferrer'
         )

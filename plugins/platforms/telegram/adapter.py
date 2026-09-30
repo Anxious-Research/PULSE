@@ -412,7 +412,7 @@ _UPDATER_START_TIMEOUT = 30.0  # start_polling() can hang on a degraded pool aft
 # start_polling() can also hang when the connection pool is in a degraded state after
 # _drain_polling_connections(), particularly when both primary and fallback Telegram endpoints are
 # unreachable. Bounding start_polling() prevents the reconnect ladder from stalling indefinitely and allows
-# the heartbeat loop to trigger its own recovery path. Refs: Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-#59614
+# the heartbeat loop to trigger its own recovery path. Refs: Anxious-Research/PULSE#59614
 _INITIAL_POLLING_PROGRESS_TIMEOUT = 60.0
 # Bounded drain (shutdown()/initialize() of the getUpdates request) so a wedged socket can't freeze
 # _polling_error_task and gate every escalation path behind its in-flight guard.
@@ -421,7 +421,7 @@ _INITIAL_POLLING_PROGRESS_TIMEOUT = 60.0
 # _drain_polling_connections() and freezing the whole reconnect ladder (the tracked _polling_error_task
 # never completes, so every escalation path stays gated behind its in-flight guard). Bound the drain so the
 # ladder always advances toward the fatal-restart escalation. Matches _UPDATER_STOP_TIMEOUT. Refs:
-# Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-#66377
+# Anxious-Research/PULSE#66377
 _DRAIN_TIMEOUT = 15.0
 # Wedged-recovery watchdog: healthy worst case is stop + 2x drain + start + 60s backoff ≈ 135s, so
 # 300s in flight is unambiguously stuck and the heartbeat force-escalates.
@@ -3155,7 +3155,7 @@ class TelegramAdapter(BasePlatformAdapter):
             raise RuntimeError(
                 "TELEGRAM_WEBHOOK_SECRET is required when TELEGRAM_WEBHOOK_URL is set. Without it, the "
                 "webhook endpoint accepts forged updates from anyone who can reach it — see "
-                "https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/security/advisories/GHSA-3vpc-7q5r-276h.\n\n"
+                "https://github.com/Anxious-Research/PULSE/security/advisories/GHSA-3vpc-7q5r-276h.\n\n"
                 "Generate a secret and set it in your .env:\n  export TELEGRAM_WEBHOOK_SECRET=\"$(openssl rand -hex 32)\"\n\n"
                 "Then register it with Telegram when setting the webhook via setWebhook's secret_token parameter.")
         from urllib.parse import urlparse

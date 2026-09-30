@@ -39,7 +39,7 @@ function clearProxyEnv() {
 
 test('update API uses an HTTPS proxy only when the environment selects one', () => {
   clearProxyEnv()
-  const url = 'https://api.github.com/repos/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/commits/main'
+  const url = 'https://api.github.com/repos/Anxious-Research/PULSE/commits/main'
 
   assert.equal(updateCheckAgent(url), undefined)
   process.env.HTTPS_PROXY = 'http://127.0.0.1:8080'
@@ -69,9 +69,9 @@ test('update API request reaches the configured HTTP CONNECT proxy', async () =>
     const status = await new Promise<number | undefined>((resolve, reject) => {
       https
         .get(
-          'https://api.github.com/repos/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/commits/main',
+          'https://api.github.com/repos/Anxious-Research/PULSE/commits/main',
           {
-            agent: updateCheckAgent('https://api.github.com/repos/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/commits/main')
+            agent: updateCheckAgent('https://api.github.com/repos/Anxious-Research/PULSE/commits/main')
           },
           res => resolve(res.statusCode)
         )

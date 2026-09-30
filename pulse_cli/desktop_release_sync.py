@@ -55,7 +55,7 @@ def _run_git(project_root: Path, *args: str) -> str | None:
 
 
 def release_owner_repo(project_root: Path) -> tuple[str, str] | None:
-    """(owner, repo) from this checkout's origin, e.g. ('Anxious-Research', 'PULSE-...')."""
+    """(owner, repo) from this checkout's origin, e.g. ('Anxious-Research', 'PULSE')."""
     url = _run_git(project_root, "remote", "get-url", "origin")
     if not url:
         return None

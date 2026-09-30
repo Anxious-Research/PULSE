@@ -66,7 +66,7 @@ export function VersionDetails({ version }: { version: DesktopVersionInfo }) {
           <dd className="break-all text-right">
             <ExternalLink
               className="break-all font-mono text-xs"
-              href={`https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/commit/${version.commit}`}
+              href={`https://github.com/Anxious-Research/PULSE/commit/${version.commit}`}
               native
             >
               {version.commit.slice(0, 14)}

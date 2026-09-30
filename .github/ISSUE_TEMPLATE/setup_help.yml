@@ -12,8 +12,8 @@ body:
         - Run `pulse debug share` and paste the links in the Debug Report section below
         - If you're in a chat session, you can use `/debug` instead — it does the same thing
         - Try `pulse update` to get the latest version
-        - Check the [README troubleshooting section](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-#troubleshooting)
-        - For general questions, consider the [Anxious Research Lab Discord](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues) for faster help
+        - Check the [README troubleshooting section](https://github.com/Anxious-Research/PULSE#troubleshooting)
+        - For general questions, consider the [Anxious Research Lab Discord](https://github.com/Anxious-Research/PULSE/issues) for faster help
 
   - type: textarea
     id: description

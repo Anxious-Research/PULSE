@@ -150,7 +150,7 @@ export function makePulseCloudBackendDownError(baseUrl: string, error: unknown):
       `(HTTP ${serverError.statusCode}: server-side fault). ` +
       'Check https://portal.anxious-research.com for backend status, ' +
       'or switch to Local mode in Settings → Gateway. ' +
-      'You can also reach out on Discord at https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues ' +
+      'You can also reach out on Discord at https://github.com/Anxious-Research/PULSE/issues ' +
       'for immediate assistance. ' +
       `Original detail: ${detail}`
   ) as any

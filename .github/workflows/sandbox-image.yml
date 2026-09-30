@@ -39,7 +39,7 @@ env:
 jobs:
   # PR code: secret-free build + smoke per arch.
   build:
-    if: github.repository == 'Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-'
+    if: github.repository == 'Anxious-Research/PULSE'
     strategy:
       fail-fast: false
       matrix:
@@ -75,7 +75,7 @@ jobs:
 
   # Trusted source only; the sole Docker Hub credential boundary.
   publish:
-    if: github.repository == 'Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-' && (github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.publish))
+    if: github.repository == 'Anxious-Research/PULSE' && (github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.publish))
     needs: [build]
     environment: container-publish
     strategy:
@@ -129,7 +129,7 @@ jobs:
 
   # Registry-side stitch of the two digests into one tagged manifest list.
   merge:
-    if: ${{ !cancelled() && github.repository == 'Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-' && (github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.publish)) }}
+    if: ${{ !cancelled() && github.repository == 'Anxious-Research/PULSE' && (github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.publish)) }}
     needs: [publish]
     runs-on: ubuntu-latest
     timeout-minutes: 10

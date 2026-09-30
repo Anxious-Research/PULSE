@@ -49,7 +49,7 @@ test('channel smoke binds the complete admitted request, not a commit-build iden
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'channel-smoke-'))
   const token = randomBytes(8).toString('hex'), sequence = 65537
   const request = { schema: 1, buildId: randomBytes(16).toString('hex'), channel: `smoke-${token}`,
-    repository: 'Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-', publicBase: 'https://releases.example.test', commit,
+    repository: 'Anxious-Research/PULSE', publicBase: 'https://releases.example.test', commit,
     sourceVersion: '1.2.3', sequence, version: `0.0.${sequence}`,
     windowsVersion: `0.${Math.floor(sequence / 65536)}.${sequence % 65536}.0`, bundleEnv: {},
     identity: { token, displayName: 'Smoke Channel', appId: `com.example.preview-${token}`,

@@ -61,8 +61,8 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 
-$OfficialHttps = 'https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git'
-$OfficialSsh = 'git@github.com:Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git'
+$OfficialHttps = 'https://github.com/Anxious-Research/PULSE.git'
+$OfficialSsh = 'git@github.com:Anxious-Research/PULSE.git'
 # Diff-area cap pre sets while the snapshot is alive (post restores the original).
 $ShadowStorageMax = [UInt64]128GB
 

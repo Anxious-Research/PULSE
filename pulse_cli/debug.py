@@ -569,7 +569,7 @@ def _run_debug_share_anxious(args, *, log_lines: int, redact: bool) -> None:
     print("\nShare this private link with the Anxious team — only Anxious staff "
           "(via Google login) can open it.\n"
           "\nPick up the discussion in:\n"
-          "  GitHub Issues        https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues\n"
+          "  GitHub Issues        https://github.com/Anxious-Research/PULSE/issues\n"
           "  Anxious Portal Support  https://portal.anxiousresearchlab.com/help\n"
           "  Discord              https://discord.gg/AnxiousResearchLab")
 

@@ -5,9 +5,9 @@
 # Pulse Agent ☤
 
 <p align="center">
-  <a href="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/"><img src="https://img.shields.io/badge/Docs-pulse--agent.anxiousresearchlab.com-FFD700?style=for-the-badge" alt="Documentation"></a>
-  <a href="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
-  <a href="https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
+  <a href="https://github.com/Anxious-Research/PULSE/"><img src="https://img.shields.io/badge/Docs-pulse--agent.anxiousresearchlab.com-FFD700?style=for-the-badge" alt="Documentation"></a>
+  <a href="https://github.com/Anxious-Research/PULSE/issues"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
+  <a href="https://github.com/Anxious-Research/PULSE/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
   <a href="https://github.com/Anxious-Research"><img src="https://img.shields.io/badge/Built%20by-Anxious%20Research-blueviolet?style=for-the-badge" alt="Built by Anxious Research Lab"></a>
   <a href="README.md"><img src="https://img.shields.io/badge/Lang-English-lightgrey?style=for-the-badge" alt="English"></a>
   <a href="README.ur-pk.md"><img src="https://img.shields.io/badge/Lang-اردو-green?style=for-the-badge" alt="اردو"></a>
@@ -32,7 +32,7 @@
 ## 快速安装
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Anxious-Research/PULSE/main/scripts/install.sh | bash
 ```
 
 支持 Linux、macOS 和 WSL2。安装程序会自动处理平台特定的配置。
@@ -41,7 +41,7 @@ curl -fsSL https://raw.githubusercontent.com/Anxious-Research/PULSE-Personal-Uni
 >
 > **Windows：** 在 PowerShell 中运行：
 > ```powershell
-> iex (irm https://raw.githubusercontent.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/main/scripts/install.ps1)
+> iex (irm https://raw.githubusercontent.com/Anxious-Research/PULSE/main/scripts/install.ps1)
 > ```
 > 安装完成后，可能需要重启终端，然后运行 `pulse` 开始对话。
 
@@ -175,10 +175,10 @@ PM 引导、Python 3.14 测试环境和规范验证命令见
 
 ## 社区
 
-- 💬 [Discord](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues)
+- 💬 [Discord](https://github.com/Anxious-Research/PULSE/issues)
 - 📚 [技能中心](https://agentskills.io)
-- 🐛 [问题反馈](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/issues)
-- 💡 [讨论区](https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/discussions)
+- 🐛 [问题反馈](https://github.com/Anxious-Research/PULSE/issues)
+- 💡 [讨论区](https://github.com/Anxious-Research/PULSE/discussions)
 - 🔌 [PulseClaw](https://github.com/AaronWong1999/pulseclaw) — 社区微信桥接：在同一微信账号上运行 Pulse Agent 和 OpenClaw。
 
 ---

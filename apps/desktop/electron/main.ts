@@ -8122,7 +8122,7 @@ async function freshGatewayWsUrl(profile) {
 // Canonical Pulse portal base URL, overridable for staging/dev. Mirrors the CLI
 // Canonical Pulse portal base URL, overridable for staging/dev.
 // so a single override flips every Pulse surface to the same portal.
-const DEFAULT_PULSE_PORTAL_URL = 'https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-'  // no hosted portal; override via PULSE_PORTAL_BASE_URL
+const DEFAULT_PULSE_PORTAL_URL = 'https://github.com/Anxious-Research/PULSE'  // no hosted portal; override via PULSE_PORTAL_BASE_URL
 
 function resolvePortalBaseUrl() {
   const raw = process.env.PULSE_PORTAL_BASE_URL || process.env.NOUS_PORTAL_BASE_URL || DEFAULT_PULSE_PORTAL_URL

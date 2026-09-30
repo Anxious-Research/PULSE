@@ -1,7 +1,7 @@
 # Pulse CLI Reference
 
 Live sources when anything looks stale: `pulse --help`, `pulse <command> --help`,
-https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/reference/cli-commands
+https://github.com/Anxious-Research/PULSE/reference/cli-commands
 
 ### Global Flags
 
@@ -79,7 +79,7 @@ pulse gateway run|install|start|stop|restart|status|setup
 ```
 
 20+ platforms: Telegram, Discord, Slack, WhatsApp (Baileys + Business Cloud API), iMessage (Photon — `pulse photon setup`), Signal, Email, SMS, Matrix, Mattermost, Teams, LINE, SimpleX, ntfy, Google Chat, Home Assistant, DingTalk, Feishu, WeCom, Weixin, API Server, Webhooks. Open WebUI connects via the API Server adapter. Most adapters ship under `plugins/platforms/`.
-Docs: https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-/user-guide/messaging/
+Docs: https://github.com/Anxious-Research/PULSE/user-guide/messaging/
 
 ### Sessions
 

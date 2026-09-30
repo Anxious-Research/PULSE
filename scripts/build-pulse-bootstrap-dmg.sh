@@ -15,13 +15,13 @@
 # through the runtime, exactly like `curl ... install.sh | bash`.
 #
 # Usage:
-#   PULSE_REPO_URL=https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git \
+#   PULSE_REPO_URL=https://github.com/Anxious-Research/PULSE.git \
 #     bash scripts/build-pulse-bootstrap-dmg.sh [--out PULSE-Setup.dmg]
 #
 # Requirements: macOS with hdiutil + create-dmg (brew install create-dmg)
 # or falls back to plain hdiutil.
 set -e
-REPO_URL="${PULSE_REPO_URL:-https://github.com/Anxious-Research/PULSE-Personal-Unified-Learning-System-for-Engagement-.git}"
+REPO_URL="${PULSE_REPO_URL:-https://github.com/Anxious-Research/PULSE.git}"
 OUT="${1:-}"
 [ "${1:-}" = "--out" ] && OUT="${2:-}"
 OUT="${OUT:-PULSE-Setup.dmg}"
