@@ -81,6 +81,13 @@ def prepare_launch_dependencies(project_root: Path, *, env: dict) -> None:
 
 
 def build_source_tui(project_root: Path, *, env: dict) -> None:
+    # The TUI's widget SDK (ui-tui/sdk) is not vendored; building without it
+    # fails on unresolvable imports. Skip with a loud warning instead of
+    # aborting the install — same policy as missing apps/shared above.
+    if not (project_root / "ui-tui" / "sdk").is_dir():
+        print("  ⚠ Skipping the TUI build: ui-tui/sdk/ is absent "
+              "(prebuilt ui-tui/dist, if present, keeps working)")
+        return
     run_source_script(project_root, "scripts/build/tui.mjs", env=env, label="Building the TUI")
 
 
