@@ -1,6 +1,7 @@
+import { ArrowRight } from 'lucide-react'
 import { type CSSProperties } from 'react'
 
-import { HackeryButton } from '../components/hackery-button'
+import { Button } from '../components/button'
 import { startInstall } from '../store'
 
 /*
@@ -42,7 +43,14 @@ export default function Welcome() {
         </p>
       </div>
 
-      <HackeryButton label="Install" onClick={() => void startInstall()} />
+      <Button
+        size="lg"
+        className="group inline-flex items-center gap-2 px-6"
+        onClick={() => void startInstall()}
+      >
+        Install Pulse
+        <ArrowRight size={18} className="transition-transform group-hover:translate-x-0.5" />
+      </Button>
     </div>
   )
 }

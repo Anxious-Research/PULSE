@@ -1,8 +1,8 @@
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, ArrowRight } from 'lucide-react'
 import { useState } from 'react'
 import { type CSSProperties } from 'react'
 
-import { HackeryButton } from '../components/hackery-button'
+import { Button } from '../components/button'
 import { launchPulseDesktop } from '../store'
 
 /*
@@ -59,12 +59,15 @@ export default function Success() {
         </p>
       </div>
 
-      <HackeryButton
+      <Button
+        size="lg"
+        className="group inline-flex items-center gap-2 px-6"
         disabled={launching}
-        label={launching ? 'Launching' : 'Launch'}
-        loading={launching}
         onClick={() => void handleLaunch()}
-      />
+      >
+        {launching ? 'Launching\u2026' : 'Launch Pulse'}
+        <ArrowRight size={18} className="transition-transform group-hover:translate-x-0.5" />
+      </Button>
 
       {error && (
         <div className="flex max-w-2xl items-start gap-2 text-sm" role="alert">
