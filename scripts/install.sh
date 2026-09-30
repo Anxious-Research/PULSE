@@ -778,6 +778,7 @@ stage_complete() {
         printf '{\n  "schemaVersion": 1,\n  "pinnedCommit": "%s",\n  "pinnedBranch": "%s",\n  "completedAt": "%s"\n}\n' \
             "$commit" "$BRANCH" "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" > "$INSTALL_DIR/.pulse-bootstrap-complete.tmp"
         mv -f "$INSTALL_DIR/.pulse-bootstrap-complete.tmp" "$INSTALL_DIR/.pulse-bootstrap-complete"
+        cp -f "$INSTALL_DIR/.pulse-bootstrap-complete" "$INSTALL_DIR/.pulse_bootstrap-complete" 2>/dev/null || true
     fi
     log_success "Pulse Agent install complete. Run: pulse"
 }
