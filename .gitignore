@@ -69,3 +69,4 @@ Thumbs.db
 .pulse-bootstrap-complete
 install-stamp.json
 .bytecode-fingerprint
+apps/desktop/build/
