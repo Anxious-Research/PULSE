@@ -1,0 +1,3 @@
+{"personality":"neutral","headline":"What are we moving today?","body":"Send a bug, branch, plan, or rough idea. I'll inspect the repo and turn it into the next concrete step."}
+{"personality":"default","headline":"What's on your mind?","body":"Bring the code, question, or stuck part. I'll read the room before making changes."}
+{"personality":"pulse","headline":"What should Pulse look at?","body":"Send the task, failing path, or half-formed plan. I'll help turn it into action."}

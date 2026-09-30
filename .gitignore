@@ -38,6 +38,7 @@ logs/
 audio_cache/
 image_cache/
 *.jsonl
+!apps/desktop/src/components/chat/intro-copy.jsonl
 
 # Node & Frontend
 node_modules/
