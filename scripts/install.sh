@@ -602,14 +602,16 @@ stage_venv() {
 # The application dependency graph is never installed in this interpreter.
 bootstrap_python() {
     ensure_uv
-    local _py
+    local _py=""
     # Read packages.python.version by following object names and braces, not
     # indentation — same pre-Python reader contract as setup-pulse.sh's pin().
-    _py="$(awk -F '"' '
-        /^[[:space:]]*("[^"]+"[[:space:]]*:[[:space:]]*)?\{/ { path[++depth] = $2; next }
-        /^[[:space:]]*\}[[:space:]]*,?[[:space:]]*$/ { delete path[depth--]; next }
-        path[2] == "packages" && path[3] == "python" && $2 == "version" && depth == 3 { print $4; exit }
-    ' "$INSTALL_DIR/pm/lock.json" | cut -d+ -f1 | cut -d. -f1,2)"
+    if [ -f "$INSTALL_DIR/pm/lock.json" ]; then
+        _py="$(awk -F '"' '
+            /^[[:space:]]*("[^"]+"[[:space:]]*:[[:space:]]*)?\{/ { path[++depth] = $2; next }
+            /^[[:space:]]*\}[[:space:]]*,?[[:space:]]*$/ { delete path[depth--]; next }
+            path[2] == "packages" && path[3] == "python" && $2 == "version" && depth == 3 { print $4; exit }
+        ' "$INSTALL_DIR/pm/lock.json" 2>/dev/null | cut -d+ -f1 | cut -d. -f1,2)"
+    fi
     [ -n "$_py" ] || _py="3.14"
     # Only base interpreters qualify: an activated app venv must not become
     # PM's bootstrap parent. Prefer the existing managed Python, then a host
