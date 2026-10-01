@@ -1,8 +1,6 @@
 import { useStore } from '@nanostores/react'
 import { FileText, RefreshCw } from 'lucide-react'
-import { type CSSProperties } from 'react'
 
-import { Button } from '../components/button'
 import {
   $logPath,
   $mode,
@@ -17,11 +15,9 @@ interface FailureProps {
 }
 
 /*
- * Failure screen. Same hero treatment as Welcome/Success — the wordmark
- * carries the brand, so we keep it across every terminal state.
- *
- * The actual error message lives below in muted text. Two affordances on
- * shared Button tokens: Retry (primary) and Open logs (quiet text link).
+ * Failure screen — exact replica of the Hermes installer failure card,
+ * rebranded to Pulse. Light card, red serif caps heading, gray reason,
+ * solid blue Retry + quiet Open log folder, mono log path.
  */
 export default function Failure({ bootstrap }: FailureProps) {
   const logPath = useStore($logPath)
@@ -29,25 +25,13 @@ export default function Failure({ bootstrap }: FailureProps) {
   const isUpdate = mode === 'update'
 
   return (
-    <div className="pulse-fade-in flex h-full flex-col items-center justify-center gap-6 px-12 py-10">
+    <div className="pulse-fade-in flex h-full flex-col items-center justify-center gap-6 bg-white px-12 py-10 text-slate-900">
       <div className="w-full max-w-2xl min-w-0 text-center">
-        <p
-          className="fit-text mx-auto mb-4 w-full font-['Collapse'] font-bold uppercase leading-[0.9] tracking-[0.08em] text-destructive mix-blend-plus-lighter dark:text-destructive/90"
-          style={
-            {
-              '--fit-text-line-height': '0.9',
-              '--fit-text-max': '5rem',
-              '--fit-text-min': '2.25rem'
-            } as CSSProperties
-          }
-        >
-          <span>
-            <span>{isUpdate ? 'Update didn\u2019t finish' : 'Install didn\u2019t finish'}</span>
-          </span>
-          <span aria-hidden="true">{isUpdate ? 'Update didn\u2019t finish' : 'Install didn\u2019t finish'}</span>
-        </p>
+        <h1 className="m-0 font-serif text-5xl font-bold uppercase leading-tight tracking-wide text-red-700">
+          {isUpdate ? 'Update didn\u2019t finish' : 'Install didn\u2019t finish'}
+        </h1>
 
-        <p className="m-0 mx-auto max-w-xl text-center text-sm leading-normal tracking-tight text-muted-foreground">
+        <p className="m-0 mx-auto mt-3 max-w-xl text-center text-sm leading-normal text-slate-500">
           {bootstrap.error ??
             (isUpdate
               ? 'Something went wrong during the update.'
@@ -56,18 +40,26 @@ export default function Failure({ bootstrap }: FailureProps) {
       </div>
 
       <div className="flex items-center gap-3">
-        <Button className="gap-1.5" onClick={() => void (isUpdate ? startUpdate() : startInstall())}>
-          <RefreshCw />
+        <button
+          className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+          onClick={() => void (isUpdate ? startUpdate() : startInstall())}
+          type="button"
+        >
+          <RefreshCw size={16} />
           {isUpdate ? 'Retry update' : 'Retry install'}
-        </Button>
-        <Button className="gap-1.5" onClick={() => void openLogDir()} variant="text">
-          <FileText />
-          Open logs
-        </Button>
+        </button>
+        <button
+          className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
+          onClick={() => void openLogDir()}
+          type="button"
+        >
+          <FileText size={16} />
+          Open log folder
+        </button>
       </div>
 
       {logPath && (
-        <p className="max-w-lg text-center text-xs text-muted-foreground/70">
+        <p className="max-w-lg text-center text-xs text-slate-400">
           Log: <code className="font-mono">{logPath}</code>
         </p>
       )}

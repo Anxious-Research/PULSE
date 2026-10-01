@@ -1,20 +1,13 @@
-import { AlertCircle } from 'lucide-react'
+import { CircleAlert, Rocket } from 'lucide-react'
 import { useState } from 'react'
-import { type CSSProperties } from 'react'
 
-import { HackeryButton } from '../components/hackery-button'
 import { launchPULSEDesktop } from '../store'
 
 /*
- * Success screen. PULSE AGENT wordmark stays as the visual anchor
- * (same Collapse Bold treatment as Welcome + the desktop chat intro),
- * with a status line below.
- *
- * Launching the desktop can fail (e.g. Stage-Desktop was skipped and
- * PULSE.exe doesn't exist). We catch the Tauri error and surface it
- * inline rather than silently doing nothing — the previous version
- * had `onClick={() => void launchPULSEDesktop()}` which swallowed
- * the rejection and left the user staring at an unresponsive button.
+ * Success screen — exact replica of the Hermes installer success card,
+ * rebranded to Pulse. Light card, blue serif caps heading, gray subline
+ * with a pill for `pulse desktop`, solid blue Launch button, pink inline
+ * error box when the desktop app can't be auto-launched.
  */
 export default function Success() {
   const [error, setError] = useState<string | null>(null)
@@ -35,44 +28,41 @@ export default function Success() {
   }
 
   return (
-    <div className="pulse-fade-in flex h-full flex-col items-center justify-center gap-8 px-12 py-10">
+    <div className="pulse-fade-in flex h-full flex-col items-center justify-center gap-6 bg-white px-12 py-10 text-slate-900">
       <div className="w-full max-w-2xl min-w-0 text-center">
-        <p
-          className="fit-text mx-auto mb-4 w-full font-['Collapse'] font-bold uppercase leading-[0.9] tracking-[0.08em] text-midground mix-blend-plus-lighter dark:text-foreground/90"
-          style={
-            {
-              '--fit-text-line-height': '0.9',
-              '--fit-text-max': '5rem',
-              '--fit-text-min': '2.25rem'
-            } as CSSProperties
-          }
-        >
-          <span>
-            <span>PULSE is ready</span>
-          </span>
-          <span aria-hidden="true">PULSE is ready</span>
-        </p>
+        <h1 className="m-0 font-serif text-6xl font-bold uppercase leading-tight tracking-wide text-blue-700">
+          Pulse is ready
+        </h1>
 
-        <p className="m-0 text-center text-base leading-normal tracking-tight text-muted-foreground">
+        <p className="m-0 mx-auto mt-3 max-w-xl text-center text-sm leading-normal text-slate-500">
           You can launch from here, or any time from your terminal with{' '}
-          <code className="font-mono text-sm text-foreground/80">pulse desktop</code>.
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[13px] text-slate-600">
+            pulse desktop
+          </code>
+          .
         </p>
       </div>
 
-      <HackeryButton
+      <button
+        className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:pointer-events-none disabled:opacity-50"
         disabled={launching}
-        label={launching ? 'Launching' : 'Launch'}
-        loading={launching}
         onClick={() => void handleLaunch()}
-      />
+        type="button"
+      >
+        <Rocket size={16} />
+        {launching ? 'Launching' : 'Launch Pulse'}
+      </button>
 
       {error && (
-        <div className="flex max-w-2xl items-start gap-2 text-sm" role="alert">
-          <AlertCircle className="mt-0.5 shrink-0 text-destructive" size={16} />
-          <div className="min-w-0">
-            <div className="font-medium text-destructive">Couldn&rsquo;t launch the desktop app</div>
-            <div className="mt-0.5 text-muted-foreground">{error}</div>
+        <div
+          className="w-full max-w-2xl rounded-lg border border-red-200 bg-red-50 p-4 text-left"
+          role="alert"
+        >
+          <div className="flex items-center gap-2 text-sm font-semibold text-red-700">
+            <CircleAlert size={16} />
+            Couldn&rsquo;t launch the desktop app
           </div>
+          <div className="mt-1 break-words text-sm leading-relaxed text-red-900/80">{error}</div>
         </div>
       )}
     </div>
