@@ -678,15 +678,7 @@ async function remoteProcessCreationTime(ssh, pid) {
 
 // A pid is "provably ours" only if its remote cmdline carries our dashboard
 // args — never kill a pid we can't positively identify as our dashboard.
-async function pidIsOurDashboard(
-  ssh,
-  pid,
-  spawnNonce,
-  pulsePath = '',
-  pulseHome = '',
-  ownershipId = '',
-  profile = ''
-) {
+async function pidIsOurDashboard(ssh, pid, spawnNonce, pulsePath = '', pulseHome = '', ownershipId = '', profile = '') {
   if (!pid || !/^[0-9a-f]{16}$/.test(String(spawnNonce || '')) || !pulsePath) {
     return false
   }
@@ -763,15 +755,7 @@ async function cleanupStale(ssh, ownershipId, lock, pidAlive = true) {
   if (
     pidAlive &&
     lock &&
-    (await pidIsOurDashboard(
-      ssh,
-      lock.pid,
-      lock.spawnNonce,
-      lock.pulsePath,
-      lock.pulseHome,
-      ownershipId,
-      lock.profile
-    ))
+    (await pidIsOurDashboard(ssh, lock.pid, lock.spawnNonce, lock.pulsePath, lock.pulseHome, ownershipId, lock.profile))
   ) {
     try {
       const result = (
@@ -1835,8 +1819,8 @@ export {
   ownershipDirectory,
   pidIsOurDashboard,
   probePULSEVersion,
-  probeRemotePULSEHome,
   probeRemotePlatform,
+  probeRemotePULSEHome,
   PROTOCOL_VERSION,
   readLockfile,
   readRemoteInstallId,

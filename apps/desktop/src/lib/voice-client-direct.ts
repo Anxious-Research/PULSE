@@ -1,4 +1,4 @@
-import { pulseApiAs, type OwnerScope, ownerScoped, type ResolvedOwner } from '@/api/client'
+import { type OwnerScope, ownerScoped, pulseApiAs, type ResolvedOwner } from '@/api/client'
 import { getApiRequestConnection, getApiRequestProfile, pulseApi } from '@/pulse'
 
 /**

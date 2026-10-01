@@ -1,8 +1,8 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import type { PULSEConfigRecord } from '@/pulse'
 import { type I18nConfigClient, I18nProvider, registerAppLocale } from '@/i18n'
+import type { PULSEConfigRecord } from '@/pulse'
 import { stubMenuDomApis, stubResizeObserver } from '@/test/jsdom'
 
 import { LanguageSwitcher } from './language-switcher'

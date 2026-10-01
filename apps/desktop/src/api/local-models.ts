@@ -1,6 +1,6 @@
 import type { LocalCatalogModel, LocalHardware, LocalModelsStatus, LocalRuntimeJob } from '@/types/pulse'
 
-import { pulseApi, profileScoped } from './client'
+import { profileScoped, pulseApi } from './client'
 
 export interface LocalModelsScope {
   connectionId: string | null

@@ -2,11 +2,11 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import {
-  PULSE_HUB_FALLBACK_ORIGIN,
-  PULSE_HUB_ORIGIN,
   isPULSEHubClipboardWrite,
   isPULSEHubExternalUrl,
-  isPULSEHubOrigin
+  isPULSEHubOrigin,
+  PULSE_HUB_FALLBACK_ORIGIN,
+  PULSE_HUB_ORIGIN
 } from './hub-iframe-policy'
 import { createWindowOpenHandler, describeDeniedUrl } from './window-open-policy'
 

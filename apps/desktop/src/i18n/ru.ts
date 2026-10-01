@@ -1667,7 +1667,8 @@ export const ru = defineLocale({
       useBackend: 'Использовать этот бэкенд',
       pulseIncluded: 'Входит в подписку PULSE — войдите в Pulse Portal, чтобы активировать.',
       pulseAuthNeededTitle: 'Войдите в Pulse Portal',
-      pulseAuthNeededMessage: provider => `${provider} сохранён, но не активируется, пока вы не войдёте в Pulse Portal.`,
+      pulseAuthNeededMessage: provider =>
+        `${provider} сохранён, но не активируется, пока вы не войдёте в Pulse Portal.`,
       pulseAuthSignIn: 'Войти',
       pulseAuthDoneTitle: 'Pulse Portal подключён',
       pulseAuthDoneMessage: 'Ваши бэкенды по подписке теперь активны.',
@@ -2181,8 +2182,7 @@ export const ru = defineLocale({
     restartFailedManual: 'Не удалось перезапустить шлюз — перезапустите его вручную и проверьте журналы.',
     telegramQr: {
       title: 'Выберите способ подключения Telegram-бота',
-      subtitle:
-        'Оба способа подключают бота под вашим контролем и сохраняют его данные только в этой установке PULSE.',
+      subtitle: 'Оба способа подключают бота под вашим контролем и сохраняют его данные только в этой установке PULSE.',
       quickSetup: 'Быстрая настройка',
       recommended: 'Рекомендуется',
       quickHelp:

@@ -11,8 +11,8 @@ import type {
 import {
   connectionScoped,
   getApiRequestConnection,
-  pulseApi,
   profileScoped,
+  pulseApi,
   STARTUP_REQUEST_TIMEOUT_MS
 } from './client'
 

@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 
-import { getToolsets, type ProfileScope, profileScopeKey } from '@/pulse'
 import { isDesktopToolsetVisible } from '@/lib/desktop-toolsets'
 import { normalize } from '@/lib/text'
+import { getToolsets, type ProfileScope, profileScopeKey } from '@/pulse'
 import type { ToolsetInfo } from '@/types/pulse'
 
 import { includesQuery, toolNames, toolsetDisplayLabel } from '../../settings/helpers'

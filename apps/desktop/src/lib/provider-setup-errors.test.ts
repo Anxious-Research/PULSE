@@ -4,9 +4,7 @@ import { isProviderSetupErrorCode, isProviderSetupErrorMessage } from './provide
 
 describe('isProviderSetupErrorMessage', () => {
   it('matches generic missing-provider copy', () => {
-    expect(isProviderSetupErrorMessage('No inference provider configured. Run `pulse model` to choose one.')).toBe(
-      true
-    )
+    expect(isProviderSetupErrorMessage('No inference provider configured. Run `pulse model` to choose one.')).toBe(true)
     expect(isProviderSetupErrorMessage('No inference provider is configured.')).toBe(true)
     expect(isProviderSetupErrorMessage('No PULSE provider is configured.')).toBe(true)
     expect(isProviderSetupErrorMessage('set an API key (OPENROUTER_API_KEY) in ~/.pulse/.env')).toBe(true)

@@ -81,28 +81,25 @@ export function registerDesktopUninstallIpc({
     // The local artifact owns this decision, not the Python summary.
     return { ...summary, code_removal_allowed: codeRemovalAllowed }
   })
-  ipcMain.handle(
-    'pulse:uninstall:run',
-    async (_event: unknown, payload?: unknown): Promise<DesktopUninstallResult> => {
-      // Every cleanup mode can remove the bundle, including a hidden data request.
-      if (!codeRemovalAllowed) {
-        return {
-          ok: false,
-          error: 'externally-managed',
-          message: 'This desktop install must be removed through its installer or package manager.'
-        }
+  ipcMain.handle('pulse:uninstall:run', async (_event: unknown, payload?: unknown): Promise<DesktopUninstallResult> => {
+    // Every cleanup mode can remove the bundle, including a hidden data request.
+    if (!codeRemovalAllowed) {
+      return {
+        ok: false,
+        error: 'externally-managed',
+        message: 'This desktop install must be removed through its installer or package manager.'
       }
-
-      const mode: unknown = payload && typeof payload === 'object' && 'mode' in payload ? payload.mode : payload
-      const requestedMode: string = String(mode || '')
-
-      if (!allowedUninstallModes(kind).includes(requestedMode)) {
-        return { ok: false, error: 'invalid-mode', message: `Unknown uninstall mode: ${requestedMode}` }
-      }
-
-      return runUninstall(requestedMode)
     }
-  )
+
+    const mode: unknown = payload && typeof payload === 'object' && 'mode' in payload ? payload.mode : payload
+    const requestedMode: string = String(mode || '')
+
+    if (!allowedUninstallModes(kind).includes(requestedMode)) {
+      return { ok: false, error: 'invalid-mode', message: `Unknown uninstall mode: ${requestedMode}` }
+    }
+
+    return runUninstall(requestedMode)
+  })
 }
 
 const UNINSTALL_MODES: string[] = ['gui', 'lite', 'full', 'data']

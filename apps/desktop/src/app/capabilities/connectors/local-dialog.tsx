@@ -2,8 +2,8 @@ import { compactNumber } from '@pulse/shared'
 import { useLocation, useNavigate } from 'react-router'
 
 import { PanelEmpty } from '@/app/overlays/panel'
-import type { ProfileScope } from '@/pulse'
 import { useI18n } from '@/i18n'
+import type { ProfileScope } from '@/pulse'
 
 import type { McpServersController } from '../mcp/use-mcp-servers'
 

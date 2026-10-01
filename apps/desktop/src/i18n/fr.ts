@@ -4699,8 +4699,7 @@ export const frOverrides = {
     manualBody:
       "Vous avez installé PULSE depuis la ligne de commande, les mises à jour s'y effectuent donc aussi. Collez ceci dans votre terminal :",
     manualPickedUp: 'PULSE prendra en compte la nouvelle version au prochain lancement.',
-    manualBodyBackend:
-      'Le backend PULSE est géré en dehors de cette app. Exécutez ceci sur le serveur qui l’héberge :',
+    manualBodyBackend: 'Le backend PULSE est géré en dehors de cette app. Exécutez ceci sur le serveur qui l’héberge :',
     manualPickedUpBackend: 'Le backend chargera la nouvelle version une fois la mise à jour terminée.',
     guiSkewTitle: "Mettre à jour l'application de bureau",
     guiSkewBody:
@@ -4850,8 +4849,7 @@ export const frOverrides = {
     headerTitle: 'Configurons PULSE Agent pour vous',
     headerDesc:
       'Connectez un fournisseur de modèles pour commencer à discuter. La plupart des options nécessitent un clic.',
-    preparingInstall:
-      "PULSE finalise l'installation. Cela prend généralement moins d'une minute au premier lancement.",
+    preparingInstall: "PULSE finalise l'installation. Cela prend généralement moins d'une minute au premier lancement.",
     starting: 'Démarrage de PULSE…',
     lookingUpProviders: 'Recherche des fournisseurs...',
     collapse: 'Réduire',

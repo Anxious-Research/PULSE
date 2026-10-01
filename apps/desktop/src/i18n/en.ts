@@ -1604,8 +1604,7 @@ export const en: Translations = {
     gateway: {
       loading: 'Loading gateway settings...',
       unavailableTitle: 'Gateway settings unavailable',
-      unavailableDesc:
-        'Connection settings can only be changed from the PULSE Desktop app on the computer running it.',
+      unavailableDesc: 'Connection settings can only be changed from the PULSE Desktop app on the computer running it.',
       title: 'Gateway Connection',
       envOverride: 'env override',
       intro:
@@ -4272,8 +4271,7 @@ export const en: Translations = {
     errorTitle: 'Update didn’t finish',
     errorBody: 'No worries — nothing was lost. You can try again now.',
     blockerTitle: 'Close local previews to update PULSE?',
-    blockerBody:
-      'PULSE needs to stop these local previews before updating. This will not modify or delete your files.',
+    blockerBody: 'PULSE needs to stop these local previews before updating. This will not modify or delete your files.',
     foreignBlockerTitle: 'Close other processes to update PULSE',
     foreignBlockerBody:
       'PULSE can’t safely close these processes automatically. Close the app, terminal, or service that owns each one, then try the update again.',
@@ -4388,8 +4386,7 @@ export const en: Translations = {
     installTo: 'Will install to',
     retryAfterRun: 'I’ve run it -- retry',
     setupChoiceTitle: 'Set up PULSE Desktop',
-    setupChoiceDesc:
-      'Connect this app to a PULSE gateway you already run, or install PULSE locally on this computer.',
+    setupChoiceDesc: 'Connect this app to a PULSE gateway you already run, or install PULSE locally on this computer.',
     setupChoiceDescLocal: 'Install PULSE on this computer, or connect to a PULSE gateway you already run.',
     connectExistingTitle: 'Connect to existing PULSE',
     connectExistingShort: 'Connect existing',
@@ -4598,8 +4595,7 @@ export const en: Translations = {
       powRequired:
         "The PULSE server asked for a proof of work, but that isn't implemented in your Agent yet. Sign in or create a free PULSE account to continue.",
       locked: "This session can't continue without signing in. Sign in or create a free PULSE account to keep going.",
-      generic:
-        "PULSE couldn't set up free access without signing in. Signing in is free, or connect another provider.",
+      generic: "PULSE couldn't set up free access without signing in. Signing in is free, or connect another provider.",
       signInBelow: 'Signing in is free. Pick PULSE below.',
       tryAgain: 'Try again',
       retrying: 'Trying again…'
@@ -5103,8 +5099,7 @@ export const en: Translations = {
         auth: 'The AI service rejected your sign-in. Check the credentials for this provider, then send your message again.',
         billing: 'Your account has no credits left for this provider. Top up or switch provider, then send again.',
         disk: 'Your disk is full, so PULSE could not save this conversation. Free some space, then retry.',
-        endpoint:
-          "PULSE can't reach your custom model server. Check that it is running, then send your message again.",
+        endpoint: "PULSE can't reach your custom model server. Check that it is running, then send your message again.",
         gateway:
           'PULSE hit an internal problem starting this reply. Send your message again; if it keeps happening, send diagnostics.',
         generic: 'Something went wrong while PULSE was replying. Retry, or copy the details if it keeps happening.',

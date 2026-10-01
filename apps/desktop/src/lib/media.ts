@@ -1,6 +1,6 @@
 import { LOCAL_CONNECTION_ID } from '@pulse/shared'
 
-import { capabilityScoped, pulseApi, type OwnerScope } from '@/api/client'
+import { capabilityScoped, type OwnerScope, pulseApi } from '@/api/client'
 import type { PULSEConnection } from '@/global'
 import { translateNow } from '@/i18n'
 import { desktopFsCacheKey, isReadFileErrorResult, readDesktopFileDataUrl } from '@/lib/desktop-fs'

@@ -1,4 +1,4 @@
-import { capabilityScoped, pulseApi, type ProfileScope, sessionReadOwnerPin } from '@/api/client'
+import { capabilityScoped, type ProfileScope, pulseApi, sessionReadOwnerPin } from '@/api/client'
 
 import type { TimelineEntry } from './timeline-data'
 

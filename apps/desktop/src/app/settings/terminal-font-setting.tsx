@@ -7,8 +7,8 @@ import {
   TERMINAL_FONT_SUGGESTIONS
 } from '@/app/right-sidebar/terminal/terminal-font'
 import { Button } from '@/components/ui/button'
-import { savePULSEConfig } from '@/pulse'
 import { useI18n } from '@/i18n'
+import { savePULSEConfig } from '@/pulse'
 import { notifyError } from '@/store/notifications'
 import type { PULSEConfigRecord } from '@/types/pulse'
 

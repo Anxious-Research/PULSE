@@ -6,7 +6,7 @@ import type {
   ProfilesResponse
 } from '@/types/pulse'
 
-import { capabilityScoped, pulseApi, type ProfileScope, STARTUP_REQUEST_TIMEOUT_MS } from './client'
+import { capabilityScoped, type ProfileScope, pulseApi, STARTUP_REQUEST_TIMEOUT_MS } from './client'
 
 export function getProfiles(scope?: ProfileScope): Promise<ProfilesResponse> {
   return pulseApi<ProfilesResponse>({

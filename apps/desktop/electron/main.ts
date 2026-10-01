@@ -314,7 +314,7 @@ import {
 import { assertNoSecondLocalBackend, assertNotPassiveSpawn } from './host-backend-singleton'
 import { lookupPublishedSessionToken } from './host-published-token'
 import { claimHostSpawnGate } from './host-spawn-gate'
-import { PULSE_HUB_FALLBACK_ORIGIN, PULSE_HUB_ORIGIN, isPULSEHubClipboardWrite } from './hub-iframe-policy'
+import { isPULSEHubClipboardWrite, PULSE_HUB_FALLBACK_ORIGIN, PULSE_HUB_ORIGIN } from './hub-iframe-policy'
 import { requestHudClose } from './hud-close'
 import { cursorPointInWindow } from './hud-cursor'
 import { startHudGameOverlayWatch } from './hud-game-overlay'
@@ -5389,10 +5389,7 @@ async function resolvePULSEBackend(backendArgs: string[]): Promise<ResolvedPULSE
 
         const shellForProbe: boolean = isCommandScript(pulseCommand)
 
-        if (
-          shouldTrustPULSEOverride(pulseOverride) ||
-          (await verifyPULSECli(pulseCommand, { shell: shellForProbe }))
-        ) {
+        if (shouldTrustPULSEOverride(pulseOverride) || (await verifyPULSECli(pulseCommand, { shell: shellForProbe }))) {
           return {
             label: `existing PULSE CLI at ${pulseCommand}`,
             command: pulseCommand,
@@ -8320,9 +8317,7 @@ async function discoverCloudAgents(org?: string) {
       // A 401 means the portal session lapsed (and silent renewal could not
       // recover it) — surface it as a re-login, not a generic failure.
       if (error && error.statusCode === 401) {
-        const err = new Error(
-          'Your PULSE Cloud session has expired. Open Settings → Gateway and sign in again.'
-        ) as any
+        const err = new Error('Your PULSE Cloud session has expired. Open Settings → Gateway and sign in again.') as any
 
         err.needsCloudLogin = true
         err.cause = error

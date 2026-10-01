@@ -15,7 +15,11 @@ export function BrandMark({ className, ...props }: React.ComponentProps<'span'>)
 
   return (
     <span className={cn('inline-flex size-14 shrink-0 items-center justify-center', className)} {...props}>
-      <img alt="" className="size-full object-contain" src={assetPath(dark ? 'pulse-girl-dark.png' : 'pulse-girl.png')} />
+      <img
+        alt=""
+        className="size-full object-contain"
+        src={assetPath(dark ? 'pulse-girl-dark.png' : 'pulse-girl.png')}
+      />
     </span>
   )
 }

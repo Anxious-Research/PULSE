@@ -13,7 +13,7 @@ import type {
   WebhooksResponse
 } from '@/types/pulse'
 
-import { pulseApi, profileScoped } from './client'
+import { profileScoped, pulseApi } from './client'
 
 export function getMessagingPlatforms(profile?: null | string): Promise<MessagingPlatformsResponse> {
   return pulseApi<MessagingPlatformsResponse>({

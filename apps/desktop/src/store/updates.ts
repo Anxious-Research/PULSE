@@ -15,9 +15,9 @@ import type {
   DesktopVersionInfo,
   PULSEConnection
 } from '@/global'
-import { checkPULSEUpdate, getActionStatus, updatePULSE } from '@/pulse'
 import { translateNow } from '@/i18n'
 import { persistString, storedString } from '@/lib/storage'
+import { checkPULSEUpdate, getActionStatus, updatePULSE } from '@/pulse'
 import { $connectionsRegistry, refreshConnectionsRegistry } from '@/store/connections'
 import { reconnectGateway } from '@/store/gateway-reconnect'
 import { dismissNotification, notify } from '@/store/notifications'
