@@ -855,7 +855,7 @@ export const host = {
     )
 
     // The profile is gone. Drop its persisted tiles now — a leftover tile
-    // restores on relaunch and re-creates the deleted profile (hermes-agent#94235).
+    // restores on relaunch and re-creates the deleted profile .
     dropTilesForProfile(
       route ? route.profile : name,
       route
@@ -1405,7 +1405,7 @@ export const host = {
    *  they closed) are respected. Presentation only: no gateway activation,
    *  no session create. Feature-detect on older desktops.
    *
-   *  `isStaleTile` (hermes-agent#90102): the caller's reconciliation probe
+   *  `isStaleTile` : the caller's reconciliation probe
    *  against backend truth. The tile bucket is a Local Storage cache — a
    *  persisted bot tile can name a session the backend has since superseded,
    *  and fronting it pinned the roster click to a stale finished session

@@ -7,9 +7,10 @@ PULSE.
 
 ## Desktop app + shared UI kit (`apps/desktop/`, `apps/shared/`)
 
-Vendored from the Hermes Agent project under the MIT License, then rebranded
-for PULSE (names, identifiers, endpoints, artwork references). Per the MIT
-terms, the original copyright and permission notice is reproduced here:
+Vendored from the Hermes Agent project (https://github.com/NousResearch/hermes-agent)
+under the MIT License, then rebranded for PULSE (names, identifiers, endpoints,
+artwork references). Per the MIT terms, the original copyright and permission
+notice is reproduced here:
 
 ```
 MIT License

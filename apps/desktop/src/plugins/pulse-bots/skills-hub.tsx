@@ -16,7 +16,7 @@ import type { RosterRow } from './types'
 // ── skills hub section: the REAL hub page (docs) embedded as a picker ──────
 // https://pulse-agent.anxious-research.com/docs/skills?embed=picker hides the
 // docs chrome and adds "+ Add to this Agent" per card, posting
-// {type: 'hermes-skill-pick', ...} to us (hermes-agent#86243). We validate
+// {type: 'pulse-skill-pick', ...} to us . We validate
 // the origin, install via skills.manage, and bubble onInstalled so the
 // checklist above gains the row. Search-box fallback kept for offline use.
 

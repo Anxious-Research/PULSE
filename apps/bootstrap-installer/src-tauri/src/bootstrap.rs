@@ -1106,9 +1106,9 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     #[cfg(windows)]
-    const STDIO_HELPER_ENV: &str = "HERMES_BOOTSTRAP_STDIO_HELPER";
+    const STDIO_HELPER_ENV: &str = "PULSE_BOOTSTRAP_STDIO_HELPER";
     #[cfg(windows)]
-    const STDIO_SLEEPER_ENV: &str = "HERMES_BOOTSTRAP_STDIO_SLEEPER";
+    const STDIO_SLEEPER_ENV: &str = "PULSE_BOOTSTRAP_STDIO_SLEEPER";
     #[cfg(windows)]
     const STDIO_HELPER_TEST: &str = "bootstrap::tests::stdio_helper_launch";
     #[cfg(windows)]

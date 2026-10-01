@@ -899,7 +899,7 @@ describe('dropTilesForProfile', () => {
     // no connection id at all. `String(undefined ?? '').trim()` yields '', so a
     // local-delete branch comparing against `=== 'local'` never matches and the
     // tile survives every delete, resurrecting the deleted profile on relaunch
-    // (hermes-agent#94235). The branch must treat a missing id as local.
+    // . The branch must treat a missing id as local.
     mod.openSessionTile('bot-legacy', 'right', undefined, undefined, {
       ownerRoute: { mode: 'local' as const, profile: 'press-bot' } as unknown as SessionProfileRoute,
       workspaceMode: 'bots' as const,

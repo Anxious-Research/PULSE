@@ -44,8 +44,8 @@ export const PROFILE_SESSION_LIST_LIMIT = 200
 
 /** The one canonical title. (profile, CANONICAL_CHAT_TITLE) IS the bot's
  *  forever-chat identity — see the header above. Exported for the roster
- *  click path's tile-staleness probe (hermes-agent#90102), which must
- *  recognize canonical-titled tabs without restating the literal. */
+ *  click path's tile-staleness probe, which must recognize canonical-titled
+ *  tabs without restating the literal. */
 export const CANONICAL_CHAT_TITLE = 'Bot Chat'
 
 /** A `session.list` row as the registry lookup reads it. CanonicalSession
@@ -110,18 +110,18 @@ async function openStoredBotChat(
       : 60_000
 
   // A profile backend that just woke up can lose the hydration-timeout race
-  // even though the session is fine (hermes-agent#89617) — clicking Retry
-  // succeeds because the backend is warm by then. retryHydrationTimeoutOnce
-  // asks the SDK layer to retry that same wait internally, BEFORE it arms the
-  // core stranded-session overlay: a plugin-side retry can't do this because
-  // only host.openSession sees the resume-exhausted latch that overlay reads.
+  // even though the session is fine — clicking Retry succeeds because the
+  // backend is warm by then. retryHydrationTimeoutOnce asks the SDK layer to
+  // retry that same wait internally, BEFORE it arms the core stranded-session
+  // overlay: a plugin-side retry can't do this because only host.openSession
+  // sees the resume-exhausted latch that overlay reads.
   //
   // forceResume: an explicit bot switch must never trust a cached transcript.
   // The SDK's surface-health check passes whenever ANY non-empty transcript is
   // painted, including a stale snapshot the session-states cache kept from the
   // previous time this bot was open — which left the pane showing old messages
-  // until an app restart (hermes-agent#93604). A resume is cheap and
-  // idempotent, so on this explicit user navigation we always request one.
+  // until an app restart. A resume is cheap and idempotent, so on this
+  // explicit user navigation we always request one.
   await host.openSession(storedId, {
     ...(route
       ? {

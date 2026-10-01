@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Publish the prebuilt desktop UI bundle to the rolling `desktop-ui` GitHub Release.
 #
-# This is PULSE's prebuilt channel (Hermes uploads its installers to GitHub
-# Releases the same way): the Electron UI cannot be rebuilt from this checkout,
-# so `pulse update` fetches the bundle from here instead of building it.
+# This is PULSE's prebuilt channel: the Electron UI cannot be rebuilt from this
+# checkout, so `pulse update` fetches the bundle from here instead of building
+# it.
 # Release contents (public download, no auth needed for installs):
 #   pulse-desktop-ui.tar.gz   app.asar + app.asar.unpacked/ + ui-manifest.json
 #   ui-manifest.json          {"commit","built_at","sha256"}

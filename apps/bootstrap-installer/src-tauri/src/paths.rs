@@ -157,8 +157,8 @@ fn repair_macos_installer_helper(_path: &Path) {}
 
 /// Where the bootstrap-complete marker lives (existence-only for the Rust
 /// installer fast path; JSON schema-checked by the Electron app). Per main.ts:
-///   const BOOTSTRAP_COMPLETE_MARKER = path.join(ACTIVE_HERMES_ROOT, '.pulse-bootstrap-complete')
-/// We don't always know ACTIVE_HERMES_ROOT until install.ps1 reports it, so
+///   const BOOTSTRAP_COMPLETE_MARKER = path.join(ACTIVE_PULSE_ROOT, '.pulse-bootstrap-complete')
+/// We don't always know ACTIVE_PULSE_ROOT until install.ps1 reports it, so
 /// this is a probe helper, not a definitive path.
 pub fn likely_bootstrap_marker(install_root: &Path) -> PathBuf {
     install_root.join(".pulse-bootstrap-complete")
