@@ -43,23 +43,23 @@ import { useProfileScope } from "@/contexts/useProfileScope";
 import { ToolsetConfigDrawer } from "@/components/ToolsetConfigDrawer";
 import { SkillEditorDialog } from "@/components/SkillEditorDialog";
 import { LoadErrorNotice } from "@/components/LoadErrorNotice";
-import { useToast } from "@pulse-research/ui/hooks/use-toast";
-import { Toast } from "@pulse-research/ui/ui/components/toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@pulse-research/ui/ui/components/card";
-import { Badge } from "@pulse-research/ui/ui/components/badge";
-import { Button } from "@pulse-research/ui/ui/components/button";
-import { ListItem } from "@pulse-research/ui/ui/components/list-item";
-import { Spinner } from "@pulse-research/ui/ui/components/spinner";
-import { Switch } from "@pulse-research/ui/ui/components/switch";
+import { useToast } from "@nous-research/ui/hooks/use-toast";
+import { Toast } from "@nous-research/ui/ui/components/toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@nous-research/ui/ui/components/card";
+import { Badge } from "@nous-research/ui/ui/components/badge";
+import { Button } from "@nous-research/ui/ui/components/button";
+import { ListItem } from "@nous-research/ui/ui/components/list-item";
+import { Spinner } from "@nous-research/ui/ui/components/spinner";
+import { Switch } from "@nous-research/ui/ui/components/switch";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@pulse-research/ui/ui/components/dialog";
+} from "@nous-research/ui/ui/components/dialog";
 import { cn } from "@/lib/utils";
-import { Input } from "@pulse-research/ui/ui/components/input";
+import { Input } from "@nous-research/ui/ui/components/input";
 import { useI18n } from "@/i18n";
 import { en } from "@/i18n/en";
 import { usePageHeader } from "@/contexts/usePageHeader";

@@ -71,15 +71,15 @@ vi.mock('@/components/ModelReloadConfirm', () => ({
 vi.mock('@/components/ReasoningPicker', () => ({
   ReasoningPicker: () => null
 }))
-vi.mock('@pulse-research/ui/ui/components/button', () => ({
+vi.mock('@nous-research/ui/ui/components/button', () => ({
   Button: ({ children, onClick }: { children?: ReactNode; onClick?: () => void }) => (
     <button onClick={onClick}>{children}</button>
   )
 }))
-vi.mock('@pulse-research/ui/ui/components/badge', () => ({
+vi.mock('@nous-research/ui/ui/components/badge', () => ({
   Badge: ({ children }: { children?: ReactNode }) => <span>{children}</span>
 }))
-vi.mock('@pulse-research/ui/ui/components/card', () => ({
+vi.mock('@nous-research/ui/ui/components/card', () => ({
   Card: ({ children }: { children?: ReactNode }) => <div>{children}</div>
 }))
 

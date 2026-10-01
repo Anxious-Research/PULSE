@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { Button } from "@pulse-research/ui/ui/components/button";
-import { Input } from "@pulse-research/ui/ui/components/input";
-import { Label } from "@pulse-research/ui/ui/components/label";
-import { Spinner } from "@pulse-research/ui/ui/components/spinner";
+import { Button } from "@nous-research/ui/ui/components/button";
+import { Input } from "@nous-research/ui/ui/components/input";
+import { Label } from "@nous-research/ui/ui/components/label";
+import { Spinner } from "@nous-research/ui/ui/components/spinner";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@pulse-research/ui/ui/components/dialog";
+} from "@nous-research/ui/ui/components/dialog";
 import { errorMessage } from "@/lib/api-error";
 
 /* ------------------------------------------------------------------ */

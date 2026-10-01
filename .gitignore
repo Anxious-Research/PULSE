@@ -122,7 +122,7 @@ apps/desktop/release/
 apps/desktop/.staging-*/
 *.tsbuildinfo
 
-# Web UI assets — synced from @pulse-research/ui at build time via
+# Web UI assets — synced from @nous-research/ui at build time via
 # `npm run sync-assets` (see web/package.json).
 web/public/fonts/
 web/public/ds-assets/

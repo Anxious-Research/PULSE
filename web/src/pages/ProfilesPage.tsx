@@ -23,25 +23,25 @@ import {
   X,
 } from "lucide-react";
 import spinners from "unicode-animations";
-import { H2 } from "@pulse-research/ui/ui/components/typography/h2";
+import { H2 } from "@nous-research/ui/ui/components/typography/h2";
 import { api } from "@/lib/api";
 import type { ActiveProfileInfo, ProfileInfo } from "@/lib/api";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
-import { useToast } from "@pulse-research/ui/hooks/use-toast";
-import { useConfirmDelete } from "@pulse-research/ui/hooks/use-confirm-delete";
+import { useToast } from "@nous-research/ui/hooks/use-toast";
+import { useConfirmDelete } from "@nous-research/ui/hooks/use-confirm-delete";
 import { useModalBehavior } from "@/hooks/useModalBehavior";
-import { Toast } from "@pulse-research/ui/ui/components/toast";
-import { Card, CardContent } from "@pulse-research/ui/ui/components/card";
-import { Badge } from "@pulse-research/ui/ui/components/badge";
-import { Button } from "@pulse-research/ui/ui/components/button";
-import { Input } from "@pulse-research/ui/ui/components/input";
-import { Label } from "@pulse-research/ui/ui/components/label";
+import { Toast } from "@nous-research/ui/ui/components/toast";
+import { Card, CardContent } from "@nous-research/ui/ui/components/card";
+import { Badge } from "@nous-research/ui/ui/components/badge";
+import { Button } from "@nous-research/ui/ui/components/button";
+import { Input } from "@nous-research/ui/ui/components/input";
+import { Label } from "@nous-research/ui/ui/components/label";
 import {
   Select,
   SelectOption,
-} from "@pulse-research/ui/ui/components/select";
-import { Checkbox } from "@pulse-research/ui/ui/components/checkbox";
+} from "@nous-research/ui/ui/components/select";
+import { Checkbox } from "@nous-research/ui/ui/components/checkbox";
 import { useI18n } from "@/i18n";
 import { usePageHeader } from "@/contexts/usePageHeader";
 import { cn, themedBody } from "@/lib/utils";

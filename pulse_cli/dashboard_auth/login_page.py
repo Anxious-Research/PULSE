@@ -3,7 +3,7 @@
 Providers come from the registry; an OAuth provider renders an anchor to
 ``/auth/login?provider=<name>``, a ``supports_password`` provider renders a
 credential form wired by :data:`_PASSWORD_FORM_SCRIPT`. Styling mirrors the
-``@pulse-research/ui`` design system; fonts load from the SPA's ``/fonts/``
+``@nous-research/ui`` design system; fonts load from the SPA's ``/fonts/``
 mount, which the gate allowlists pre-auth.
 
 The ``class="provider-btn"`` anchor is test-stable: the suite extracts its
@@ -25,7 +25,7 @@ _LOGIN_HTML_TEMPLATE = """\
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sign in — PULSE Agent</title>
 <style>
-  /* Brand fonts shipped by @pulse-research/ui — same files the SPA loads. */
+  /* Brand fonts shipped by @nous-research/ui — same files the SPA loads. */
   @font-face {{
     font-family: 'Collapse';
     font-style: normal;
