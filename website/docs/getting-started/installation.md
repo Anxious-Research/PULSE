@@ -132,14 +132,14 @@ pulse config get     # Inspect individual config values
 pulse setup          # Or run the full setup wizard to configure everything at once
 ```
 
-:::tip Fastest path: Nous Portal
+:::tip Fastest path: Pulse Portal
 One subscription covers 300+ models plus the [Tool Gateway](../user-guide/features/tool-gateway.md) (web search, image generation, TTS, cloud browser). Skip the per-tool key juggling:
 
 ```bash
 pulse setup --portal
 ```
 
-That logs you in, sets Nous as your provider, and turns on the Tool Gateway in one command.
+That logs you in, sets PULSE as your provider, and turns on the Tool Gateway in one command.
 :::
 
 :::tip Already running PULSE on another machine?

@@ -111,7 +111,7 @@ export function isServerSideHttpError(error: unknown): {
 }
 
 /**
- * The one factory for the actionable Nous Cloud agent-is-down error, shared by
+ * The one factory for the actionable Pulse Cloud agent-is-down error, shared by
  * both startup boundaries that can observe a server-side HTTP fault:
  *
  *  - OAuth WS-ticket mint (buildRemoteConnection → mintGatewayWsTicket), which
@@ -146,11 +146,11 @@ export function makeNousCloudBackendDownError(baseUrl: string, error: unknown): 
   const detail = error instanceof Error ? error.message : String(error ?? '')
 
   const err = new Error(
-    `Nous Cloud agent ${hostname} is down ` +
+    `Pulse Cloud agent ${hostname} is down ` +
       `(HTTP ${serverError.statusCode}: server-side fault). ` +
       'Check https://portal.anxious-research.com for backend status, ' +
       'or switch to Local mode in Settings → Gateway. ' +
-      'You can also reach out on Discord at discord.gg/NousResearch ' +
+      'You can also reach out on Discord at discord.gg/AnxiousResearch ' +
       'for immediate assistance. ' +
       `Original detail: ${detail}`
   ) as any
@@ -164,7 +164,7 @@ export function makeNousCloudBackendDownError(baseUrl: string, error: unknown): 
 }
 
 /**
- * True when the backend URL points at a Nous-managed PULSE Cloud instance
+ * True when the backend URL points at a PULSE-managed PULSE Cloud instance
  * (e.g. ares-3009.agents.anxious-research.com). These are Fly.io-hosted machines
  * the user cannot restart themselves — a 503 from one means the server is down
  * and the recovery path is Portal/Discord/wait.
@@ -326,7 +326,7 @@ export async function waitForPULSEReady(baseUrl: string, options: PULSEReadyOpti
 
   const detail = lastError instanceof Error ? lastError.message : 'timeout'
 
-  // When a Nous-managed cloud agent returns a server-side HTTP error
+  // When a PULSE-managed cloud agent returns a server-side HTTP error
   // (502/503/504), the backend server itself is down — the user cannot
   // restart it and the generic "did not become ready" message is opaque.
   // Surface an actionable error instead (#85335). This is the SAME factory

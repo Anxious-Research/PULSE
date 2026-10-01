@@ -21,7 +21,7 @@ Quick answers and fixes for the most common questions and issues.
 PULSE Agent works with any OpenAI-compatible API. Supported providers include:
 
 - **[OpenRouter](https://openrouter.ai/)** — access hundreds of models through one API key (recommended for flexibility)
-- **[Nous Portal](../integrations/nous-portal.md)** — Nous Research's subscription gateway — 300+ models plus web/image/TTS/browser through one OAuth login (recommended for newcomers)
+- **[Pulse Portal](../integrations/pulse-portal.md)** — Anxious Research's subscription gateway — 300+ models plus web/image/TTS/browser through one OAuth login (recommended for newcomers)
 - **OpenAI** — GPT-5.4, GPT-5-codex, GPT-4.1, GPT-4o, etc.
 - **Anthropic** — Claude models (direct API, OAuth via `pulse auth add anthropic`, OpenRouter, or any compatible proxy)
 - **Google** — Gemini models (direct API via `gemini` provider, OpenRouter, or compatible proxy)
@@ -655,7 +655,7 @@ If an MCP server crashes mid-request, PULSE will report a timeout. Check the ser
 
 **Cause:** The docs site (`pulse-agent.anxious-research.com`) is served through Vercel, whose WAF denies some residential IP ranges it considers flagged. If your network is on such a range, every request to the domain returns a 403 block page.
 
-**Solution:** The Skills Hub picker probes the primary domain and automatically falls back to the equivalent GitHub Pages deployment (`nousresearch.github.io/pulse-agent`), which serves the same catalog. If the page still fails on both origins, check whether a proxy, DNS filter, or firewall is blocking both hosts — and report the affected range to the maintainers so it can be reviewed on the deployment side.
+**Solution:** The Skills Hub picker probes the primary domain and automatically falls back to the equivalent GitHub Pages deployment (`anxious-research.github.io/pulse-agent`), which serves the same catalog. If the page still fails on both origins, check whether a proxy, DNS filter, or firewall is blocking both hosts — and report the affected range to the maintainers so it can be reviewed on the deployment side.
 
 ---
 
@@ -925,5 +925,5 @@ If using OpenRouter, make sure your API key has credits. A 400 from OpenRouter o
 If your issue isn't covered here:
 
 1. **Search existing issues:** [GitHub Issues](https://github.com/Anxious-Research/PULSE/issues)
-2. **Ask the community:** [Nous Research Discord](https://discord.gg/nousresearch)
+2. **Ask the community:** [Anxious Research Discord](https://discord.gg/anxious-research)
 3. **File a bug report:** Include your OS, Python version (`python3 --version`), PULSE version (`pulse --version`), and the full error message

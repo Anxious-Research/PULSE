@@ -98,7 +98,7 @@ jobs:
           LIVE_FILTER: ${{ inputs.filter }}
           OPENROUTER_API_KEY: ${{ secrets.LIVE_OPENROUTER_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.LIVE_ANTHROPIC_API_KEY }}
-          NOUS_API_KEY: ${{ secrets.LIVE_NOUS_API_KEY }}
+          PULSE_API_KEY: ${{ secrets.LIVE_NOUS_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.LIVE_OPENAI_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.LIVE_GEMINI_API_KEY }}
           XAI_API_KEY: ${{ secrets.LIVE_XAI_API_KEY }}

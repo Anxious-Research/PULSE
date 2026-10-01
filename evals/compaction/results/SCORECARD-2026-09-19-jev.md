@@ -39,7 +39,7 @@ Harness: `evals/compaction/runner.py` with the new `engine: jev` arm
 API, `~typesafe/jev-latest` → served as `typesafe/jev-1.13-20260917`). Three real 500K-token
 lineage prefixes from state.db (PR review campaign, system-prompt token analysis, SIGSEGV
 fix), 15-question recall exam each, same bank for every arm, answered and judged by the
-configured `auxiliary.compression` route (gemini-3.8-flash via Nous). A fourth transcript
+configured `auxiliary.compression` route (gemini-3.8-flash via PULSE). A fourth transcript
 (541 tool calls in 500K) could not be fitted into Jev's 25K-token state ceiling even at the
 last fitting stage — the plugin throws there and Claude Code falls back to its built-in
 summary; recorded as `jev_fallback`, not scored.
@@ -156,5 +156,5 @@ every ~40K tokens of new work with every turn billed at ~460K input.
   `preserve_recent_messages: 6` pins fewer turns than in Claude Code; `jev_tail40` widens
   it to roughly lean's 25K tail and changes nothing (+1 pt).
 - Eval spend for the whole run (question generation, 634 answer/judge calls): 43.5M input
-  tokens ≈ $33.6 at gemini-3.8-flash list, through Nous inference. Jev spend across all
+  tokens ≈ $33.6 at gemini-3.8-flash list, through PULSE inference. Jev spend across all
   arms: $0.08 via OpenRouter.

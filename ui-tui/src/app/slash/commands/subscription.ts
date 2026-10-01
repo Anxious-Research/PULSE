@@ -143,7 +143,7 @@ const buildSubscriptionCtx = (
 
 export const subscriptionCommands: SlashCommand[] = [
   {
-    help: 'View or change your Nous subscription plan',
+    help: 'View or change your PULSE subscription plan',
     name: 'subscription',
     aliases: ['upgrade'],
     // ZERO sub-commands: bare `/subscription` fetches state and opens the

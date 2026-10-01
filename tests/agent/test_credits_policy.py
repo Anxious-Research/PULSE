@@ -317,7 +317,7 @@ class TestIsFreeTierModel:
         assert is_free_tier_model("some/zero-priced", "https://inference-api.anxious-research.com/v1/") is True
 
 
-    def test_nous_welcome_host_is_free_without_pricing(self, monkeypatch):
+    def test_pulse_welcome_host_is_free_without_pricing(self, monkeypatch):
         """Anything the welcome host serves is the free tier, with no pricing lookup: the portal seeds
         paid_access=False for a free-tier identity ($0 by design), and that must never raise
         credits.depleted ("run /topup") on a surface that cannot top up."""
@@ -325,19 +325,19 @@ class TestIsFreeTierModel:
         from pulse_cli import models_pricing
 
         monkeypatch.setattr(models_pricing, "_pricing_cache", {})
-        assert is_free_tier_model("nous/welcome", "https://welcome-api.anxious-research.com/v1") is True
+        assert is_free_tier_model("pulse/welcome", "https://welcome-api.anxious-research.com/v1") is True
         assert is_free_tier_model("some/other", "https://welcome-api.anxious-research.com") is True
 
-    def test_paid_nous_host_still_needs_pricing_evidence(self, monkeypatch):
+    def test_paid_pulse_host_still_needs_pricing_evidence(self, monkeypatch):
         """The free-tier rule is the host, not the model name: the paid inference host can serve
-        nous/welcome to a named account, and a depleted named account still sees the notice."""
+        pulse/welcome to a named account, and a depleted named account still sees the notice."""
         from agent.credits_tracker import is_free_tier_model
         from pulse_cli import models_pricing
 
         monkeypatch.setattr(models_pricing, "_pricing_cache", {})
-        assert is_free_tier_model("nous/welcome", "https://inference-api.anxious-research.com/v1") is False
+        assert is_free_tier_model("pulse/welcome", "https://inference-api.anxious-research.com/v1") is False
         assert is_free_tier_model("some/paid", "https://inference-api.anxious-research.com/v1") is False
-        assert is_free_tier_model("nous/welcome", "") is False
+        assert is_free_tier_model("pulse/welcome", "") is False
 
     def test_exception_fails_open_to_false(self, monkeypatch):
         from agent.credits_tracker import is_free_tier_model

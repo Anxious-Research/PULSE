@@ -121,11 +121,11 @@ def test_entitlement_guidance_is_classified_at_direct_print(tmp_path, monkeypatc
     monkeypatch.setenv("PULSE_HOME", str(tmp_path))
     (tmp_path / "config.yaml").write_text(yaml.safe_dump(
         {} if suppress is None else {"display": {"suppress_warning_notifications": suppress}}))
-    monkeypatch.setattr(conversation_loop, "_nous_entitlement_message", lambda capability: "entitlement detail\nnext step")
+    monkeypatch.setattr(conversation_loop, "_pulse_entitlement_message", lambda capability: "entitlement detail\nnext step")
     agent = Emitter()
     printed = []
     agent._print_fn = lambda *a, **k: printed.append(a)
-    assert conversation_loop._print_nous_entitlement_guidance(agent, "model access") is True
+    assert conversation_loop._print_pulse_entitlement_guidance(agent, "model access") is True
     assert printed == ([] if suppress is True else [("   💡 entitlement detail",), ("   💡 next step",)])
 
 

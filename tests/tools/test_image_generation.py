@@ -276,7 +276,7 @@ class TestExtractHttpStatus:
 
 
 class TestManagedGatewayErrorTranslation:
-    """4xx from the Nous managed gateway should be translated to a user-actionable message."""
+    """4xx from the PULSE managed gateway should be translated to a user-actionable message."""
 
     @pytest.fixture(autouse=True)
     def _fal_client_stub(self, image_tool, monkeypatch):
@@ -292,7 +292,7 @@ class TestManagedGatewayErrorTranslation:
         # Simulate: managed mode active, managed submit raises 4xx.
         managed_gateway = MagicMock()
         managed_gateway.gateway_origin = "https://fal-queue-gateway.example.com"
-        managed_gateway.nous_user_token = "test-token"
+        managed_gateway.pulse_user_token = "test-token"
         monkeypatch.setattr(image_tool, "_resolve_managed_fal_gateway",
                             lambda: managed_gateway)
 
@@ -319,7 +319,7 @@ class TestManagedGatewayErrorTranslation:
 
         managed_gateway = MagicMock()
         managed_gateway.gateway_origin = "https://fal-queue-gateway.example.com"
-        managed_gateway.nous_user_token = "test-token"
+        managed_gateway.pulse_user_token = "test-token"
         monkeypatch.setattr(
             image_tool, "_resolve_managed_fal_gateway", lambda: managed_gateway
         )
@@ -454,7 +454,7 @@ class TestManagedKreaRouting:
             lambda: SimpleNamespace(
                 vendor="krea",
                 gateway_origin="https://krea-gateway.example.com",
-                nous_user_token="tok",
+                pulse_user_token="tok",
                 managed_mode=True,
             ),
         )
@@ -484,13 +484,13 @@ class TestManagedPortalRouting:
         monkeypatch.setattr("agent.image_gen_registry.get_provider", lambda name: fake_provider)
         monkeypatch.setattr("pulse_cli.plugins._ensure_plugins_discovered", lambda *a, **k: None)
 
-    def test_routes_portal_model_to_nous_plugin(self, image_tool, monkeypatch):
+    def test_routes_portal_model_to_pulse_plugin(self, image_tool, monkeypatch):
         import json as _json
         from unittest.mock import MagicMock
 
-        monkeypatch.setattr(image_tool, "_read_configured_image_provider", lambda: "nous")
+        monkeypatch.setattr(image_tool, "_read_configured_image_provider", lambda: "pulse")
         monkeypatch.setattr(image_tool, "_read_configured_image_model", lambda: "openai/gpt-5.4-image-2")
-        fake_provider = MagicMock(display_name="Nous Portal")
+        fake_provider = MagicMock(display_name="Pulse Portal")
         fake_provider.generate.return_value = {"success": True, "image": "/tmp/x.png"}
         self._fake_registry(monkeypatch, fake_provider)
 
@@ -502,7 +502,7 @@ class TestManagedPortalRouting:
     def test_portal_model_without_plugin_errors_instead_of_billing_fal(self, image_tool, monkeypatch):
         import json as _json
 
-        monkeypatch.setattr(image_tool, "_read_configured_image_provider", lambda: "nous")
+        monkeypatch.setattr(image_tool, "_read_configured_image_provider", lambda: "pulse")
         monkeypatch.setattr(image_tool, "_read_configured_image_model", lambda: "openai/gpt-5.4-image-2")
         self._fake_registry(monkeypatch, None)
 

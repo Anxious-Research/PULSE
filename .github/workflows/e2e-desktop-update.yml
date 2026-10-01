@@ -101,7 +101,7 @@ jobs:
           PULSE_E2E_UPDATE_ROOT: ${{ runner.temp }}/hdu
           OPENROUTER_API_KEY: ''
           OPENAI_API_KEY: ''
-          NOUS_API_KEY: ''
+          PULSE_API_KEY: ''
           ANTHROPIC_API_KEY: ''
 
       - name: Collect the install's logs

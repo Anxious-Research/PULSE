@@ -342,7 +342,7 @@ For an ordinary package of that desktop build, use the workspace's
 `dist:win`, `dist:mac`, `dist:linux`, or `pack` command. Those commands do not
 replace the complete tagged build described above.
 
-Icons are generated from `assets/nous-girl-*.svg` and `assets/backgrounds/`.
+Icons are generated from `assets/pulse-girl-*.svg` and `assets/backgrounds/`.
 `node scripts/generate-icons.mjs` renders them with the PULSE runtime Python
 (`PULSE_PYTHON`, else `python` on PATH); Pillow and resvg-py are core
 dependencies. Generated PNG/ICO/ICNS files are not source assets.

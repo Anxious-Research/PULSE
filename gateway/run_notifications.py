@@ -922,7 +922,7 @@ class GatewayNotificationsMixin:
             return False
 
     def _free_tier_startup_line(self) -> Optional[str]:
-        """Extra startup line when the gateway's inference is carried by the Nous free tier; None otherwise.
+        """Extra startup line when the gateway's inference is carried by the PULSE free tier; None otherwise.
 
         Best-effort: a resolution failure (no provider, auth error) must not block the online notice."""
         try:

@@ -9,7 +9,7 @@ const ALIASES: Record<string, string> = {
   ares: 'ember',
   gold: 'default',
   pulse: 'default',
-  'nous-light': 'nous'
+  'pulse-light': 'pulse'
 }
 
 export function useSkinCommand() {

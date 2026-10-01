@@ -11,7 +11,7 @@ import {
   requestModelOptions
 } from './model-options'
 
-const globalOptions = { model: 'pulse-4', provider: 'nous', providers: [] }
+const globalOptions = { model: 'pulse-4', provider: 'pulse', providers: [] }
 
 vi.mock('@/pulse', () => ({
   getGlobalModelOptions: vi.fn(() => Promise.resolve(globalOptions))
@@ -141,8 +141,8 @@ describe('requestModelOptions', () => {
   it('prefers an owner-routed request over the ambient gateway socket', async () => {
     const gatewayPayload = {
       model: 'chrome-model',
-      provider: 'nous',
-      providers: [{ models: ['chrome-model'], name: 'Nous', slug: 'nous' }]
+      provider: 'pulse',
+      providers: [{ models: ['chrome-model'], name: 'PULSE', slug: 'pulse' }]
     }
 
     const routedPayload = {

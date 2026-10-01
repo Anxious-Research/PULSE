@@ -93,8 +93,8 @@ website/
 assets/
 !assets/
 assets/*
-!assets/nous-girl-black.svg
-!assets/nous-girl-white.svg
+!assets/pulse-girl-black.svg
+!assets/pulse-girl-white.svg
 !assets/backgrounds/
 !assets/backgrounds/**
 infographic/

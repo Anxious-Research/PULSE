@@ -1,5 +1,5 @@
 """Regression test: Discord /model picker must surface ALL models for a
-provider whose list exceeds 25 entries (e.g. Nous curated + Portal free
+provider whose list exceeds 25 entries (e.g. PULSE curated + Portal free
 recommendations), not silently truncate the tail at 25 options.
 
 Discord caps a single Select at 25 options and a View at 5 action rows. The
@@ -30,7 +30,7 @@ def _all_options(view: "ModelPickerView"):
     return out
 
 
-def test_nous_free_models_render_across_partitioned_selects():
+def test_pulse_free_models_render_across_partitioned_selects():
     # 37 models: 32 curated + 5 free Portal recommendations appended at the tail
     # (the real-world shape that was getting clipped at 25 on Discord).
     models = [
@@ -78,21 +78,21 @@ def test_nous_free_models_render_across_partitioned_selects():
     view = ModelPickerView(
         providers=[
             {
-                "slug": "nous",
-                "name": "Nous Portal",
+                "slug": "pulse",
+                "name": "Pulse Portal",
                 "models": list(models),
                 "total_models": len(models),
                 "is_current": True,
             }
         ],
         current_model="tencent/hy3",
-        current_provider="nous",
+        current_provider="pulse",
         session_key="session-1",
         on_model_selected=lambda *a, **k: None,
         allowed_user_ids={"123"},
     )
-    view._selected_provider = "nous"
-    view._build_model_select("nous")
+    view._selected_provider = "pulse"
+    view._build_model_select("pulse")
 
     # The tail must render — this is the regression that was failing before
     # multi-select partitioning.

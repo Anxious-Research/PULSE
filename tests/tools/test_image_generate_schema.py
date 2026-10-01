@@ -101,12 +101,12 @@ class TestDynamicParamGating(unittest.TestCase):
         self.assertNotIn("upscale", props)
 
     def test_managed_krea_model_advertises_krea_edit_args_and_upscale(self):
-        """provider nous + a Krea model id is served by the Krea gateway, so the
+        """provider pulse + a Krea model id is served by the Krea gateway, so the
         schema must advertise what the Krea plugin declares, not the FAL catalog."""
         from plugins.image_gen.krea import KreaImageGenProvider
 
         with patch.object(ig, "_read_configured_image_provider",
-                          return_value="nous"), \
+                          return_value="pulse"), \
              patch.object(ig, "_read_configured_image_model",
                           return_value="krea-2-medium"):
             schema = _build_dynamic_image_schema()
@@ -122,7 +122,7 @@ class TestDynamicParamGating(unittest.TestCase):
         """A managed Krea model renders exactly the controls the Krea plugin declares; FAL renders none."""
         from plugins.image_gen.krea import KreaImageGenProvider
 
-        with patch.object(ig, "_read_configured_image_provider", return_value="nous"), \
+        with patch.object(ig, "_read_configured_image_provider", return_value="pulse"), \
              patch.object(ig, "_read_configured_image_model", return_value="krea-2-medium"):
             props = _build_dynamic_image_schema()["parameters"]["properties"]
         declared = KreaImageGenProvider().capabilities()["creative_controls"]

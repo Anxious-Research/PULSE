@@ -47,7 +47,7 @@ For PULSE specifically, native sign-in means:
 ## How it works
 
 ```
-Desktop app                Gateway (/auth/native/*)          Nous Portal (IDP)
+Desktop app                Gateway (/auth/native/*)          Pulse Portal (IDP)
    │ 1. open loopback 127.0.0.1:<random port>
    │ 2. system browser ─►  /auth/native/authorize
    │    (PKCE challenge)    (starts the normal PKCE login) ─► /oauth/authorize
@@ -60,8 +60,7 @@ Desktop app                Gateway (/auth/native/*)          Nous Portal (IDP)
 ```
 
 The gateway **brokers** the flow: it is the authorization server *to the
-desktop app* and an OAuth client *to the upstream identity provider* (Nous
-Portal). This is required because the upstream `client_id` and permitted
+desktop app* and an OAuth client *to the upstream identity provider* (Pulse Portal). This is required because the upstream `client_id` and permitted
 redirect URIs are bound to the gateway's own origin — a desktop app can't be a
 direct client of the Portal. The desktop still gets the full RFC 8252
 experience: its own PKCE pair, its own loopback redirect, and tokens it owns.
@@ -103,7 +102,7 @@ tool blocks the loopback listener, or you close the browser tab — the app
 Native sign-in is available automatically on any gated gateway with an
 interactive session provider registered. No configuration is required — the
 `/auth/native/*` routes and the `auth_flows` advertisement are part of the
-dashboard-auth subsystem. OAuth providers (e.g. the bundled **Nous** provider)
+dashboard-auth subsystem. OAuth providers (e.g. the bundled **PULSE** provider)
 broker the upstream IDP redirect; password providers (e.g. the bundled
 **basic-auth** plugin) land the system browser on the gateway's `/login`
 credential form instead — which is what lets OS password managers (macOS
@@ -122,4 +121,4 @@ The relevant endpoints (all public, pre-auth bootstrap, same as the existing
 
 - [OAuth over SSH / Remote Hosts](./oauth-over-ssh.md) — the loopback-callback
   pattern for provider/MCP OAuth on remote machines.
-- [Run PULSE with Nous Portal](./run-pulse-with-nous-portal.md)
+- [Run PULSE with Pulse Portal](./run-pulse-with-pulse-portal.md)

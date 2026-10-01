@@ -71,8 +71,8 @@ export const libTextEn = {
     billingDialog: {
       dismiss: 'Dismiss',
       topUp: 'Top up',
-      nousDetail: 'Your Nous credit balance is exhausted — top up to keep going.',
-      nousTitle: 'Out of Nous credits',
+      pulseDetail: 'Your PULSE credit balance is exhausted — top up to keep going.',
+      pulseTitle: 'Out of PULSE credits',
       yourProvider: 'your provider',
       openBillingPage: 'Open billing page',
       switchProvider: 'Switch provider',

@@ -2,7 +2,7 @@
 
 Personal sync (status/pull/push/now/enable/disable/device) moves your own skills across
 your devices; ``propose`` shares a skill with your organisation. Sync is INERT unless the
-resolved Nous token carries the access-gate claim AND a sync base URL is configured — the
+resolved PULSE token carries the access-gate claim AND a sync base URL is configured — the
 commands report that state rather than failing opaquely.
 """
 

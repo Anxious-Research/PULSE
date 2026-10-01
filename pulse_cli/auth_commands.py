@@ -27,7 +27,7 @@ from pulse_cli.secret_prompt import masked_secret_prompt
 
 
 # Providers that support OAuth login in addition to API keys.
-_OAUTH_CAPABLE_PROVIDERS = {"anthropic", "nous", "openai-codex", "xai-oauth", "qwen-oauth", "minimax-oauth", "openrouter"}
+_OAUTH_CAPABLE_PROVIDERS = {"anthropic", "pulse", "openai-codex", "xai-oauth", "qwen-oauth", "minimax-oauth", "openrouter"}
 # ...and default to it when ``--type`` is omitted. OpenRouter stays API-key-first: the documented
 # ``pulse auth add openrouter --api-key sk-or-...`` must keep working with no ``--type``.
 _OAUTH_DEFAULT_PROVIDERS = _OAUTH_CAPABLE_PROVIDERS - {"openrouter"}
@@ -303,40 +303,40 @@ def _ask(prompt: str, reader: Callable[[str], str] | None = None) -> str | None:
         return None
 
 
-def _add_nous_oauth_credential(args, provider: str) -> PooledCredential:
-    """``pulse auth add nous --type oauth``: shared-credential import, else device-code login."""
+def _add_pulse_oauth_credential(args, provider: str) -> PooledCredential:
+    """``pulse auth add pulse --type oauth``: shared-credential import, else device-code login."""
     custom_label = (getattr(args, "label", None) or "").strip() or None
     timeout = getattr(args, "timeout", None) or 15.0
 
     def _persist(creds: dict, what: str) -> PooledCredential:
-        # `--label` is embedded into providers.nous so label_from_token doesn't overwrite it on every
-        # subsequent load_pool("nous").
-        entry = auth_mod.persist_nous_credentials(creds, label=custom_label)
+        # `--label` is embedded into providers.pulse so label_from_token doesn't overwrite it on every
+        # subsequent load_pool("pulse").
+        entry = auth_mod.persist_pulse_credentials(creds, label=custom_label)
         shown_label = entry.label if entry is not None else label_from_token(
             creds.get("access_token", ""), f"{provider}-oauth-1")
         print(f'{what} {provider} OAuth {"device-code " if what == "Saved" else ""}credentials: "{shown_label}"')
         return entry
 
-    # Codex-style auto-import: a shared Nous credential at <pulse-root>/shared/nous_auth.json
-    # (written by any previous login) makes `pulse --profile <name> auth add nous --type oauth`
+    # Codex-style auto-import: a shared PULSE credential at <pulse-root>/shared/pulse_auth.json
+    # (written by any previous login) makes `pulse --profile <name> auth add pulse --type oauth`
     # a one-tap operation for multi-profile users.
-    if auth_mod._read_shared_nous_state():
+    if auth_mod._read_shared_pulse_state():
         try:
-            found = f"Found existing Nous OAuth credentials at {auth_mod._nous_shared_store_path()}"
+            found = f"Found existing PULSE OAuth credentials at {auth_mod._pulse_shared_store_path()}"
         except RuntimeError:
-            found = "Found existing shared Nous OAuth credentials"
+            found = "Found existing shared PULSE OAuth credentials"
         print()
         print(found)
         do_import = _ask("Import these credentials? [Y/n]: ")
         if do_import is None or do_import.lower() in {"", "y", "yes"}:
-            print("Rehydrating Nous session from shared credentials...")
-            rehydrated = auth_mod._try_import_shared_nous_state(timeout_seconds=timeout)
+            print("Rehydrating PULSE session from shared credentials...")
+            rehydrated = auth_mod._try_import_shared_pulse_state(timeout_seconds=timeout)
             if rehydrated is not None:
                 return _persist(rehydrated, "Imported")
             # Expired refresh_token, portal down, etc. — fall through to device-code.
             print("Could not refresh shared credentials — falling back to device-code login.")
 
-    creds = auth_mod._nous_device_code_login(
+    creds = auth_mod._pulse_device_code_login(
         portal_base_url=getattr(args, "portal_url", None),
         inference_base_url=getattr(args, "inference_url", None),
         client_id=getattr(args, "client_id", None), scope=getattr(args, "scope", None),
@@ -414,8 +414,8 @@ def auth_add_command(args) -> None:
 def _add_credential(args, provider: str, pool, requested_type: str) -> PooledCredential:
     if requested_type == AUTH_TYPE_API_KEY:
         return _add_api_key_credential(args, provider, pool)
-    if provider == "nous":
-        return _add_nous_oauth_credential(args, provider)
+    if provider == "pulse":
+        return _add_pulse_oauth_credential(args, provider)
 
     spec = _OAUTH_ADD_SPECS.get(provider)
     if spec is None:
@@ -522,7 +522,7 @@ def auth_list_command(args) -> None:
         if not entries:
             continue
         current = pool.peek()
-        if provider == "nous" and all(_is_free_tier_entry(e) for e in entries):
+        if provider == "pulse" and all(_is_free_tier_entry(e) for e in entries):
             # The free tier is not a credential the user added; never list it as one.
             label, hint = _free_tier_lines()
             print(f"{provider}: {label}")
@@ -638,12 +638,12 @@ def auth_refresh_command(args) -> None:
         raise SystemExit(
             f"{provider} credential #{index} ({matched.label}) is not a refreshable OAuth "
             f"credential.")
-    # Nous's resolver is singleton-bound, not an independent-account refresher.
-    if provider == "nous" and matched.source != "device_code":
+    # PULSE's resolver is singleton-bound, not an independent-account refresher.
+    if provider == "pulse" and matched.source != "device_code":
         raise SystemExit(
-            f"nous credential #{index} ({matched.label}) is not a refreshable OAuth "
+            f"pulse credential #{index} ({matched.label}) is not a refreshable OAuth "
             "credential: only the device_code singleton supports refresh. "
-            "Reauthenticate with `pulse auth add nous --type oauth`.")
+            "Reauthenticate with `pulse auth add pulse --type oauth`.")
     refreshed = pool.try_refresh_matching(credential_id=matched.id)
     if refreshed is None:
         after = next((e for e in pool.entries() if e.id == matched.id), None)
@@ -887,7 +887,7 @@ def _interactive_strategy() -> None:
 
 
 def auth_upgrade_command(args) -> None:
-    """``pulse auth upgrade``: sign the free tier into a Nous account, keeping its connectors."""
+    """``pulse auth upgrade``: sign the free tier into a PULSE account, keeping its connectors."""
     from pulse_cli.anon_auth import upgrade_guest
     code = upgrade_guest(args)
     if code:

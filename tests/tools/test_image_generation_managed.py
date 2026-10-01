@@ -18,7 +18,7 @@ def test_union_catalog_lists_each_model_once():
     def rows(name):
         return {
             "krea": [{"id": m, "display": m} for m in KREA_MODEL_IDS],
-            "nous": [
+            "pulse": [
                 {"id": "microsoft/mai-image-2.5-pro"},   # same id as a FAL entry
                 {"id": "krea/krea-2-medium"},            # Krea 2 under its Portal id
                 {"id": "google/gemini-3-pro-image"},     # Nano Banana Pro under its Portal id

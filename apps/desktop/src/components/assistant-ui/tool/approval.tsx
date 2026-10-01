@@ -212,7 +212,7 @@ export function ApprovalQueue({
       }}
       surfaceClassName={cn(
         'rounded-xl border bg-(--ui-chat-surface-background)',
-        floating ? 'border-(--stroke-nous) shadow-nous' : 'border-(--ui-stroke-secondary)'
+        floating ? 'border-(--stroke-pulse) shadow-pulse' : 'border-(--ui-stroke-secondary)'
       )}
       swipeDirections={['left']}
     >

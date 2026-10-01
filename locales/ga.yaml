@@ -435,7 +435,7 @@ gateway:
     last_activity: "**Gníomhaíocht is déanaí:** {timestamp}"
     model: "**Samhail:** `{model}`"
     model_provider: "**Samhail:** `{model}` ({provider})"
-    free_tier: "Nous · plean saor in aisce · nous/welcome · /login chun síniú isteach"
+    free_tier: "PULSE · plean saor in aisce · pulse/welcome · /login chun síniú isteach"
     context: "**Comhthéacs:** {used} / {total} ({pct}%)"
     context_used: "**Comhthéacs:** ~{used} comhartha"
     tokens: "**Comharthaí billeáilte ar feadh an tsaoil:** {tokens} _(ní méid do chomhthéacs reatha; úsáid `/context`)_"
@@ -548,7 +548,7 @@ gateway:
     unknown_subcommand: "Fo-ordú /usage anaithnid: `{args}`. Bain triail as `/usage` nó `/usage reset [--force]`."
     reset_wrong_provider: "Níl athshocruithe teorann bainc ar fáil ach ar an soláthraí openai-codex. Athraigh le `/model` ar dtús."
   credits:
-    not_logged_in: "Níl tú logáilte isteach i Nous Portal. Logáil isteach chun d'iarmhéid creidmheasa a fheiceáil agus breis a chur leis."
+    not_logged_in: "Níl tú logáilte isteach i Pulse Portal. Logáil isteach chun d'iarmhéid creidmheasa a fheiceáil agus breis a chur leis."
   verbose:
     not_enabled: "Níl an t-ordú `/verbose` cumasaithe d'ardáin teachtaireachtaí.\n\nCumasaigh in `config.yaml`:\n```yaml\ndisplay:\n  tool_progress_command: true\n```"
     mode_off: "⚙️ Dul chun cinn uirlise: **AS** — gan aon ghníomhaíocht uirlise á thaispeáint."
@@ -841,7 +841,7 @@ gateway:
   startup:
     handoff_thread_title: "PULSE — {title}"
     restarted: "♻ Atosaíodh an gateway go rathúil. Leanann do sheisiún ar aghaidh."
-    free_tier_line: "Tátal: plean saor in aisce Nous (nous/welcome). Sínigh isteach le haghaidh tuilleadh: /login"
+    free_tier_line: "Tátal: plean saor in aisce PULSE (pulse/welcome). Sínigh isteach le haghaidh tuilleadh: /login"
     online: "♻️ Gateway ar líne — tá PULSE ar ais agus réidh."
     db_corrupt: "⚠️ Braitheadh truailliú i mbunachar sonraí na seisiún. Seans nach sábhálfar teachtaireachtaí. Roghanna athshlánaithe:\n1. Rith `pulse {profile_arg}doctor --fix`\n2. Stop an gateway, ansin athshlánaigh le:\n   pulse {profile_arg}sessions recover --source {db_path} --inspect-only\n   (má thuairiscíonn sé gur féidir é a athshlánú) pulse {profile_arg}sessions recover --source {db_path} --output recovered-state.db\n   — glacann an t-athshlánú roghchóip den chomhad damáistithe ar dtús; NÁ rith `sqlite3 ... \".recover\"` i gcoinne an state.db bheo, is féidir le CLI sqlite3 leochaileach é a thruailliú níos mó\n3. Athchóirigh ó chúltaca i {backups_dir}/\nRith `pulse {profile_arg}doctor` le haghaidh diagnóisic sláintithe."
     db_fts_corrupt: "⚠️ Thuairiscigh bunachar sonraí na seisiún earráid truaillithe atá teoranta don innéacs cuardaigh (FTS5); níl damáiste ar na táblaí teachtaireachtaí. Seans nach sábhálfar teachtaireachtaí go dtí go ndeiseofar é: rith `pulse {profile_arg}doctor --fix`, ansin atosaigh an gateway. Ná rith uirlisí athshlánaithe agus ná hathchóirigh cúltaca mura ndearbhaíonn `pulse {profile_arg}doctor` damáiste."
@@ -937,7 +937,7 @@ gateway:
   codex_runtime:
     config_load_failed: "❌ Níorbh fhéidir an chumraíocht a lódáil: {error}"
   topup:
-    header: "💳 **Iarmhéid Nous**"
+    header: "💳 **Iarmhéid PULSE**"
     portal_link: "Bainistigh billeáil ar an bportal: {url}"
     hint: "Cuir breis leis agus bainistigh billeáil sa bhrabhsálaí — nuashonrófar d'iarmhéid anseo ina dhiaidh sin."
   login:
@@ -1660,11 +1660,11 @@ slash:
   usage:
     description: "Taispeáin úsáid comharthaí agus teorainneacha ráta; fuasclaíonn `reset` athshocrú teorann Codex bainc"
   subscription:
-    description: "Féach ar do phlean Nous agus athraigh é sa bhrabhsálaí"
+    description: "Féach ar do phlean PULSE agus athraigh é sa bhrabhsálaí"
   login:
-    description: "Sínigh isteach le cuntas Nous (coinníonn sé do nascóirí)"
+    description: "Sínigh isteach le cuntas PULSE (coinníonn sé do nascóirí)"
   topup:
-    description: "Taispeáin d'iarmhéid Nous agus bainistigh billeáil ar an bportal"
+    description: "Taispeáin d'iarmhéid PULSE agus bainistigh billeáil ar an bportal"
   platforms:
     description: "Taispeáin stádas gateway/ardán teachtaireachtaí"
   platform:
@@ -1685,7 +1685,7 @@ cli:
   billing:
     load_failed: "{label}: {error}"
     load_failed_label: "Níorbh fhéidir an bhilleáil a lódáil"
-    not_logged_in: "Níl tú logáilte isteach i Nous Portal."
+    not_logged_in: "Níl tú logáilte isteach i Pulse Portal."
     run_portal_then: "Rith `pulse portal` chun logáil isteach, ansin {cmd}."
     org_line: "Eagraíocht: {org}"
     org_line_role: "Eagraíocht: {org} · {role}"
@@ -1775,7 +1775,7 @@ cli:
     confirm_purchase: "Dearbhaigh an ceannach"
     total_line: "Iomlán: {amount}"
     portal_card_will_be_charged: "Gearrfar an muirear ar do chárta atá sábháilte ar an tairseach."
-    consent_charge: "Trí dhearbhú, tugann tú cead do Nous Research muirear a ghearradh ar do chárta."
+    consent_charge: "Trí dhearbhú, tugann tú cead do Anxious Research muirear a ghearradh ar do chárta."
     choice_pay_now: "Íoc {amount} anois"
     desc_submit_charge: "cuir an muirear isteach"
     desc_manage_card_billing: "bainistigh do chárta / billeáil sa bhrabhsálaí"
@@ -1836,7 +1836,7 @@ cli:
     threshold_label: "Nuair a thiteann an t-iarmhéid faoi bhun"
     reload_to_label: "Athlíon an t-iarmhéid go"
     reload_must_exceed_threshold: "🔴 Ní mór don mhéid athlíonta a bheith níos mó ná an teorainn."
-    auto_reload_consent: "Trí dhearbhú, údaraíonn tú do Nous Research muirear a ghearradh ar {card} aon uair a shroicheann d'iarmhéid {threshold}. Cas as am ar bith anseo nó ar an tairseach."
+    auto_reload_consent: "Trí dhearbhú, údaraíonn tú do Anxious Research muirear a ghearradh ar {card} aon uair a shroicheann d'iarmhéid {threshold}. Cas as am ar bith anseo nó ar an tairseach."
     turn_on_auto_reload_question: "Cas air uath-athlíonadh?"
     auto_reload_enabled: "✅ Uath-athlíonadh ar: faoi bhun {threshold} → athlíon go {reload_to}."
     auto_reload_disabled: "✅ Uath-athlíonadh casta as."
@@ -2416,7 +2416,7 @@ cli:
     empty_base_url: "⚠️  D'fhill réiteoir an tsoláthraí URL bunaidh folamh. Seiceáil cumraíocht do sholáthraí nó rith: pulse setup"
     switching_to_fallback: "⚠️  {reason} — ag athrú go dtí an cúltaca: {provider} / {model}"
     first_run_no_provider: "☤ Níl aon soláthraí inférála cumraithe fós — réitímis é sin."
-    first_run_pick_provider: "Roghnóidh tú soláthraí (is é Nous Portal OAuth an ceann is tapúla; ní gá eochair API) agus samhail."
+    first_run_pick_provider: "Roghnóidh tú soláthraí (is é Pulse Portal OAuth an ceann is tapúla; ní gá eochair API) agus samhail."
     first_run_prompt: "Socraigh soláthraí anois? [T/n]:"
     first_run_skipped: "Scipeáilte. Rith 'pulse model' nó 'pulse setup' am ar bith."
     first_run_cancelled: "Socrú cealaithe. Rith 'pulse model' am ar bith."
@@ -2444,7 +2444,7 @@ cli:
     delivering_leftover_steer: "⏩ Ag seachadadh /steer fuílligh mar an chéad seal eile: '{preview}'"
     reasoning_label: "Réasúnaíocht"
     reasoning_more_lines: "... ({count} líne eile — /reasoning full le taispeáint)"
-    billing_cta_nous: "Rith [bold]/topup[/] le creidmheasanna a chur leis, nó [bold]/subscription[/] leis an bplean a athrú."
+    billing_cta_pulse: "Rith [bold]/topup[/] le creidmheasanna a chur leis, nó [bold]/subscription[/] leis an bplean a athrú."
     billing_cta_provider: "Cuir creidmheasanna leis trí {provider}"
     your_provider: "do sholáthraí"
     billing_cta_switch: "Nó athraigh soláthraí le [bold]/model <model> --provider <provider>[/]."
@@ -3088,7 +3088,7 @@ cli:
     fix_lm_studio: "Leigheas LM Studio: Socraigh fad an chomhthéacs i socruithe na samhla → athlódáil an tsamhail"
     fix_local_server: "Leigheas: tosaigh do fhreastalaí le comhthéacs {tokens_k}K ar a laghad (llama.cpp: -c {tokens}), nó socraigh model.ollama_num_ctx in config.yaml don fhuinneog a fhreastalaíonn sé i ndáiríre"
     fix_config: "Leigheas: Socraigh model.context_length in config.yaml, nó méadaigh socrú comhthéacs do fhreastalaí"
-    pulse_models_not_agentic: "⚠  NÍL samhlacha PULSE 3 & 4 de chuid Nous Research gníomhaireach agus níl siad deartha le húsáid le PULSE Agent."
+    pulse_models_not_agentic: "⚠  NÍL samhlacha PULSE 3 & 4 de chuid Anxious Research gníomhaireach agus níl siad deartha le húsáid le PULSE Agent."
     pulse_models_lack_tools: "Níl na cumais glaonna uirlisí acu a theastaíonn do shreafaí oibre gníomhaire. Smaoinigh ar shamhail ghníomhaireach a úsáid (Claude, GPT, Gemini, DeepSeek, etc.)."
     pulse_models_switch_hint: "Athraigh le: /model sonnet  nó  /model gpt5"
     project_skills_loaded: "◆ {count} scil(eanna) tionscadail lódáilte ón stór seo"
@@ -3654,8 +3654,8 @@ tips:
   t181: "Is brabhsálaí frith-bhraite é Camofox — forc Firefox le bréagnú méarloirg i C++."
   t182: "Filleann browser_navigate roghchóip den leathanach go huathoibríoch — ní gá browser_snapshot a ghlaoch ina dhiaidh."
   t183: "Forleagann browser_vision le annotate=true lipéid uimhrithe ar eilimintí idirghníomhacha."
-  t184: "Osclaíonn pulse mcp roghnóir idirghníomhach de MCPanna atá ceadaithe ag Nous agus is féidir leat iad a shuiteáil le brú amháin eochrach."
-  t185: "Liostaíonn pulse mcp catalog freastalaithe MCP atá ceadaithe ag Nous agus a sheoltar leis an stór."
+  t184: "Osclaíonn pulse mcp roghnóir idirghníomhach de MCPanna atá ceadaithe ag PULSE agus is féidir leat iad a shuiteáil le brú amháin eochrach."
+  t185: "Liostaíonn pulse mcp catalog freastalaithe MCP atá ceadaithe ag PULSE agus a sheoltar leis an stór."
   t186: "Suiteálann pulse mcp install <name> iontráil chatalóige, iarrann dintiúir ort, agus ligeann duit roghnú cé acu dá huirlisí a chumasófar."
   t187: "Cumraítear freastalaithe MCP in config.yaml — tacaítear le hiompar stdio agus HTTP araon."
   t188: "Scagadh uirlisí de réir freastalaí: liostaíonn tools.include uirlisí ceadaithe agus tools.exclude uirlisí coiscthe."
@@ -3682,7 +3682,7 @@ tips:
   t209: "Soláthraithe saincheaptha: sábháil críochphointí ainmnithe in config.yaml faoi custom_providers."
   t210: "Instealann PULSE_EPHEMERAL_SYSTEM_PROMPT leid chórais nach sábháiltear sa stair choíche."
   t211: "Tacaíonn credential_pool_strategies le rothlú fill_first, round_robin, least_used, agus random."
-  t212: "Socraíonn pulse auth add nous nó pulse auth add openai-codex soláthraithe OAuth-bhunaithe."
+  t212: "Socraíonn pulse auth add pulse nó pulse auth add openai-codex soláthraithe OAuth-bhunaithe."
   t213: "Tacaíonn an freastalaí API le Chat Completions agus le Responses API araon, le staid ar thaobh an fhreastalaí."
   t214: "Taispeánann tool_preview_length: 0 sa chumraíocht conairí comhaid iomlána i bhfotha gníomhaíochta an snitheora."
   t215: "Ritheann pulse status --deep seiceálacha diagnóiseacha níos doimhne ar gach comhpháirt."
@@ -3752,7 +3752,7 @@ tips:
   t279: "Seachnaíonn PULSE_DEV=1 brath an mhóid coimeádáin le haghaidh forbartha áitiúla."
   t280: "Faigheann gach freastalaí MCP a thacar uirlisí féin (mcp-servername) is féidir a scoránú go neamhspleách trí pulse tools."
   t281: "Réitítear ionadchoinneálaithe ${ENV_VAR} MCP sa chumraíocht nuair a sceitear an freastalaí — lena n-áirítear athróga ó ~/.pulse/.env."
-  t282: "Faigheann scileanna ó stórtha iontaofa (NousResearch) leibhéal slándála 'trusted'; faigheann scileanna pobail scanadh breise."
+  t282: "Faigheann scileanna ó stórtha iontaofa (AnxiousResearch) leibhéal slándála 'trusted'; faigheann scileanna pobail scanadh breise."
   t283: "Coinníonn coraintín na scileanna ag ~/.pulse/skills/.hub/quarantine/ scileanna atá ag fanacht le hathbhreithniú slándála."
   t284: "Instealann /steer <leid> nóta tar éis an chéad ghlao uirlise eile — tabhair sá sa treo i lár taisc gan cur isteach."
   t285: "Socraíonn /goal <text> cuspóir seasta lúb Ralph — leanann PULSE ar aghaidh go huathoibríoch seal i ndiaidh seala go dtí go ndeir moltóir go bhfuil sé déanta."
@@ -3778,7 +3778,7 @@ tips:
   t305: "Aischuireann pulse curator rollback scileanna ó roghchóip réamhrite — tá cúltacaí faoi skills/.curator_backups/."
   t306: "Glanann pulse auth reset <provider> [target] tréimhsí fuaraithe agus bratacha ídithe ar linn dintiúr iomlán, nó ar dhintiúr amháin de réir innéacs, id, nó lipéid."
   t307: "Rothlaíonn credential_pool_strategies.<provider>: round_robin eochracha go cothrom in ionad an réamhshocraithe fill_first."
-  t308: "Seolann use_gateway: true de réir uirlise web, image, tts, nó browser trí do shíntiús Nous — gan eochracha breise."
+  t308: "Seolann use_gateway: true de réir uirlise web, image, tts, nó browser trí do shíntiús PULSE — gan eochracha breise."
   t309: "Eisiann provider_routing.data_collection: deny soláthraithe a stórálann sonraí ar OpenRouter."
   t310: "Ní sheolann provider_routing.require_parameters: true ach chuig soláthraithe a thacaíonn le gach paraiméadar i d'iarratas."
   t311: "Athcheanglaíonn PULSE_TUI_RESUME=1 leis an seisiún TUI is déanaí go huathoibríoch ag am tosaithe — áisiúil tar éis titim SSH."

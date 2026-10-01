@@ -1,4 +1,4 @@
-"""Serve-start bootstrap for the Nous free tier: the ONE place a free-tier identity is created.
+"""Serve-start bootstrap for the PULSE free tier: the ONE place a free-tier identity is created.
 
 Every PULSE process that may need the free tier runs this once at boot (``pulse serve`` on a
 daemon thread beside the other background boots; the CLI first-run guard synchronously). It
@@ -8,7 +8,7 @@ the answer in process memory, and tells every connected client with one ``setup.
 
 Nothing else mints. ``free_tier.status`` and ``setup.status`` read the record; provider resolution
 never reaches the portal; a dead credential is replaced by the explicit re-mint in
-``auth_nous.resolve_nous_runtime_credentials``. Ruling: NS-845 Q1.2 (recorded on NS-847).
+``auth_pulse.resolve_pulse_runtime_credentials``. Ruling: NS-845 Q1.2 (recorded on NS-847).
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ class SetupRecord:
     provider_configured: bool      # some provider can carry inference (free tier included)
     inference_provider: str        # ``resolve_provider("auto")``'s answer, "" when nothing resolves
     free_tier_account: bool        # the identity that exists is the free tier AND the tier is on
-    has_identity: bool             # a Nous identity (free tier or account) is on disk
+    has_identity: bool             # a PULSE identity (free tier or account) is on disk
     other_providers: bool          # the inventory found something usable BESIDES the free tier
     error: str = ""                # why the mint did not happen, when it did not; "" otherwise
     # The mint memo's verdict, verbatim (``anon_auth.MintFailure.as_payload``):
@@ -46,7 +46,7 @@ class SetupRecord:
 
     @property
     def free_tier_route(self) -> bool:
-        return self.free_tier_account and self.inference_provider == "nous"
+        return self.free_tier_account and self.inference_provider == "pulse"
 
     def as_payload(self) -> Dict[str, Any]:
         # The broadcast carries the failure block flat, the same shape ``setup.status`` spreads,
@@ -154,7 +154,7 @@ def _inventory_other_providers() -> bool:
     from pulse_cli.auth import resolve_provider
     _inventory_stamp = _config_stamp()
     try:
-        return resolve_provider("auto", skip_free_tier=True) != "nous"
+        return resolve_provider("auto", skip_free_tier=True) != "pulse"
     except Exception as exc:
         logger.debug("free tier bootstrap: nothing else carries inference (%s)", exc)
         return False
@@ -175,13 +175,13 @@ def _build_record(*, other: bool, force: bool) -> SetupRecord:
 
     error = ""
     failure: Dict[str, Any] = {}
-    state: Optional[Dict[str, Any]] = anon_auth.current_nous_state()
+    state: Optional[Dict[str, Any]] = anon_auth.current_pulse_state()
     if anon_auth.guest_enabled():
         try:
             state = anon_auth.ensure_portal_identity(explicit=True, force=force)
         except Exception as exc:
             error = str(exc)
-            logger.info("Nous free tier not set up at boot: %s", exc)
+            logger.info("PULSE free tier not set up at boot: %s", exc)
         if state is None:
             # Either this attempt failed (the memo now holds why) or an earlier one did and its
             # cooldown still runs: the record carries that verdict either way.
@@ -269,7 +269,7 @@ def _retry_until_settled() -> None:
         _sleep(max(1, int(record.failure.get("retry_after") or 0)))
         record = retry_bootstrap_mint(force=False)
         if record.has_identity:
-            logger.info("Nous free tier set up after a boot-time retry")
+            logger.info("PULSE free tier set up after a boot-time retry")
             return
 
 

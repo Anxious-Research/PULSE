@@ -66,14 +66,14 @@ const identity = {
   store,
   light,
   displayName,
-  appId: `com.nousresearch.${name.kebab}${kebabSuffix}`,
+  appId: `com.anxious-research.${name.kebab}${kebabSuffix}`,
   // Store and commit builds do not publish a release feed.
   channel: store || buildCommit ? null : light ? (canary ? 'light-canary' : 'light') : (canary ? 'canary' : 'latest'),
   appNamePascal: `${name.pascal}${pascalSuffix}`,
   artifactNamePascal: name.pascal,
   windowsExecutableName: kebabSuffix ? cliName : displayName,
   cliName,
-  msixAppIdWithOrg: `NousResearch.${name.pascal}${pascalSuffix}`,
+  msixAppIdWithOrg: `AnxiousResearch.${name.pascal}${pascalSuffix}`,
   ...(store
     ? {
         storeMsix: {
@@ -81,7 +81,7 @@ const identity = {
           // validated + re-signed by the Store on submission.
           identityName: 'NousResearchInc.PULSEAgent',
           publisher: 'CN=EE6D86E4-606F-4E38-B940-AD7248C9D519',
-          publisherDisplayName: 'Nous Research Inc.'
+          publisherDisplayName: 'Anxious Research Inc.'
         }
       }
     : {})

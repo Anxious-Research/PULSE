@@ -21,7 +21,7 @@ import pulse_cli.auth as auth
 def store_file(tmp_path):
     f = tmp_path / "auth.json"
     f.write_text(
-        json.dumps({"version": 1, "providers": {"nous": {"api_key": "secret"}}}),
+        json.dumps({"version": 1, "providers": {"pulse": {"api_key": "secret"}}}),
         encoding="utf-8",
     )
     return f
@@ -66,4 +66,4 @@ def test_unparseable_json_still_degrades_and_preserves_a_copy(store_file):
 
 def test_healthy_store_is_returned_unchanged(store_file):
     result = auth._load_auth_store(store_file)
-    assert result["providers"]["nous"]["api_key"] == "secret"
+    assert result["providers"]["pulse"]["api_key"] == "secret"

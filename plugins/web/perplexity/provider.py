@@ -21,8 +21,8 @@ Env vars::
     PERPLEXITY_API_KEY=...       # required for direct search and extract
     PERPLEXITY_BASE_URL=...      # optional override of https://api.perplexity.ai
 
-No anonymous tier. The Nous Subscription selection serves search through
-``perplexity-gateway.<TOOL_GATEWAY_DOMAIN>`` using the Nous token; a direct
+No anonymous tier. The PULSE Subscription selection serves search through
+``perplexity-gateway.<TOOL_GATEWAY_DOMAIN>`` using the PULSE token; a direct
 key takes precedence. Managed extract stays on Firecrawl.
 
 Extract caveat: Perplexity's only supported page-content route returns the
@@ -71,7 +71,7 @@ def _missing_key_error() -> str:
 
 
 def _managed_gateway(token_reader=None):
-    """Nous Tool Gateway config when web_search is on the managed route, else None."""
+    """PULSE Tool Gateway config when web_search is on the managed route, else None."""
     from tools import managed_tool_gateway as gw
     from tools.web_tools import _managed_web_search
 
@@ -92,8 +92,8 @@ def _perplexity_request(endpoint: str, payload: Dict[str, Any], gateway=None) ->
     api_key = get_provider_env("PERPLEXITY_API_KEY")
     headers = _HEADERS
     if gateway is not None:
-        # Nous-owned key behind the gateway: identify the harness only, not a per-user integration.
-        base_url, api_key, headers = gateway.gateway_origin.rstrip("/"), gateway.nous_user_token, {"User-Agent": _HEADERS["User-Agent"]}
+        # PULSE-owned key behind the gateway: identify the harness only, not a per-user integration.
+        base_url, api_key, headers = gateway.gateway_origin.rstrip("/"), gateway.pulse_user_token, {"User-Agent": _HEADERS["User-Agent"]}
     elif api_key:
         base_url = (get_provider_env("PERPLEXITY_BASE_URL") or _DEFAULT_BASE_URL).rstrip("/")
     else:
@@ -183,11 +183,11 @@ class PerplexityWebSearchProvider(WebSearchProvider):
         return "Perplexity"
 
     def is_available(self) -> bool:
-        """True with a ``PERPLEXITY_API_KEY``, or on the managed route with a likely-usable Nous token."""
+        """True with a ``PERPLEXITY_API_KEY``, or on the managed route with a likely-usable PULSE token."""
         from agent.web_search_provider import get_provider_env
-        from tools.managed_tool_gateway import peek_nous_access_token
+        from tools.managed_tool_gateway import peek_pulse_access_token
 
-        return bool(get_provider_env("PERPLEXITY_API_KEY")) or _managed_gateway(token_reader=peek_nous_access_token) is not None
+        return bool(get_provider_env("PERPLEXITY_API_KEY")) or _managed_gateway(token_reader=peek_pulse_access_token) is not None
 
     def supports_search(self) -> bool:
         return True
@@ -214,9 +214,9 @@ class PerplexityWebSearchProvider(WebSearchProvider):
             direct = bool(get_provider_env("PERPLEXITY_API_KEY"))
             gateway = None if direct else _managed_gateway()
             if gateway is None and not direct and _managed_web_search():
-                from tools.tool_backend_helpers import NOUS_MANAGED_PROVIDER, selection_error
+                from tools.tool_backend_helpers import PULSE_MANAGED_PROVIDER, selection_error
                 raise ValueError(selection_error(
-                    "web", NOUS_MANAGED_PROVIDER, "the Nous Tool Gateway is not available (not entitled or unreachable)"))
+                    "web", PULSE_MANAGED_PROVIDER, "the PULSE Tool Gateway is not available (not entitled or unreachable)"))
             logger.info("Perplexity search: '%s' (limit=%d%s)", query, limit, ", managed" if gateway else "")
             payload = {
                 "query": query,

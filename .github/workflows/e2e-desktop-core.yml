@@ -76,7 +76,7 @@ jobs:
           PULSE_E2E_REQUIRE_PACKAGED: '1'
           OPENROUTER_API_KEY: ''
           OPENAI_API_KEY: ''
-          NOUS_API_KEY: ''
+          PULSE_API_KEY: ''
           ANTHROPIC_API_KEY: ''
 
       - name: Upload failure artifacts

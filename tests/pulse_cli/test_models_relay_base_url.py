@@ -19,7 +19,7 @@ class _RecordingProfile:
         return ["relay-only-model"]
 
 
-@pytest.mark.parametrize("provider", ["openai-codex", "copilot", "nous", "opencode-zen", "openrouter"])
+@pytest.mark.parametrize("provider", ["openai-codex", "copilot", "pulse", "opencode-zen", "openrouter"])
 def test_canonical_url_preserves_native_catalog_but_other_paths_stay_relays(monkeypatch, provider):
     from pulse_cli.config import atomic_config_write
     from pulse_constants import get_pulse_home

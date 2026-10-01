@@ -21,10 +21,10 @@ def channel_request(commit: str, sequence: int = 65536) -> dict:
         "windowsVersion": f"0.{sequence // 65536}.{sequence % 65536}.0",
         "identity": {
             "token": token, "displayName": "PULSE unregistered-preview",
-            "appId": f"com.nousresearch.pulse-channel-{token}",
+            "appId": f"com.anxious-research.pulse-channel-{token}",
             "appNamePascal": f"PULSEChannel{token}", "artifactNamePascal": "PULSEBundled",
             "cliName": "pulse-unregistered-preview", "windowsExecutableName": "pulse-unregistered-preview",
-            "msixAppIdWithOrg": f"NousResearch.PULSEChannel{token}",
+            "msixAppIdWithOrg": f"AnxiousResearch.PULSEChannel{token}",
         },
         "bundleEnv": {"PULSE_GUEST_ONBOARDING": "1", "PULSE_HOME": None},
         "publicBase": "https://builds.example.test",

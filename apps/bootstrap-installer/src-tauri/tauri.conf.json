@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "PULSE",
   "version": "0.0.0",
-  "identifier": "com.nousresearch.pulse.setup",
+  "identifier": "com.anxious-research.pulse.setup",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://127.0.0.1:5175",
@@ -36,8 +36,8 @@
     "category": "DeveloperTool",
     "shortDescription": "PULSE",
     "longDescription": "Installs PULSE Agent on your machine. Drives scripts/install.ps1 (Windows) and scripts/install.sh (macOS/Linux).",
-    "publisher": "Nous Research",
-    "copyright": "Copyright © 2026 Nous Research",
+    "publisher": "Anxious Research",
+    "copyright": "Copyright © 2026 Anxious Research",
     "targets": [
       "app",
       "dmg",

@@ -1,7 +1,7 @@
-"""Live A/B of the Nous hourly-expiry stampede, no real network.
+"""Live A/B of the PULSE hourly-expiry stampede, no real network.
 
 Local server: accepts bearer FRESH, returns 401 {"type":"authentication_error", "Your API key is invalid,
-blocked or out of funds..."} for any other bearer. resolve_nous_runtime_credentials is patched to return
+blocked or out of funds..."} for any other bearer. resolve_pulse_runtime_credentials is patched to return
 FRESH (standing in for the auth store the keepalive/peers have refreshed). N agents are built holding a
 STALE JWT that expires in 30 s and each fires one API call concurrently. Count 401s the server saw.
 
@@ -53,15 +53,15 @@ srv = ThreadingHTTPServer(("127.0.0.1", 0), H); threading.Thread(target=srv.serv
 base = f"http://127.0.0.1:{srv.server_address[1]}/v1"
 
 import pulse_cli.auth as auth_mod
-auth_mod.resolve_nous_runtime_credentials = lambda **kw: {"api_key": FRESH, "base_url": base}
-import pulse_cli.nous_auth_keepalive as ka
-ka.start_nous_auth_keepalive = lambda **kw: None  # thread itself is out of scope here; we test adoption
+auth_mod.resolve_pulse_runtime_credentials = lambda **kw: {"api_key": FRESH, "base_url": base}
+import pulse_cli.pulse_auth_keepalive as ka
+ka.start_pulse_auth_keepalive = lambda **kw: None  # thread itself is out of scope here; we test adoption
 
 from run_agent import AIAgent
 
 agents = []
 for i in range(n):
-    a = AIAgent(api_key=STALE, base_url=base, provider="nous", model="test/model", quiet_mode=True,
+    a = AIAgent(api_key=STALE, base_url=base, provider="pulse", model="test/model", quiet_mode=True,
                 skip_context_files=True, skip_memory=True)
     a.api_mode = "chat_completions"
     a._interrupt_requested = False

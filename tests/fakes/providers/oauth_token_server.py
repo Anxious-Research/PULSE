@@ -15,7 +15,7 @@ flows PULSE drives but does not own:
   approving, recording the arrival time of every poll so a test can assert the
   client honoured ``interval`` and the ``slow_down`` +5 s back-off (§3.5).
 
-Both the Anthropic (``/v1/oauth/token``) and Nous Portal (``/api/oauth/token``)
+Both the Anthropic (``/v1/oauth/token``) and Pulse Portal (``/api/oauth/token``)
 paths are served; request bodies may be form-encoded or JSON.
 
 :class:`TLSInterceptProxy` lets a client whose token URL is a hardcoded

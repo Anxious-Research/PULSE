@@ -7,8 +7,8 @@ from unittest.mock import patch
 
 import pytest
 
-from pulse_cli.nous_account import NousPortalAccountInfo, NousToolAccessInfo
-from pulse_cli.nous_subscription import NousSubscriptionFeatures
+from pulse_cli.pulse_account import NousPortalAccountInfo, NousToolAccessInfo
+from pulse_cli.pulse_subscription import NousSubscriptionFeatures
 from pulse_cli.tools_config import (
     _DEFAULT_OFF_TOOLSETS,
     _RECENTLY_SHIPPED_TOOLSETS,
@@ -248,15 +248,15 @@ def test_save_platform_tools_preserves_mcp_server_names():
 
 
 
-def test_first_install_nous_auto_configures_video_gen(monkeypatch):
-    """When a Nous subscriber checks video_gen in the toolset checklist,
-    apply_nous_managed_defaults must write video_gen.provider and
+def test_first_install_pulse_auto_configures_video_gen(monkeypatch):
+    """When a PULSE subscriber checks video_gen in the toolset checklist,
+    apply_pulse_managed_defaults must write video_gen.provider and
     video_gen.use_gateway so the FAL plugin can route through the gateway
     at runtime.  Regression test for the bug where video_gen was marked as
     auto-configured but no config was actually written."""
-    monkeypatch.setattr("tools.tool_backend_helpers.managed_nous_tools_enabled", lambda: True)
+    monkeypatch.setattr("tools.tool_backend_helpers.managed_pulse_tools_enabled", lambda: True)
     config = {
-        "model": {"provider": "nous"},
+        "model": {"provider": "pulse"},
         "platform_toolsets": {"cli": []},
     }
     for env_var in (
@@ -285,7 +285,7 @@ def test_first_install_nous_auto_configures_video_gen(monkeypatch):
         lambda: ["cli"],
     )
     monkeypatch.setattr(
-        "pulse_cli.nous_subscription.get_nous_portal_account_info",
+        "pulse_cli.pulse_subscription.get_pulse_portal_account_info",
         lambda *args, **kwargs: NousPortalAccountInfo(
             logged_in=True,
             source="jwt",
@@ -302,7 +302,7 @@ def test_first_install_nous_auto_configures_video_gen(monkeypatch):
 
     tools_command(first_install=True, config=config)
 
-    assert config["video_gen"]["provider"] == "nous"
+    assert config["video_gen"]["provider"] == "pulse"
     assert "use_gateway" not in config["video_gen"]
     # video_gen should NOT appear in the manual configure list — it's auto-configured
     assert "video_gen" not in configured
@@ -635,14 +635,14 @@ def test_visible_providers_reuses_logged_out_feature_snapshot(monkeypatch):
     )
     features = NousSubscriptionFeatures(
         subscribed=False,
-        nous_auth_present=False,
-        provider_is_nous=False,
+        pulse_auth_present=False,
+        provider_is_pulse=False,
         features={},
         account_info=account,
     )
     monkeypatch.setattr(
         tools_config,
-        "get_nous_subscription_features",
+        "get_pulse_subscription_features",
         lambda *args, **kwargs: pytest.fail("feature snapshot was resolved again"),
     )
 
@@ -651,7 +651,7 @@ def test_visible_providers_reuses_logged_out_feature_snapshot(monkeypatch):
     )
 
     assert any(
-        provider.get("managed_nous_feature") == "image_gen"
+        provider.get("managed_pulse_feature") == "image_gen"
         for provider in providers
     )
 
@@ -671,14 +671,14 @@ def test_visible_providers_reuses_pool_video_feature_snapshot(monkeypatch):
     )
     features = NousSubscriptionFeatures(
         subscribed=True,
-        nous_auth_present=True,
-        provider_is_nous=False,
+        pulse_auth_present=True,
+        provider_is_pulse=False,
         features={},
         account_info=account,
     )
     monkeypatch.setattr(
         tools_config,
-        "get_nous_subscription_features",
+        "get_pulse_subscription_features",
         lambda *args, **kwargs: pytest.fail("feature snapshot was resolved again"),
     )
 
@@ -687,7 +687,7 @@ def test_visible_providers_reuses_pool_video_feature_snapshot(monkeypatch):
     )
 
     assert not any(
-        provider.get("managed_nous_feature") == "video_gen"
+        provider.get("managed_pulse_feature") == "video_gen"
         for provider in providers
     )
 
@@ -696,13 +696,13 @@ def test_visible_providers_reuses_pool_video_feature_snapshot(monkeypatch):
 
 # ── One managed image row ─────────────────────────────────────────────────────
 #
-# FAL, Krea and Portal models all live behind the single "Nous Subscription" row; the stored
+# FAL, Krea and Portal models all live behind the single "PULSE Subscription" row; the stored
 # model id picks the gateway. Before, the Portal plugin rendered its own row that also wrote
-# `provider: nous`, so two rows read active at once and the Portal pick generated on FAL.
+# `provider: pulse`, so two rows read active at once and the Portal pick generated on FAL.
 
 
 def _managed_image_row() -> dict:
-    return next(p for p in TOOL_CATEGORIES["image_gen"]["providers"] if p.get("managed_nous_feature") == "image_gen")
+    return next(p for p in TOOL_CATEGORIES["image_gen"]["providers"] if p.get("managed_pulse_feature") == "image_gen")
 
 
 def test_exactly_one_image_row_is_active_for_a_managed_selection(monkeypatch):
@@ -710,12 +710,12 @@ def test_exactly_one_image_row_is_active_for_a_managed_selection(monkeypatch):
     from pulse_cli.tools_config_providers import _plugin_image_gen_providers
 
     monkeypatch.setattr(
-        tools_config, "get_nous_subscription_features",
-        lambda config, **kwargs: SimpleNamespace(features={"image_gen": SimpleNamespace(managed_by_nous=True)}),
+        tools_config, "get_pulse_subscription_features",
+        lambda config, **kwargs: SimpleNamespace(features={"image_gen": SimpleNamespace(managed_by_pulse=True)}),
     )
     rows = TOOL_CATEGORIES["image_gen"]["providers"] + _plugin_image_gen_providers()
     for model in ("fal-ai/flux-2/klein/9b", "krea-2-medium", "google/gemini-3-pro-image"):
-        config = {"image_gen": {"provider": "nous", "model": model}}
+        config = {"image_gen": {"provider": "pulse", "model": model}}
         active = [r["name"] for r in rows if tools_config._is_provider_active(r, config)]
         assert active == [_managed_image_row()["name"]], (model, active)
 
@@ -728,7 +728,7 @@ def test_gui_model_catalog_for_the_managed_row_spans_every_managed_gateway(monke
 
     paid = NousPortalAccountInfo(logged_in=True, source="jwt", fresh=False, paid_service_access=True)
     monkeypatch.setattr(
-        tools_config, "get_nous_subscription_features",
+        tools_config, "get_pulse_subscription_features",
         lambda *args, **kwargs: SimpleNamespace(features={}, account_info=paid))
     plugin = _resolve_toolset_model_plugin("image_gen", _managed_image_row())
     catalog, default_model = _toolset_model_catalog("image_gen", plugin, {})
@@ -746,7 +746,7 @@ def test_pool_only_account_is_offered_fal_models_only(monkeypatch):
         logged_in=True, source="jwt", fresh=False, paid_service_access=False,
         tool_access=NousToolAccessInfo(enabled=True, coverage={"fal": True, "krea": False}))
     monkeypatch.setattr(
-        tools_config, "get_nous_subscription_features",
+        tools_config, "get_pulse_subscription_features",
         lambda *args, **kwargs: SimpleNamespace(features={}, account_info=pool))
     catalog, _ = _managed_image_catalog({})
 

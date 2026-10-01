@@ -2,20 +2,20 @@
  * Built-in desktop themes. Names match the CLI skins / dashboard presets.
  * Add new themes here — no code changes needed elsewhere.
  *
- * The palette-bearing skins (nous, catppuccin, everforest, solarized) are forks
+ * The palette-bearing skins (pulse, catppuccin, everforest, solarized) are forks
  * of their VS Code originals, converted by `buildThemeFromMarketplace` (see
  * ./install.ts) from the extensions below — the same path a Marketplace import
  * takes, so each is identical to installing the extension by hand and costs the
  * user neither the download nor the install step.
  *
- *   nous       ← github.github-vscode-theme   (Light Default / Dark Default)
+ *   pulse       ← github.github-vscode-theme   (Light Default / Dark Default)
  *   catppuccin ← Catppuccin.catppuccin-vsc    (Latte / Mocha)
  *   everforest ← sainnhe.everforest
  *   solarized  ← ryanolsonx.solarized
  *
  * Re-convert marketplace forks from the upstream extension rather than
  * hand-editing hexes; hand edits drift from upstream silently and can't be
- * re-derived. `nous-alt` is first-party — do not re-derive it from GitHub.
+ * re-derived. `pulse-alt` is first-party — do not re-derive it from GitHub.
  */
 
 import { THEME_PRESET_PALETTES } from '@pulse/shared'
@@ -45,7 +45,7 @@ const SYSTEM_MONO =
 export const DEFAULT_TYPOGRAPHY: DesktopThemeTypography = { fontSans: SYSTEM_SANS, fontMono: SYSTEM_MONO }
 
 /**
- * Nous — the canonical PULSE desktop identity, forked from the GitHub VS Code
+ * PULSE — the canonical PULSE desktop identity, forked from the GitHub VS Code
  * theme (github.github-vscode-theme). Light is GitHub Light Default, dark is
  * GitHub Dark Default, both converted through the same path a Marketplace
  * install takes, so the palette here is byte-identical to importing the
@@ -57,10 +57,10 @@ export const DEFAULT_TYPOGRAPHY: DesktopThemeTypography = { fontSans: SYSTEM_SAN
 /**
  * GitHub — the upstream palette, unmodified.
  *
- * `nous` is a fork of this with its own accent, so shipping both keeps the
+ * `pulse` is a fork of this with its own accent, so shipping both keeps the
  * original available on its own terms instead of only existing as the thing
- * nous diverged from. Everything but the accent family is identical between
- * them; separate presets are what let nous's accent move without silently
+ * pulse diverged from. Everything but the accent family is identical between
+ * them; separate presets are what let pulse's accent move without silently
  * redefining what "GitHub" means.
  */
 export const githubTheme: DesktopTheme = {
@@ -116,7 +116,7 @@ export const githubTheme: DesktopTheme = {
 /** Catppuccin — Latte in light, Mocha in dark (Catppuccin.catppuccin-vsc). */
 
 /**
- * Nous — the canonical PULSE desktop identity: GitHub's chrome carrying Nous
+ * PULSE — the canonical PULSE desktop identity: GitHub's chrome carrying PULSE
  * blue. Forked from github.github-vscode-theme (Light Default / Dark Default),
  * with only the accent family re-seeded; every neutral is upstream's.
  *
@@ -126,11 +126,11 @@ export const githubTheme: DesktopTheme = {
  * surfaces below are mixed from those seeds in OKLab, which is what keeps a
  * saturated blue from drifting violet on its way to white.
  */
-export const nousTheme: DesktopTheme = {
-  name: 'nous',
-  label: 'Nous',
-  description: 'GitHub chrome, Nous blue accent',
-  ...THEME_PRESET_PALETTES.nous,
+export const pulseTheme: DesktopTheme = {
+  name: 'pulse',
+  label: 'PULSE',
+  description: 'GitHub chrome, PULSE blue accent',
+  ...THEME_PRESET_PALETTES.pulse,
   typography: {
     fontSans: SYSTEM_SANS,
     fontMono: SYSTEM_MONO,
@@ -323,14 +323,14 @@ export const solarizedTheme: DesktopTheme = {
 }
 
 /**
- * Nous Alt — the hand-authored Nous from before the GitHub fork. Light is
+ * PULSE Alt — the hand-authored PULSE from before the GitHub fork. Light is
  * glass neutrals with brand blue; dark is cream on mission-blue.
  */
-export const nousAltTheme: DesktopTheme = {
-  name: 'nous-alt',
-  label: 'Nous Alt',
+export const pulseAltTheme: DesktopTheme = {
+  name: 'pulse-alt',
+  label: 'PULSE Alt',
   description: 'Glass neutrals, cream on mission-blue',
-  ...THEME_PRESET_PALETTES['nous-alt'],
+  ...THEME_PRESET_PALETTES['pulse-alt'],
   typography: {
     fontSans: SYSTEM_SANS,
     fontMono: SYSTEM_MONO,
@@ -396,12 +396,12 @@ export const slateTheme: DesktopTheme = {
 }
 
 export const BUILTIN_THEMES: Record<string, DesktopTheme> = {
-  nous: nousTheme,
+  pulse: pulseTheme,
   github: githubTheme,
   catppuccin: catppuccinTheme,
   everforest: everforestTheme,
   solarized: solarizedTheme,
-  'nous-alt': nousAltTheme,
+  'pulse-alt': pulseAltTheme,
   midnight: midnightTheme,
   ember: emberTheme,
   mono: monoTheme,
@@ -412,4 +412,4 @@ export const BUILTIN_THEMES: Record<string, DesktopTheme> = {
 export const BUILTIN_THEME_LIST = Object.values(BUILTIN_THEMES)
 
 /** Skin used when nothing is persisted or the persisted name is retired. */
-export const DEFAULT_SKIN_NAME = 'nous'
+export const DEFAULT_SKIN_NAME = 'pulse'

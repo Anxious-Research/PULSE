@@ -47,11 +47,11 @@ def guest(tmp_path, monkeypatch):
     monkeypatch.setenv("PULSE_GUEST_ONBOARDING", "1")
     with _auth_store_lock():
         store = _load_auth_store()
-        store.setdefault("providers", {})["nous"] = {
+        store.setdefault("providers", {})["pulse"] = {
             "auth_method": anon_auth.ANON_AUTH_METHOD, "account_tier": "anonymous", "anon_token": "anon_0001",
             "client_id": "nas-anonymous", "access_token": _jwt(), "expires_at": "2999-01-01T00:00:00+00:00",
             "inference_base_url": "https://welcome-api.anxious-research.com/v1"}
-        store["active_provider"] = "nous"
+        store["active_provider"] = "pulse"
         _save_auth_store(store)
 
 
@@ -64,13 +64,13 @@ def _set_guest_off(monkeypatch):
 def test_status_is_pull_from_local_state_and_ack_persists_on_the_identity(guest, monkeypatch):
     status = _call("free_tier.status")
     assert status == {"has_guest": True, "enabled": True, "available": True, "notice_pending": True,
-                      "model": "nous/welcome", "label": anon_auth.FREE_TIER_LABEL}
+                      "model": "pulse/welcome", "label": anon_auth.FREE_TIER_LABEL}
 
     assert _call("free_tier.ack_notice") == {"acked": True}
     assert _call("free_tier.status")["notice_pending"] is False
-    assert _load_auth_store()["providers"]["nous"][anon_auth.GUEST_NOTICE_FLAG] is True
+    assert _load_auth_store()["providers"]["pulse"][anon_auth.GUEST_NOTICE_FLAG] is True
 
-    # nous.guest: false -> the identity exists but carries nothing; no notice either.
+    # pulse.guest: false -> the identity exists but carries nothing; no notice either.
     _set_guest_off(monkeypatch)
     status = _call("free_tier.status")
     assert status["has_guest"] is True and status["enabled"] is False
@@ -82,7 +82,7 @@ def test_billing_state_answers_the_free_tier_locally(guest, monkeypatch):
     monkeypatch.setattr(bv, "build_billing_state", lambda *a, **kw: pytest.fail("free tier must not call the portal"))
     res = _call("billing.state")
     assert res["ok"] is True and res["logged_in"] is False
-    assert res["free_tier_account"] is True and res["free_tier_model"] == "nous/welcome"
+    assert res["free_tier_account"] is True and res["free_tier_model"] == "pulse/welcome"
     assert res["usage"] == {"available": False}
 
     _set_guest_off(monkeypatch)
@@ -114,10 +114,10 @@ def test_provision_sets_the_free_tier_up_through_the_lifecycle_primitive(tmp_pat
         calls.append(kw)
         with _auth_store_lock():
             store = _load_auth_store()
-            store.setdefault("providers", {})["nous"] = {
+            store.setdefault("providers", {})["pulse"] = {
                 "auth_method": anon_auth.ANON_AUTH_METHOD, "account_tier": "anonymous", "anon_token": "anon_0002"}
             _save_auth_store(store)
-        return store["providers"]["nous"]
+        return store["providers"]["pulse"]
 
     monkeypatch.setattr(anon_auth, "ensure_portal_identity", fake_provision)
     assert _call("free_tier.provision") == {"has_guest": True, "enabled": True}
@@ -126,10 +126,10 @@ def test_provision_sets_the_free_tier_up_through_the_lifecycle_primitive(tmp_pat
     assert len(calls) == 1                       # idempotent: an identity exists, nothing is minted
 
     def refused(**kw):
-        raise anon_auth.AuthError("Nous free tier is not open on this portal.", code="anon_gate_closed")
+        raise anon_auth.AuthError("PULSE free tier is not open on this portal.", code="anon_gate_closed")
 
     with _auth_store_lock():
-        store = _load_auth_store(); store["providers"].pop("nous"); _save_auth_store(store)
+        store = _load_auth_store(); store["providers"].pop("pulse"); _save_auth_store(store)
     # The real primitive memoises the refusal; the RPC reports that memo.
     monkeypatch.setattr(anon_auth, "ensure_portal_identity", real_ensure)
     monkeypatch.setattr(anon_auth, "_reconcile_and_provision", refused)

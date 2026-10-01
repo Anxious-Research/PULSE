@@ -125,7 +125,7 @@ authentication; manage sign-in from the registered connection controls.
        - **Session token** — paste the dashboard session token from the
          remote gateway. When editing, *"Leave blank to keep the saved
          token."*
-       - **OAuth** — sign in through the Nous Portal browser flow; no token
+       - **OAuth** — sign in through the Pulse Portal browser flow; no token
          to paste.
    - *SSH only:*
      - **SSH host** — one composite field in `user@host:22` form (user and

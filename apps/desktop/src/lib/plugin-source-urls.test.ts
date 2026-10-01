@@ -4,9 +4,9 @@ import { resolvePluginSourceLinks } from './plugin-source-urls'
 
 describe('resolvePluginSourceLinks', () => {
   it('maps owner/repo to github browse and clone urls', () => {
-    expect(resolvePluginSourceLinks('NousResearch/pulse-example-plugins')).toEqual({
-      gitUrl: 'https://github.com/NousResearch/pulse-example-plugins.git',
-      browseUrl: 'https://github.com/NousResearch/pulse-example-plugins',
+    expect(resolvePluginSourceLinks('AnxiousResearch/pulse-example-plugins')).toEqual({
+      gitUrl: 'https://github.com/AnxiousResearch/pulse-example-plugins.git',
+      browseUrl: 'https://github.com/AnxiousResearch/pulse-example-plugins',
       subdir: null
     })
   })

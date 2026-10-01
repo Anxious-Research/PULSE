@@ -36,8 +36,8 @@ Key capabilities:
 
 ## Setup
 
-:::tip Nous Subscribers
-If you have a paid [Nous Portal](https://portal.anxious-research.com) subscription, you can use browser automation through the **[Tool Gateway](tool-gateway.md)** without any separate API keys. New installs can run `pulse setup --portal` to log in and turn on every gateway tool at once; existing installs can pick **Nous Subscription** as the browser provider via `pulse model` or `pulse tools`.
+:::tip PULSE Subscribers
+If you have a paid [Pulse Portal](https://portal.anxious-research.com) subscription, you can use browser automation through the **[Tool Gateway](tool-gateway.md)** without any separate API keys. New installs can run `pulse setup --portal` to log in and turn on every gateway tool at once; existing installs can pick **PULSE Subscription** as the browser provider via `pulse model` or `pulse tools`.
 :::
 
 ### Browser Use cloud mode
@@ -66,7 +66,7 @@ BROWSERBASE_PROJECT_ID=your-project-id-here
 Get your credentials at [browserbase.com](https://browserbase.com).
 
 :::note Selecting the provider
-The `.env` keys above supply **credentials only**. The active cloud browser is chosen by the `browser.cloud_provider` selection written by `pulse tools` → Browser Automation (`browserbase`, `browser-use`, `camofox`, or `nous` for the Nous Subscription). Once a selection exists, adding or removing a key does not switch providers — and a selected provider with a missing key errors with guidance to run `pulse tools` instead of silently rerouting. Never-configured setups still autodetect from available credentials.
+The `.env` keys above supply **credentials only**. The active cloud browser is chosen by the `browser.cloud_provider` selection written by `pulse tools` → Browser Automation (`browserbase`, `browser-use`, `camofox`, or `pulse` for the PULSE Subscription). Once a selection exists, adding or removing a key does not switch providers — and a selected provider with a missing key errors with guidance to run `pulse tools` instead of silently rerouting. Never-configured setups still autodetect from available credentials.
 :::
 
 ### Browser Use mode (default)
@@ -75,7 +75,7 @@ Browser Use mode uses the [Browser Use CLI 3.0](https://github.com/browser-use/b
 
 **This is the default browser mode**: when `browser.backend` is unset, the agent gets the single `browser_exec` tool. Its engine is browser-harness (the Browser Use CLI is a thin wrapper around it), a regular Python dependency of PULSE, so every install ships it, including the Desktop app, with no separate download. If it is ever missing from PULSE's environment, PULSE falls back to the built-in browser tools and `pulse update` restores it.
 
-The mode is a **driver** that composes with your configured browser backend: it drives PULSE' own headless Chromium, a Nous-subscription cloud browser, Browserbase, Firecrawl, or Browser Use cloud browsers — whichever browser source is selected in `pulse tools` → Browser Automation. The one exception is Camofox, which has no CDP endpoint for the harness to attach to; Camofox setups automatically keep the built-in browser tools.
+The mode is a **driver** that composes with your configured browser backend: it drives PULSE' own headless Chromium, a PULSE-subscription cloud browser, Browserbase, Firecrawl, or Browser Use cloud browsers — whichever browser source is selected in `pulse tools` → Browser Automation. The one exception is Camofox, which has no CDP endpoint for the harness to attach to; Camofox setups automatically keep the built-in browser tools.
 
 **Local browsing uses the packaged Chromium, not your own Chrome.** With no cloud provider or `/browser connect` endpoint configured, PULSE launches the same Chromium that the built-in tools use (installed via `pulse tools` → Browser Automation, driven through agent-browser) and points the Browser Use CLI at it. Your installed Chrome is never touched, so there is no `chrome://inspect` remote-debugging toggle to enable and no "Allow remote debugging?" popup — and it works on headless hosts with no Chrome at all. The browser is shared with the built-in stack's lifecycle: it is closed after `browser.inactivity_timeout`, at exit, and by the orphan sweep. To drive a browser you're signed in to, use `/browser connect` or the [real-profile toggle](#real-profile-browsing-use-your-own-logins).
 
@@ -508,7 +508,7 @@ The engine works with both browser drivers:
 - **Browser Use mode (the default).** PULSE launches `lightpanda serve --host 127.0.0.1 --port <free>` itself — one process per `browser_exec` session name (or per task) — and points the Browser Use CLI at it. No Chromium, Playwright or Node.js is needed. The process is reaped after `browser.inactivity_timeout`, on exit, and by the orphan sweep if PULSE crashes. All of these processes share one on-disk HTTP cache at `$PULSE_HOME/cache/browser-use/lightpanda/http-cache`, so repeat visits skip re-downloading assets. PULSE passes the cache flag only when the installed Lightpanda supports it (0.3.x+); older binaries simply run without a cache. To clear it, stop your Lightpanda sessions first, then delete that directory. Lightpanda has no graphical renderer, so `capture_screenshot()` is unavailable and the tool description tells the model to work text-first; it also holds one page per session, so the model is told to call `new_tab()` once and `goto_url()` afterwards (tracked upstream in [lightpanda-io/browser#1962](https://github.com/lightpanda-io/browser/issues/1962)).
 - **Built-in browser tools** (`/browser use off`). PULSE drives Lightpanda through `agent-browser --engine lightpanda` over CDP, the same way it drives local Chrome, with **automatic Chrome fallback**: Lightpanda handles the actions it supports (navigate, snapshot, click, type, scroll, back, press, eval) and PULSE transparently retries on Chrome for anything it doesn't. Screenshots and `browser_vision` are routed straight to Chrome.
 
-**When the engine is ignored.** `browser.engine` is the lowest-precedence browser setting: a cloud provider (including the Nous subscription browser — and on never-configured setups, any `BROWSERBASE_API_KEY` / `BROWSER_USE_API_KEY` in `~/.pulse/.env` auto-selects one), Camofox, a `browser.cdp_url` / `/browser connect` override, or `browser.use_real_profile` all take precedence. Picking Lightpanda in `pulse tools` writes `cloud_provider: local` for you; `/browser status` and `pulse doctor` report when the engine is configured but shadowed, and by what.
+**When the engine is ignored.** `browser.engine` is the lowest-precedence browser setting: a cloud provider (including the PULSE subscription browser — and on never-configured setups, any `BROWSERBASE_API_KEY` / `BROWSER_USE_API_KEY` in `~/.pulse/.env` auto-selects one), Camofox, a `browser.cdp_url` / `/browser connect` override, or `browser.use_real_profile` all take precedence. Picking Lightpanda in `pulse tools` writes `cloud_provider: local` for you; `/browser status` and `pulse doctor` report when the engine is configured but shadowed, and by what.
 
 ### Local Chromium-family browser via CDP (`/browser connect`)
 
@@ -655,7 +655,7 @@ The `browser` toolset must be included in your config's `toolsets` list or enabl
 Navigate to a URL. Must be called before any other browser tool. Initializes the Browserbase session.
 
 ```
-Navigate to https://github.com/NousResearch
+Navigate to https://github.com/AnxiousResearch
 ```
 
 :::tip

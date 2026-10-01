@@ -852,7 +852,7 @@ class TestWindowsLockedProfileCopy:
         con = sqlite3.connect(ck)
         con.execute("create table cookies(host_key, name)")
         con.executemany("insert into cookies values(?,?)",
-                        [("nous.ai", f"c{i}") for i in range(42)])
+                        [("pulse.ai", f"c{i}") for i in range(42)])
         con.commit()
         return root, con  # caller keeps con open to simulate the live lock
 

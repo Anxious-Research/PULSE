@@ -2,7 +2,7 @@
 
 A host that mints one physical ``session_id`` per RESPONSE re-keys every
 conversation-affinity hint PULSE sends — ``prompt_cache_key`` on both
-OpenAI-wire transports, the OpenRouter/Nous sticky ``session_id``, and xAI's
+OpenAI-wire transports, the OpenRouter/PULSE sticky ``session_id``, and xAI's
 ``x-grok-conv-id`` — so the conversation never lands back on the routing
 bucket it warmed. PULSE cannot infer the logical conversation from the id's
 syntax (#79017's failure class), but it does not have to: the host declares
@@ -380,7 +380,7 @@ class TestPromptCacheKeyStability:
 
 
 class TestProviderStickyKeys:
-    """OpenRouter / Nous sticky ids and x-grok-conv-id read the same scope."""
+    """OpenRouter / PULSE sticky ids and x-grok-conv-id read the same scope."""
 
     @pytest.fixture(autouse=True)
     def _clean_context(self):
@@ -423,14 +423,14 @@ class TestProviderStickyKeys:
 
         assert headers["x-grok-conv-id"] == headers_next["x-grok-conv-id"] == scope
 
-    def test_nous_sticky_key_follows_the_declared_scope(self):
+    def test_pulse_sticky_key_follows_the_declared_scope(self):
         from providers import get_provider_profile
 
         scope = declared_conversation_scope(_agent(RUN_1, None, CHAT_KEY))
         token = set_affinity_scope(scope)
         try:
-            body = get_provider_profile("nous").build_extra_body(session_id=RUN_1)
-            body_next = get_provider_profile("nous").build_extra_body(session_id=RUN_2)
+            body = get_provider_profile("pulse").build_extra_body(session_id=RUN_1)
+            body_next = get_provider_profile("pulse").build_extra_body(session_id=RUN_2)
         finally:
             reset_affinity_scope(token)
 

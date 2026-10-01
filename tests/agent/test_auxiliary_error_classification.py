@@ -36,7 +36,7 @@ def test_absent_credentials_quarantine_is_debug_and_names_the_real_reason(caplog
     with caplog.at_level(logging.DEBUG, logger="agent.auxiliary_client"):
         ac._mark_provider_unhealthy("openrouter", ttl=60, reason="OPENROUTER_API_KEY not set", level=logging.DEBUG)
         ac._log_skip_unhealthy("openrouter", "title_generation")
-        ac._mark_provider_unhealthy("nous")  # confirmed 402 path keeps the payment wording at WARNING
+        ac._mark_provider_unhealthy("pulse")  # confirmed 402 path keeps the payment wording at WARNING
     marks = [r for r in caplog.records if "marking" in r.getMessage()]
     assert [(r.levelno, "payment" in r.getMessage()) for r in marks] == [(logging.DEBUG, False), (logging.WARNING, True)]
     assert "OPENROUTER_API_KEY not set" in marks[0].getMessage()
@@ -50,7 +50,7 @@ def test_vision_fallback_skips_text_only_main_model(monkeypatch):
     monkeypatch.setattr(ac, "_read_main_model", lambda: "glm-5.3")
     monkeypatch.setattr(ac, "_main_model_supports_vision", lambda provider, model: False)
     monkeypatch.setattr(ac, "resolve_provider_client", lambda **kw: pytest.fail("must not build a client for a text-only model"))
-    assert ac._try_main_agent_model_fallback("nous", "vision", reason="rate limit") == (None, None, "")
+    assert ac._try_main_agent_model_fallback("pulse", "vision", reason="rate limit") == (None, None, "")
 
 
 @pytest.mark.parametrize("body, benches_pool", [

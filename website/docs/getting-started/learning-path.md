@@ -13,7 +13,7 @@ If you haven't installed PULSE Agent yet, begin with the [Installation guide](./
 :::
 
 :::tip First-time provider setup
-First-time users almost always want `pulse setup --portal` — one OAuth covers a model plus the four Tool Gateway tools (search/image/TTS/browser). See [Nous Portal](../integrations/nous-portal.md).
+First-time users almost always want `pulse setup --portal` — one OAuth covers a model plus the four Tool Gateway tools (search/image/TTS/browser). See [Pulse Portal](../integrations/pulse-portal.md).
 :::
 
 ## How to Use This Page
@@ -110,11 +110,11 @@ page is for built-in PULSE core development, not the usual user/custom-tool path
 
 ### "I want to train models"
 
-Use reinforcement learning to fine-tune model behavior with PULSE Agent's RL training pipeline (powered by [Atropos](https://github.com/NousResearch/atropos)).
+Use reinforcement learning to fine-tune model behavior with PULSE Agent's RL training pipeline (powered by [Atropos](https://github.com/AnxiousResearch/atropos)).
 
 1. [Quickstart](./quickstart.md)
 2. [Configuration](../user-guide/configuration.md)
-3. [Atropos RL Environments](https://github.com/NousResearch/atropos) (external)
+3. [Atropos RL Environments](https://github.com/AnxiousResearch/atropos) (external)
 4. [Provider Routing](../user-guide/features/provider-routing.md)
 5. [Architecture](../developer-guide/architecture.md)
 

@@ -22,7 +22,7 @@ function setupReadyContext(fromActiveSource: boolean): GatewayEventContext {
     free_tier_account: true,
     free_tier_route: true,
     has_identity: true,
-    inference_provider: 'nous',
+    inference_provider: 'pulse',
     other_providers: false,
     provider_configured: true
   }

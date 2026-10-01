@@ -58,7 +58,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  IMAGE_NAME: nousresearch/pulse-agent
+  IMAGE_NAME: anxious-research/pulse-agent
 
 jobs:
   # Resolve the release phase. Release modes run only via workflow_call from
@@ -252,7 +252,7 @@ jobs:
           # real-API calls from inside the harness.
           OPENROUTER_API_KEY: ""
           OPENAI_API_KEY: ""
-          NOUS_API_KEY: ""
+          PULSE_API_KEY: ""
         run: |
           # Each of these tests drives a container, so the docker daemon sets
           # the limit and not the processor. This pins the runner's worker
@@ -712,7 +712,7 @@ jobs:
           import json, sys
           manifest = json.load(open("/tmp/manifest/manifest.json"))
           manifest["list-digest"] = sys.argv[2]
-          manifest["image"] = "nousresearch/pulse-agent"
+          manifest["image"] = "anxious-research/pulse-agent"
           manifest["tags"] = [sys.argv[1]]
           json.dump(manifest, open("/tmp/manifest/manifest.json", "w"), indent=2)
           EOF

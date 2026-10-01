@@ -22,8 +22,8 @@ PULSE Agent 支持在 CLI 和消息平台上进行完整的语音交互。通过
 `~/.pulse/` 目录和默认的 `config.yaml` 会在首次运行 `pulse` 时自动创建。只需手动创建 `~/.pulse/.env` 来存放 API 密钥。
 :::
 
-:::tip Nous Portal 同时覆盖两项
-付费的 [Nous Portal](./tool-gateway.md) 订阅通过 Tool Gateway 同时提供 LLM（第 2 步）**和** OpenAI TTS — 无需单独的 OpenAI 密钥。全新安装时，`pulse setup --portal` 可一次性完成两项配置。
+:::tip Pulse Portal 同时覆盖两项
+付费的 [Pulse Portal](./tool-gateway.md) 订阅通过 Tool Gateway 同时提供 LLM（第 2 步）**和** OpenAI TTS — 无需单独的 OpenAI 密钥。全新安装时，`pulse setup --portal` 可一次性完成两项配置。
 :::
 
 ## 概览

@@ -1,6 +1,6 @@
 """``_pricing_cache`` keys on the credential, not just the base URL.
 
-Nous ``/v1/models`` answers each caller with the catalog their org may reach,
+PULSE ``/v1/models`` answers each caller with the catalog their org may reach,
 so an anonymous read, and two different tokens, must not share a cache entry.
 """
 
@@ -156,7 +156,7 @@ class TestPeekCachedPricing:
 
 
 class TestNousCatalogExpiry:
-    """A Nous catalog reflects the org's policy, which an admin can change while
+    """A PULSE catalog reflects the org's policy, which an admin can change while
     a long-lived process holds the entry."""
 
     def test_entry_expires_so_a_policy_change_is_picked_up(self, catalog, monkeypatch):

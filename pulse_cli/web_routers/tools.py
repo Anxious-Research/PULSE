@@ -172,7 +172,7 @@ def _resolve_toolset_model_plugin(ts_key: str, provider_row: dict) -> Optional[s
 
 def _toolset_model_catalog(ts_key: str, plugin_name: str, config: dict):
     """Return ``(catalog_dict, default_model)`` for a toolset's plugin backend or, for an image row's
-    ``imagegen_backend`` (``fal``, the managed ``nous`` union), that backend's catalog."""
+    ``imagegen_backend`` (``fal``, the managed ``pulse`` union), that backend's catalog."""
     from pulse_cli.tools_config import IMAGEGEN_BACKENDS, _plugin_image_gen_catalog, _plugin_video_gen_catalog
 
     if ts_key == "image_gen":
@@ -231,7 +231,7 @@ def _no_models(name: str) -> dict:
 async def get_toolsets(profile: Optional[str] = None):
     from pulse_cli.tools_config import (
         _CONFIG_ONLY_TOOLSETS, _get_effective_configurable_toolsets, _get_platform_tools,
-        _toolset_configuration_platform, _toolset_has_keys, get_nous_subscription_features,
+        _toolset_configuration_platform, _toolset_has_keys, get_pulse_subscription_features,
         gui_toolset_label)
     from pulse_cli.platforms import platform_label
     from toolsets import resolve_toolset
@@ -246,7 +246,7 @@ async def get_toolsets(profile: Optional[str] = None):
             enabled_by_platform = {
                 platform: _get_platform_tools(config, platform, include_default_mcp_servers=False)
                 for platform in target_platforms}
-            features = get_nous_subscription_features(config)
+            features = get_pulse_subscription_features(config)
             # Credential presence resolves through the profile's secret scope: outside this block
             # it read the dashboard process env (another profile's keys) or fails closed.
             configured = {name: _toolset_has_keys(name, config, features=features) for name, _, _ in toolset_rows}
@@ -350,7 +350,7 @@ async def get_toolset_config(name: str, profile: Optional[str] = None):
         TOOL_CATEGORIES, _is_provider_active, _visible_providers, provider_readiness_status,
         web_provider_capabilities)
     from pulse_cli.config import get_env_value
-    from pulse_cli.nous_subscription import get_nous_subscription_features
+    from pulse_cli.pulse_subscription import get_pulse_subscription_features
 
     _require_known_toolset(name)
 
@@ -362,7 +362,7 @@ async def get_toolset_config(name: str, profile: Optional[str] = None):
             active_provider = None
             if cat:
                 # Entitlement state fetched once for the whole matrix.
-                features = get_nous_subscription_features(config, force_fresh=True)
+                features = get_pulse_subscription_features(config, force_fresh=True)
                 for prov in _visible_providers(cat, config, force_fresh=True):
                     env_vars = [
                         {
@@ -381,10 +381,10 @@ async def get_toolset_config(name: str, profile: Optional[str] = None):
                         "tag": prov.get("tag", ""),
                         "env_vars": env_vars,
                         "post_setup": prov.get("post_setup"),
-                        "requires_nous_auth": bool(prov.get("requires_nous_auth")),
+                        "requires_pulse_auth": bool(prov.get("requires_pulse_auth")),
                         "is_active": is_active,
                         # Server-side readiness: zero-env-var rows are NOT
-                        # automatically ready (logged-out Nous rows, never-run
+                        # automatically ready (logged-out PULSE rows, never-run
                         # post_setup installs).
                         "status": provider_readiness_status(
                             prov, config, features=features, is_active=is_active)}
@@ -498,13 +498,13 @@ async def select_toolset_provider(
 
     ``web`` only: ``capability`` ('search' | 'extract') writes
     ``web.<capability>_backend`` (the override the dispatchers resolve first);
-    omitted -> legacy ``web.backend``.  Managed Nous rows report Portal
-    entitlement (``needs_nous_auth`` + ``feature``): the GUI has no inline
+    omitted -> legacy ``web.backend``.  Managed PULSE rows report Portal
+    entitlement (``needs_pulse_auth`` + ``feature``): the GUI has no inline
     login, so an unentitled selection would write config and never activate.
     """
     from pulse_cli.tools_config import apply_provider_selection, web_provider_capabilities
-    from pulse_cli.nous_subscription import (
-        MANAGED_FEATURE_COVERAGE_CATEGORY, get_nous_subscription_features)
+    from pulse_cli.pulse_subscription import (
+        MANAGED_FEATURE_COVERAGE_CATEGORY, get_pulse_subscription_features)
 
     _require_known_toolset(name)
 
@@ -547,13 +547,13 @@ async def select_toolset_provider(
                 if body.capability is not None:
                     response["capability"] = body.capability
 
-            # Entitlement check for managed Nous rows (mirrors the CLI's
-            # ensure_nous_portal_access gate).  Hits the Portal, so it runs AFTER
+            # Entitlement check for managed PULSE rows (mirrors the CLI's
+            # ensure_pulse_portal_access gate).  Hits the Portal, so it runs AFTER
             # releasing the mutation lock — still in the worker thread + scope.
             row = _provider_row(config)
-            managed_feature = (row or {}).get("managed_nous_feature")
+            managed_feature = (row or {}).get("managed_pulse_feature")
             if managed_feature:
-                features = get_nous_subscription_features(config, force_fresh=True)
+                features = get_pulse_subscription_features(config, force_fresh=True)
                 acct = features.account_info
                 category = MANAGED_FEATURE_COVERAGE_CATEGORY.get(managed_feature)
                 entitled = bool(
@@ -564,7 +564,7 @@ async def select_toolset_provider(
                         if category
                         else acct.tool_gateway_entitled))
                 if not entitled:
-                    response["needs_nous_auth"] = True
+                    response["needs_pulse_auth"] = True
                     response["feature"] = managed_feature
         return response
 

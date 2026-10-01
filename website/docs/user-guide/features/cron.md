@@ -31,7 +31,7 @@ All of this is available to PULSE itself through the `cronjob_manage` tool, so y
 
 Whichever provider a job resolves to, its provider-specific request settings (e.g. `request_overrides` such as `extra_body`/`extra_headers` for custom providers) carry into the scheduled run just like an interactive session.
 
-`pulse setup --portal` is the lowest-friction option for unattended runs since OAuth refresh is automatic. See [Nous Portal](../../integrations/nous-portal.md).
+`pulse setup --portal` is the lowest-friction option for unattended runs since OAuth refresh is automatic. See [Pulse Portal](../../integrations/pulse-portal.md).
 :::
 
 :::tip

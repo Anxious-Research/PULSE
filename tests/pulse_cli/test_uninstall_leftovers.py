@@ -48,7 +48,7 @@ def _fake_launchctl(monkeypatch, calls):
 def test_remove_launchd_gateway_sweeps_both_label_patterns(launch_agents, monkeypatch):
     current = launch_agents / "ai.pulse.gateway.plist"
     profiled = launch_agents / "ai.pulse.gateway-work.plist"
-    legacy = launch_agents / "io.nousresearch.pulse-agent.gateway.plist"
+    legacy = launch_agents / "io.anxious-research.pulse-agent.gateway.plist"
     unrelated = launch_agents / "com.other.agent.plist"
     for p in (current, profiled, legacy, unrelated):
         p.write_text("<plist/>", encoding="utf-8")
@@ -61,7 +61,7 @@ def test_remove_launchd_gateway_sweeps_both_label_patterns(launch_agents, monkey
     assert unrelated.exists()  # never touch another app's agent
     labels = {c[-1].rsplit("/", 1)[-1] for c in calls if c[1] == "bootout"}
     assert labels == {"ai.pulse.gateway", "ai.pulse.gateway-work",
-                      "io.nousresearch.pulse-agent.gateway"}
+                      "io.anxious-research.pulse-agent.gateway"}
     assert all(c[1] == "unload" for c in calls if c[1] == "unload")
 
 
@@ -80,11 +80,11 @@ def test_remove_desktop_app_leftovers_removes_pulse_library_entries(fake_home):
     library = fake_home / "Library"
     ours = []
     for parent, name in (
-        ("Caches", "com.nousresearch.pulse"),
+        ("Caches", "com.anxious-research.pulse"),
         ("Logs", "PULSE"),
-        ("WebKit", "com.nousresearch.pulse"),
-        ("HTTPStorages", "com.nousresearch.pulse"),
-        ("Saved Application State", "com.nousresearch.pulse.savedState"),
+        ("WebKit", "com.anxious-research.pulse"),
+        ("HTTPStorages", "com.anxious-research.pulse"),
+        ("Saved Application State", "com.anxious-research.pulse.savedState"),
     ):
         d = library / parent / name
         d.mkdir(parents=True)

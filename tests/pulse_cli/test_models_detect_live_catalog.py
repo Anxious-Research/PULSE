@@ -24,7 +24,7 @@ def live_catalog(monkeypatch):
 class TestCurrentProviderCatalogWins:
     @pytest.mark.parametrize("provider,model", [
         ("openai-codex", "gpt-6-astra"),       # early-access id, static Codex list lags
-        ("nous", "some-portal-only-model"),    # Portal serves it, static snapshot doesn't
+        ("pulse", "some-portal-only-model"),    # Portal serves it, static snapshot doesn't
         ("ollama-cloud", "glm-5.3-flash"),     # static list points at zai; OpenRouter has zai/…
     ])
     def test_served_model_stays_on_current_provider(self, live_catalog, provider, model):
@@ -32,12 +32,12 @@ class TestCurrentProviderCatalogWins:
         assert models.detect_provider_for_model(model, provider) is None
 
     def test_bare_name_resolves_to_current_providers_full_slug(self, live_catalog):
-        live_catalog["nous"] = ["zai/glm-5.3-flash"]
-        assert models.detect_provider_for_model("glm-5.3-flash", "nous") == ("nous", "zai/glm-5.3-flash")
+        live_catalog["pulse"] = ["zai/glm-5.3-flash"]
+        assert models.detect_provider_for_model("glm-5.3-flash", "pulse") == ("pulse", "zai/glm-5.3-flash")
 
     def test_unserved_model_still_walks_the_ladder(self, live_catalog, monkeypatch):
         from pulse_cli import models_detect
 
         monkeypatch.setattr(models_detect, "provider_has_credentials", lambda p: p == "openrouter")
-        live_catalog["nous"] = ["pulse-4-405b"]
-        assert models.detect_provider_for_model("no-such-model", "nous") == ("openrouter", "vendor/no-such-model")
+        live_catalog["pulse"] = ["pulse-4-405b"]
+        assert models.detect_provider_for_model("no-such-model", "pulse") == ("openrouter", "vendor/no-such-model")

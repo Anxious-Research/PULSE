@@ -77,7 +77,7 @@ MANAGE_CONNECTIONS_SCHEMA = {
         "callable at once through tool_describe/tool_call. Where no card exists an MCP target runs at once and the result says what "
         "happened, with a link for the user to open when one is needed. This tool can NOT "
         "disconnect, delete, or revoke an account — that is deliberately user-only. When asked, say so and direct the user to the "
-        "Nous Portal (their org's Connectors page) or the desktop app."
+        "Pulse Portal (their org's Connectors page) or the desktop app."
     ),
     "parameters": {
         "type": "object",

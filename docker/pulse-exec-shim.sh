@@ -11,7 +11,7 @@
 # unreadable to the supervised gateway. The most common manifestation: the
 # user runs `docker exec <c> pulse login`, this writes
 # /opt/data/auth.json as root:root mode 0600, and from then on the gateway
-# returns "Provider authentication failed: PULSE is not logged into Nous
+# returns "Provider authentication failed: PULSE is not logged into PULSE
 # Portal" on every incoming message — even though `docker exec <c> pulse
 # chat -q ping` (also running as root) succeeds because root happens to be
 # able to read its own root-owned file. See systematic-debugging skill

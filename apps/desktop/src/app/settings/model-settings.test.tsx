@@ -65,12 +65,12 @@ vi.mock('../hooks/use-on-profile-switch', () => ({
 }))
 
 beforeEach(() => {
-  getGlobalModelInfo.mockResolvedValue({ provider: 'nous', model: 'pulse-4' })
+  getGlobalModelInfo.mockResolvedValue({ provider: 'pulse', model: 'pulse-4' })
   getGlobalModelOptions.mockResolvedValue({
     providers: [
       {
-        name: 'Nous',
-        slug: 'nous',
+        name: 'PULSE',
+        slug: 'pulse',
         models: ['pulse-4', 'pulse-4-mini'],
         authenticated: true,
         capabilities: { 'pulse-4': { reasoning: true, fast: true } }
@@ -78,12 +78,12 @@ beforeEach(() => {
     ]
   })
   getAuxiliaryModels.mockResolvedValue({
-    main: { provider: 'nous', model: 'pulse-4' },
+    main: { provider: 'pulse', model: 'pulse-4' },
     tasks: [{ task: 'vision', provider: 'auto', model: '', base_url: '' }]
   })
   getMoaModels.mockResolvedValue(null)
-  setModelAssignment.mockResolvedValue({ ok: true, provider: 'nous', model: 'pulse-4', gateway_tools: [] })
-  getRecommendedDefaultModel.mockResolvedValue({ provider: 'nous', model: 'pulse-4', free_tier: null })
+  setModelAssignment.mockResolvedValue({ ok: true, provider: 'pulse', model: 'pulse-4', gateway_tools: [] })
+  getRecommendedDefaultModel.mockResolvedValue({ provider: 'pulse', model: 'pulse-4', free_tier: null })
   setEnvVar.mockResolvedValue({ ok: true })
   getPULSEConfigRecord.mockResolvedValue({ agent: { reasoning_effort: 'medium', service_tier: 'normal' } })
   savePULSEConfig.mockResolvedValue({ ok: true })
@@ -197,7 +197,7 @@ describe('ModelSettings', () => {
   it('replaces the selected provider and model when the active profile changes', async () => {
     getGlobalModelInfo
       .mockResolvedValueOnce({ provider: 'custom', model: 'local-a' })
-      .mockResolvedValueOnce({ provider: 'nous', model: 'pulse-4' })
+      .mockResolvedValueOnce({ provider: 'pulse', model: 'pulse-4' })
     getGlobalModelOptions
       .mockResolvedValueOnce({
         providers: [
@@ -212,8 +212,8 @@ describe('ModelSettings', () => {
       .mockResolvedValueOnce({
         providers: [
           {
-            name: 'Nous',
-            slug: 'nous',
+            name: 'PULSE',
+            slug: 'pulse',
             models: ['pulse-4'],
             authenticated: true,
             capabilities: { 'pulse-4': { reasoning: true, fast: true } }
@@ -229,7 +229,7 @@ describe('ModelSettings', () => {
     })
 
     await waitFor(() => expect(getGlobalModelInfo).toHaveBeenCalledTimes(2))
-    await waitFor(() => expect(screen.getAllByRole('combobox')[0].textContent).toContain('Nous'))
+    await waitFor(() => expect(screen.getAllByRole('combobox')[0].textContent).toContain('PULSE'))
     expect(screen.queryByRole('button', { name: 'Set up provider' })).toBeNull()
   })
 
@@ -237,8 +237,8 @@ describe('ModelSettings', () => {
     getGlobalModelOptions.mockResolvedValueOnce({
       providers: [
         {
-          name: 'Nous',
-          slug: 'nous',
+          name: 'PULSE',
+          slug: 'pulse',
           models: ['pulse-4'],
           authenticated: true
         },
@@ -337,8 +337,8 @@ describe('ModelSettings', () => {
     getGlobalModelOptions.mockResolvedValueOnce({
       providers: [
         {
-          name: 'Nous',
-          slug: 'nous',
+          name: 'PULSE',
+          slug: 'pulse',
           models: ['pulse-4'],
           authenticated: true,
           capabilities: { 'pulse-4': { reasoning: false, fast: false } }
@@ -354,8 +354,8 @@ describe('ModelSettings', () => {
 
   it('edits auxiliary reasoning effort and applies it with the assignment', async () => {
     getAuxiliaryModels.mockResolvedValueOnce({
-      main: { provider: 'nous', model: 'pulse-4' },
-      tasks: [{ task: 'vision', provider: 'nous', model: 'pulse-4', base_url: '', reasoning_effort: null }]
+      main: { provider: 'pulse', model: 'pulse-4' },
+      tasks: [{ task: 'vision', provider: 'pulse', model: 'pulse-4', base_url: '', reasoning_effort: null }]
     })
 
     renderModelSettings()
@@ -373,7 +373,7 @@ describe('ModelSettings', () => {
     await waitFor(() =>
       expect(setModelAssignment).toHaveBeenCalledWith({
         model: 'pulse-4',
-        provider: 'nous',
+        provider: 'pulse',
         scope: 'auxiliary',
         task: 'vision',
         reasoning_effort: 'high'
@@ -391,7 +391,7 @@ describe('ModelSettings', () => {
     await waitFor(() =>
       expect(setModelAssignment).toHaveBeenCalledWith({
         model: 'pulse-4',
-        provider: 'nous',
+        provider: 'pulse',
         scope: 'auxiliary',
         task: 'vision'
       })
@@ -410,7 +410,7 @@ describe('ModelSettings', () => {
     await waitFor(() => expect(screen.getByText('Model metadata request timed out')).toBeTruthy())
     // The main-model selector still resolves from the config-backed auxiliary
     // read, so the page is interactive, not just an error shell.
-    await waitFor(() => expect(screen.getAllByRole('combobox')[0].textContent).toContain('Nous'))
+    await waitFor(() => expect(screen.getAllByRole('combobox')[0].textContent).toContain('PULSE'))
   })
 
   it('carries the user-defined endpoint when an aux slot is set to a local main model', async () => {
@@ -452,7 +452,7 @@ describe('ModelSettings', () => {
     clearNotifications()
     setModelAssignment.mockResolvedValueOnce({
       ok: true,
-      provider: 'nous',
+      provider: 'pulse',
       model: 'pulse-4',
       gateway_tools: [],
       stale_aux: []
@@ -480,7 +480,7 @@ describe('ModelSettings', () => {
       provider: 'openrouter',
       model: 'anthropic/claude-opus-4.7',
       gateway_tools: [],
-      stale_aux: [{ task: 'compression', provider: 'nous', model: 'pulse-4' }]
+      stale_aux: [{ task: 'compression', provider: 'pulse', model: 'pulse-4' }]
     })
 
     renderModelSettings()
@@ -491,14 +491,14 @@ describe('ModelSettings', () => {
 
     // The switch-time notice names the pinned provider and offers a reset.
     expect(await screen.findByText(/still run on/)).toBeTruthy()
-    expect(screen.getByText('nous')).toBeTruthy()
+    expect(screen.getByText('pulse')).toBeTruthy()
   })
 
   it.each(['zh', 'zh-hant'] as const)(
     'localizes stale auxiliary warnings in %s without resetting assignments',
     async locale => {
       getAuxiliaryModels.mockResolvedValueOnce({
-        main: { provider: 'nous', model: 'pulse-4' },
+        main: { provider: 'pulse', model: 'pulse-4' },
         tasks: [{ task: 'curator', provider: 'openrouter', model: 'fixture-model', base_url: '' }]
       })
       const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -524,7 +524,7 @@ describe('ModelSettings', () => {
 
   it('shows a persistent banner when a loaded aux slot mismatches the main provider', async () => {
     getAuxiliaryModels.mockResolvedValueOnce({
-      main: { provider: 'nous', model: 'pulse-4' },
+      main: { provider: 'pulse', model: 'pulse-4' },
       tasks: [{ task: 'curator', provider: 'openrouter', model: 'anthropic/claude-opus-4.7', base_url: '' }]
     })
 
@@ -536,7 +536,7 @@ describe('ModelSettings', () => {
 
   it('does not warn when an aux slot uses the main alias', async () => {
     getAuxiliaryModels.mockResolvedValueOnce({
-      main: { provider: 'nous', model: 'pulse-4' },
+      main: { provider: 'pulse', model: 'pulse-4' },
       tasks: [{ task: 'vision', provider: 'main', model: 'kimi-k3', base_url: '' }]
     })
 
@@ -586,7 +586,7 @@ describe('ModelSettings MoA preset editor', () => {
     presets: {
       default: {
         reference_models: [
-          { provider: 'nous', model: 'pulse-4' },
+          { provider: 'pulse', model: 'pulse-4' },
           { provider: 'openrouter', model: 'deepseek/deepseek-v4-pro' }
         ],
         aggregator: { provider: 'openrouter', model: 'anthropic/claude-opus-4.8' },
@@ -597,7 +597,7 @@ describe('ModelSettings MoA preset editor', () => {
       }
     },
     reference_models: [
-      { provider: 'nous', model: 'pulse-4' },
+      { provider: 'pulse', model: 'pulse-4' },
       { provider: 'openrouter', model: 'deepseek/deepseek-v4-pro' }
     ],
     aggregator: { provider: 'openrouter', model: 'anthropic/claude-opus-4.8' },
@@ -611,8 +611,8 @@ describe('ModelSettings MoA preset editor', () => {
     getGlobalModelOptions.mockResolvedValue({
       providers: [
         {
-          name: 'Nous',
-          slug: 'nous',
+          name: 'PULSE',
+          slug: 'pulse',
           models: ['pulse-4', 'pulse-4-mini'],
           authenticated: true,
           capabilities: { 'pulse-4': { reasoning: true, fast: true } }
@@ -660,7 +660,7 @@ describe('ModelSettings MoA preset editor', () => {
       const saved = saveMoaModels.mock.calls.at(-1)![0] as ReturnType<typeof moaConfig>
       expect(saved.default_preset).toBe('default')
       expect(saved.presets.default.reference_models[0]).toMatchObject({
-        provider: 'nous',
+        provider: 'pulse',
         model: 'pulse-4',
         enabled: false
       })
@@ -768,7 +768,7 @@ describe('ModelSettings MoA preset editor', () => {
           presets: expect.objectContaining({
             default: expect.objectContaining({
               reference_models: [
-                expect.objectContaining({ provider: 'nous', model: 'pulse-4', enabled: false }),
+                expect.objectContaining({ provider: 'pulse', model: 'pulse-4', enabled: false }),
                 expect.objectContaining({ provider: 'openrouter', model: 'deepseek/deepseek-v4-pro' })
               ]
             })
@@ -791,7 +791,7 @@ describe('ModelSettings stale-aux banner dismissal', () => {
   })
 
   const staleAux = {
-    main: { provider: 'nous', model: 'pulse-4' },
+    main: { provider: 'pulse', model: 'pulse-4' },
     tasks: [{ task: 'vision', provider: 'alibaba', model: 'qwen3.6-flash', base_url: '' }]
   }
 
@@ -827,7 +827,7 @@ describe('ModelSettings stale-aux banner dismissal', () => {
       provider: 'openrouter',
       model: 'anthropic/claude-opus-4.7',
       gateway_tools: [],
-      stale_aux: [{ task: 'compression', provider: 'nous', model: 'pulse-4' }]
+      stale_aux: [{ task: 'compression', provider: 'pulse', model: 'pulse-4' }]
     })
 
     renderModelSettings()

@@ -34,8 +34,8 @@ class TestTerminalRequirements:
 
 
     def test_terminal_and_execute_code_tools_resolve_for_managed_modal(self, monkeypatch, tmp_path):
-        monkeypatch.setattr("tools.tool_backend_helpers.managed_nous_tools_enabled", lambda: True)
-        monkeypatch.setattr("tools.terminal_tool_backends.managed_nous_tools_enabled", lambda: True)
+        monkeypatch.setattr("tools.tool_backend_helpers.managed_pulse_tools_enabled", lambda: True)
+        monkeypatch.setattr("tools.terminal_tool_backends.managed_pulse_tools_enabled", lambda: True)
         monkeypatch.setenv("HOME", str(tmp_path))
         monkeypatch.setenv("USERPROFILE", str(tmp_path))
         monkeypatch.delenv("MODAL_TOKEN_ID", raising=False)

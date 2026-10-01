@@ -343,7 +343,7 @@ def test_unreadable_bundled_manifest_fails_the_policy_instead_of_dropping_it(mon
 
 def test_inheriting_child_gets_provider_keys_but_never_adapter_secrets(child_env, monkeypatch):
     # inherit_credentials is the narrow grant for model-driving CLIs: provider keys only.
-    granted = ["OPENAI_API_KEY", "NOUS_API_KEY", *OPERATOR_SECRETS]
+    granted = ["OPENAI_API_KEY", "PULSE_API_KEY", *OPERATOR_SECRETS]
     for name in [*ADAPTER_SECRETS, *granted]:
         monkeypatch.setenv(name, "fake-" + name)
     observed = observe_child(local.pulse_subprocess_env(inherit_credentials=True),

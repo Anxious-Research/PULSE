@@ -43,8 +43,8 @@ const OPTIONS: ModelOptionsResult = {
       authenticated: true
     },
     {
-      slug: 'nous',
-      name: 'Nous',
+      slug: 'pulse',
+      name: 'PULSE',
       models: ['PULSE-4.5'],
       authenticated: true
     }
@@ -176,9 +176,9 @@ describe('ModelPickerDialog search ranking', () => {
 
   it('orders model rows exactly as the shared fuzzyRank does', async () => {
     vi.mocked(requestModelOptions).mockResolvedValue({
-      providers: [{ slug: 'nous', name: 'Nous', models: MODELS, authenticated: true }]
+      providers: [{ slug: 'pulse', name: 'PULSE', models: MODELS, authenticated: true }]
     })
-    renderPicker({ currentModel: 'gpt-4o', currentProvider: 'nous' })
+    renderPicker({ currentModel: 'gpt-4o', currentProvider: 'pulse' })
     await screen.findByText('gpt-4o')
 
     const query = 'g4o'
@@ -205,9 +205,9 @@ describe('ModelPickerDialog search ranking', () => {
     const catalog = ['gpt-4o', 'claude-3-opus', 'qwen3.8-flash']
 
     vi.mocked(requestModelOptions).mockResolvedValue({
-      providers: [{ slug: 'nous', name: 'Nous', models: catalog, authenticated: true }]
+      providers: [{ slug: 'pulse', name: 'PULSE', models: catalog, authenticated: true }]
     })
-    renderPicker({ currentModel: 'gpt-4o', currentProvider: 'nous' })
+    renderPicker({ currentModel: 'gpt-4o', currentProvider: 'pulse' })
     await screen.findByText('gpt-4o')
 
     fireEvent.change(screen.getByRole('combobox'), { target: { value: query } })

@@ -2,8 +2,8 @@
 
 from types import SimpleNamespace
 
-from pulse_cli.nous_account import NousPaidServiceAccessInfo, NousPortalAccountInfo
-from pulse_cli.nous_subscription import NousFeatureState, NousSubscriptionFeatures
+from pulse_cli.pulse_account import NousPaidServiceAccessInfo, NousPortalAccountInfo
+from pulse_cli.pulse_subscription import NousFeatureState, NousSubscriptionFeatures
 import subprocess
 
 
@@ -19,9 +19,9 @@ def _patch_common_status_deps(monkeypatch, status_mod, tmp_path, *, openai_base_
         return ""
 
     monkeypatch.setattr(status_mod, "get_env_value", _get_env_value, raising=False)
-    monkeypatch.setattr(auth_mod, "get_nous_auth_status", lambda: {}, raising=False)
+    monkeypatch.setattr(auth_mod, "get_pulse_auth_status", lambda: {}, raising=False)
     monkeypatch.setattr(
-        auth_mod, "get_nous_auth_status_local", lambda: {}, raising=False
+        auth_mod, "get_pulse_auth_status_local", lambda: {}, raising=False
     )
     monkeypatch.setattr(auth_mod, "get_codex_auth_status", lambda: {}, raising=False)
     monkeypatch.setattr(

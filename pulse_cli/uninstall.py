@@ -295,12 +295,12 @@ def _remove_systemd_gateway() -> bool:
 
 
 # Both gateway LaunchAgent naming schemes: the current ``ai.pulse.gateway*``
-# label and the ``io.nousresearch.pulse-agent.gateway*`` label older builds
+# label and the ``io.anxious-research.pulse-agent.gateway*`` label older builds
 # installed. An uninstall must sweep BOTH — a stale agent keeps respawning the
 # gateway after the code tree is gone (#62209).
 _LAUNCHD_GATEWAY_PLIST_PATTERNS = (
     "ai.pulse.gateway*.plist",
-    "io.nousresearch.pulse-agent.gateway*.plist",
+    "io.anxious-research.pulse-agent.gateway*.plist",
 )
 
 
@@ -915,9 +915,9 @@ def _macos_cache_leftover_dirs() -> "list[Path]":
     caches = Path.home() / "Library" / "Caches"
     return [
         caches / "PULSE",
-        caches / "com.nousresearch.pulse",
+        caches / "com.anxious-research.pulse",
         caches / "pulse-setup",
-        caches / "com.nousresearch.pulse.setup",
+        caches / "com.anxious-research.pulse.setup",
     ]
 
 

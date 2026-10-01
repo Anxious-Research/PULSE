@@ -19,7 +19,7 @@ def test_resolve_spotify_runtime_credentials_refreshes_without_changing_active_p
 
     with auth_mod._auth_store_lock():
         store = auth_mod._load_auth_store()
-        store["active_provider"] = "nous"
+        store["active_provider"] = "pulse"
         auth_mod._store_provider_state(
             store,
             "spotify",
@@ -63,7 +63,7 @@ def test_resolve_spotify_runtime_credentials_refreshes_without_changing_active_p
     persisted = auth_mod.get_provider_auth_state("spotify")
     assert persisted is not None
     assert persisted["access_token"] == "fresh-token"
-    assert auth_mod.get_active_provider() == "nous"
+    assert auth_mod.get_active_provider() == "pulse"
 
 
 def test_auth_spotify_status_command_reports_logged_in(capsys, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -115,7 +115,7 @@ _STALE_SPOTIFY_STATE = {
 def _seed_spotify_state(tmp_path, state: dict) -> None:
     with auth_mod._auth_store_lock():
         store = auth_mod._load_auth_store()
-        store["active_provider"] = "nous"
+        store["active_provider"] = "pulse"
         auth_mod._store_provider_state(store, "spotify", state, set_active=False)
         auth_mod._save_auth_store(store)
 
@@ -127,7 +127,7 @@ def test_resolve_credentials_quarantines_dead_tokens_on_terminal_refresh_failure
     """Terminal refresh failure (relogin_required=True + refresh_token present)
     must clear access_token/refresh_token/expires_* from auth.json and write a
     last_auth_error marker so subsequent calls fail fast without a network retry.
-    Mirrors Nous / xAI-OAuth / Codex-OAuth / MiniMax quarantine pattern.
+    Mirrors PULSE / xAI-OAuth / Codex-OAuth / MiniMax quarantine pattern.
     """
     monkeypatch.setenv("PULSE_HOME", str(tmp_path))
     _seed_spotify_state(tmp_path, dict(_STALE_SPOTIFY_STATE))
@@ -174,6 +174,6 @@ def test_resolve_credentials_quarantines_dead_tokens_on_terminal_refresh_failure
     assert "at" in err
 
     # Active provider must be unchanged.
-    assert auth_mod.get_active_provider() == "nous"
+    assert auth_mod.get_active_provider() == "pulse"
 
 

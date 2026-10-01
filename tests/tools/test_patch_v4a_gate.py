@@ -37,10 +37,10 @@ class TestPatchV4AGate(unittest.TestCase):
             ("openai-codex", "codex-large", True),
             ("azure-openai", "deploy-x", True),
             ("openrouter", "openai/gpt-5.2", True),
-            ("nous", "openai/o5-mini", True),
+            ("pulse", "openai/o5-mini", True),
             ("openrouter", "anthropic/claude-sonnet-4", False),
             ("anthropic", "claude-fable-5", False),
-            ("nous", "pulse-4-405b", False),
+            ("pulse", "pulse-4-405b", False),
             ("", "", False),
         ]:
             self.assertEqual(_family(prov, model), want, (prov, model))

@@ -15,7 +15,7 @@ This guide is the practical companion to the [Voice Mode feature reference](../u
 If the feature page explains what voice mode can do, this guide shows how to actually use it well.
 
 :::tip
-[Nous Portal](../integrations/nous-portal.md) bundles both the LLM and TTS through one OAuth — voice mode works end-to-end with no extra credentials.
+[Pulse Portal](../integrations/pulse-portal.md) bundles both the LLM and TTS through one OAuth — voice mode works end-to-end with no extra credentials.
 :::
 
 ## What voice mode is good for

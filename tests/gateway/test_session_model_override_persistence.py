@@ -185,7 +185,7 @@ def test_rehydrate_opencode_override_heals_relay_url_for_rederived_wire(store_fa
 @pytest.mark.parametrize("codex_on_turn", ["recovers", "still_unavailable"])
 def test_codex_override_never_runs_on_the_default_providers_endpoint(store_factory, codex_on_turn):
     """A persisted openai-codex override whose credentials fail to re-resolve used to be layered over the
-    DEFAULT provider's runtime (Nous URL + Nous key + chat_completions). The turn runs on ONE coherent
+    DEFAULT provider's runtime (PULSE URL + PULSE key + chat_completions). The turn runs on ONE coherent
     route: the override's own provider when it resolves, else the whole default route with a notice."""
     store = store_factory()
     session_key = store.get_or_create_session(_make_source()).session_key
@@ -194,7 +194,7 @@ def test_codex_override_never_runs_on_the_default_providers_endpoint(store_facto
     runner = _make_runner(store_factory())
     codex = {"provider": "openai-codex", "api_key": "codex-tok", "api_mode": "codex_responses",
              "base_url": "https://chatgpt.com/backend-api/codex"}
-    nous = {"provider": "nous", "api_key": "nous-key", "api_mode": "chat_completions",
+    pulse = {"provider": "pulse", "api_key": "pulse-key", "api_mode": "chat_completions",
             "base_url": "https://inference-api.anxious-research.com/v1"}
     calls = iter([RuntimeError("refresh blip"), codex if codex_on_turn == "recovers" else RuntimeError("gone")])
 
@@ -206,11 +206,11 @@ def test_codex_override_never_runs_on_the_default_providers_endpoint(store_facto
         return dict(nxt)
 
     with patch("gateway.run._resolve_runtime_agent_kwargs_for_provider", side_effect=_for_provider), \
-         patch("gateway.run._resolve_runtime_agent_kwargs", return_value=dict(nous)):
+         patch("gateway.run._resolve_runtime_agent_kwargs", return_value=dict(pulse)):
         model, runtime = runner._resolve_session_agent_runtime(
-            session_key=session_key, user_config={"model": {"default": "openai/gpt-6-luna", "provider": "nous"}})
+            session_key=session_key, user_config={"model": {"default": "openai/gpt-6-luna", "provider": "pulse"}})
 
-    expected_model, expected = ("gpt-6-luna-900k", codex) if codex_on_turn == "recovers" else ("openai/gpt-6-luna", nous)
+    expected_model, expected = ("gpt-6-luna-900k", codex) if codex_on_turn == "recovers" else ("openai/gpt-6-luna", pulse)
     assert (model, {k: runtime[k] for k in expected}) == (expected_model, expected)
     assert bool(runner._pre_agent_fallback_notice) is (codex_on_turn == "still_unavailable")
 

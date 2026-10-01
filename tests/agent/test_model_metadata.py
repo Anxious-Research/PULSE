@@ -886,11 +886,11 @@ class TestFetchEndpointModelMetadata:
 
 
 # =========================================================================
-# Nous Portal context-window resolution (provider="nous")
+# Pulse Portal context-window resolution (provider="pulse")
 # =========================================================================
 
 class TestNousPortalContextResolution:
-    """Nous Portal /v1/models is authoritative for what Nous infra enforces
+    """Pulse Portal /v1/models is authoritative for what PULSE infra enforces
     and may diverge from the OpenRouter catalog.
 
     Invariants this class pins down:
@@ -916,7 +916,7 @@ class TestNousPortalContextResolution:
         """An empty model name must not substring-match arbitrary catalog
         entries — '' is a substring of every key, so pre-fix it "matched"
         whatever the endpoint listed first (e.g. a 32K embedding model on
-        the Nous portal) and poisoned the resolved context length."""
+        the PULSE portal) and poisoned the resolved context length."""
         import agent.model_metadata as mm
         mock_fetch.return_value = {
             "voyageai/voyage-code-4": {"context_length": 32_000},
@@ -959,7 +959,7 @@ class TestNousPortalContextResolution:
             model="qwen3.6-plus",
             base_url=base_url,
             api_key="fake",
-            provider="nous",
+            provider="pulse",
         )
         assert ctx == 1_000_000, "OR fallback should still serve the request"
         assert not cache_file.exists() or not yaml.safe_load(
@@ -974,7 +974,7 @@ class TestNousPortalContextResolution:
     def test_stale_cache_is_bypassed_and_overwritten_by_portal(
         self, mock_or, mock_portal, tmp_path, monkeypatch
     ):
-        """Users upgrading from pre-fix builds have ``qwen3.6-plus@…nous… =
+        """Users upgrading from pre-fix builds have ``qwen3.6-plus@…pulse… =
         1000000`` (OR-derived) sitting in their cache file.  Step 1 must
         NOT short-circuit on that entry — step 5b reconciles against the
         portal and overwrites the persistent value with 262144."""
@@ -999,7 +999,7 @@ class TestNousPortalContextResolution:
             model="qwen3.6-plus",
             base_url=base_url,
             api_key="fake",
-            provider="nous",
+            provider="pulse",
         )
         assert ctx == 262_144, (
             f"Stale OR-derived cache entry should not have leaked through; got {ctx}"

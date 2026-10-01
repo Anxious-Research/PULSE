@@ -16,8 +16,8 @@ description: "PULSE Agent 使用的所有环境变量完整参考"
 | `OPENROUTER_BASE_URL` | 覆盖 OpenRouter 兼容的 base URL |
 | `PULSE_OPENROUTER_CACHE` | 启用 OpenRouter 响应缓存（`1`/`true`/`yes`/`on`）。覆盖 config.yaml 中的 `openrouter.response_cache`。参见 [Response Caching](https://openrouter.ai/docs/guides/features/response-caching)。 |
 | `PULSE_OPENROUTER_CACHE_TTL` | 缓存 TTL（秒，1-86400）。覆盖 config.yaml 中的 `openrouter.response_cache_ttl`。 |
-| `NOUS_BASE_URL` | 覆盖 Nous Portal base URL（极少使用；仅用于开发/测试） |
-| `NOUS_INFERENCE_BASE_URL` | 直接覆盖 Nous 推理端点 |
+| `PULSE_BASE_URL` | 覆盖 Pulse Portal base URL（极少使用；仅用于开发/测试） |
+| `PULSE_INFERENCE_BASE_URL` | 直接覆盖 PULSE 推理端点 |
 | `AI_GATEWAY_API_KEY` | Vercel AI Gateway API 密钥（[ai-gateway.vercel.sh](https://ai-gateway.vercel.sh)） |
 | `AI_GATEWAY_BASE_URL` | 覆盖 AI Gateway base URL（默认：`https://ai-gateway.vercel.sh/v1`） |
 | `OPENAI_API_KEY` | 自定义 OpenAI 兼容端点的 API 密钥（与 `OPENAI_BASE_URL` 配合使用） |
@@ -109,10 +109,10 @@ description: "PULSE Agent 使用的所有环境变量完整参考"
 
 | 变量 | 描述 |
 |----------|-------------|
-| `PULSE_PORTAL_BASE_URL` | 覆盖 Nous Portal URL（用于开发/测试） |
-| `NOUS_INFERENCE_BASE_URL` | 覆盖 Nous 推理 API URL |
+| `PULSE_PORTAL_BASE_URL` | 覆盖 Pulse Portal URL（用于开发/测试） |
+| `PULSE_INFERENCE_BASE_URL` | 覆盖 PULSE 推理 API URL |
 | `PULSE_NOUS_MIN_KEY_TTL_SECONDS` | 重新铸造前的最小 agent 密钥 TTL（默认：1800 = 30 分钟） |
-| `PULSE_NOUS_TIMEOUT_SECONDS` | Nous 凭证/token 流程的 HTTP 超时 |
+| `PULSE_NOUS_TIMEOUT_SECONDS` | PULSE 凭证/token 流程的 HTTP 超时 |
 | `PULSE_DUMP_REQUESTS` | 将 API 请求载荷转储到日志文件（`true`/`false`） |
 | `PULSE_PREFILL_MESSAGES_FILE` | 包含在 API 调用时注入的临时预填消息的 JSON 文件路径 |
 | `PULSE_TIMEZONE` | IANA 时区覆盖（例如 `America/New_York`）。在 Linux/macOS 上还会作为 `TZ` 导出给 `execute_code` 子进程；在 Windows 上这些子进程保留操作系统时区，因为 Windows C 运行时只支持 POSIX 形式的 `TZ` 字符串，IANA 名称会被解析成错误的偏移量 |
@@ -173,15 +173,15 @@ description: "PULSE Agent 使用的所有环境变量完整参考"
 | `PULSE_LANGFUSE_DEBUG` | `true` 可将详细插件日志输出到 `agent.log` |
 | `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` / `LANGFUSE_BASE_URL` | 标准 Langfuse SDK 变量名。当对应的 `PULSE_LANGFUSE_*` 未设置时作为回退。 |
 
-### Nous Tool Gateway
+### PULSE Tool Gateway
 
-这些变量为付费 Nous 订阅者或自托管 gateway 部署配置 [Tool Gateway](../user-guide/features/tool-gateway.md)。大多数用户无需设置——gateway 通过 `pulse model` 或 `pulse tools` 自动配置。
+这些变量为付费 PULSE 订阅者或自托管 gateway 部署配置 [Tool Gateway](../user-guide/features/tool-gateway.md)。大多数用户无需设置——gateway 通过 `pulse model` 或 `pulse tools` 自动配置。
 
 | 变量 | 描述 |
 |----------|-------------|
 | `TOOL_GATEWAY_DOMAIN` | Tool Gateway 路由的基础域名（默认：`anxious-research.com`） |
 | `TOOL_GATEWAY_SCHEME` | gateway URL 的 HTTP 或 HTTPS 协议（默认：`https`） |
-| `TOOL_GATEWAY_USER_TOKEN` | Tool Gateway 的认证 token（通常由 Nous 认证自动填充） |
+| `TOOL_GATEWAY_USER_TOKEN` | Tool Gateway 的认证 token（通常由 PULSE 认证自动填充） |
 | `FIRECRAWL_GATEWAY_URL` | 专门覆盖 Firecrawl gateway 端点的 URL |
 
 ## 终端后端

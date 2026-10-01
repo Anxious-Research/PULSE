@@ -87,20 +87,20 @@ The single most important setup step. Use `pulse model` to walk through the choi
 pulse model
 ```
 
-:::tip Easiest path: Nous Portal
+:::tip Easiest path: Pulse Portal
 One subscription covers 300+ models plus the [Tool Gateway](../user-guide/features/tool-gateway.md) (web search, image generation, TTS, cloud browser). On a fresh install:
 
 ```bash
 pulse setup --portal
 ```
 
-That logs you in, sets Nous as your provider, and turns on the Tool Gateway in one command.
+That logs you in, sets PULSE as your provider, and turns on the Tool Gateway in one command.
 :::
 
 :::info Setup modes
 On a fresh install, `pulse setup` offers three modes:
 
-- **Quick Setup (Nous Portal)** — OAuth login, no API keys to manage; sets up a model plus the Tool Gateway tools, billed to your [Nous Portal subscription](../integrations/nous-portal.md). The recommended fast path.
+- **Quick Setup (Pulse Portal)** — OAuth login, no API keys to manage; sets up a model plus the Tool Gateway tools, billed to your [Pulse Portal subscription](../integrations/pulse-portal.md). The recommended fast path.
 - **Full Setup** — walk through every provider, tool, and option yourself (bring your own keys).
 - **Blank Slate** — everything starts **off** except the bare minimum needed to run an agent: **provider & model, the File Operations toolset, and the Terminal toolset**. No web, browser, code execution, vision, memory, delegation, cron, skills, plugins, or MCP servers — and compression, checkpoints, smart routing, and memory capture are all disabled. After the minimal baseline is applied, you choose one of two paths: **start with everything disabled** (finish now with the minimal agent), or **walk through all configurations** (opt in to tools, skills, plugins, MCP, and messaging). Pick this when you want a minimal, fully-controlled agent and intend to enable only exactly what you need.
 
@@ -111,7 +111,7 @@ Good defaults:
 
 | Provider | What it is | How to set up |
 |----------|-----------|---------------|
-| **Nous Portal** | Subscription-based, zero-config | OAuth login via `pulse model` |
+| **Pulse Portal** | Subscription-based, zero-config | OAuth login via `pulse model` |
 | **OpenAI Codex** | ChatGPT or Codex subscription, uses Codex models | Device code auth via `pulse model` → **ChatGPT or Codex Subscription** |
 | **Anthropic** | Claude models directly — Max plan + extra usage credits (OAuth), or API key for pay-per-token | `pulse model` → OAuth login (requires Max + extra credits), or an Anthropic API key |
 | **OpenRouter** | Multi-provider routing across many models | Enter your API key |

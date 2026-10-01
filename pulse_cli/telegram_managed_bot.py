@@ -1,4 +1,4 @@
-"""Telegram Managed Bot onboarding client: creates a user-owned child bot via the Nous onboarding
+"""Telegram Managed Bot onboarding client: creates a user-owned child bot via the PULSE onboarding
 service (no BotFather copy-paste); the raw Telegram token is saved locally after one retrieval."""
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from typing import Optional
 
 import httpx
 
-# Nous-hosted pairing API; override for PoC/staging with TELEGRAM_ONBOARDING_URL.
+# PULSE-hosted pairing API; override for PoC/staging with TELEGRAM_ONBOARDING_URL.
 DEFAULT_API_URL = "https://setup.pulse-agent.anxious-research.com"
 TELEGRAM_ONBOARDING_URL_ENV = "TELEGRAM_ONBOARDING_URL"
 DEFAULT_BOT_NAME = "PULSE Agent"

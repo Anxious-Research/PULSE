@@ -1,12 +1,12 @@
 ---
 sidebar_position: 0
 title: "Run Nemotron 3 Ultra free in PULSE Agent"
-description: "Try NVIDIA Nemotron 3 Ultra on Nous Portal — free June 4–18 — with day 0 support in PULSE Agent"
+description: "Try NVIDIA Nemotron 3 Ultra on Pulse Portal — free June 4–18 — with day 0 support in PULSE Agent"
 ---
 
 # Run Nemotron 3 Ultra free in PULSE Agent
 
-Nous Research has been inducted into the **Nemotron Coalition** of leading AI labs working with **NVIDIA** to advance open frontier foundation models. In honor of this, we've partnered with **Nebius** to provide **Nemotron 3 Ultra** free on [Nous Portal](https://portal.anxious-research.com) for two weeks (**June 4th – June 18th**). Follow the instructions below to try the model in your PULSE Agent today.
+Anxious Research has been inducted into the **Nemotron Coalition** of leading AI labs working with **NVIDIA** to advance open frontier foundation models. In honor of this, we've partnered with **Nebius** to provide **Nemotron 3 Ultra** free on [Pulse Portal](https://portal.anxious-research.com) for two weeks (**June 4th – June 18th**). Follow the instructions below to try the model in your PULSE Agent today.
 
 :::info Limited-time offer
 The `nvidia/nemotron-3-ultra:free` tier is available from **June 4th to June 18th**. The `:free` tag is what keeps it on the no-cost plan — pick that exact variant.
@@ -22,9 +22,9 @@ The simplest path: a one-click installer with a guided, point-and-click setup. N
 
 [Download the PULSE Desktop installer](https://pulse-agent.anxious-research.com/) for macOS or Windows, then open it. On first launch it finishes setting itself up (usually under a minute).
 
-### 2. Connect Nous Portal
+### 2. Connect Pulse Portal
 
-When the app opens, you'll see a "Let's get you set up" screen. Click **Nous Portal** (marked **Recommended**). Your browser opens — create a [Nous Portal](https://portal.anxious-research.com) account (or sign in), choose the **Free** plan, and authorize PULSE. The app connects automatically.
+When the app opens, you'll see a "Let's get you set up" screen. Click **Pulse Portal** (marked **Recommended**). Your browser opens — create a [Pulse Portal](https://portal.anxious-research.com) account (or sign in), choose the **Free** plan, and authorize PULSE. The app connects automatically.
 
 ### 3. Pick the free Nemotron 3 Ultra model
 
@@ -74,9 +74,9 @@ pulse setup
 
 Select **Quick Setup**. PULSE opens a browser tab and waits for you to finish the next steps.
 
-### 3. Create a Nous Portal account
+### 3. Create a Pulse Portal account
 
-In the browser, create a [Nous Portal](https://portal.anxious-research.com) account (or sign in) and choose the **Free** plan.
+In the browser, create a [Pulse Portal](https://portal.anxious-research.com) account (or sign in) and choose the **Free** plan.
 
 ### 4. Connect your account
 
@@ -111,13 +111,13 @@ Already set up with another model?
 
 ## Troubleshooting
 
-- **Don't see the model in the list?** Make sure you finished the Nous Portal connection and that you're on the **Free** plan. In the CLI, `pulse portal info` confirms you're logged in and routing through Nous.
+- **Don't see the model in the list?** Make sure you finished the Pulse Portal connection and that you're on the **Free** plan. In the CLI, `pulse portal info` confirms you're logged in and routing through PULSE.
 - **Picked the wrong variant?** Re-select `nvidia/nemotron-3-ultra:free` — the `:free` suffix is required to stay on the no-cost tier.
 - **Browser didn't open / you're on a remote host (CLI)?** See [OAuth over SSH / Remote Hosts](./oauth-over-ssh.md) for port-forwarding workarounds.
 
 ## See also
 
 - **[Desktop App](../user-guide/desktop.md)** — The native one-click app (macOS, Windows, Linux)
-- **[Run PULSE Agent with Nous Portal](./run-pulse-with-nous-portal.md)** — Full Portal walkthrough: models, Tool Gateway, and verification
-- **[Nous Portal integration](../integrations/nous-portal.md)** — What's in the subscription
+- **[Run PULSE Agent with Pulse Portal](./run-pulse-with-pulse-portal.md)** — Full Portal walkthrough: models, Tool Gateway, and verification
+- **[Pulse Portal integration](../integrations/pulse-portal.md)** — What's in the subscription
 - **[Quickstart](../getting-started/quickstart.md)** — Install-to-chat in under 5 minutes

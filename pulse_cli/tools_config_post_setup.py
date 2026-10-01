@@ -75,7 +75,7 @@ def _post_setup_agent_browser(post_setup_key: str) -> None:
         if docker and post_setup_key == "agent_browser" and not _chromium_installed():
             _print_warning("    Chromium is missing but you're running in Docker.")
             _info_lines("Pull the latest image to get the bundled Chromium:",
-                        "  docker pull ghcr.io/nousresearch/pulse-agent:latest")
+                        "  docker pull ghcr.io/anxious-research/pulse-agent:latest")
         return
 
     try:
@@ -398,7 +398,7 @@ def _agent_browser_installed() -> bool:
     """True when everything ``_run_post_setup("agent_browser")`` installs is present: the agent-browser CLI
     *and* the Chromium build it drives (or the Lightpanda engine, which needs no Chromium), so "Run
     setup" flips to installed only when re-running it would be a no-op."""
-    from pulse_cli.nous_subscription import _local_browser_runnable
+    from pulse_cli.pulse_subscription import _local_browser_runnable
 
     return _local_browser_runnable()
 
@@ -421,7 +421,7 @@ def _lightpanda_installed() -> bool:
 def _cloud_agent_browser_installed() -> bool:
     """Installed-check for the ``browserbase`` hook: cloud providers host their own Chromium, so
     presence of the agent-browser CLI is the whole contract."""
-    from pulse_cli.nous_subscription import _has_agent_browser
+    from pulse_cli.pulse_subscription import _has_agent_browser
     return _has_agent_browser()
 
 

@@ -68,7 +68,7 @@ class TestEnsurePULSEHome:
     # module) so this fixture keeps testing the OLD text regardless of any
     # future change to _LEGACY_TEMPLATE_SOULS's length or ordering.
     _PRE_REWRITE_DEFAULT_SOUL = (
-        "You are PULSE Agent, an intelligent AI assistant created by Nous "
+        "You are PULSE Agent, an intelligent AI assistant created by PULSE "
         "Research. You are helpful, knowledgeable, and direct. You assist "
         "users with a wide range of tasks including answering questions, "
         "writing and editing code, analyzing information, creative work, "
@@ -951,7 +951,7 @@ class TestConfigSupportFloor:
 
     _V20_FIXTURE = {
         "_config_version": 20,
-        "model": {"default": "anthropic/claude-fable-5", "provider": "nous"},
+        "model": {"default": "anthropic/claude-fable-5", "provider": "pulse"},
         "plugins": {"disabled": ["foo"]},
         "skills": {"write_mode": "on"},
         "model_catalog": {"ttl_hours": 24},
@@ -962,7 +962,7 @@ class TestConfigSupportFloor:
         # v31 writes verify_on_stop=False, but False now equals the schema
         # default (opt-in) so the write invariant strips it, and the emptied
         # section goes with it (it survived only as the phantom `agent: {}`).
-        "model": {"default": "anthropic/claude-fable-5", "provider": "nous"},
+        "model": {"default": "anthropic/claude-fable-5", "provider": "pulse"},
         "model_catalog": {},
         "plugins": {"disabled": ["foo"], "enabled": []},
     }

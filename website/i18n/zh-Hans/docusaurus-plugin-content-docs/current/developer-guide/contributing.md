@@ -90,7 +90,7 @@ npm ci --prefix website
 npm run build:fast --prefix website
 ```
 
-图标从 `assets/nous-girl-*.svg` 和 `assets/backgrounds/` 生成。
+图标从 `assets/pulse-girl-*.svg` 和 `assets/backgrounds/` 生成。
 `node scripts/generate-icons.mjs` 使用 PULSE 运行时 Python（`PULSE_PYTHON`，否则为 PATH 上的 `python`）渲染图标：Pillow 和 resvg-py 是核心依赖。不要提交生成的 PNG/ICO/ICNS 文件。
 
 ### 运行测试
@@ -235,7 +235,7 @@ fix(security): prevent shell injection in sudo password piping
 
 ## 社区
 
-- **Discord**：[discord.gg/NousResearch](https://discord.gg/NousResearch)
+- **Discord**：[discord.gg/AnxiousResearch](https://discord.gg/AnxiousResearch)
 - **GitHub Discussions**：用于设计提案和架构讨论
 - **Skills Hub**：上传专业 skill 并与社区共享
 

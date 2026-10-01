@@ -1,4 +1,4 @@
-"""Plugin catalog — curated, Nous-approved PULSE plugins shipped with the repo.
+"""Plugin catalog — curated, PULSE-approved PULSE plugins shipped with the repo.
 
 Mirrors the ``optional-mcps/`` MCP-catalog pattern: one YAML file per entry under the in-tree
 ``plugin-catalog/`` directory, pinned to an exact 40-character commit SHA. Presence in the directory IS

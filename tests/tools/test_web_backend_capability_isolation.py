@@ -55,7 +55,7 @@ def test_ladder_derived_firecrawl_takes_managed_path_on_gateway_ready_install(mo
     import plugins.web.firecrawl.provider as prov
 
     _ladder_env(monkeypatch, {"extract_backend": "keenable"})
-    gw = SimpleNamespace(nous_user_token="tok", gateway_origin="https://gw.example")
+    gw = SimpleNamespace(pulse_user_token="tok", gateway_origin="https://gw.example")
     monkeypatch.setattr(prov._gateway, "resolve_managed_tool_gateway", lambda *a, **k: gw)
     monkeypatch.setattr(prov, "_wt", lambda: SimpleNamespace())
     monkeypatch.setattr(prov, "Firecrawl", lambda **kwargs: SimpleNamespace(kwargs=kwargs), raising=False)

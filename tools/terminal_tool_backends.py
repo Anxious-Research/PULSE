@@ -18,8 +18,8 @@ from tools.environments.singularity import SingularityEnvironment as _Singularit
 from tools.environments.ssh import SSHEnvironment as _SSHEnvironment
 from tools.managed_tool_gateway import is_managed_tool_gateway_ready
 from tools.terminal_tool_config import _get_plugin_env_provider
-from tools.tool_backend_helpers import (has_direct_modal_credentials, managed_nous_tools_enabled,
-                                        nous_tool_gateway_unavailable_message, resolve_modal_backend_state)
+from tools.tool_backend_helpers import (has_direct_modal_credentials, managed_pulse_tools_enabled,
+                                        pulse_tool_gateway_unavailable_message, resolve_modal_backend_state)
 
 # Log-record parity with the origin module.
 logger = logging.getLogger("tools.terminal_tool")
@@ -106,14 +106,14 @@ def _get_modal_backend_state(modal_mode: object | None) -> Dict[str, Any]:
 def _modal_unavailable_reason(modal_state: Dict[str, Any]) -> tuple[str, str]:
     """(log message, ValueError message) for a modal_state with no selected backend.
     Single decision shared by the requirements checker and the env builder."""
-    gateway = nous_tool_gateway_unavailable_message("managed Modal execution")
+    gateway = pulse_tool_gateway_unavailable_message("managed Modal execution")
     if modal_state["managed_mode_blocked"] or modal_state["mode"] == "managed":
-        tail = (("Nous Tool Gateway access is not currently available and no direct Modal credentials/config "
+        tail = (("PULSE Tool Gateway access is not currently available and no direct Modal credentials/config "
                  f"were found. {gateway} Choose TERMINAL_MODAL_MODE=direct/auto to use direct Modal credentials.")
                 if modal_state["managed_mode_blocked"] else f"the managed tool gateway is unavailable. {gateway}")
         return (f"Modal backend selected with TERMINAL_MODAL_MODE=managed, but {tail}",
                 f"Modal backend is configured for managed mode, but {tail}")
-    managed = managed_nous_tools_enabled()
+    managed = managed_pulse_tools_enabled()
     if modal_state["mode"] == "direct":
         return ("Modal backend selected with TERMINAL_MODAL_MODE=direct, but no direct Modal credentials/config "
                 f"were found. Configure Modal or choose TERMINAL_MODAL_MODE={'managed/auto' if managed else 'auto'}.",

@@ -318,7 +318,7 @@ By default the reviewer runs on your main model. To pin a dedicated review model
 ```yaml
 auxiliary:
   review:
-    provider: openrouter               # or nous, anthropic, a direct base_url, ...
+    provider: openrouter               # or pulse, anthropic, a direct base_url, ...
     model: anthropic/claude-opus-4.6   # a strong reviewer model
 ```
 

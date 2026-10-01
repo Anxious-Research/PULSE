@@ -98,7 +98,7 @@ def preview_identity(name: str, token: str) -> dict:
     return {"token": token, "displayName": f"PULSE {name}",
             "appId": f"ai.pulse.channel.h{token}", "appNamePascal": pascal,
             "artifactNamePascal": pascal, "cliName": f"pulse-{name}",
-            "windowsExecutableName": pascal, "msixAppIdWithOrg": f"NousResearch.{pascal}"}
+            "windowsExecutableName": pascal, "msixAppIdWithOrg": f"AnxiousResearch.{pascal}"}
 
 
 class ChannelPublisher:

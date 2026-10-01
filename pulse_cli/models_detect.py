@@ -4,8 +4,7 @@ Split out of ``pulse_cli.models``. The detection ladder there consults static ca
 OpenRouter catalog, and its answer used to be applied blindly. Two guards close the class of
 "put the user on a provider they never selected":
 
-* the CURRENT provider's live catalog outranks every static guess (Codex early-access ids, Nous
-  Portal slugs, Ollama Cloud models absent from ``_PROVIDER_MODELS`` — #97487, the $100 Astra
+* the CURRENT provider's live catalog outranks every static guess (Codex early-access ids, Pulse Portal slugs, Ollama Cloud models absent from ``_PROVIDER_MODELS`` — #97487, the $100 Astra
   incident);
 * an auto-detected TARGET must be a provider the user has credentials for. Guessing a vendor the
   user never signed into either 401s or, for OpenRouter (whose runtime resolves with an empty key

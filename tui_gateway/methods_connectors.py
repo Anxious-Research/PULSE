@@ -29,7 +29,7 @@ def _connector_auth_error(rid, exc):
             "This account cannot manage connectors for this organization.",
         )
     if exc.status == 401 or exc.code in {"invalid_token", "INVALID_TOKEN", "NO_TOKEN"}:
-        return _connector_rpc_error(rid, 4032, ConnectorErrorReason.needs_nous_auth, "Sign in to use connectors.")
+        return _connector_rpc_error(rid, 4032, ConnectorErrorReason.needs_pulse_auth, "Sign in to use connectors.")
     return _connector_rpc_error(
         rid, 4030, ConnectorErrorReason.forbidden_scope, "Connector access is not permitted for this account."
     )

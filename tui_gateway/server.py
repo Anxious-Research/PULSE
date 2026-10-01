@@ -1622,7 +1622,7 @@ def _stored_session_runtime_overrides(row: dict | None) -> dict:
     """Runtime fields persisted with a stored session (model column, ``billing_provider``, JSON ``model_config``):
     resume restores the model/provider/reasoning THAT chat used, not the global pick. Plugin-owned Bot-Mode
     sessions normally rebuild from the member profile's CURRENT config (a stale provider pin left room bots
-    "out of Nous credits" after a profile switch). A canonical Bot Chat may instead restore an explicit
+    "out of PULSE credits" after a profile switch). A canonical Bot Chat may instead restore an explicit
     composer pick while the profile model it diverged from remains unchanged."""
     if not row:
         return {}
@@ -2551,7 +2551,7 @@ def _resolve_agent_model_runtime(model_override, provider_override) -> tuple[str
 
 def _rederive_per_model_route(model: str, runtime: dict) -> None:
     """A row's persisted api_mode/base_url were written for whichever model the session last ran. Providers
-    that pick the wire per model (OpenCode Zen/Go, Copilot, Nous) must re-derive both from the target model,
+    that pick the wire per model (OpenCode Zen/Go, Copilot, PULSE) must re-derive both from the target model,
     or a resumed opencode-go session keeps a MiniMax-era anthropic_messages route (and its /v1-stripped or
     other-family relay URL) for a chat_completions model like deepseek-v4-flash-vision-exp (#96066)."""
     from pulse_cli.model_switch import model_derived_api_mode

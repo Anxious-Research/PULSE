@@ -1,15 +1,15 @@
-"""Managed ("Nous Subscription") image generation: one picker row, one model catalog.
+"""Managed ("PULSE Subscription") image generation: one picker row, one model catalog.
 
-Three gateways sit behind the single stored selection ``image_gen.provider: nous``; the stored
+Three gateways sit behind the single stored selection ``image_gen.provider: pulse``; the stored
 ``image_gen.model`` decides which one serves a request:
 
 * ``fal``    — the FAL managed gateway, every id in the in-tree ``FAL_MODELS`` catalog;
 * ``krea``   — the Krea managed gateway, the ``plugins/image_gen/krea`` model ids;
-* ``portal`` — Nous Portal chat-completions image models (``plugins/image_gen/openrouter``'s
-  ``nous`` provider), anything else.
+* ``portal`` — Pulse Portal chat-completions image models (``plugins/image_gen/openrouter``'s
+  ``pulse`` provider), anything else.
 
 Before this module the second and third gateways each had their own picker row that also
-wrote ``provider: nous`` — every managed row read "active" at once and picking the Portal row
+wrote ``provider: pulse`` — every managed row read "active" at once and picking the Portal row
 silently generated on FAL.
 """
 
@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional, Tuple
 
-from tools.tool_backend_helpers import NOUS_MANAGED_PROVIDER
+from tools.tool_backend_helpers import PULSE_MANAGED_PROVIDER
 
 FAL, KREA, PORTAL = "fal", "krea", "portal"
 
@@ -54,12 +54,12 @@ def managed_route(provider: Any, model_id: Any) -> Optional[str]:
     (raw config values; blank or non-string reads as unset).
 
     ``None`` when a direct/BYO provider owns the request. A Portal id reaches the Portal only under
-    an explicit ``nous`` pick; with the provider unset it stays on the in-tree FAL path."""
+    an explicit ``pulse`` pick; with the provider unset it stays on the in-tree FAL path."""
     provider, model_id = (v.strip() if isinstance(v, str) and v.strip() else None for v in (provider, model_id))
-    if provider is not None and provider != NOUS_MANAGED_PROVIDER:
+    if provider is not None and provider != PULSE_MANAGED_PROVIDER:
         return None
     backend = managed_backend_for_model(model_id)
-    if backend == PORTAL and provider != NOUS_MANAGED_PROVIDER:
+    if backend == PORTAL and provider != PULSE_MANAGED_PROVIDER:
         return FAL
     return backend
 
@@ -93,7 +93,7 @@ def managed_image_catalog(
         for row in _plugin_rows("krea"):
             catalog[row["id"]] = {**row, "backend": KREA}
     if include_portal:
-        for row in _plugin_rows("nous"):
+        for row in _plugin_rows("pulse"):
             mid = row["id"]
             if mid in catalog or _PORTAL_DUPLICATE_OF.get(mid) in catalog:
                 continue

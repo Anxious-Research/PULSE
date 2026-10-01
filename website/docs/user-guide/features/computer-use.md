@@ -46,7 +46,7 @@ the machine running PULSE Desktop. On a gateway with `terminal.backend:
 local` that is the gateway host. With a sandboxed terminal (`docker`, `ssh`,
 `singularity`) the driver runs **inside the sandbox** on the sandbox's own
 display, so it can only ever touch what the terminal can; the sandbox image
-must carry `cua-driver` (`nousresearch/pulse-sandbox:desktop` does). Modal,
+must carry `cua-driver` (`anxious-research/pulse-sandbox:desktop` does). Modal,
 Daytona and Vercel sandboxes cannot host a display yet, so with those
 backends `computer_use` refuses unless `bot_desktop.placement: gateway` opts
 into driving the host. Details: [Bot Screen → Where the screen

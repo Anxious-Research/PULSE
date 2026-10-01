@@ -133,8 +133,8 @@ def _resolve_cloud_provider_uncached() -> Optional[CloudBrowserProvider]:
                 _bt._cached_cloud_provider = None
                 _bt._cloud_provider_resolved = True
                 return None
-            if provider_key == "nous":
-                # Managed "Nous Subscription" is serviced by the Browser Use provider.
+            if provider_key == "pulse":
+                # Managed "PULSE Subscription" is serviced by the Browser Use provider.
                 provider_key = "browser-use"
         if provider_key:
             resolved = _instantiate_explicit_cloud_provider(provider_key)

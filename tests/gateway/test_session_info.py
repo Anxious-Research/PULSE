@@ -55,11 +55,11 @@ class TestFormatSessionInfo:
                                   "review", {"provider": "moa", "base_url": "", "api_key": ""})
         moa_cfg = {"moa": {"presets": {"review": {
             "reference_models": [{"provider": "openai", "model": "gpt-5.5"}],
-            "aggregator": {"provider": "nous", "model": "claude-opus-4.8"},
+            "aggregator": {"provider": "pulse", "model": "claude-opus-4.8"},
         }}}}
         with p1, p2, p3, patch("pulse_cli.config.load_config", return_value=moa_cfg):
             info = runner._format_session_info()
-        assert "nous:claude-opus-4.8" in info
+        assert "pulse:claude-opus-4.8" in info
 
     def test_named_custom_provider_keeps_context_pin_without_model_base_url(
         self, runner, tmp_path

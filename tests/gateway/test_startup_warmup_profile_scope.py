@@ -1,6 +1,6 @@
 """Boot probes run inside the launch profile's scope under multiplex.
 
-``get_tool_definitions`` runs every ``check_fn``; the vision probe resolves Nous runtime
+``get_tool_definitions`` runs every ``check_fn``; the vision probe resolves PULSE runtime
 credentials, whose Portal / inference routing overrides read through ``agent.secret_scope.get_secret``.
 With multiplex active and no scope on the executor thread that read fails closed, the override is
 absent, and a non-production Portal's refresh token is POSTed to the production Portal. The warm-up
@@ -27,7 +27,7 @@ def multiplex_home(tmp_path, monkeypatch):
     (home / ".env").write_text(f"PULSE_PORTAL_BASE_URL={PORTAL}\n")
     monkeypatch.setenv("PULSE_HOME", str(home))
     monkeypatch.delenv("PULSE_PORTAL_BASE_URL", raising=False)
-    monkeypatch.delenv("NOUS_PORTAL_BASE_URL", raising=False)
+    monkeypatch.delenv("PULSE_PORTAL_BASE_URL", raising=False)
     secret_scope.set_multiplex_active(True)
     try:
         yield home
@@ -37,9 +37,9 @@ def multiplex_home(tmp_path, monkeypatch):
 
 def _probe(seen: dict):
     def probe() -> int:
-        from pulse_cli.auth_nous import _nous_portal_env_override
+        from pulse_cli.auth_pulse import _pulse_portal_env_override
         seen["scope_installed"] = secret_scope._SECRET_SCOPE.get() is not None
-        seen["portal_override"] = _nous_portal_env_override()
+        seen["portal_override"] = _pulse_portal_env_override()
         return 1
     return probe
 

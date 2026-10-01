@@ -11,7 +11,7 @@ import type { McpCatalogEntry } from '@/types/pulse'
 /**
  * The MCP draft provider — the suggestion bus's founding member (PR #85036).
  *
- * Matches the draft against the Nous-approved MCP catalog's `suggest`
+ * Matches the draft against the PULSE-approved MCP catalog's `suggest`
  * metadata (`GET /api/mcp/catalog` — the same reviewed manifests behind
  * `pulse mcp catalog`), by whole-word keyword and pasted-link host suffix,
  * excluding servers already configured. The catalog is the single source of

@@ -11,7 +11,7 @@ import {
   AccentSwatch,
   LayoutPreviewCard,
   LAYOUTS,
-  NOUS_ACCENT,
+  PULSE_ACCENT,
   orderConnectorPicks
 } from '@/components/onboarding-chat/options'
 import type { LayoutNode } from '@/components/pane-shell/tree/model'
@@ -169,7 +169,7 @@ function pickAccent(value: string, receipt?: string): void {
     return
   }
 
-  const accent = hex === NOUS_ACCENT ? null : hex
+  const accent = hex === PULSE_ACCENT ? null : hex
 
   setOnboardingAnswers({
     accent,
@@ -183,7 +183,7 @@ export function LookCard({ attrs, locked, messageId }: CardProps) {
   const { renderedMode } = useTheme()
   const { commit, done } = useCardCommit('look')
   const accents = accentsFor(renderedMode === 'dark')
-  const accent = answers.accent ?? NOUS_ACCENT
+  const accent = answers.accent ?? PULSE_ACCENT
   const picked = accents.find(swatch => swatch.hex === accent.toLowerCase())
 
   const requested = normalizeHex(attrs.value)

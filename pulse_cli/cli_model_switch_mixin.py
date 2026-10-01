@@ -67,7 +67,7 @@ def stored_session_route(session_meta, *, current_model, current_provider):
         # The endpoint and its wire belong to the provider this chat left; resolve the stored one's own.
         base_url = api_mode = None
     # A row's api_mode/base_url were written for whichever model the session last ran. Providers that
-    # pick the wire per model (OpenCode Zen/Go, Copilot, Nous) re-derive both from the stored model, or a
+    # pick the wire per model (OpenCode Zen/Go, Copilot, PULSE) re-derive both from the stored model, or a
     # resumed opencode-go session keeps a MiniMax-era anthropic_messages route for a chat_completions
     # model (#96066) — the CLI/oneshot twin of tui_gateway's _rederive_per_model_route.
     from pulse_cli.model_switch import model_derived_api_mode
@@ -142,7 +142,7 @@ def _print_switch_summary(cli, result, old_model, *, one_turn: bool, strict_cont
             _acting = f"{agg.get('provider')}:{agg.get('model')}"
             _cprint(f"    {t('cli.model.acting_model', model=_acting)}")
 
-    # Provider-aware context chain: Codex OAuth / Copilot / Nous caps win over the raw
+    # Provider-aware context chain: Codex OAuth / Copilot / PULSE caps win over the raw
     # models.dev entry (gpt-5.5 is 1.05M on openai but 272K on Codex OAuth).
     mi = result.model_info
     agent = cli.agent

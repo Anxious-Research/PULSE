@@ -35,7 +35,7 @@ import pulse_cli.plugins as plugins_mod
 from tools import transcription_tools
 
 
-PROMPT = "PULSE, Teknium, Nous Research, kanban"
+PROMPT = "PULSE, Teknium, Anxious Research, kanban"
 
 
 # ---------------------------------------------------------------------------

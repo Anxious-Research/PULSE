@@ -1,6 +1,6 @@
 """Public-name catalogs for shared metrics: the only non-enum names a package may carry.
 
-Every set here is something Nous itself publishes (slash-command registry, bundled and optional
+Every set here is something PULSE itself publishes (slash-command registry, bundled and optional
 skills, optional-mcps/ and plugin-catalog/ entries, built-in auxiliary tasks, shipped locales).
 A name outside its set is reported as ``custom`` so user-defined identities never leave the machine.
 Loaders are cached: the catalogs only change with the installed PULSE version.

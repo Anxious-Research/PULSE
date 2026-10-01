@@ -119,8 +119,8 @@ function channelRecord(channel: 'stable' | 'canary', sequence: number): FixtureR
       displayName: channel === 'stable' ? 'PULSE Stable' : 'PULSE Canary',
       appNamePascal: 'PULSE',
       artifactNamePascal: 'PULSE',
-      appId: 'chat.nous.pulse',
-      msixAppIdWithOrg: 'NousResearch.PULSE',
+      appId: 'chat.pulse.pulse',
+      msixAppIdWithOrg: 'AnxiousResearch.PULSE',
       cliName: 'pulse',
       windowsExecutableName: 'pulse'
     },
@@ -145,8 +145,8 @@ function buildManifest(
     displayName: channel === 'stable' ? 'PULSE Stable' : 'PULSE Canary',
     appNamePascal: 'PULSE',
     artifactNamePascal: 'PULSE',
-    appId: 'chat.nous.pulse',
-    msixAppIdWithOrg: 'NousResearch.PULSE',
+    appId: 'chat.pulse.pulse',
+    msixAppIdWithOrg: 'AnxiousResearch.PULSE',
     cliName: 'pulse',
     windowsExecutableName: 'pulse'
   }
@@ -175,7 +175,7 @@ function buildManifest(
         platform: 'darwin',
         arch: 'arm64',
         variant: 'bundled',
-        identity: 'chat.nous.pulse',
+        identity: 'chat.pulse.pulse',
         version: tag.replace(/^v/, ''),
         teamId: 'TESTTEAM12',
         artifact: {

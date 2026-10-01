@@ -55,7 +55,7 @@ _BEARER_PROVIDERS: Dict[str, Tuple[str, ...]] = {
     "OPENROUTER_API_KEY": ("openrouter.ai", "*.openrouter.ai"), "OPENAI_API_KEY": ("api.openai.com",),
     "GROQ_API_KEY": ("api.groq.com",), "TOGETHER_API_KEY": ("api.together.xyz",),
     "DEEPSEEK_API_KEY": ("api.deepseek.com",), "MISTRAL_API_KEY": ("api.mistral.ai",),
-    "XAI_API_KEY": ("api.x.ai",), "NOUS_API_KEY": ("inference.anxious-research.com",),
+    "XAI_API_KEY": ("api.x.ai",), "PULSE_API_KEY": ("inference.anxious-research.com",),
 }
 
 # Non-Authorization-header providers (v0.39 ``match_headers`` is case-insensitive).  ``aliases``

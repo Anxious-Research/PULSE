@@ -37,7 +37,7 @@ def _resolve_provider_key(env_var: str, provider_id: str) -> str:
 from tools.tts_command_provider import (
     BUILTIN_TTS_PROVIDERS, _configured_command_tts_output_path, _generate_command_tts,
     _get_command_tts_output_format, _is_command_tts_voice_compatible, _resolve_command_provider_config)
-from tools.tool_backend_helpers import NOUS_MANAGED_PROVIDER
+from tools.tool_backend_helpers import PULSE_MANAGED_PROVIDER
 from tools.tts_tool_delivery import (
     _resolve_max_text_length, _build_audio_delivery_files, _convert_to_opus, _remove_quietly,
     _repair_ogg_container, _resolve_audio_delivery_profile, _split_text_for_tts)
@@ -143,9 +143,9 @@ def _load_tts_config() -> Dict[str, Any]:
 
 def _get_provider(tts_config: Dict[str, Any]) -> str:
     """Configured provider or the free default (inference credentials never imply consent to paid
-    speech); ``nous`` is serviced by the OpenAI path through the managed openai-audio gateway."""
+    speech); ``pulse`` is serviced by the OpenAI path through the managed openai-audio gateway."""
     provider = (tts_config.get("provider") or DEFAULT_PROVIDER).lower().strip()
-    return "openai" if provider == NOUS_MANAGED_PROVIDER else provider
+    return "openai" if provider == PULSE_MANAGED_PROVIDER else provider
 
 
 # Platforms whose native voice-bubble delivery requires Ogg/Opus (MP3 renders broken there).

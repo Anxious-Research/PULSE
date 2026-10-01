@@ -12,7 +12,7 @@ from __future__ import annotations
 import pytest
 
 from agent.account_usage import build_credits_view
-from pulse_cli.nous_account import NousPortalAccountInfo, NousPaidServiceAccessInfo
+from pulse_cli.pulse_account import NousPortalAccountInfo, NousPaidServiceAccessInfo
 
 def _account(**kwargs) -> NousPortalAccountInfo:
     kwargs.setdefault("logged_in", True)
@@ -31,7 +31,7 @@ def _logged_in_account(monkeypatch):
 
     def _install(account):
         monkeypatch.setattr(
-            "pulse_cli.nous_account.get_nous_portal_account_info",
+            "pulse_cli.pulse_account.get_pulse_portal_account_info",
             lambda *a, **kw: account,
         )
 

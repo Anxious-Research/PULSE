@@ -29,7 +29,7 @@ async def test_reasoning_flag_applies_after_the_switch_with_the_pick_scope():
     runner, calls = _runner()
     ctx = _ModelSwitchContext(session_key="telegram:c1", source=None, config_path=None,
                               persist_global=True, reasoning_effort="high")
-    result = SimpleNamespace(new_model="m", target_provider="nous")
+    result = SimpleNamespace(new_model="m", target_provider="pulse")
     source = SimpleNamespace(platform=Platform.TELEGRAM)
 
     reply = await runner._commit_model_switch(result, ctx, source=source)
@@ -42,7 +42,7 @@ async def test_reasoning_flag_applies_after_the_switch_with_the_pick_scope():
 async def test_no_flag_and_once_leave_reasoning_untouched():
     runner, calls = _runner()
     source = SimpleNamespace(platform=Platform.TELEGRAM)
-    result = SimpleNamespace(new_model="m", target_provider="nous")
+    result = SimpleNamespace(new_model="m", target_provider="pulse")
     await runner._commit_model_switch(
         result, _ModelSwitchContext(session_key="k", source=None, config_path=None, persist_global=False),
         source=source)

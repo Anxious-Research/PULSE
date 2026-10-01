@@ -60,7 +60,7 @@ def test_prompt_snapshots_are_deduplicated_and_hydrated_for_readers(db):
 
 
 def test_route_changes_keep_the_prompt_and_replacement_collects_orphans(db):
-    shared_prompt = "Model: x-ai/grok-4.5\nProvider: nous"
+    shared_prompt = "Model: x-ai/grok-4.5\nProvider: pulse"
     db.create_session(
         "s1",
         "pulse_browser",

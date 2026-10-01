@@ -435,7 +435,7 @@ gateway:
     last_activity: "**最終アクティビティ:** {timestamp}"
     model: "**モデル:** `{model}`"
     model_provider: "**モデル:** `{model}` ({provider})"
-    free_tier: "Nous · 無料プラン · nous/welcome · /login でログイン"
+    free_tier: "PULSE · 無料プラン · pulse/welcome · /login でログイン"
     context: "**コンテキスト:** {used} / {total} ({pct}%)"
     context_used: "**コンテキスト:** ~{used} トークン"
     tokens: "**累計請求トークン:** {tokens} _(現在のコンテキストサイズではありません。`/context` を使用してください)_"
@@ -548,7 +548,7 @@ gateway:
     unknown_subcommand: "不明な /usage サブコマンド: `{args}`。`/usage` または `/usage reset [--force]` をお試しください。"
     reset_wrong_provider: "バンクされた使用制限リセットは openai-codex プロバイダーでのみ利用できます。まず `/model` で切り替えてください。"
   credits:
-    not_logged_in: "Nous Portal にログインしていません。ログインすると残高の確認とチャージができます。"
+    not_logged_in: "Pulse Portal にログインしていません。ログインすると残高の確認とチャージができます。"
   verbose:
     not_enabled: "`/verbose` コマンドはメッセージングプラットフォームで有効になっていません。\n\n`config.yaml` で有効にしてください:\n```yaml\ndisplay:\n  tool_progress_command: true\n```"
     mode_off: "⚙️ ツール進捗: **OFF** — ツールの動作は表示されません。"
@@ -841,7 +841,7 @@ gateway:
   startup:
     handoff_thread_title: "PULSE — {title}"
     restarted: "♻ ゲートウェイの再起動に成功しました。セッションは継続します。"
-    free_tier_line: "推論: Nous 無料プラン (nous/welcome)。さらに利用するにはログイン: /login"
+    free_tier_line: "推論: PULSE 無料プラン (pulse/welcome)。さらに利用するにはログイン: /login"
     online: "♻️ ゲートウェイがオンラインです — PULSE が復帰し、準備完了です。"
     db_corrupt: "⚠️ セッションデータベースの破損を検出しました。メッセージが永続化されない可能性があります。復旧オプション:\n1. `pulse {profile_arg}doctor --fix` を実行\n2. ゲートウェイを停止し、次で復旧:\n   pulse {profile_arg}sessions recover --source {db_path} --inspect-only\n   (復旧可能と報告された場合) pulse {profile_arg}sessions recover --source {db_path} --output recovered-state.db\n   — 復旧は先に破損ファイルのスナップショットを取ります。稼働中の state.db に対して `sqlite3 ... \".recover\"` を実行しないでください。脆弱な sqlite3 CLI はさらに破損させる可能性があります\n3. {backups_dir}/ のバックアップから復元\nサニタイズ済みの診断情報は `pulse {profile_arg}doctor` で確認できます。"
     db_fts_corrupt: "⚠️ セッションデータベースが検索インデックス (FTS5) に限定された破損エラーを報告しました。メッセージテーブルは損傷していません。修復されるまでメッセージが永続化されない可能性があります: `pulse {profile_arg}doctor --fix` を実行し、ゲートウェイを再起動してください。`pulse {profile_arg}doctor` が損傷を確認しない限り、復旧ツールの実行やバックアップからの復元は行わないでください。"
@@ -937,7 +937,7 @@ gateway:
   codex_runtime:
     config_load_failed: "❌ 設定を読み込めませんでした: {error}"
   topup:
-    header: "💳 **Nous 残高**"
+    header: "💳 **PULSE 残高**"
     portal_link: "請求はポータルで管理してください: {url}"
     hint: "チャージと請求の管理はブラウザで行ってください — 完了後、ここの残高が更新されます。"
   login:
@@ -1660,11 +1660,11 @@ slash:
   usage:
     description: "トークン使用量とレート制限を表示。`reset` で蓄えた Codex の制限リセットを適用"
   subscription:
-    description: "Nous プランを確認し、ブラウザで変更"
+    description: "PULSE プランを確認し、ブラウザで変更"
   login:
-    description: "Nous アカウントでサインイン（コネクターは維持）"
+    description: "PULSE アカウントでサインイン（コネクターは維持）"
   topup:
-    description: "Nous の残高を表示し、ポータルで請求を管理"
+    description: "PULSE の残高を表示し、ポータルで請求を管理"
   platforms:
     description: "ゲートウェイ/メッセージングプラットフォームの状態を表示"
   platform:
@@ -1685,7 +1685,7 @@ cli:
   billing:
     load_failed: "{label}: {error}"
     load_failed_label: "請求情報を読み込めませんでした"
-    not_logged_in: "Nous Portal にログインしていません。"
+    not_logged_in: "Pulse Portal にログインしていません。"
     run_portal_then: "`pulse portal` を実行してログインし、その後 {cmd} を実行してください。"
     org_line: "組織: {org}"
     org_line_role: "組織: {org} · {role}"
@@ -1775,7 +1775,7 @@ cli:
     confirm_purchase: "購入の確認"
     total_line: "合計: {amount}"
     portal_card_will_be_charged: "ポータルに保存されたカードに課金されます。"
-    consent_charge: "確認すると、Nous Research によるカードへの課金を許可したことになります。"
+    consent_charge: "確認すると、Anxious Research によるカードへの課金を許可したことになります。"
     choice_pay_now: "今すぐ {amount} を支払う"
     desc_submit_charge: "課金を送信"
     desc_manage_card_billing: "ブラウザでカード / 請求を管理"
@@ -1836,7 +1836,7 @@ cli:
     threshold_label: "残高がこの金額を下回ったら"
     reload_to_label: "この金額までチャージ"
     reload_must_exceed_threshold: "🔴 チャージ後の金額はしきい値より大きくする必要があります。"
-    auto_reload_consent: "確認すると、残高が {threshold} に達するたびに Nous Research が {card} に課金することを許可したことになります。ここまたはポータルからいつでもオフにできます。"
+    auto_reload_consent: "確認すると、残高が {threshold} に達するたびに Anxious Research が {card} に課金することを許可したことになります。ここまたはポータルからいつでもオフにできます。"
     turn_on_auto_reload_question: "自動チャージをオンにしますか？"
     auto_reload_enabled: "✅ 自動チャージ オン: {threshold} 未満で {reload_to} までチャージ。"
     auto_reload_disabled: "✅ 自動チャージをオフにしました。"
@@ -2416,7 +2416,7 @@ cli:
     empty_base_url: "⚠️  プロバイダーリゾルバーが空のベース URL を返しました。プロバイダー設定を確認するか、次を実行してください: pulse setup"
     switching_to_fallback: "⚠️  {reason} — フォールバックに切り替えます: {provider} / {model}"
     first_run_no_provider: "☤ 推論プロバイダーがまだ設定されていません — 今から設定しましょう。"
-    first_run_pick_provider: "プロバイダー（Nous Portal の OAuth が最速で、API キー不要です）とモデルを選択します。"
+    first_run_pick_provider: "プロバイダー（Pulse Portal の OAuth が最速で、API キー不要です）とモデルを選択します。"
     first_run_prompt: "今すぐプロバイダーを設定しますか？ [Y/n]:"
     first_run_skipped: "スキップしました。'pulse model' または 'pulse setup' はいつでも実行できます。"
     first_run_cancelled: "セットアップをキャンセルしました。'pulse model' はいつでも実行できます。"
@@ -2444,7 +2444,7 @@ cli:
     delivering_leftover_steer: "⏩ 残っている /steer を次のターンとして送ります: '{preview}'"
     reasoning_label: "推論"
     reasoning_more_lines: "... （他 {count} 行 — /reasoning full で全文表示）"
-    billing_cta_nous: "[bold]/topup[/] でクレジットを追加するか、[bold]/subscription[/] でプランを変更してください。"
+    billing_cta_pulse: "[bold]/topup[/] でクレジットを追加するか、[bold]/subscription[/] でプランを変更してください。"
     billing_cta_provider: "{provider} でクレジットを追加してください"
     your_provider: "ご利用のプロバイダー"
     billing_cta_switch: "または [bold]/model <model> --provider <provider>[/] でプロバイダーを切り替えてください。"
@@ -3088,7 +3088,7 @@ cli:
     fix_lm_studio: "LM Studio の対処法: モデル設定でコンテキスト長を設定 → モデルを再読み込み"
     fix_local_server: "対処法: サーバーを少なくとも {tokens_k}K コンテキストで起動する（llama.cpp: -c {tokens}）か、config.yaml の model.ollama_num_ctx を実際に提供しているウィンドウ長に設定してください"
     fix_config: "対処法: config.yaml で model.context_length を設定するか、サーバーのコンテキスト設定を増やしてください"
-    pulse_models_not_agentic: "⚠  Nous Research の PULSE 3 および 4 モデルはエージェント向けではなく、PULSE Agent での使用を想定していません。"
+    pulse_models_not_agentic: "⚠  Anxious Research の PULSE 3 および 4 モデルはエージェント向けではなく、PULSE Agent での使用を想定していません。"
     pulse_models_lack_tools: "これらのモデルにはエージェントワークフローに必要なツール呼び出し機能がありません。エージェント対応モデル（Claude、GPT、Gemini、DeepSeek など）の使用を検討してください。"
     pulse_models_switch_hint: "切り替え方法: /model sonnet  または  /model gpt5"
     project_skills_loaded: "◆ このリポジトリからプロジェクトスキル {count} 件を読み込みました"
@@ -3654,8 +3654,8 @@ tips:
   t181: "Camofox は検出回避型のブラウザです。C++ によるフィンガープリント偽装を備えた Firefox のフォークです。"
   t182: "browser_navigate は自動的にページのスナップショットを返すため、あとから browser_snapshot を呼ぶ必要はありません。"
   t183: "browser_vision に annotate=true を指定すると、操作可能な要素に番号付きラベルを重ねて表示します。"
-  t184: "pulse mcp は Nous 承認済み MCP の対話型ピッカーを開き、キー 1 つでインストールできます。"
-  t185: "pulse mcp catalog はリポジトリに同梱されている Nous 承認済みの MCP サーバーを一覧表示します。"
+  t184: "pulse mcp は PULSE 承認済み MCP の対話型ピッカーを開き、キー 1 つでインストールできます。"
+  t185: "pulse mcp catalog はリポジトリに同梱されている PULSE 承認済みの MCP サーバーを一覧表示します。"
   t186: "pulse mcp install <name> はカタログの項目をインストールし、認証情報の入力を求め、有効にするツールを選択させてくれます。"
   t187: "MCP サーバーは config.yaml で設定します。stdio と HTTP の両方のトランスポートに対応しています。"
   t188: "サーバーごとのツールフィルタリング: tools.include で特定のツールをホワイトリストに、tools.exclude でブラックリストに登録します。"
@@ -3682,7 +3682,7 @@ tips:
   t209: "カスタムプロバイダー: config.yaml の custom_providers に名前付きエンドポイントを保存できます。"
   t210: "PULSE_EPHEMERAL_SYSTEM_PROMPT は、履歴に一切保存されないシステムプロンプトを注入します。"
   t211: "credential_pool_strategies は fill_first、round_robin、least_used、random のローテーションに対応しています。"
-  t212: "pulse auth add nous または pulse auth add openai-codex で、OAuth ベースのプロバイダーを設定できます。"
+  t212: "pulse auth add pulse または pulse auth add openai-codex で、OAuth ベースのプロバイダーを設定できます。"
   t213: "API サーバーは Chat Completions と、サーバー側で状態を保持する Responses API の両方に対応しています。"
   t214: "設定で tool_preview_length: 0 にすると、スピナーのアクティビティ表示にファイルパスが省略なしで表示されます。"
   t215: "pulse status --deep は、すべてのコンポーネントに対してより詳しい診断チェックを実行します。"
@@ -3752,7 +3752,7 @@ tips:
   t279: "PULSE_DEV=1 は、ローカル開発のためにコンテナモードの検出を回避します。"
   t280: "各 MCP サーバーには独自のツールセット（mcp-servername）があり、pulse tools で個別にオン/オフできます。"
   t281: "設定内の MCP の ${ENV_VAR} プレースホルダーはサーバー起動時に解決され、~/.pulse/.env の変数も対象です。"
-  t282: "信頼済みリポジトリ（NousResearch）のスキルは「trusted」セキュリティレベルになり、コミュニティのスキルは追加のスキャンを受けます。"
+  t282: "信頼済みリポジトリ（AnxiousResearch）のスキルは「trusted」セキュリティレベルになり、コミュニティのスキルは追加のスキャンを受けます。"
   t283: "~/.pulse/skills/.hub/quarantine/ のスキル隔離領域には、セキュリティレビュー待ちのスキルが保管されます。"
   t284: "/steer <prompt> は次のツール呼び出しの後にメモを注入します。中断せずにタスクの途中で方向を修正できます。"
   t285: "/goal <text> は継続的な Ralph ループの目標を設定します。ジャッジが完了と判定するまで、PULSE はターンを自動で続けます。"
@@ -3778,7 +3778,7 @@ tips:
   t305: "pulse curator rollback は実行前のスナップショットからスキルを復元します。バックアップは skills/.curator_backups/ にあります。"
   t306: "pulse auth reset <provider> [target] は、認証情報プール全体、またはインデックス・id・ラベルで指定した 1 件のクールダウンと枯渇フラグをクリアします。"
   t307: "credential_pool_strategies.<provider>: round_robin は、デフォルトの fill_first ではなくキーを均等に巡回させます。"
-  t308: "ツールごとに use_gateway: true を設定すると、web、image、tts、browser を Nous サブスクリプション経由で使えます。追加のキーは不要です。"
+  t308: "ツールごとに use_gateway: true を設定すると、web、image、tts、browser を PULSE サブスクリプション経由で使えます。追加のキーは不要です。"
   t309: "provider_routing.data_collection: deny は、OpenRouter 上でデータを保存するプロバイダーを除外します。"
   t310: "provider_routing.require_parameters: true は、リクエストのすべてのパラメーターに対応するプロバイダーだけにルーティングします。"
   t311: "PULSE_TUI_RESUME=1 は起動時に最新の TUI セッションへ自動で再接続します。SSH が切れた後に便利です。"

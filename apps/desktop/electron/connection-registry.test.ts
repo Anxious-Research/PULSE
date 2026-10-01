@@ -461,13 +461,13 @@ test('resolvedConnectionId reuses the exact URL envelope and rejects weak or dup
         headers: { 'CF-Access-Client-Id': { encoding: 'safeStorage', value: 'header-b' } }
       },
       {
-        id: 'cloud-nous',
+        id: 'cloud-pulse',
         kind: 'cloud',
-        label: 'Nous cloud',
+        label: 'PULSE cloud',
         url: sharedUrl,
         authMode: 'oauth',
         headers: { 'CF-Access-Client-Id': { encoding: 'safeStorage', value: 'header-cloud' } },
-        org: 'nous'
+        org: 'pulse'
       },
       {
         id: 'cloud-labs',
@@ -508,10 +508,10 @@ test('resolvedConnectionId reuses the exact URL envelope and rejects weak or dup
       baseUrl: sharedUrl,
       headers: { 'CF-Access-Client-Id': { encoding: 'safeStorage', value: 'header-cloud' } },
       mode: 'remote',
-      org: 'nous',
+      org: 'pulse',
       remoteKind: 'cloud'
     }),
-    'cloud-nous'
+    'cloud-pulse'
   )
   assert.equal(
     resolvedConnectionId(registry, {
@@ -1270,13 +1270,13 @@ test('merge preserves fields the editor does not carry (org, ssh extras)', () =>
     id: 'c',
     kind: 'cloud' as const,
     label: 'Cloud',
-    org: 'nous',
+    org: 'pulse',
     url: 'https://a.cloud'
   }
 
   const renamed = mergeConnectionInput({ id: 'c', kind: 'cloud', label: 'Renamed', url: 'https://a.cloud' }, cloud)
 
-  assert.equal(renamed.org, 'nous')
+  assert.equal(renamed.org, 'pulse')
 
   const ssh = {
     host: 'homelab.lan',
@@ -1412,12 +1412,12 @@ test('remote input normalizes URL and auth mode; cloud keeps org', () => {
   assert.equal(remote.authMode, 'token')
 
   const cloud = normalizeConnectionInput(
-    { kind: 'cloud', label: 'Cloud', url: 'https://foo.pulse.cloud', authMode: 'oauth', org: 'nous' },
+    { kind: 'cloud', label: 'Cloud', url: 'https://foo.pulse.cloud', authMode: 'oauth', org: 'pulse' },
     registry
   )
 
   assert.equal(cloud.kind, 'cloud')
-  assert.equal(cloud.org, 'nous')
+  assert.equal(cloud.org, 'pulse')
   assert.equal(cloud.authMode, 'oauth')
 })
 
@@ -1497,7 +1497,7 @@ test('normalizeRegistry round-trips a valid registry unchanged in shape', () => 
         label: 'PULSE Cloud',
         url: 'https://a.pulse.cloud',
         authMode: 'oauth',
-        org: 'nous'
+        org: 'pulse'
       },
       { id: 'spark', kind: 'ssh', label: 'Spark', host: 'spark1', user: 'tek', port: 2222 }
     ]
@@ -1599,14 +1599,14 @@ test('migrate: v1 global remote becomes a labeled entry and the primary', () => 
 test('migrate: v1 cloud keeps cloud provenance + org', () => {
   const registry = migrateV1ToRegistry({
     mode: 'cloud',
-    remote: { url: 'https://a.pulse.cloud', authMode: 'oauth', org: 'nous' }
+    remote: { url: 'https://a.pulse.cloud', authMode: 'oauth', org: 'pulse' }
   })
 
   const cloud = registry.connections.find(c => c.kind === 'cloud')
 
   assert.ok(cloud)
   assert.equal(registry.primary, cloud.id)
-  assert.equal(cloud.org, 'nous')
+  assert.equal(cloud.org, 'pulse')
 })
 
 test('migrate: per-profile overrides become extra sources, deduped by URL', () => {

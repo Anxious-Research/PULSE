@@ -194,7 +194,7 @@ delegation:
 ```yaml
 auxiliary:
   review:
-    provider: openrouter               # 或 nous、anthropic、直连 base_url 等
+    provider: openrouter               # 或 pulse、anthropic、直连 base_url 等
     model: anthropic/claude-opus-4.6   # 一个强力的评审模型
 ```
 

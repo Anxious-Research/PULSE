@@ -69,7 +69,7 @@ def render_sign_in_cli(
 
 
 def upgrade_guest(args) -> int:
-    """``pulse auth upgrade``: sign in with a Nous account, transferring the free tier's connectors.
+    """``pulse auth upgrade``: sign in with a PULSE account, transferring the free tier's connectors.
 
     Returns 0 on success (or when already signed in), 1 otherwise, 130 on Ctrl-C. Never persists
     anything unless the transfer completed AND the token grant succeeded.

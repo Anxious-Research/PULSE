@@ -33,7 +33,7 @@ Docker 与 PULSE Agent 的交集有两种截然不同的方式：
 mkdir -p ~/.pulse
 docker run -it --rm \
   -v ~/.pulse:/opt/data \
-  nousresearch/pulse-agent setup
+  anxious-research/pulse-agent setup
 ```
 
 这将进入设置向导，向导会提示你输入 API 密钥并将其写入 `~/.pulse/.env`。你只需执行一次。强烈建议此时为 gateway 配置一个聊天系统。
@@ -48,7 +48,7 @@ docker run -d \
   --restart unless-stopped \
   -v ~/.pulse:/opt/data \
   -p 8642:8642 \
-  nousresearch/pulse-agent gateway run
+  anxious-research/pulse-agent gateway run
 ```
 
 端口 8642 暴露 gateway 的 [OpenAI 兼容 API 服务器](./features/api-server.md)和健康检查端点。如果你只使用聊天平台（Telegram、Discord 等），该端口是可选的；但如果你希望 dashboard 或外部工具访问 gateway，则必须开放。
@@ -65,7 +65,7 @@ docker run -d \
   -e API_SERVER_HOST=0.0.0.0 \
   -e API_SERVER_KEY="$(openssl rand -hex 32)" \
   -e API_SERVER_CORS_ORIGINS='*' \
-  nousresearch/pulse-agent gateway run
+  anxious-research/pulse-agent gateway run
 ```
 
 在面向互联网的机器上开放任何端口都存在安全风险。除非你了解相关风险，否则不应这样做。
@@ -82,7 +82,7 @@ docker run -d \
   -p 8642:8642 \
   -p 9119:9119 \
   -e PULSE_DASHBOARD=1 \
-  nousresearch/pulse-agent gateway run
+  anxious-research/pulse-agent gateway run
 ```
 
 Dashboard 由 s6 监管：若进程崩溃，`s6-supervise` 会在短暂退避后自动重启。Dashboard 的 stdout/stderr 会直接转发到 `docker logs <container>`；gateway 的主输出现在写入每个 profile 的 s6 日志文件，见下方的 per-profile 日志说明。
@@ -104,7 +104,7 @@ Dashboard 由 s6 监管：若进程崩溃，`s6-supervise` 会在短暂退避后
 有三种内置方式可满足第二个条件：
 
 - **用户名/密码** —— 最简单的自托管 / 局域网 / VPN 内部署方式：设置 `PULSE_DASHBOARD_BASIC_AUTH_USERNAME` + `PULSE_DASHBOARD_BASIC_AUTH_PASSWORD`（以及用于跨重启稳定 session 的 `PULSE_DASHBOARD_BASIC_AUTH_SECRET`）。不适合直接暴露到公网上。
-- **OAuth（Nous Portal）** —— 适合托管/公网部署：设置 `PULSE_DASHBOARD_OAUTH_CLIENT_ID` 后，`dashboard_auth/nous` 提供者会自动激活。
+- **OAuth（Pulse Portal）** —— 适合托管/公网部署：设置 `PULSE_DASHBOARD_OAUTH_CLIENT_ID` 后，`dashboard_auth/pulse` 提供者会自动激活。
 - **自托管 OIDC** —— 通过标准 OpenID Connect 接入你自己的身份提供商：设置 `PULSE_DASHBOARD_OIDC_ISSUER` + `PULSE_DASHBOARD_OIDC_CLIENT_ID` 后，`dashboard_auth/self_hosted` 提供者会激活。
 
 无论选择哪种，调用方在访问受保护路由前都会先被重定向到登录页。完整说明见 [Web Dashboard → 鉴权](features/web-dashboard.md)。
@@ -129,7 +129,7 @@ Dashboard 由 s6 监管：若进程崩溃，`s6-supervise` 会在短暂退避后
 ```sh
 docker run -it --rm \
   -v ~/.pulse:/opt/data \
-  nousresearch/pulse-agent
+  anxious-research/pulse-agent
 ```
 
 或者，如果你已通过 Docker Desktop 等方式在运行中的容器内打开了终端，直接运行：
@@ -207,7 +207,7 @@ docker run -it --rm \
   -v ~/.pulse:/opt/data \
   -e ANTHROPIC_API_KEY="sk-ant-..." \
   -e OPENAI_API_KEY="sk-..." \
-  nousresearch/pulse-agent
+  anxious-research/pulse-agent
 ```
 
 直接传入的 `-e` 标志会覆盖 `.env` 中的值。这对于不希望将密钥写入磁盘的 CI/CD 或密钥管理器集成非常有用。
@@ -223,7 +223,7 @@ docker run -it --rm \
 ```yaml
 services:
   pulse:
-    image: nousresearch/pulse-agent:latest
+    image: anxious-research/pulse-agent:latest
     container_name: pulse
     restart: unless-stopped
     command: gateway run
@@ -267,7 +267,7 @@ docker run -d \
   --restart unless-stopped \
   --memory=4g --cpus=2 \
   -v ~/.pulse:/opt/data \
-  nousresearch/pulse-agent gateway run
+  anxious-research/pulse-agent gateway run
 ```
 
 ## Dockerfile 说明 {#what-the-dockerfile-does}
@@ -333,13 +333,13 @@ pulse profile delete coder            # 拆除 s6 槽
 拉取最新镜像并重建容器。你的数据目录不受影响。
 
 ```sh
-docker pull nousresearch/pulse-agent:latest
+docker pull anxious-research/pulse-agent:latest
 docker rm -f pulse
 docker run -d \
   --name pulse \
   --restart unless-stopped \
   -v ~/.pulse:/opt/data \
-  nousresearch/pulse-agent gateway run
+  anxious-research/pulse-agent gateway run
 ```
 
 或使用 Docker Compose：
@@ -373,10 +373,10 @@ SSH 和 Modal 后端也会进行相同的同步——技能和凭据文件在每
 
 ### 持久安装——构建派生镜像
 
-当工具必须在每次容器启动时立即可用且无需重新安装延迟时，构建一个继承自 `nousresearch/pulse-agent` 并在层中安装该工具的新镜像：
+当工具必须在每次容器启动时立即可用且无需重新安装延迟时，构建一个继承自 `anxious-research/pulse-agent` 并在层中安装该工具的新镜像：
 
 ```dockerfile
-FROM nousresearch/pulse-agent:latest
+FROM anxious-research/pulse-agent:latest
 
 USER root
 RUN apt-get update \
@@ -397,7 +397,7 @@ docker run -d \
   my-pulse:latest gateway run
 ```
 
-入口点脚本和 `/opt/data` 语义原样继承，本页其余内容仍然适用。拉取更新的上游 `nousresearch/pulse-agent` 时记得重新构建镜像。
+入口点脚本和 `/opt/data` 语义原样继承，本页其余内容仍然适用。拉取更新的上游 `anxious-research/pulse-agent` 时记得重新构建镜像。
 
 ### 复杂工具或多服务栈——运行 sidecar 容器
 
@@ -406,7 +406,7 @@ docker run -d \
 ```yaml
 services:
   pulse:
-    image: nousresearch/pulse-agent:latest
+    image: anxious-research/pulse-agent:latest
     container_name: pulse
     restart: unless-stopped
     command: gateway run
@@ -464,7 +464,7 @@ services:
             - capabilities: [gpu]
 
   pulse:
-    image: nousresearch/pulse-agent:latest
+    image: anxious-research/pulse-agent:latest
     container_name: pulse
     restart: unless-stopped
     command: gateway run
@@ -508,7 +508,7 @@ docker run -d \
   --name pulse \
   -v ~/.pulse:/opt/data \
   -p 8642:8642 \
-  nousresearch/pulse-agent gateway run
+  anxious-research/pulse-agent gateway run
 ```
 
 ```yaml
@@ -527,7 +527,7 @@ docker run -d \
   --name pulse \
   --network host \
   -v ~/.pulse:/opt/data \
-  nousresearch/pulse-agent gateway run
+  anxious-research/pulse-agent gateway run
 ```
 
 ```yaml
@@ -593,7 +593,7 @@ docker run -d \
   --name pulse \
   --shm-size=1g \
   -v ~/.pulse:/opt/data \
-  nousresearch/pulse-agent gateway run
+  anxious-research/pulse-agent gateway run
 ```
 
 ### 网络问题后 gateway 无法重连
@@ -608,6 +608,6 @@ docker restart pulse
 
 ```sh
 docker logs --tail 50 pulse          # 最近日志
-docker run -it --rm nousresearch/pulse-agent:latest version     # 验证版本
+docker run -it --rm anxious-research/pulse-agent:latest version     # 验证版本
 docker stats pulse                    # 资源使用情况
 ```

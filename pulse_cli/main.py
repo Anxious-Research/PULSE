@@ -767,7 +767,7 @@ from datetime import datetime
 
 from pulse_cli.model_setup_flows import (
     _model_flow_openrouter,
-    _model_flow_nous,
+    _model_flow_pulse,
     _model_flow_openai_codex,
     _model_flow_xai_oauth,
     _model_flow_qwen_oauth,
@@ -1087,7 +1087,7 @@ def _auth_store_logged_in(auth_file: Path, registry, strict_profile_scope: bool)
 
 
 def _has_any_provider_configured(*, strict_profile_scope: bool = False) -> bool:
-    """Check if at least one inference provider is usable. Never creates one: the Nous free tier
+    """Check if at least one inference provider is usable. Never creates one: the PULSE free tier
     counts only once its identity exists, and the boot bootstrap (``pulse_cli.free_tier_bootstrap``)
     is the only thing that creates it; ``cmd_chat`` runs the bootstrap before asking.
 
@@ -1174,7 +1174,7 @@ def _has_any_provider_configured(*, strict_profile_scope: bool = False) -> bool:
         except Exception:
             pass
 
-    # Nothing explicit anywhere: an existing Nous free-tier identity counts while the tier is on.
+    # Nothing explicit anywhere: an existing PULSE free-tier identity counts while the tier is on.
     try:
         from pulse_cli.anon_auth import guest_enabled, has_guest
         return guest_enabled() and has_guest()
@@ -1975,7 +1975,7 @@ cmd_dump = _forward_command("cmd_dump", "pulse_cli.dump", "run_dump", doc='Dump 
 cmd_debug = _forward_command("cmd_debug", "pulse_cli.debug", "run_debug", doc='Debug tools (share report, etc.).')
 cmd_skin = _forward_command("cmd_skin", "pulse_cli.skin_cmd", "skin_command", doc='Skin management (list / use / set).')
 cmd_import = _forward_command("cmd_import", "pulse_cli.backup", "run_import", forward_return=True, doc='Restore a PULSE backup from a zip file.')
-cmd_dashboard_register = _forward_command("cmd_dashboard_register", "pulse_cli.dashboard_register", "cmd_dashboard_register", doc='Register a self-hosted dashboard OAuth client with Nous Portal.')
+cmd_dashboard_register = _forward_command("cmd_dashboard_register", "pulse_cli.dashboard_register", "cmd_dashboard_register", doc='Register a self-hosted dashboard OAuth client with Pulse Portal.')
 cmd_gateway_enroll = _forward_command("cmd_gateway_enroll", "pulse_cli.gateway_enroll", "cmd_gateway_enroll", doc='Enroll a self-hosted gateway with a relay connector.')
 cmd_prompt_size = _forward_command("cmd_prompt_size", "pulse_cli.prompt_size", "cmd_prompt_size", doc='Show a byte/char breakdown of the system prompt + tool schemas.')
 cmd_pairing = _forward_command("cmd_pairing", "pulse_cli.pairing", "pairing_command")
@@ -2012,7 +2012,7 @@ _PROVIDER_MODEL_FLOWS = {
     "openrouter": lambda c, m, a: _model_flow_openrouter(c, m),
     "moa": lambda c, m, a: _model_flow_moa(c, m),
     "ai-gateway": lambda c, m, a: _model_flow_ai_gateway(c, m),
-    "nous": lambda c, m, a: _model_flow_nous(c, m, args=a),
+    "pulse": lambda c, m, a: _model_flow_pulse(c, m, args=a),
     "openai-codex": lambda c, m, a: _model_flow_openai_codex(c, m),
     "xai-oauth": lambda c, m, a: _model_flow_xai_oauth(c, m, args=a),
     "qwen-oauth": lambda c, m, a: _model_flow_qwen_oauth(c, m),
@@ -2082,7 +2082,7 @@ def _resolve_active_provider(config, model_cfg, effective_provider, custom_provi
             if exc.code == "no_provider_configured":
                 # The picker that is about to open IS the fix; a warning that says
                 # "run `pulse model`" from inside `pulse model` is circular.
-                print("No provider is set up yet — pick one below. (Nous Portal works without an API key.)")
+                print("No provider is set up yet — pick one below. (Pulse Portal works without an API key.)")
             elif effective_provider == "auto":
                 print(f"Warning: {format_auth_error(exc)} Falling back to auto provider detection.")
             active = None  # no provider yet; default to first in list

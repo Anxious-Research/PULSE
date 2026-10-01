@@ -22,7 +22,7 @@ def test_fleet_config_migration_live_windows(tmp_path, monkeypatch):
         home = profiles / name
         home.mkdir(parents=True)
         (home / "config.yaml").write_text(
-            yaml.safe_dump({"_config_version": ver, "model": {"provider": "nous"}}),
+            yaml.safe_dump({"_config_version": ver, "model": {"provider": "pulse"}}),
             encoding="utf-8",
         )
     active.mkdir(exist_ok=True)
@@ -44,7 +44,7 @@ def test_fleet_config_migration_live_windows(tmp_path, monkeypatch):
     for name in ("research", "work"):
         on_disk = yaml.safe_load((profiles / name / "config.yaml").read_text())
         assert on_disk["_config_version"] == latest
-        assert on_disk["model"]["provider"] == "nous"
+        assert on_disk["model"]["provider"] == "pulse"
 
     # active untouched; idempotent second run
     assert yaml.safe_load((active / "config.yaml").read_text())["_config_version"] == 12

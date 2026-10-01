@@ -17,7 +17,7 @@ Build stunning 3D scenes via a concept-art fidelity loop.
 | Source | Optional — install with `pulse skills install official/creative/dream-loop` |
 | Path | `optional-skills/creative/dream-loop` |
 | Version | `1.0.0` |
-| Author | Anshu Chimala (adapted by Nous Research) |
+| Author | Anshu Chimala (adapted by Anxious Research) |
 | License | MIT |
 | Platforms | linux, macos |
 | Tags | `3d`, `games`, `webgl`, `threejs`, `image-generation`, `visual-fidelity`, `creative` |

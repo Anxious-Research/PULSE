@@ -1808,7 +1808,7 @@ def test_oauth_system_prompt_sanitizer_preserves_docs_url():
             {
                 "role": "system",
                 "content": (
-                    "PULSE Agent by Nous Research uses pulse-agent skills. "
+                    "PULSE Agent by Anxious Research uses pulse-agent skills. "
                     "Docs: https://pulse-agent.anxious-research.com/docs ; "
                     "interpreter ~/.pulse/pulse-agent/venv/bin/python ; "
                     "source github.com/Anxious-Research/PULSE ; mail pulse-agent@example.com ; "

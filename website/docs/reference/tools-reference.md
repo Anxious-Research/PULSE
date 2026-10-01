@@ -59,7 +59,7 @@ If the prompt times out part-way, answers the user already locked are kept: the 
 ## `connections` toolset
 
 One tool for both kinds of external app. A target is a managed connector (`"gmail"` or
-`{"name": "gmail"}`, authorized through the Nous gateway) or a local MCP server
+`{"name": "gmail"}`, authorized through the PULSE gateway) or a local MCP server
 (`{"name": "linear", "mcp": true}`, an entry in `mcp_servers`).
 
 | Tool | Description | Requires environment |
@@ -68,7 +68,7 @@ One tool for both kinds of external app. A target is a managed connector (`"gmai
 
 The deadline for one call is five minutes, fixed by the backend when the call starts;
 reopening the chat or restarting the desktop never extends it. The tool is present only when the
-Nous Portal has enabled connectors for the signed-in account (the `managed_tools` claim on its
+Pulse Portal has enabled connectors for the signed-in account (the `managed_tools` claim on its
 token). Other sessions do not see it.
 
 ## `code_execution` toolset

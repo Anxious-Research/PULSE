@@ -1,6 +1,6 @@
-"""MCP catalog — curated, Nous-approved MCP servers shipped with the repo.
+"""MCP catalog — curated, PULSE-approved MCP servers shipped with the repo.
 
-Entries are added only by merging a PR into pulse-agent; presence in ``optional-mcps/`` = Nous
+Entries are added only by merging a PR into pulse-agent; presence in ``optional-mcps/`` = PULSE
 approval (no community tier, no other trust signals). Manifests pin transport details.
 """
 

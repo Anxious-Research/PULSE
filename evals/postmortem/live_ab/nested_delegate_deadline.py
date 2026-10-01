@@ -1,7 +1,7 @@
 """Live A/B for the nested-delegate deadline. A depth-1 orchestrator child dispatches one leaf that runs a
 ~460 s task (longer than the 420 s sequential deadline). On main the orchestrator's delegate_task call returns
 'timed out after 420.0s' and the leaf runs on as an orphan; on the branch the call blocks and returns the
-real result. Uses glm-5.3 via Nous for cost. Deadline shortened via config to keep the run short."""
+real result. Uses glm-5.3 via PULSE for cost. Deadline shortened via config to keep the run short."""
 import os, sys, json, time, re, subprocess
 # Usage: python nested_delegate_deadline.py <repo_root>   (run once per ref; LIVE: a couple of real child calls)
 root = sys.argv[1]; arm = os.path.basename(os.path.normpath(root))
@@ -25,9 +25,9 @@ print("effective sequential deadline:", resolve_timeout("tools.sequential_call",
 from run_agent import AIAgent
 from pulse_cli.runtime_provider import resolve_runtime_provider
 MODEL = "z-ai/glm-5.3-flash"
-rt = resolve_runtime_provider(requested="nous", target_model=MODEL)
+rt = resolve_runtime_provider(requested="pulse", target_model=MODEL)
 sid = f"dl_{arm}_{int(time.time())}"
-ag = AIAgent(model=MODEL, provider="nous", base_url=rt.get("base_url"), api_key=rt.get("api_key"), api_mode=rt.get("api_mode"),
+ag = AIAgent(model=MODEL, provider="pulse", base_url=rt.get("base_url"), api_key=rt.get("api_key"), api_mode=rt.get("api_mode"),
              session_id=sid, quiet_mode=True, enabled_toolsets=["terminal", "delegation"], platform="cli", max_iterations=8,
              skip_context_files=True, skip_memory=True)
 # Make this agent a depth-1 orchestrator exactly as delegate_tool_child_run does for a real nested orchestrator:

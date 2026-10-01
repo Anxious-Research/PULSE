@@ -43,7 +43,7 @@ export interface CatalogEntry {
 const DOCS_ORIGIN = 'https://pulse-agent.anxious-research.com'
 // The public domain redirects here without CORS headers on the redirect.
 // Use the docs' actual static host, not GitHub's API or repository endpoints.
-const CATALOG_BASE = 'https://nousresearch.github.io/pulse-agent/docs/api'
+const CATALOG_BASE = 'https://anxious-research.github.io/pulse-agent/docs/api'
 const text = (value: unknown): string => (typeof value === 'string' ? value : '')
 const strings = (value: unknown): string[] => (Array.isArray(value) ? value.filter(v => typeof v === 'string') : [])
 

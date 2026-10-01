@@ -14,7 +14,7 @@
 /** The docs site served from Vercel. */
 export const PULSE_HUB_ORIGIN = 'https://pulse-agent.anxious-research.com'
 /** The equivalent GitHub Pages deployment of the same site. */
-export const PULSE_HUB_FALLBACK_ORIGIN = 'https://nousresearch.github.io'
+export const PULSE_HUB_FALLBACK_ORIGIN = 'https://anxious-research.github.io'
 
 const HUB_ORIGINS = new Set([PULSE_HUB_ORIGIN, PULSE_HUB_FALLBACK_ORIGIN])
 

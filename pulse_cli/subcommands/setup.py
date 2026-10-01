@@ -32,7 +32,7 @@ def build_setup_parser(subparsers, *, cmd_setup: Callable) -> None:
         "or unset, instead of running the full reconfigure wizard.")
     setup_parser.add_argument(
         "--portal", action="store_true",
-        help="One-shot Nous Portal setup: log in via OAuth, pick a Nous "
-        "model, set Nous as the inference provider, and opt into the Tool "
+        help="One-shot Pulse Portal setup: log in via OAuth, pick a PULSE "
+        "model, set PULSE as the inference provider, and opt into the Tool "
         "Gateway. Skips the rest of the wizard.")
     setup_parser.set_defaults(func=cmd_setup)

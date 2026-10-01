@@ -63,7 +63,7 @@ class TestProviderPersistsAfterModelSave:
 
         def _boom(path, data, **kwargs):
             assert path == config_path
-            assert data["model"]["provider"] == "nous"
+            assert data["model"]["provider"] == "pulse"
             assert data["model"]["base_url"] == "https://inference.example.com/v1"
             assert data["model"]["default"] == "some-old-model"
             raise OSError("simulated atomic write failure")
@@ -71,7 +71,7 @@ class TestProviderPersistsAfterModelSave:
         with patch("pulse_cli.auth.atomic_config_replace", side_effect=_boom) as mock_write:
             with pytest.raises(OSError, match="simulated atomic write failure"):
                 _update_config_for_provider(
-                    "nous",
+                    "pulse",
                     "https://inference.example.com/v1/",
                     default_model="llama-3.3",
                 )

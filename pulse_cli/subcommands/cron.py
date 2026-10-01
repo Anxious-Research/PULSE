@@ -71,7 +71,7 @@ def build_cron_parser(subparsers, *, cmd_cron: Callable) -> None:
         help="Lock the CURRENT main agent model (and its provider) onto this job so later "
             "`pulse model` changes never touch it. Ignored when --model is given.")
     cron_create.add_argument("--provider", dest="model_provider",
-        help="Inference provider paired with --model (e.g. 'openrouter', 'nous').")
+        help="Inference provider paired with --model (e.g. 'openrouter', 'pulse').")
     cron_create.add_argument("--reasoning-effort", dest="reasoning_effort",
         help="Pin this job's reasoning (thinking) effort: none, minimal, low, "
             "medium, high, xhigh, max, or ultra. Overrides agent.reasoning_effort "

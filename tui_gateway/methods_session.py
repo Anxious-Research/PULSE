@@ -212,7 +212,7 @@ def _active_pet():
 
 def _billing_call(rid, fn, extra: dict | None = None) -> dict:
     """Portal call → ok; BillingError → serialized envelope, else generic; ``extra`` rides both ERROR envelopes."""
-    from pulse_cli.nous_billing import BillingError
+    from pulse_cli.pulse_billing import BillingError
     try:
         return _ok(rid, fn())
     except BillingError as exc:
@@ -1447,10 +1447,10 @@ def _(rid, params: dict, session: dict) -> dict:
     usage: dict = _session_usage_snapshot(session)
     if session.get("agent") is None and not usage:
         usage = {"calls": 0, "input": 0, "output": 0, "total": 0}
-    # Nous credits are agent-independent (portal fetch); fail-open when absent.
+    # PULSE credits are agent-independent (portal fetch); fail-open when absent.
     with contextlib.suppress(Exception):
-        from agent.account_usage import nous_credits_lines
-        if credits := nous_credits_lines():
+        from agent.account_usage import pulse_credits_lines
+        if credits := pulse_credits_lines():
             usage["credits_lines"] = credits
     # Provider account limits (e.g. Codex quota windows) — the same block the CLI and gateway /usage
     # render, so the Desktop usage feed is not the one surface that omits them. Fail-open.
@@ -1845,7 +1845,7 @@ def _billing_view(name: str, module: str, builder: str, serializer: str, fallbac
 
 @method("billing.state")
 def _(rid, params: dict) -> dict:
-    """Read-only billing view (no scope required); fail-open. The Nous free tier has no account to
+    """Read-only billing view (no scope required); fail-open. The PULSE free tier has no account to
     bill, so its state is answered locally (``free_tier_account`` set, ``logged_in`` false) without a portal
     round-trip that could only fail."""
     try:
@@ -1869,7 +1869,7 @@ _billing_view("subscription.state", "agent.subscription_view", "build_subscripti
 def _(rid, params: dict) -> dict:
     """POST /api/billing/subscription/preview → chargeless effect quote. billing:manage."""
     from agent.subscription_view import subscription_change_preview_from_payload
-    from pulse_cli.nous_billing import post_subscription_preview
+    from pulse_cli.pulse_billing import post_subscription_preview
     if not (tier_id := params.get("subscription_type_id")):
         return _billing_invalid(rid, "subscription_type_id is required")
     return _billing_call(rid, lambda: _serialize_subscription_preview(
@@ -1878,12 +1878,12 @@ def _(rid, params: dict) -> dict:
 
 def _billing_route(name: str, call, *, invalid=None, message: str = "", error: str = "invalid_request",
                    idempotent: bool = False):
-    """Portal write route on ``pulse_cli.nous_billing`` (lazy; tests patch its functions): ``invalid(params)``
+    """Portal write route on ``pulse_cli.pulse_billing`` (lazy; tests patch its functions): ``invalid(params)``
     → ``_billing_invalid(message, error)``; ``call(nb, params, key)`` performs the request. ``idempotent``
     mints ``idempotency_key`` if absent and echoes it (also on error) so the TUI retries the SAME operation."""
     @method(name)
     def _(rid, params: dict) -> dict:
-        import pulse_cli.nous_billing as nb
+        import pulse_cli.pulse_billing as nb
         if invalid is not None and invalid(params):
             return _billing_invalid(rid, message, error=error)
         key = extra = None
@@ -1938,8 +1938,8 @@ def _(rid, params: dict) -> dict:
     sid = params.get("session_id") or ""
 
     def call():
-        from pulse_cli.auth import step_up_nous_billing_scope
-        granted = step_up_nous_billing_scope(
+        from pulse_cli.auth import step_up_pulse_billing_scope
+        granted = step_up_pulse_billing_scope(
             open_browser=False,
             on_verification=lambda url, code: _emit(
                 "billing.step_up.verification", sid, {"verification_url": url, "user_code": code}))

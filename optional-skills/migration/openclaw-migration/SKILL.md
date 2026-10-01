@@ -2,7 +2,7 @@
 name: openclaw-migration
 description: Import an OpenClaw setup (memories, skills) into PULSE.
 version: 1.0.0
-author: PULSE Agent (Nous Research)
+author: PULSE Agent (Anxious Research)
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

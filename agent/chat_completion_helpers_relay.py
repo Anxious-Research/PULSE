@@ -77,6 +77,6 @@ class RelayChatAccumulator:
             "refusal": "".join(self._refusal) or None,
             "reasoning_details": self._reasoning_details or None,
             "tool_calls": [acc[i] for i in sorted(acc)] or None}
-        # "stop" also covers Nous Portal ``lastOne`` usage frames, which carry no finish_reason.
+        # "stop" also covers Pulse Portal ``lastOne`` usage frames, which carry no finish_reason.
         return {"model": self._model, "usage": self._usage,
             "choices": [{"message": message, "finish_reason": self._finish_reason or "stop"}]}

@@ -24,11 +24,11 @@ def _jwt(**claims) -> str:
     return f"{seg({'alg': 'RS256'})}.{seg(payload)}.sig"
 
 
-def _seed_nous(state: dict) -> None:
+def _seed_pulse(state: dict) -> None:
     with _auth_store_lock():
         store = _load_auth_store()
-        store.setdefault("providers", {})["nous"] = state
-        store["active_provider"] = "nous"
+        store.setdefault("providers", {})["pulse"] = state
+        store["active_provider"] = "pulse"
         _save_auth_store(store)
 
 
@@ -44,12 +44,12 @@ def _account_state() -> dict:
 
 
 @pytest.fixture
-def nous_runner(tmp_path, monkeypatch):
+def pulse_runner(tmp_path, monkeypatch):
     monkeypatch.setattr(gateway_run, "_pulse_home", tmp_path)
     monkeypatch.setenv("PULSE_SHARED_AUTH_DIR", str(tmp_path / "shared-store"))
     monkeypatch.setenv("PULSE_GUEST_ONBOARDING", "1")
     # Provider precedence gates the line and is answered from persisted state only (no network at boot).
-    for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "NOUS_API_KEY"):
+    for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "PULSE_API_KEY"):
         monkeypatch.delenv(var, raising=False)
     runner, adapter = make_restart_runner()
     runner.config.platforms[Platform.TELEGRAM].home_channel = HomeChannel(
@@ -66,9 +66,9 @@ async def _startup_message(runner, adapter) -> str:
 
 
 @pytest.mark.asyncio
-async def test_guest_inference_adds_exactly_one_free_tier_line(nous_runner):
-    runner, adapter = nous_runner
-    _seed_nous(_guest_state())
+async def test_guest_inference_adds_exactly_one_free_tier_line(pulse_runner):
+    runner, adapter = pulse_runner
+    _seed_pulse(_guest_state())
     assert anon_auth.has_free_tier_account()
 
     message = await _startup_message(runner, adapter)
@@ -79,9 +79,9 @@ async def test_guest_inference_adds_exactly_one_free_tier_line(nous_runner):
 
 
 @pytest.mark.asyncio
-async def test_signed_in_account_keeps_the_plain_online_notice(nous_runner):
-    runner, adapter = nous_runner
-    _seed_nous(_account_state())
+async def test_signed_in_account_keeps_the_plain_online_notice(pulse_runner):
+    runner, adapter = pulse_runner
+    _seed_pulse(_account_state())
     assert not anon_auth.has_free_tier_account()
 
     message = await _startup_message(runner, adapter)
@@ -90,9 +90,9 @@ async def test_signed_in_account_keeps_the_plain_online_notice(nous_runner):
 
 
 @pytest.mark.asyncio
-async def test_non_nous_provider_never_mentions_the_free_tier(nous_runner, monkeypatch):
-    runner, adapter = nous_runner
-    _seed_nous(_guest_state())  # identity exists for connectors, but inference is elsewhere
+async def test_non_pulse_provider_never_mentions_the_free_tier(pulse_runner, monkeypatch):
+    runner, adapter = pulse_runner
+    _seed_pulse(_guest_state())  # identity exists for connectors, but inference is elsewhere
     monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-test")  # an explicit key wins provider precedence
 
     message = await _startup_message(runner, adapter)

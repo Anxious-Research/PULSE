@@ -25,7 +25,7 @@ pulse chat -q "Hello"
 pulse chat --model "anthropic/claude-sonnet-4"
 
 # 使用指定提供商
-pulse chat --provider nous        # 使用 Nous Portal
+pulse chat --provider pulse        # 使用 Pulse Portal
 pulse chat --provider openrouter  # 强制使用 OpenRouter
 
 # 使用指定工具集

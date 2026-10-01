@@ -17,9 +17,9 @@ class TurnRetryState:
     # Per-provider OAuth / credential refresh guards
     codex_auth_retry_attempted: bool = False
     anthropic_auth_retry_attempted: bool = False
-    nous_auth_retry_attempted: bool = False
-    nous_paid_entitlement_refresh_attempted: bool = False
-    # Nous free tier: one model move onto the tier's own model after a ``model_not_free``
+    pulse_auth_retry_attempted: bool = False
+    pulse_paid_entitlement_refresh_attempted: bool = False
+    # PULSE free tier: one model move onto the tier's own model after a ``model_not_free``
     # refusal, and one route re-read after a wrong-host refusal (``anon_on_paid_host``).
     welcome_model_switch_attempted: bool = False
     welcome_route_heal_attempted: bool = False

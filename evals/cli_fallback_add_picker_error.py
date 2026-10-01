@@ -51,7 +51,7 @@ def run(root: Path, output: Path) -> dict:
         (hh / "config.yaml").write_text(CONFIG, encoding="utf-8")
         (hh / ".env").write_text("OPENROUTER_API_KEY=local-not-used\n", encoding="utf-8")
         auth = hh / "auth.json"
-        auth.write_text(json.dumps({"version": 1, "providers": {}, "active_provider": "nous"}))
+        auth.write_text(json.dumps({"version": 1, "providers": {}, "active_provider": "pulse"}))
         # A stub ``curses`` package forces every menu onto its numbered fallback so the PTY
         # exchange is line-oriented (the curses UI is not what is under test here).
         shim = Path(home) / "shim" / "curses"

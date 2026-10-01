@@ -924,7 +924,7 @@ def remove_oauth_tokens(server_name: str, *, pulse_home: str | Path | None = Non
 # name/logo/redirect URIs, replacing per-install DCR. The SDK does the protocol; PULSE only decides
 # eligibility. Published from ``website/static/oauth/client-metadata.json``; the github.io origin is
 # deliberate — servers MUST NOT follow redirects when fetching it, and pulse-agent.anxious-research.com/docs/* 301s here.
-_CIMD_CLIENT_METADATA_URL = "https://nousresearch.github.io/pulse-agent/docs/oauth/client-metadata.json"
+_CIMD_CLIENT_METADATA_URL = "https://anxious-research.github.io/pulse-agent/docs/oauth/client-metadata.json"
 # Loopback ports/hosts declared in that document (exact match, so no ephemeral port under CIMD);
 # below Linux's 32768 ephemeral floor. tests/tools/test_mcp_cimd.py keeps them in sync.
 _CIMD_PORTS = (27890, 27891, 27892, 27893, 27894)

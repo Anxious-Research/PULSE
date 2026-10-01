@@ -47,7 +47,7 @@ same reviewed commit this page describes.
 The website and Desktop read the same generated CDN snapshot:
 [`https://pulse-agent.anxious-research.com/docs/api/plugins.json`](https://pulse-agent.anxious-research.com/docs/api/plugins.json).
 Desktop fetches it through
-`https://nousresearch.github.io/pulse-agent/docs/api/plugins.json`; the public
+`https://anxious-research.github.io/pulse-agent/docs/api/plugins.json`; the public
 docs alias serves the same data. The docs build reads `plugin-catalog/*.yaml`
 and adds cached repository star counts. It also publishes the installer's
 removed-entry list. Neither Browse view crawls source repositories or queries
@@ -67,7 +67,7 @@ directory of the pulse-agent repository, declaring:
 | `name` | The catalog key you pass to `pulse plugins install` |
 | `repo` | The plugin's public git repository |
 | `sha` | The **exact 40-hex commit** that was reviewed — installs check out this pin, not a branch tip |
-| `tier` | `official` (maintained by NousResearch) or `community` |
+| `tier` | `official` (maintained by AnxiousResearch) or `community` |
 | `category` | Browse shelf: `desktop` (default), `memory`, `platform`, `web`, `tools`, `voice`, `automation`, `models` or `general` |
 | `maintainer` | Who owns the plugin |
 | `capabilities` | Declared tools, hooks, middleware, and required env vars |

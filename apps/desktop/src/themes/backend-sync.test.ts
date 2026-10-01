@@ -88,7 +88,7 @@ describe('ingestBackendSkin', () => {
     expect($pendingSkinApply.get()).toBe('default')
   })
 
-  it('lets the provider resolve and keep default (not retired → nous)', () => {
+  it('lets the provider resolve and keep default (not retired → pulse)', () => {
     // skinPref / normalizeSkin must accept `default` once the backend registers
     // it; RETIRED_SKINS no longer includes default (#76743 review). Static
     // imports — the dynamic ones deadlocked under vitest's module runner.
@@ -147,7 +147,7 @@ describe('ingestBackendSkin', () => {
     // itself — the separate CSS store stays for built-in-named skins only.
     expect($backendThemes.get().default?.label).toBe('Classic PULSE')
     expect($backendThemes.get().default?.customCSS).toBe('body { background: red; }')
-    expect($backendCustomCSS.get().nous).toBeUndefined()
+    expect($backendCustomCSS.get().pulse).toBeUndefined()
   })
 
   it('clears customCSS when a built-in-named skin drops the field', () => {

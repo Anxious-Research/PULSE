@@ -44,9 +44,9 @@ if hasattr(ad, name): setattr(ad, name, _wrapped)
 print("hooked converter:", name)
 from run_agent import AIAgent
 from pulse_cli.runtime_provider import resolve_runtime_provider
-rt = resolve_runtime_provider(requested="nous", target_model="anthropic/claude-fable-5.1")
+rt = resolve_runtime_provider(requested="pulse", target_model="anthropic/claude-fable-5.1")
 sid = f"f0wire_{arm}_{int(time.time())}"
-ag = AIAgent(model="anthropic/claude-fable-5.1", provider="nous", base_url=rt.get("base_url"), api_key=rt.get("api_key"),
+ag = AIAgent(model="anthropic/claude-fable-5.1", provider="pulse", base_url=rt.get("base_url"), api_key=rt.get("api_key"),
              api_mode=rt.get("api_mode"), session_id=sid, quiet_mode=True, enabled_toolsets=["file", "terminal"],
              platform="cli", max_iterations=10, skip_context_files=True, skip_memory=True,
              reasoning_config={"enabled": True, "effort": "medium"})

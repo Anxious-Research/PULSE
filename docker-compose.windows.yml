@@ -11,7 +11,7 @@
 #
 services:
   gateway:
-    image: nousresearch/pulse-agent:latest
+    image: anxious-research/pulse-agent:latest
     container_name: pulse
     restart: unless-stopped
     volumes:
@@ -22,7 +22,7 @@ services:
     command: ["gateway", "run"]
 
   dashboard:
-    image: nousresearch/pulse-agent:latest
+    image: anxious-research/pulse-agent:latest
     container_name: pulse-dashboard
     restart: unless-stopped
     depends_on:

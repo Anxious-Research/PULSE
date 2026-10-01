@@ -92,14 +92,14 @@ def busy_message(command: str) -> str:
 
 
 # Prefixes of the TimeoutErrors raised by ``pulse_cli.auth._auth_store_lock`` (profile
-# auth.json) and ``pulse_cli.auth_nous._nous_shared_store_lock`` (cross-profile shared store)
+# auth.json) and ``pulse_cli.auth_pulse._pulse_shared_store_lock`` (cross-profile shared store)
 # when the advisory lock times out (#124533). Both sit on the assistant-init path
-# (``resolve_nous_access_token`` acquires the shared lock inside the profile lock), and init
+# (``resolve_pulse_access_token`` acquires the shared lock inside the profile lock), and init
 # died on lock contention there — the generic /model /setup hints would send the user
 # debugging credentials that are perfectly fine.
 _AUTH_LOCK_TIMEOUT_PREFIXES = (
     "Timed out waiting for auth store lock",
-    "Timed out waiting for shared Nous auth lock",
+    "Timed out waiting for shared PULSE auth lock",
 )
 
 

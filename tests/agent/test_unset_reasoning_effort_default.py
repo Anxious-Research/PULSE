@@ -1,6 +1,6 @@
 """An unset ``agent.reasoning_effort`` resolves to ``medium`` on custom / OpenAI-compatible routes.
 
-The Nous, OpenRouter and AI Gateway profiles already fill medium when no effort is configured; the
+The PULSE, OpenRouter and AI Gateway profiles already fill medium when no effort is configured; the
 custom profile (``providers.<name>`` blocks, ``--provider custom``) omitted the field, so the
 endpoint's own default applied — for kimi-k3 that is ``max``: 3x the reasoning tokens and ~3x the
 latency of medium. The default is decided at request time in ``_reasoning_config_for_wire`` so the
@@ -83,8 +83,8 @@ def test_unset_effort_default_keeps_the_field_off_where_it_would_be_wrong():
         ollama._ollama_num_ctx = 8192
         ollama._ollama_supports_thinking_cached = lambda: False
         assert _wire_reasoning_config(ollama) is None
-        # Profiles that decide inside build_api_kwargs_extras (Nous fills medium itself) get None as before.
-        assert _wire_reasoning_config(_Agent(None, provider="nous")) is None
+        # Profiles that decide inside build_api_kwargs_extras (PULSE fills medium itself) get None as before.
+        assert _wire_reasoning_config(_Agent(None, provider="pulse")) is None
         # Not a chat-completions wire: the Anthropic adapter's "unset = no thinking kwargs" stands.
         from agent.reasoning_params import unset_reasoning_default
         assert unset_reasoning_default(_Agent(None, api_mode="anthropic_messages")) is None

@@ -30,7 +30,7 @@ import pytest
 
 from tests.e2e.core.providers._catalog_helpers import Known, gate, known_gate
 from tests.fakes.providers.catalog_fake import CatalogFake
-from tests.fakes.providers.catalog_oauth import NOUS_INVOKE_SCOPE, OAuthFake, make_jwt
+from tests.fakes.providers.catalog_oauth import PULSE_INVOKE_SCOPE, OAuthFake, make_jwt
 
 pytestmark = pytest.mark.skipif(sys.platform == "win32", reason="POSIX harness")
 
@@ -44,11 +44,11 @@ CREDENTIAL_FREE_HOSTS = frozenset({"models.dev:443"})
 KNOWN: dict[str, Known] = {
     "device_interval": Known(
         r"^device poll gap \d+\.\d+s < server interval",
-        "#121163 Nous device-code login polls at 1s, ignoring the server's interval"),
-    "nous_401_retry_route": Known(
-        r"^401 recovery retry left NOUS_INFERENCE_BASE_URL: egress to \[[^\]]*'inference-api\.nousresearch\.com:443'",
-        "#121323 Nous 401 pool recovery retries on the stored production host, "
-        "dropping the NOUS_INFERENCE_BASE_URL override"),
+        "#121163 PULSE device-code login polls at 1s, ignoring the server's interval"),
+    "pulse_401_retry_route": Known(
+        r"^401 recovery retry left PULSE_INFERENCE_BASE_URL: egress to \[[^\]]*'inference-api\.anxious-research\.com:443'",
+        "#121323 PULSE 401 pool recovery retries on the stored production host, "
+        "dropping the PULSE_INFERENCE_BASE_URL override"),
 }
 
 _PASSTHROUGH_ENV = frozenset({"PATH", "LANG", "LANGUAGE", "USER", "LOGNAME", "SHELL", "TZ"})
@@ -108,28 +108,28 @@ def _iso(delta_s: float) -> str:
     return (datetime.now(timezone.utc) + timedelta(seconds=delta_s)).isoformat()
 
 
-def _nous_state(fake: OAuthFake, access: str, refresh: str, ttl_s: int) -> dict[str, Any]:
+def _pulse_state(fake: OAuthFake, access: str, refresh: str, ttl_s: int) -> dict[str, Any]:
     return {"access_token": access, "refresh_token": refresh, "token_type": "Bearer",
-            "scope": NOUS_INVOKE_SCOPE, "client_id": "pulse-cli", "portal_base_url": fake.origin,
+            "scope": PULSE_INVOKE_SCOPE, "client_id": "pulse-cli", "portal_base_url": fake.origin,
             "inference_base_url": PROD_NOUS_INFERENCE, "obtained_at": _iso(-60), "expires_at": _iso(ttl_s),
             "agent_key": access, "agent_key_expires_at": _iso(ttl_s),
             "tls": {"insecure": False, "ca_bundle": None}}
 
 
-OTHER_NOUS_ROW = "nous-manual-2"
+OTHER_NOUS_ROW = "pulse-manual-2"
 OPENROUTER_ROW = {"id": "or-1", "label": "openrouter-key", "auth_type": "api_key", "priority": 0,
                   "source": "manual", "access_token": "sk-or-oauth-e2e-untouched",
                   "base_url": "https://openrouter.ai/api/v1"}
 
 
-def _nous_store(fake: OAuthFake, access: str, refresh: str, ttl_s: int) -> dict[str, Any]:
-    state = _nous_state(fake, access, refresh, ttl_s)
+def _pulse_store(fake: OAuthFake, access: str, refresh: str, ttl_s: int) -> dict[str, Any]:
+    state = _pulse_state(fake, access, refresh, ttl_s)
     other_access = make_jwt("other-row", ttl_s=7200)
-    other = {**_nous_state(fake, other_access, "rt-other-row-untouched", 7200), "id": OTHER_NOUS_ROW,
+    other = {**_pulse_state(fake, other_access, "rt-other-row-untouched", 7200), "id": OTHER_NOUS_ROW,
              "label": "second-login", "auth_type": "oauth", "priority": 1, "source": "manual:device_code"}
-    return {"version": 1, "active_provider": "nous", "providers": {"nous": state},
+    return {"version": 1, "active_provider": "pulse", "providers": {"pulse": state},
             "credential_pool": {
-                "nous": [{**state, "id": "nous-dc-1", "label": "seed", "auth_type": "oauth", "priority": 0,
+                "pulse": [{**state, "id": "pulse-dc-1", "label": "seed", "auth_type": "oauth", "priority": 0,
                           "source": "device_code"}, other],
                 "openrouter": [OPENROUTER_ROW]}}
 
@@ -141,7 +141,7 @@ def _row(store: dict[str, Any], provider: str, row_id: str) -> dict[str, Any]:
 
 
 def _assert_untouched(before: dict[str, Any], after: dict[str, Any]) -> None:
-    for provider, row_id in (("nous", OTHER_NOUS_ROW), ("openrouter", "or-1")):
+    for provider, row_id in (("pulse", OTHER_NOUS_ROW), ("openrouter", "or-1")):
         want, got = _row(before, provider, row_id), _row(after, provider, row_id)
         for key in ("access_token", "refresh_token"):
             assert got.get(key) == want.get(key), (
@@ -166,7 +166,7 @@ def sentinel():
         yield s
 
 
-# --- Nous device-code login ------------------------------------------------------------------
+# --- PULSE device-code login ------------------------------------------------------------------
 
 # Two pendings around one slow_down: the gaps before slow_down show the base interval the client
 # honours, the gaps after it show the +1s RFC 8628 growth.
@@ -176,19 +176,19 @@ DEVICE_INTERVAL = 2
 
 @pytest.fixture(scope="module")
 def device_login(tmp_path_factory):
-    """One real ``pulse auth add nous --type oauth`` device-code login against the fake Portal."""
-    root = tmp_path_factory.mktemp("nous-device")
+    """One real ``pulse auth add pulse --type oauth`` device-code login against the fake Portal."""
+    root = tmp_path_factory.mktemp("pulse-device")
     with CatalogFake() as sentinel, OAuthFake(device_interval=DEVICE_INTERVAL, poll_script=DEVICE_SCRIPT) as fake:
-        home = Home(root, sentinel, "nous", "oauth-e2e/model")
+        home = Home(root, sentinel, "pulse", "oauth-e2e/model")
         seed = {"version": 1, "credential_pool": {"openrouter": [OPENROUTER_ROW]}}
         home.seed_auth(seed)
-        proc = home.run(["auth", "add", "nous", "--type", "oauth", "--no-browser", "--portal-url", fake.origin],
-                        extra_env={"NOUS_INFERENCE_BASE_URL": f"{fake.origin}/v1"}, timeout=90)
+        proc = home.run(["auth", "add", "pulse", "--type", "oauth", "--no-browser", "--portal-url", fake.origin],
+                        extra_env={"PULSE_INFERENCE_BASE_URL": f"{fake.origin}/v1"}, timeout=90)
         yield {"proc": proc, "fake": fake, "home": home, "seed": seed, "sentinel": sentinel,
                "gaps": [b.t - a.t for a, b in zip(fake.device_polls(), fake.device_polls()[1:])]}
 
 
-def test_nous_device_login_persists_tokens(device_login) -> None:
+def test_pulse_device_login_persists_tokens(device_login) -> None:
     proc, fake, home = device_login["proc"], device_login["fake"], device_login["home"]
     info = _describe(proc, fake, device_login["sentinel"])
     assert proc.returncode == 0, f"device-code login failed\n{info}"
@@ -196,18 +196,18 @@ def test_nous_device_login_persists_tokens(device_login) -> None:
     assert "OAUT-HE2E" in proc.stdout, f"user code never shown to the user\n{info}"
     issued = fake.issued[0]
     store = home.auth()
-    state = store.get("providers", {}).get("nous") or {}
+    state = store.get("providers", {}).get("pulse") or {}
     assert state.get("refresh_token") == issued["refresh_token"], (
-        f"providers.nous did not persist the login's refresh token: {state.get('refresh_token')!r}\n{info}")
-    assert state.get("access_token") == issued["access_token"], f"providers.nous access token not persisted\n{info}"
-    pooled = [r.get("refresh_token") for r in store.get("credential_pool", {}).get("nous", [])]
-    assert issued["refresh_token"] in pooled, f"credential_pool.nous missing the login: {pooled}\n{info}"
+        f"providers.pulse did not persist the login's refresh token: {state.get('refresh_token')!r}\n{info}")
+    assert state.get("access_token") == issued["access_token"], f"providers.pulse access token not persisted\n{info}"
+    pooled = [r.get("refresh_token") for r in store.get("credential_pool", {}).get("pulse", [])]
+    assert issued["refresh_token"] in pooled, f"credential_pool.pulse missing the login: {pooled}\n{info}"
     assert _row(store, "openrouter", "or-1")["access_token"] == OPENROUTER_ROW["access_token"], (
         "login clobbered an unrelated credential_pool row")
     assert not _vendor_egress(device_login["sentinel"]), f"login leaked egress: {_vendor_egress(device_login['sentinel'])}"
 
 
-def test_nous_device_login_slow_down_grows_interval(device_login) -> None:
+def test_pulse_device_login_slow_down_grows_interval(device_login) -> None:
     gaps = device_login["gaps"]
     assert len(gaps) == len(DEVICE_SCRIPT), f"unexpected poll count, gaps={gaps}"
     before, after = gaps[0], gaps[1:]
@@ -216,7 +216,7 @@ def test_nous_device_login_slow_down_grows_interval(device_login) -> None:
         f"after {[round(g, 2) for g in after]}")
 
 
-def test_nous_device_login_honors_server_interval(device_login) -> None:
+def test_pulse_device_login_honors_server_interval(device_login) -> None:
     gaps = device_login["gaps"]
     assert len(gaps) == len(DEVICE_SCRIPT), f"unexpected poll count, gaps={gaps}"
     with known_gate(KNOWN["device_interval"]):
@@ -224,39 +224,39 @@ def test_nous_device_login_honors_server_interval(device_login) -> None:
              f"device poll gap {gaps[0]:.2f}s < server interval {DEVICE_INTERVAL}s (gaps={[round(g, 2) for g in gaps]})")
 
 
-# --- Nous token refresh ----------------------------------------------------------------------
+# --- PULSE token refresh ----------------------------------------------------------------------
 
 
-def _nous_turn(tmp_path: Path, sentinel: CatalogFake, fake: OAuthFake, access: str, ttl_s: int):
-    home = Home(tmp_path, sentinel, "nous", "oauth-e2e/model", base_url=f"{fake.origin}/v1")
-    seed = _nous_store(fake, access, "rt-seed-0", ttl_s)
+def _pulse_turn(tmp_path: Path, sentinel: CatalogFake, fake: OAuthFake, access: str, ttl_s: int):
+    home = Home(tmp_path, sentinel, "pulse", "oauth-e2e/model", base_url=f"{fake.origin}/v1")
+    seed = _pulse_store(fake, access, "rt-seed-0", ttl_s)
     home.seed_auth(seed)
-    proc = home.run(["-z", "Say hi", "--provider", "nous", "-m", "oauth-e2e/model"],
-                    extra_env={"NOUS_INFERENCE_BASE_URL": f"{fake.origin}/v1"})
+    proc = home.run(["-z", "Say hi", "--provider", "pulse", "-m", "oauth-e2e/model"],
+                    extra_env={"PULSE_INFERENCE_BASE_URL": f"{fake.origin}/v1"})
     return home, seed, proc
 
 
 def _assert_rotation_persisted(home: Home, seed: dict[str, Any], fake: OAuthFake, info: str) -> str:
     refreshes = fake.refreshes()
     assert refreshes, f"no refresh-token exchange reached the Portal\n{info}"
-    assert refreshes[0].headers.get("x-nous-refresh-token") == "rt-seed-0", (
-        f"refresh redeemed the wrong token: {refreshes[0].headers.get('x-nous-refresh-token')!r}\n{info}")
+    assert refreshes[0].headers.get("x-pulse-refresh-token") == "rt-seed-0", (
+        f"refresh redeemed the wrong token: {refreshes[0].headers.get('x-pulse-refresh-token')!r}\n{info}")
     rotated = fake.issued[-1]
     store = home.auth()
-    assert store["providers"]["nous"].get("refresh_token") == rotated["refresh_token"], (
-        f"providers.nous kept a spent refresh token {store['providers']['nous'].get('refresh_token')!r} "
+    assert store["providers"]["pulse"].get("refresh_token") == rotated["refresh_token"], (
+        f"providers.pulse kept a spent refresh token {store['providers']['pulse'].get('refresh_token')!r} "
         f"instead of the rotation {rotated['refresh_token']!r}\n{info}")
-    assert _row(store, "nous", "nous-dc-1").get("refresh_token") == rotated["refresh_token"], (
-        f"credential_pool.nous[nous-dc-1] kept a spent refresh token "
-        f"{_row(store, 'nous', 'nous-dc-1').get('refresh_token')!r}\n{info}")
+    assert _row(store, "pulse", "pulse-dc-1").get("refresh_token") == rotated["refresh_token"], (
+        f"credential_pool.pulse[pulse-dc-1] kept a spent refresh token "
+        f"{_row(store, 'pulse', 'pulse-dc-1').get('refresh_token')!r}\n{info}")
     _assert_untouched(seed, store)
     return rotated["access_token"]
 
 
-def test_nous_expired_access_token_refreshes_before_turn(tmp_path, sentinel) -> None:
+def test_pulse_expired_access_token_refreshes_before_turn(tmp_path, sentinel) -> None:
     stale = make_jwt("expired", ttl_s=-60)
     with OAuthFake(valid_refresh={"rt-seed-0"}, revoked={stale}) as fake:
-        home, seed, proc = _nous_turn(tmp_path, sentinel, fake, stale, ttl_s=-60)
+        home, seed, proc = _pulse_turn(tmp_path, sentinel, fake, stale, ttl_s=-60)
         info = _describe(proc, fake, sentinel)
         assert proc.returncode == 0 and fake.reply in proc.stdout, f"turn with an expired token failed\n{info}"
         fresh = _assert_rotation_persisted(home, seed, fake, info)
@@ -266,16 +266,16 @@ def test_nous_expired_access_token_refreshes_before_turn(tmp_path, sentinel) -> 
         assert not _vendor_egress(sentinel), f"turn leaked egress: {_vendor_egress(sentinel)}"
 
 
-def test_nous_inference_401_refreshes_rotates_and_retries(tmp_path, sentinel) -> None:
+def test_pulse_inference_401_refreshes_rotates_and_retries(tmp_path, sentinel) -> None:
     revoked = make_jwt("revoked-by-server", ttl_s=7200)
     with OAuthFake(valid_refresh={"rt-seed-0"}, revoked={revoked}) as fake:
-        home, seed, proc = _nous_turn(tmp_path, sentinel, fake, revoked, ttl_s=7200)
+        home, seed, proc = _pulse_turn(tmp_path, sentinel, fake, revoked, ttl_s=7200)
         info = _describe(proc, fake, sentinel)
         assert any(r.bearer == revoked for r in fake.inference()), f"the stale bearer was never tried\n{info}"
         fresh = _assert_rotation_persisted(home, seed, fake, info)
-        with known_gate(KNOWN["nous_401_retry_route"]):
+        with known_gate(KNOWN["pulse_401_retry_route"]):
             gate(not _vendor_egress(sentinel),
-                 f"401 recovery retry left NOUS_INFERENCE_BASE_URL: egress to {_vendor_egress(sentinel)}\n{info}")
+                 f"401 recovery retry left PULSE_INFERENCE_BASE_URL: egress to {_vendor_egress(sentinel)}\n{info}")
         assert any(r.bearer == fresh for r in fake.inference()), f"no retry with the refreshed token\n{info}"
         assert proc.returncode == 0 and fake.reply in proc.stdout, f"turn failed after refresh\n{info}"
 

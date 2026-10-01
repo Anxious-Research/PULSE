@@ -68,7 +68,7 @@ def test_setup_summary_local_browser_unavailable_without_chromium(
     render as unavailable with an install hint — not a false 'available'.
 
     Unlike the mocked-feature tests above, this drives the real
-    ``get_nous_subscription_features`` so the surface stays aligned with the
+    ``get_pulse_subscription_features`` so the surface stays aligned with the
     runtime gate in ``tools.browser_tool_install.check_browser_requirements``.
     """
     monkeypatch.setenv("PULSE_HOME", str(tmp_path))
@@ -83,9 +83,9 @@ def test_setup_summary_local_browser_unavailable_without_chromium(
     save_config(cfg)
 
     # Only stub the readiness probes; the feature resolver itself is real.
-    monkeypatch.setattr("pulse_cli.nous_subscription._has_agent_browser", lambda: True)
+    monkeypatch.setattr("pulse_cli.pulse_subscription._has_agent_browser", lambda: True)
     monkeypatch.setattr(
-        "pulse_cli.nous_subscription.get_nous_portal_account_info",
+        "pulse_cli.pulse_subscription.get_pulse_portal_account_info",
         lambda *a, **k: None,
     )
     monkeypatch.setattr("tools.browser_tool_install._chromium_installed", lambda: False)

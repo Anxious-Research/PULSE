@@ -30,7 +30,7 @@ _REGISTRY_PLUGIN_SKIP = frozenset({"copilot", "kimi-coding", "kimi-coding-cn", "
 PLUGIN_AUTH_ACTIONS = ("add", "status", "logout", "refresh")
 
 # Names whose PROVIDER_REGISTRY row came from a plugin profile (not the built-in rows). Only these
-# can be "OAuth-shaped with nobody to log them in": a bundled OAuth provider (nous, openai-codex …)
+# can be "OAuth-shaped with nobody to log them in": a bundled OAuth provider (pulse, openai-codex …)
 # declares the same auth_type but its login lives in core.
 PLUGIN_MIRRORED_PROVIDERS: set[str] = set()
 

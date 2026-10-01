@@ -225,7 +225,7 @@ describe('createGatewayEventHandler', () => {
     expect(getTurnState().todos).toEqual([])
   })
 
-  it('opens a billing confirm dialog routing Nous to /topup', () => {
+  it('opens a billing confirm dialog routing PULSE to /topup', () => {
     const appended: Msg[] = []
     const ctx = buildCtx(appended)
     const onEvent = createGatewayEventHandler(ctx)
@@ -234,11 +234,11 @@ describe('createGatewayEventHandler', () => {
       payload: {
         billing: {
           billing_url: null,
-          is_nous: true,
+          is_pulse: true,
           message: 'out of credits',
           model: 'm',
-          provider: 'nous',
-          provider_label: 'Nous Portal'
+          provider: 'pulse',
+          provider_label: 'Pulse Portal'
         },
         text: 'Billing or credits exhausted: ...'
       },
@@ -261,7 +261,7 @@ describe('createGatewayEventHandler', () => {
       payload: {
         billing: {
           billing_url: 'https://openrouter.ai/settings/credits',
-          is_nous: false,
+          is_pulse: false,
           message: 'out of credits',
           model: 'm',
           provider: 'openrouter',

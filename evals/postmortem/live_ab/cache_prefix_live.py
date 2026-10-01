@@ -1,7 +1,7 @@
 """Live A/B for the thinking-strip cache miss (F0). Runs a short real tool loop through AIAgent on
-Fable 5.1 via Nous and prints per-call cache hit ratios from agent.log. ~10 calls, well under $1.
+Fable 5.1 via PULSE and prints per-call cache hit ratios from agent.log. ~10 calls, well under $1.
 Arm A = current code. Arm B = PULSE_KEEP_ALL_THINKING=1 monkeypatch of _manage_thinking_signatures
-that passes thinking blocks back unchanged for the Nous/Anthropic route."""
+that passes thinking blocks back unchanged for the PULSE/Anthropic route."""
 import os, sys, re, tempfile, time, subprocess, json
 # LIVE: real provider calls (cents). Usage: python cache_prefix_live.py <repo_root> <A|B>
 os.environ.setdefault("PULSE_HOME", os.path.expanduser("~/.pulse"))
@@ -25,9 +25,9 @@ if arm == "B":
         ad._manage_thinking_signatures = _keep_all
 from run_agent import AIAgent
 from pulse_cli.runtime_provider import resolve_runtime_provider
-rt = resolve_runtime_provider(requested="nous", target_model="anthropic/claude-fable-5.1")
+rt = resolve_runtime_provider(requested="pulse", target_model="anthropic/claude-fable-5.1")
 sid = f"f0ab_{arm}_{int(time.time())}"
-ag = AIAgent(model="anthropic/claude-fable-5.1", provider="nous", base_url=rt.get("base_url"), api_key=rt.get("api_key"),
+ag = AIAgent(model="anthropic/claude-fable-5.1", provider="pulse", base_url=rt.get("base_url"), api_key=rt.get("api_key"),
              api_mode=rt.get("api_mode"), session_id=sid, quiet_mode=True,
              enabled_toolsets=["file", "terminal"], platform="cli", max_iterations=12,
              skip_context_files=True, skip_memory=True, reasoning_config={"enabled": True, "effort": "medium"})

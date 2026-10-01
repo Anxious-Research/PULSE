@@ -207,7 +207,7 @@ class ProviderProfile:
         """Reasoning config the main loop sends when ``agent.reasoning_effort`` is unset.
 
         None (default) hands the unset state to ``build_api_kwargs_extras`` as ``reasoning_config=None``,
-        where each profile already decides (Nous/OpenRouter fill medium; Anthropic omits). A profile
+        where each profile already decides (PULSE/OpenRouter fill medium; Anthropic omits). A profile
         that would otherwise leave the route's own default in charge returns the config here so the
         agent records it as what went on the wire (the reasoning-rejection ladder reads that).
         """

@@ -49,7 +49,7 @@ def _confirm_selection_guards(
 
 
 class _ModelPickerRows:
-    """Column-aligned picker rows (name + $/Mtok + Nous sale chrome).
+    """Column-aligned picker rows (name + $/Mtok + PULSE sale chrome).
 
     Sale chrome is emitted as styled segments, not ANSI baked into one string — curses addnstr
     would render escape bytes literally.
@@ -64,7 +64,7 @@ class _ModelPickerRows:
         # Per-model dim annotation (e.g. "usage credits"); the row stays selectable.
         self.notes = notes or {}
         self.has_pricing = bool(pricing and any(pricing.get(m) for m in all_models))
-        # Leave room for a leading "★ " on sale rows (Nous only).
+        # Leave room for a leading "★ " on sale rows (PULSE only).
         name_pad = 3 if sale_chrome else 2
         self.name_col = max((len(m) for m in all_models), default=0) + name_pad if self.has_pricing else 0
         # (inp, out, cache, pct|None, was_inp, was_out)
@@ -164,8 +164,8 @@ def _prompt_model_selection(
     """
     from pulse_cli.cli_output import line_input
     _unavailable = unavailable_models or []
-    # Sale chrome is Nous Portal-only, even if pricing.original is present for another provider.
-    sale_chrome = (confirm_provider or "").strip().lower() == "nous"
+    # Sale chrome is Pulse Portal-only, even if pricing.original is present for another provider.
+    sale_chrome = (confirm_provider or "").strip().lower() == "pulse"
 
     def _confirmed_selection(mid: str) -> Optional[str]:
         if not mid:

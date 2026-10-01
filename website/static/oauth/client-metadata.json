@@ -1,8 +1,8 @@
 {
-  "client_id": "https://nousresearch.github.io/pulse-agent/docs/oauth/client-metadata.json",
+  "client_id": "https://anxious-research.github.io/pulse-agent/docs/oauth/client-metadata.json",
   "client_name": "PULSE Agent",
   "client_uri": "https://pulse-agent.anxious-research.com",
-  "logo_uri": "https://nousresearch.github.io/pulse-agent/docs/img/logo.png",
+  "logo_uri": "https://anxious-research.github.io/pulse-agent/docs/img/logo.png",
   "application_type": "native",
   "grant_types": ["authorization_code", "refresh_token"],
   "response_types": ["code"],

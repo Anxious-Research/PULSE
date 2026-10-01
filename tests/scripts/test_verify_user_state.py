@@ -49,7 +49,7 @@ def _home(tmp_path):
                 "plugins/demo", "photon/sidecar", "profiles/work"):
         (home / rel).mkdir(parents=True, exist_ok=True)
     (home / "config.yaml").write_text("timezone: utc\n", encoding="utf-8")
-    (home / ".env").write_text("NOUS_API_KEY=xxx\n", encoding="utf-8")
+    (home / ".env").write_text("PULSE_API_KEY=xxx\n", encoding="utf-8")
     (home / "auth.json").write_text('{"tokens":{}}\n', encoding="utf-8")
     (home / "memories" / "note.md").write_text("remember\n", encoding="utf-8")
     (home / "cron" / "jobs.json").write_text('{"jobs":[]}\n', encoding="utf-8")

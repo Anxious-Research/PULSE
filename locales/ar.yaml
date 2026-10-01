@@ -435,7 +435,7 @@ gateway:
     last_activity: "**آخر نشاط:** {timestamp}"
     model: "**النموذج:** `{model}`"
     model_provider: "**النموذج:** `{model}` ({provider})"
-    free_tier: "Nous · الخطة المجانية · nous/welcome · /login لتسجيل الدخول"
+    free_tier: "PULSE · الخطة المجانية · pulse/welcome · /login لتسجيل الدخول"
     context: "**السياق:** {used} / {total} ({pct}%)"
     context_used: "**السياق:** ~{used} رمزًا"
     tokens: "**رموز API التراكمية (تُعاد كل استدعاء):** {tokens}"
@@ -548,7 +548,7 @@ gateway:
     unknown_subcommand: "أمر فرعي غير معروف لـ /usage: `{args}`. جرّب `/usage` أو `/usage reset [--force]`."
     reset_wrong_provider: "إعادة تعيين الاستخدام المُدّخر متاحة فقط على مزوّد openai-codex. بدّل عبر `/model` أولًا."
   credits:
-    not_logged_in: "لم تُسجّل الدخول إلى Nous Portal. سجّل الدخول لرؤية رصيد أرصدتك وإعادة الشحن."
+    not_logged_in: "لم تُسجّل الدخول إلى Pulse Portal. سجّل الدخول لرؤية رصيد أرصدتك وإعادة الشحن."
   verbose:
     not_enabled: "الأمر `/verbose` غير مُفعّل لمنصّات المراسلة.\n\nفعّله في `config.yaml`:\n```yaml\ndisplay:\n  tool_progress_command: true\n```"
     mode_off: "⚙️ تقدّم الأدوات: **مُعطّل** — لا يُعرض نشاط الأدوات."
@@ -841,7 +841,7 @@ gateway:
   startup:
     handoff_thread_title: "PULSE — {title}"
     restarted: "♻ أُعيد تشغيل البوّابة بنجاح. جلستك مستمرة."
-    free_tier_line: "الاستدلال: الطبقة المجانية من Nous (nous/welcome). سجّل الدخول للمزيد: /login"
+    free_tier_line: "الاستدلال: الطبقة المجانية من PULSE (pulse/welcome). سجّل الدخول للمزيد: /login"
     online: "♻️ البوّابة متصلة — PULSE عاد وجاهز."
     db_corrupt: "⚠️ رُصد تلف في قاعدة بيانات الجلسات. قد لا تُحفظ الرسائل. خيارات الاستعادة:\n1. شغّل `pulse {profile_arg}doctor --fix`\n2. أوقف البوّابة، ثم استعد بـ:\n   pulse {profile_arg}sessions recover --source {db_path} --inspect-only\n   (إذا أفاد بإمكانية الاستعادة) pulse {profile_arg}sessions recover --source {db_path} --output recovered-state.db\n   — تأخذ الاستعادة لقطة من الملف المتضرر أولًا؛ لا تشغّل `sqlite3 ... \".recover\"` على state.db الحي، فقد يزيد sqlite3 CLI المعرّض للثغرات من تلفه\n3. استعد من نسخة احتياطية في {backups_dir}/\nشغّل `pulse {profile_arg}doctor` للحصول على تشخيصات منقّحة."
     db_fts_corrupt: "⚠️ أفادت قاعدة بيانات الجلسات بخطأ تلف محصور في فهرس البحث (FTS5)؛ جداول الرسائل غير متضررة. قد لا تُحفظ الرسائل حتى إصلاحه: شغّل `pulse {profile_arg}doctor --fix` ثم أعد تشغيل البوّابة. لا تشغّل أدوات الاستعادة ولا تستعد نسخة احتياطية إلا إذا أكّد `pulse {profile_arg}doctor` وجود تلف."
@@ -937,7 +937,7 @@ gateway:
   codex_runtime:
     config_load_failed: "❌ تعذّر تحميل الإعدادات: {error}"
   topup:
-    header: "💳 **رصيد Nous**"
+    header: "💳 **رصيد PULSE**"
     portal_link: "أدِر الفوترة من البوابة: {url}"
     hint: "أعد تعبئة الرصيد وأدِر الفوترة في المتصفح — سيتحدّث رصيدك هنا بعد ذلك."
   login:
@@ -1660,11 +1660,11 @@ slash:
   usage:
     description: "عرض استخدام الرموز وحدود المعدّل؛ `reset` يستبدل إعادة تعيين حد Codex المدّخرة"
   subscription:
-    description: "عرض خطة Nous الخاصة بك وتغييرها في المتصفح"
+    description: "عرض خطة PULSE الخاصة بك وتغييرها في المتصفح"
   login:
-    description: "تسجيل الدخول بحساب Nous (مع الاحتفاظ بموصّلاتك)"
+    description: "تسجيل الدخول بحساب PULSE (مع الاحتفاظ بموصّلاتك)"
   topup:
-    description: "عرض رصيد Nous الخاص بك وإدارة الفوترة على البوابة"
+    description: "عرض رصيد PULSE الخاص بك وإدارة الفوترة على البوابة"
   platforms:
     description: "عرض حالة البوّابة/منصات المراسلة"
   platform:
@@ -1685,7 +1685,7 @@ cli:
   billing:
     load_failed: "{label}: {error}"
     load_failed_label: "تعذّر تحميل الفوترة"
-    not_logged_in: "لم تسجّل الدخول إلى Nous Portal."
+    not_logged_in: "لم تسجّل الدخول إلى Pulse Portal."
     run_portal_then: "شغّل `pulse portal` لتسجيل الدخول، ثم {cmd}."
     org_line: "المؤسسة: {org}"
     org_line_role: "المؤسسة: {org} · {role}"
@@ -1775,7 +1775,7 @@ cli:
     confirm_purchase: "تأكيد الشراء"
     total_line: "الإجمالي: {amount}"
     portal_card_will_be_charged: "سيُخصم المبلغ من بطاقتك المحفوظة في البوابة."
-    consent_charge: "بالتأكيد، أنت تسمح لـ Nous Research بالخصم من بطاقتك."
+    consent_charge: "بالتأكيد، أنت تسمح لـ Anxious Research بالخصم من بطاقتك."
     choice_pay_now: "ادفع {amount} الآن"
     desc_submit_charge: "إرسال عملية الخصم"
     desc_manage_card_billing: "أدِر بطاقتك / الفوترة في المتصفح"
@@ -1836,7 +1836,7 @@ cli:
     threshold_label: "عندما ينخفض الرصيد دون"
     reload_to_label: "إعادة تعبئة الرصيد إلى"
     reload_must_exceed_threshold: "🔴 يجب أن يكون مبلغ إعادة التعبئة أكبر من الحد الأدنى."
-    auto_reload_consent: "بتأكيدك، تخوّل Nous Research بالخصم من {card} كلما بلغ رصيدك {threshold}. يمكنك الإيقاف في أي وقت من هنا أو من البوابة."
+    auto_reload_consent: "بتأكيدك، تخوّل Anxious Research بالخصم من {card} كلما بلغ رصيدك {threshold}. يمكنك الإيقاف في أي وقت من هنا أو من البوابة."
     turn_on_auto_reload_question: "هل تريد تفعيل إعادة التعبئة التلقائية؟"
     auto_reload_enabled: "✅ إعادة التعبئة التلقائية مفعّلة: عند الانخفاض دون {threshold} → إعادة التعبئة إلى {reload_to}."
     auto_reload_disabled: "✅ أُوقفت إعادة التعبئة التلقائية."
@@ -2416,7 +2416,7 @@ cli:
     empty_base_url: "⚠️  أعاد محدّد المزوّد عنوان URL أساسيًا فارغًا. تحقق من إعدادات المزوّد أو شغّل: pulse setup"
     switching_to_fallback: "⚠️  {reason} — جارٍ التبديل إلى البديل: {provider} / {model}"
     first_run_no_provider: "☤ لم يُضبط أي مزوّد استدلال بعد — لنُصلح ذلك."
-    first_run_pick_provider: "ستختار مزوّدًا (Nous Portal OAuth هو الأسرع؛ لا يحتاج مفتاح API) ونموذجًا."
+    first_run_pick_provider: "ستختار مزوّدًا (Pulse Portal OAuth هو الأسرع؛ لا يحتاج مفتاح API) ونموذجًا."
     first_run_prompt: "هل تريد إعداد مزوّد الآن؟ [Y/n]:"
     first_run_skipped: "تم التخطّي. شغّل 'pulse model' أو 'pulse setup' في أي وقت."
     first_run_cancelled: "أُلغي الإعداد. شغّل 'pulse model' في أي وقت."
@@ -2444,7 +2444,7 @@ cli:
     delivering_leftover_steer: "⏩ جارٍ تسليم /steer المتبقي كدور تالٍ: '{preview}'"
     reasoning_label: "الاستدلال"
     reasoning_more_lines: "... ({count} أسطر إضافية — /reasoning full للعرض)"
-    billing_cta_nous: "شغّل [bold]/topup[/] لإضافة رصيد، أو [bold]/subscription[/] لتغيير الخطة."
+    billing_cta_pulse: "شغّل [bold]/topup[/] لإضافة رصيد، أو [bold]/subscription[/] لتغيير الخطة."
     billing_cta_provider: "أضف رصيدًا عبر {provider}"
     your_provider: "مزوّدك"
     billing_cta_switch: "أو بدّل المزوّد عبر [bold]/model <model> --provider <provider>[/]."
@@ -3088,7 +3088,7 @@ cli:
     fix_lm_studio: "حل LM Studio: عيّن طول السياق في إعدادات النموذج ← أعد تحميل النموذج"
     fix_local_server: "الحل: شغّل خادمك بسياق لا يقل عن {tokens_k}K (llama.cpp: -c {tokens})، أو عيّن model.ollama_num_ctx في config.yaml إلى النافذة التي يخدمها فعلًا"
     fix_config: "الحل: عيّن model.context_length في config.yaml، أو ارفع إعداد السياق في خادمك"
-    pulse_models_not_agentic: "⚠  نماذج Nous Research PULSE 3 و4 ليست وكيلية ولم تُصمَّم للاستخدام مع PULSE Agent."
+    pulse_models_not_agentic: "⚠  نماذج Anxious Research PULSE 3 و4 ليست وكيلية ولم تُصمَّم للاستخدام مع PULSE Agent."
     pulse_models_lack_tools: "فهي تفتقر إلى قدرات استدعاء الأدوات اللازمة لسير عمل الوكيل. فكّر في استخدام نموذج وكيلي (Claude أو GPT أو Gemini أو DeepSeek وغيرها)."
     pulse_models_switch_hint: "بدّل عبر: /model sonnet  أو  /model gpt5"
     project_skills_loaded: "◆ تم تحميل {count} من مهارات المشروع من هذا المستودع"
@@ -3654,8 +3654,8 @@ tips:
   t181: "Camofox متصفح مقاوم للكشف — نسخة مشتقة من Firefox مع تزييف بصمة مكتوب بـ C++."
   t182: "تُرجع browser_navigate لقطة للصفحة تلقائيًا — لا حاجة لاستدعاء browser_snapshot بعدها."
   t183: "تضيف browser_vision مع annotate=true تسميات مرقّمة فوق العناصر التفاعلية."
-  t184: "يفتح pulse mcp منتقيًا تفاعليًا لخوادم MCP المعتمدة من Nous يمكنك تثبيتها بضغطة مفتاح واحدة."
-  t185: "يعرض pulse mcp catalog خوادم MCP المعتمدة من Nous والمرفقة مع المستودع."
+  t184: "يفتح pulse mcp منتقيًا تفاعليًا لخوادم MCP المعتمدة من PULSE يمكنك تثبيتها بضغطة مفتاح واحدة."
+  t185: "يعرض pulse mcp catalog خوادم MCP المعتمدة من PULSE والمرفقة مع المستودع."
   t186: "يثبّت pulse mcp install <name> مدخلًا من الفهرس، ويطلب بيانات الاعتماد، ويتيح لك اختيار الأدوات المفعّلة منه."
   t187: "تُضبط خوادم MCP في config.yaml — مع دعم وسيلتي النقل stdio وHTTP."
   t188: "تصفية الأدوات لكل خادم: tools.include يسمح بأدوات محددة، وtools.exclude يحظرها."
@@ -3682,7 +3682,7 @@ tips:
   t209: "المزوّدون المخصصون: احفظ نقاط نهاية مسمّاة في config.yaml تحت custom_providers."
   t210: "يحقن PULSE_EPHEMERAL_SYSTEM_PROMPT موجّه نظام لا يُحفظ في السجل أبدًا."
   t211: "يدعم credential_pool_strategies استراتيجيات التدوير fill_first وround_robin وleast_used وrandom."
-  t212: "يضبط pulse auth add nous أو pulse auth add openai-codex المزوّدين المعتمدين على OAuth."
+  t212: "يضبط pulse auth add pulse أو pulse auth add openai-codex المزوّدين المعتمدين على OAuth."
   t213: "يدعم خادم API كلًّا من Chat Completions وResponses API مع حالة محفوظة على جانب الخادم."
   t214: "يعرض tool_preview_length: 0 في الإعدادات مسارات الملفات كاملةً في شريط نشاط مؤشر الانتظار."
   t215: "يشغّل pulse status --deep فحوصات تشخيصية أعمق عبر جميع المكوّنات."
@@ -3752,7 +3752,7 @@ tips:
   t279: "يتجاوز PULSE_DEV=1 اكتشاف وضع الحاوية لأغراض التطوير المحلي."
   t280: "يحصل كل خادم MCP على مجموعة أدوات خاصة به (mcp-servername) يمكن تبديلها بشكل مستقل عبر pulse tools."
   t281: "تُحلّ عناصر ${ENV_VAR} النائبة لـ MCP في الإعدادات عند تشغيل الخادم — بما فيها المتغيرات من ~/.pulse/.env."
-  t282: "تحصل المهارات من المستودعات الموثوقة (NousResearch) على مستوى الأمان 'trusted'؛ وتخضع مهارات المجتمع لفحص إضافي."
+  t282: "تحصل المهارات من المستودعات الموثوقة (AnxiousResearch) على مستوى الأمان 'trusted'؛ وتخضع مهارات المجتمع لفحص إضافي."
   t283: "يحتفظ حجر المهارات في ~/.pulse/skills/.hub/quarantine/ بالمهارات المنتظرة للمراجعة الأمنية."
   t284: "يحقن /steer <prompt> ملاحظة بعد استدعاء الأداة التالي — لتوجيه المسار أثناء المهمة دون قطعها."
   t285: "يحدّد /goal <text> هدفًا دائمًا بأسلوب حلقة Ralph — يواصل PULSE تلقائيًا دورًا بعد دور حتى يقرّر حَكَم أن العمل تم."
@@ -3778,7 +3778,7 @@ tips:
   t305: "pulse curator rollback يستعيد المهارات من لقطة سابقة للتشغيل — النسخ الاحتياطية تحت skills/.curator_backups/."
   t306: "pulse auth reset <provider> [target] يمسح فترات التهدئة وعلامات النفاد عن مجمّع اعتمادات كامل، أو عن اعتماد واحد بالفهرس أو المعرّف أو التسمية."
   t307: "credential_pool_strategies.<provider>: round_robin يدوّر المفاتيح بالتساوي بدلًا من الافتراضي fill_first."
-  t308: "use_gateway: true لكل أداة يوجّه web أو image أو tts أو browser عبر اشتراكك في Nous — دون مفاتيح إضافية."
+  t308: "use_gateway: true لكل أداة يوجّه web أو image أو tts أو browser عبر اشتراكك في PULSE — دون مفاتيح إضافية."
   t309: "provider_routing.data_collection: deny يستثني المزوّدين الذين يخزّنون البيانات على OpenRouter."
   t310: "provider_routing.require_parameters: true يوجّه فقط إلى المزوّدين الذين يدعمون كل معامل في طلبك."
   t311: "PULSE_TUI_RESUME=1 يُعيد الاتصال تلقائيًا بأحدث جلسة TUI عند الإطلاق — مفيد بعد انقطاع SSH."

@@ -253,7 +253,7 @@ compression:
 auxiliary:
   compression:
     model: null              # Override model for summaries (default: auto-detect)
-    provider: auto           # Provider: "auto", "openrouter", "nous", "main", etc.
+    provider: auto           # Provider: "auto", "openrouter", "pulse", "main", etc.
     base_url: null           # Custom OpenAI-compatible endpoint
 ```
 
@@ -332,7 +332,7 @@ Resolution rules:
 - Keys may be **provider-scoped** as `"<provider>:<substring>"` (e.g.
   `"openai-codex:astra": 0.85`). A scoped key only matches when the session's
   provider is that route, so the same slug served with a different window
-  elsewhere (OpenRouter, Nous, direct OpenAI) keeps the global `threshold`.
+  elsewhere (OpenRouter, PULSE, direct OpenAI) keeps the global `threshold`.
   Ranking uses the model substring only, so `"astra-900k"` still beats
   `"openai-codex:astra"` for the 900K picker; a scoped key beats a bare key
   with the identical substring.

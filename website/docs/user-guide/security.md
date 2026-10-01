@@ -565,7 +565,7 @@ Container resources are configurable in `~/.pulse/config.yaml`:
 ```yaml
 terminal:
   backend: docker
-  docker_image: "nousresearch/pulse-sandbox:desktop"
+  docker_image: "anxious-research/pulse-sandbox:desktop"
   docker_forward_env: []  # Explicit allowlist only; empty keeps secrets out of the container
   container_cpu: 1        # CPU cores
   container_memory: 5120  # MB (default 5GB)
@@ -936,7 +936,7 @@ The former startup certificate guard is gone with it: PULSE no longer
 validates `PULSE_CA_BUNDLE` / `SSL_CERT_FILE` / `REQUESTS_CA_BUNDLE` /
 `CURL_CA_BUNDLE` at launch, so there is no `SSLConfigurationError` and the
 `PULSE_SKIP_SSL_GUARD` escape hatch has no effect. `PULSE_CA_BUNDLE` is
-still honoured by the Nous Portal login flow only (`pulse login`, or its
+still honoured by the Pulse Portal login flow only (`pulse login`, or its
 `--ca-bundle` flag); the standard `SSL_CERT_FILE` / `REQUESTS_CA_BUNDLE` / `CURL_CA_BUNDLE` variables
 are still read by the plain `requests`/`urllib` calls some tools make (and by
 `pip`, `uv`, `curl`, Node), so a stale path in one of them now fails at the

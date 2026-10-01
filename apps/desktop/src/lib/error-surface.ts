@@ -53,7 +53,7 @@ export const ERROR_CODE_KEYS = [
   // Raised by the desktop, never by the backend: the backend reported a turn
   // over after its events stopped, and no reply reached this window.
   'no_reply',
-  // The Nous free tier refused or could not serve the turn (agent/error_surface.py
+  // The PULSE free tier refused or could not serve the turn (agent/error_surface.py
   // `free_tier_<kind>`). The backend's sentence rides in `message` and is the card body.
   'free_tier_disabled',
   'free_tier_rate_limited',
@@ -81,7 +81,7 @@ export interface ErrorSurface {
    *  the fix is signing in again (expired/revoked grant); `api_key` means a
    *  key needs replacing. Absent from older backends. */
   authKind?: 'api_key' | 'oauth'
-  /** Auth layer only: display name of the failing provider ("Nous Portal"). */
+  /** Auth layer only: display name of the failing provider ("Pulse Portal"). */
   providerLabel?: string
   /** Auth layer, api_key only: the env var holding the rejected key
    *  (OPENAI_API_KEY). Deep-links Settings → Keys to that row. Absent from
@@ -192,7 +192,7 @@ export function formatCountdown(remainingMs: number): string {
   return hours > 0 ? `${hours}h ${tail}` : tail.replace(/^0/, '')
 }
 
-/** True when the Nous free tier refused or could not serve the turn: the way
+/** True when the PULSE free tier refused or could not serve the turn: the way
  *  forward is the free sign-in (or another provider), never an OAuth re-login. */
 export function isFreeTierSurface(surface: ErrorSurface | null | undefined): boolean {
   return typeof surface?.code === 'string' && surface.code.startsWith('free_tier_')

@@ -16,7 +16,7 @@ export const en: Translations = {
   sharedMetrics: {
     consentTitle: 'Help improve PULSE?',
     consentBody:
-      'Shared metrics contain only bounded counters. Never prompts, files, paths or error text. Collection is local. Sending them to Nous is a separate opt-in.',
+      'Shared metrics contain only bounded counters. Never prompts, files, paths or error text. Collection is local. Sending them to PULSE is a separate opt-in.',
     whatIsCollected: 'What is collected',
     collectedIntro: 'Only bounded counters:',
     collectedActivity: 'Activity, session length, outcomes and error classes',
@@ -29,23 +29,23 @@ export const en: Translations = {
     collectedMachine:
       'Coarse machine facts: RAM range, GPU type, PULSE version age and release channel, updates behind, whether a local model server is used',
     installId:
-      'Sending uploads each daily package to the Nous telemetry service. Packages carry this profile’s install ID: a stable random UUID with no personal information, reset by deleting the shared-metrics directory.',
+      'Sending uploads each daily package to the PULSE telemetry service. Packages carry this profile’s install ID: a stable random UUID with no personal information, reset by deleting the shared-metrics directory.',
     consentWindow:
       'Only packages whose entire collection period falls inside a recorded consent window are ever sent — data from before you opt in, or from any gap while sending was off, stays on this machine. Sending can be turned off again at any time.',
     readDocs: 'Read the full details',
-    share: 'Collect and send to Nous',
+    share: 'Collect and send to PULSE',
     local: 'Collect locally only',
     off: 'No thanks',
     changeLater: 'You can change this any time in Settings → Safety.',
     saveFailed: 'Couldn’t save your choice',
     collectLabel: 'Collect usage stats',
     collectDesc: 'Bounded counters kept on this device. Never prompts, files, paths or error text.',
-    sendLabel: 'Send usage stats to Nous',
+    sendLabel: 'Send usage stats to PULSE',
     sendDesc:
-      'Upload each daily package to the Nous telemetry service. Only data from inside a consent window is sent. Needs collection on.',
+      'Upload each daily package to the PULSE telemetry service. Only data from inside a consent window is sent. Needs collection on.',
     unavailable: 'Update the PULSE backend to change this setting.',
     stripBody: 'Bounded counters only, never prompts or files.',
-    stripChoices: { share: 'Send to Nous', local: 'Local only', off: 'No thanks' },
+    stripChoices: { share: 'Send to PULSE', local: 'Local only', off: 'No thanks' },
     stripDetails: 'Details'
   },
   // English editorial copy stays in the shipped JSONL; other locales override it.
@@ -231,14 +231,14 @@ export const en: Translations = {
       showAllMatches: 'Show all matches',
       segmentNoMatch: (segment: string) => `No match in ${segment}, so every match is shown.`,
       freeTierNote: 'Connections stay on this computer until you sign in.',
-      signInLine: 'Sign in to Nous to use managed apps.',
+      signInLine: 'Sign in to PULSE to use managed apps.',
       signIn: 'Sign in',
       managedUnavailable: 'Managed apps are not available for this account yet.',
       writeFailed: 'That change was not saved.',
       refreshFailed: 'The tool list was not refreshed.',
       disconnectNoAccount: 'PULSE has no account to disconnect here. Refresh the page and try again.',
       disconnectRefused:
-        'Nous could not remove this sign-in right now. Turn the app off with the switch instead, or try again later.'
+        'PULSE could not remove this sign-in right now. Turn the app off with the switch instead, or try again later.'
     },
 
     add: {
@@ -292,7 +292,7 @@ export const en: Translations = {
       providedByPlugin: (plugin: string) => `Provided by plugin ${plugin}`,
       openPlugins: 'Open the Plugins tab',
       // Verbatim, by decision of the design of record.
-      nousLine: 'Nous apps follow your account, not the profile.',
+      pulseLine: 'PULSE apps follow your account, not the profile.',
       rulesReadOnly: 'Rules cannot be changed right now.',
       rulesAppOff: (name: string) => `Turn ${name} on to change its tools.`,
       rulesSignIn: 'Sign in to change what PULSE may do here.',
@@ -347,7 +347,7 @@ export const en: Translations = {
       remove: 'Remove',
       offTitle: (name: string) => `${name} is off.`,
       offBody: 'Turn it on with the switch above to read the tools it brings.',
-      signedOutTitle: 'Sign in to Nous to read the tool list.',
+      signedOutTitle: 'Sign in to PULSE to read the tool list.',
       signedOutBody: 'Your servers on this computer are unaffected.',
       conflictTitle: 'Someone changed this rule while you were editing.',
       // Two sentences at most, and the second says the work is still here.
@@ -544,11 +544,11 @@ export const en: Translations = {
         `Signs out of the saved remote browser session, then opens ${signInLabel}. Use local gateway to switch to the bundled backend instead.`,
       signOutAndSignIn: 'Sign out & sign in',
       remoteFailureHint: 'Check the gateway URL and sign-in under Gateway settings, or switch to the local gateway.',
-      cloudDownTitle: 'Nous Cloud agent is down',
+      cloudDownTitle: 'Pulse Cloud agent is down',
       cloudDownDescription:
-        'The Nous-managed cloud agent this gateway connects to is returning a server error. It cannot be restarted from here — check its status, switch to the local gateway, or get support.',
+        'The PULSE-managed cloud agent this gateway connects to is returning a server error. It cannot be restarted from here — check its status, switch to the local gateway, or get support.',
       cloudDownHint:
-        'The buttons below open the Nous Portal (instance status and controls) and our Discord for support.',
+        'The buttons below open the Pulse Portal (instance status and controls) and our Discord for support.',
       cloudDownCheckPortal: 'Check Portal status',
       cloudDownDiscord: 'Get help on Discord',
       hideRecentLogs: 'Hide recent logs',
@@ -674,7 +674,7 @@ export const en: Translations = {
   },
 
   billingBlock: {
-    titleNous: 'Out of Nous credits',
+    titleNous: 'Out of PULSE credits',
     titleProvider: provider => `Out of credits — ${provider}`,
     fallbackMessage: 'Your account is out of credits. Add credits to keep going.',
     openBilling: 'Open billing',
@@ -683,9 +683,9 @@ export const en: Translations = {
   },
 
   sendDiagnostics: {
-    title: 'Send diagnostics to Nous',
+    title: 'Send diagnostics to PULSE',
     privacyNotice:
-      'This uploads a debug bundle to Nous-internal storage (not a public paste). It includes system info (OS, versions, provider, which API keys are configured — never the keys themselves) and full agent, gateway, and desktop logs (up to 512 KB each), which likely contain conversation content, tool outputs, and file paths. Secrets are redacted before upload. The bundle is viewable only by Nous staff and allowlisted Discord moderators, and auto-deletes after 14 days.',
+      'This uploads a debug bundle to PULSE-internal storage (not a public paste). It includes system info (OS, versions, provider, which API keys are configured — never the keys themselves) and full agent, gateway, and desktop logs (up to 512 KB each), which likely contain conversation content, tool outputs, and file paths. Secrets are redacted before upload. The bundle is viewable only by PULSE staff and allowlisted Discord moderators, and auto-deletes after 14 days.',
     upload: 'Upload',
     uploading: 'Uploading…',
     cancel: 'Cancel',
@@ -697,11 +697,11 @@ export const en: Translations = {
       'Your bundle was uploaded privately. Share the link below in your support thread so the team can see your logs.',
     failedTitle: 'Upload failed',
     failedHint:
-      'You can also run `pulse debug share --nous` from a terminal, or `pulse debug share --local` to print the report without uploading.',
+      'You can also run `pulse debug share --pulse` from a terminal, or `pulse debug share --local` to print the report without uploading.',
     handoffLead: 'Pick up the discussion in:',
     links: {
       github: 'GitHub Issues',
-      portal: 'Nous Portal Support',
+      portal: 'Pulse Portal Support',
       discord: 'Discord'
     }
   },
@@ -1634,7 +1634,7 @@ export const en: Translations = {
       cloudLoadingAgents: 'Loading your agents…',
       cloudNoAgents: {
         before: 'No agents found on this account. Create one in the ',
-        linkText: 'Nous portal',
+        linkText: 'PULSE portal',
         after: ', then refresh.'
       },
       cloudRefresh: 'Refresh',
@@ -2011,13 +2011,13 @@ export const en: Translations = {
       usageLabel: label => `${label} usage`,
       freeTier: {
         signIn: 'Sign in',
-        title: "You're on the Nous free tier",
-        message: 'Sign in with a Nous account to unlock more models and tools.',
+        title: "You're on the PULSE free tier",
+        message: 'Sign in with a PULSE account to unlock more models and tools.',
         caption:
-          'Runs on nous/welcome with connectors included. Signing in keeps your connectors and adds the tools that need an account and every other model.',
-        name: 'Nous · free tier',
+          'Runs on pulse/welcome with connectors included. Signing in keeps your connectors and adds the tools that need an account and every other model.',
+        name: 'PULSE · free tier',
         footnote:
-          'The free tier has no balance and nothing to pay. Payment and usage appear when you sign in with a Nous account.',
+          'The free tier has no balance and nothing to pay. Payment and usage appear when you sign in with a PULSE account.',
         plan: 'Free tier',
         model: 'Model',
         connectors: 'Connectors',
@@ -2125,8 +2125,8 @@ export const en: Translations = {
       state: {
         notice: {
           loggedOut: {
-            title: 'Connect your Nous account',
-            message: 'Sign in with your Nous account to see your balance, plan and usage here.',
+            title: 'Connect your PULSE account',
+            message: 'Sign in with your PULSE account to see your balance, plan and usage here.',
             action: 'Sign in'
           },
           openPortal: 'Open portal ↗',
@@ -2366,16 +2366,16 @@ export const en: Translations = {
       activeBackend: 'Active',
       activeBackendHint: 'This is your active backend',
       useBackend: 'Use this backend',
-      nousIncluded: 'Included with a Nous subscription — sign in with your Nous account to activate.',
-      nousAuthNeededTitle: 'Sign in with your Nous account',
-      nousAuthNeededMessage: provider =>
-        `${provider} is saved but will only work once you sign in with your Nous account.`,
-      nousAuthSignIn: 'Sign in',
-      nousAuthDoneTitle: 'Nous account connected',
-      nousAuthDoneMessage: 'Your subscription backends are now active.',
-      nousAuthFailed: 'Nous sign-in did not complete',
-      nousAuthFailedMessage: 'Try again.',
-      nousAuthTryAgain: 'Try again',
+      pulseIncluded: 'Included with a PULSE subscription — sign in with your PULSE account to activate.',
+      pulseAuthNeededTitle: 'Sign in with your PULSE account',
+      pulseAuthNeededMessage: provider =>
+        `${provider} is saved but will only work once you sign in with your PULSE account.`,
+      pulseAuthSignIn: 'Sign in',
+      pulseAuthDoneTitle: 'PULSE account connected',
+      pulseAuthDoneMessage: 'Your subscription backends are now active.',
+      pulseAuthFailed: 'PULSE sign-in did not complete',
+      pulseAuthFailedMessage: 'Try again.',
+      pulseAuthTryAgain: 'Try again',
       noApiKeyRequired: 'No API key required.',
       postSetupHint: step =>
         `This backend needs a one-time install (${step}). Runs on this machine — may take a few minutes.`,
@@ -3912,8 +3912,8 @@ export const en: Translations = {
       '/browser': 'Manage browser CDP connection [connect|disconnect|status] (local gateway only)',
       '/palette': 'Open the fuzzy command palette (also Ctrl+P)',
       '/usage': 'Show token usage and rate limits; `reset` redeems a banked Codex limit reset',
-      '/subscription': 'View your Nous plan and change it in the browser',
-      '/topup': 'Show your Nous balance and manage billing on the portal',
+      '/subscription': 'View your PULSE plan and change it in the browser',
+      '/topup': 'Show your PULSE balance and manage billing on the portal',
       '/platform': 'Pause, resume, or list a failing gateway platform',
       '/version': 'Show PULSE Agent version',
       '/debug': 'Upload debug report (system info + logs) and get shareable links',
@@ -4539,21 +4539,21 @@ export const en: Translations = {
   },
 
   freeTier: {
-    providerRowTitle: 'Nous · free tier',
-    providerRowPitch: 'Sign in with a Nous account to unlock more models and tools.',
+    providerRowTitle: 'PULSE · free tier',
+    providerRowPitch: 'Sign in with a PULSE account to unlock more models and tools.',
     readyTitle: 'PULSE is ready.',
     readyCaption: 'Free · connectors included',
     begin: 'Begin',
-    signInInstead: 'Sign in with a Nous account instead',
+    signInInstead: 'Sign in with a PULSE account instead',
     otherProviders: 'Other providers',
-    stripTitle: 'Free Nous inference and connectors are now available.',
-    stripBody: 'Open the model picker to try them, or sign in with a Nous account.',
+    stripTitle: 'Free PULSE inference and connectors are now available.',
+    stripBody: 'Open the model picker to try them, or sign in with a PULSE account.',
     openModelPicker: 'Open model picker',
     dismiss: 'Dismiss',
-    providerName: 'Nous',
-    statusLabel: model => `Nous · ${model}`,
+    providerName: 'PULSE',
+    statusLabel: model => `PULSE · ${model}`,
     signIn: 'Sign in',
-    signInHeading: 'Sign in with a Nous account to unlock more models and tools.',
+    signInHeading: 'Sign in with a PULSE account to unlock more models and tools.',
     settingUp: 'Setting up free inference…',
     codeBody: 'Enter this code in your browser to finish signing in.',
     copyLink: 'Copy link',
@@ -4571,36 +4571,36 @@ export const en: Translations = {
     tryAgain: 'Try again',
     startAgain: 'Start again',
     didNotComplete: "Sign-in didn't finish",
-    rejectedBody: "No problem, you're still on the free Nous service. Sign in whenever you're ready.",
+    rejectedBody: "No problem, you're still on the free PULSE service. Sign in whenever you're ready.",
     supersededBody: 'A newer sign-in code replaced this one. Use the newest one, or start again.',
     timedOutHeading: 'That sign-in link has expired',
-    timedOutBody: "Start again whenever you're ready. You're still on the free Nous service.",
+    timedOutBody: "Start again whenever you're ready. You're still on the free PULSE service.",
     retiredBody:
       "Your session ended before the sign-in finished. PULSE will start a new one; then sign in again whenever you're ready.",
     errorBody: "Sign-in didn't finish. Try again whenever you're ready.",
     busyHeading: 'Almost there',
     busyBody: wait =>
-      `PULSE couldn't finish signing you in because the Nous service is busy. Try again in ${wait}. Your session is still here in the meantime.`,
+      `PULSE couldn't finish signing you in because the PULSE service is busy. Try again in ${wait}. Your session is still here in the meantime.`,
     unreachableBody:
-      "PULSE couldn't reach the Nous service to finish signing you in. Check your internet connection and try again. Your session is still here.",
+      "PULSE couldn't reach the PULSE service to finish signing you in. Check your internet connection and try again. Your session is still here.",
     alreadySignedInHeading: 'Already signed in.',
-    alreadySignedInBody: 'This PULSE is already signed in to a Nous account.',
+    alreadySignedInBody: 'This PULSE is already signed in to a PULSE account.',
     setupFailed: {
       gateClosed:
-        "This version of PULSE can't start without a Nous account. Sign in or create one, it's free and only takes a minute.",
+        "This version of PULSE can't start without a PULSE account. Sign in or create one, it's free and only takes a minute.",
       paused:
         'Using PULSE without signing in is paused for a moment. PULSE will keep checking. Signing in is free and gets you going right now.',
       rateLimited: wait =>
         `Lots of people are getting started right now, so PULSE will try again in ${wait}. Signing in is free and skips the wait.`,
       unreachable:
-        "PULSE couldn't reach the Nous service. Check your internet connection, then tap Try again. Or connect another provider for now.",
-      serverError: 'The Nous service had a hiccup. Tap Try again in a moment, or connect another provider for now.',
+        "PULSE couldn't reach the PULSE service. Check your internet connection, then tap Try again. Or connect another provider for now.",
+      serverError: 'The PULSE service had a hiccup. Tap Try again in a moment, or connect another provider for now.',
       powRequired:
-        "The Nous server asked for a proof of work, but that isn't implemented in your Agent yet. Sign in or create a free Nous account to continue.",
-      locked: "This session can't continue without signing in. Sign in or create a free Nous account to keep going.",
+        "The PULSE server asked for a proof of work, but that isn't implemented in your Agent yet. Sign in or create a free PULSE account to continue.",
+      locked: "This session can't continue without signing in. Sign in or create a free PULSE account to keep going.",
       generic:
         "PULSE couldn't set up free access without signing in. Signing in is free, or connect another provider.",
-      signInBelow: 'Signing in is free. Pick Nous below.',
+      signInBelow: 'Signing in is free. Pick PULSE below.',
       tryAgain: 'Try again',
       retrying: 'Trying again…'
     }
@@ -4619,7 +4619,7 @@ export const en: Translations = {
     localDownloadsHeading: 'Local',
     noAuthenticatedProviders: 'No authenticated providers.',
     pro: 'Pro',
-    proNeedsSubscription: 'Pro models need a paid Nous subscription.',
+    proNeedsSubscription: 'Pro models need a paid PULSE subscription.',
     free: 'Free',
     freeTier: 'Free tier',
     priceTitle: 'Input / Output price per million tokens',
@@ -5218,15 +5218,15 @@ export const en: Translations = {
           title: 'Disk full',
           body: 'Your disk is full, so PULSE could not save this conversation. Free some space, then retry.'
         },
-        // Nous free tier. The body is normally the backend's own sentence (it names the wait
+        // PULSE free tier. The body is normally the backend's own sentence (it names the wait
         // and the way forward); these bodies stand in for an older backend that sent none.
         free_tier_disabled: {
           title: 'Using PULSE without signing in is switched off right now',
-          body: "Sign in with a Nous account to keep chatting, it's free."
+          body: "Sign in with a PULSE account to keep chatting, it's free."
         },
         free_tier_rate_limited: {
           title: "You've used up the allowance for chatting without signing in",
-          body: "It refreshes shortly. Sign in with a Nous account for a bigger allowance, it's free."
+          body: "It refreshes shortly. Sign in with a PULSE account for a bigger allowance, it's free."
         },
         free_tier_at_capacity: {
           title: 'Chatting without signing in is really busy right now',
@@ -5234,11 +5234,11 @@ export const en: Translations = {
         },
         free_tier_model_not_free: {
           title: "That model isn't available without signing in",
-          body: "PULSE uses the free model for now. Sign in with a Nous account for more models, it's free."
+          body: "PULSE uses the free model for now. Sign in with a PULSE account for more models, it's free."
         },
         free_tier_route: {
           title: "PULSE couldn't reach the free model on this route",
-          body: "Sign in with a Nous account, it's free, or check the NOUS_INFERENCE_BASE_URL setting."
+          body: "Sign in with a PULSE account, it's free, or check the PULSE_INFERENCE_BASE_URL setting."
         },
         free_tier_outage: {
           title: 'The free model is having trouble responding right now',
@@ -5246,7 +5246,7 @@ export const en: Translations = {
         },
         free_tier_refused: {
           title: "PULSE couldn't send that without signing in",
-          body: 'Signing in with a Nous account is free.'
+          body: 'Signing in with a PULSE account is free.'
         }
       },
       errorAuthKinds: {
@@ -5275,7 +5275,7 @@ export const en: Translations = {
       errorOpenPULSEFolderFailed: 'Could not open the PULSE folder',
       errorUpdateApiKey: 'Update API key',
       errorSignInAgain: provider => `Sign in to ${provider} again`,
-      errorSignInFreeTier: 'Sign in with a Nous account',
+      errorSignInFreeTier: 'Sign in with a PULSE account',
       errorOauthExpired: provider =>
         `Your ${provider} sign-in has expired or was revoked. Sign in again to keep chatting.`,
       errorOpenLogs: 'Open logs',

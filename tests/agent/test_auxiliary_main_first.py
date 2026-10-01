@@ -1,6 +1,6 @@
 """Regression tests for the ``auto`` → main-model-first policy.
 
-Prior to this change, aggregator users (OpenRouter / Nous Portal) had aux
+Prior to this change, aggregator users (OpenRouter / Pulse Portal) had aux
 tasks routed through a cheap provider-side default (Gemini Flash) while
 non-aggregator users got their main model.  This made behavior inconsistent
 and surprising — users picked Claude but got Gemini Flash summaries.
@@ -265,125 +265,125 @@ class TestResolveVisionMainFirst:
         assert mock_resolve.call_args.kwargs.get("is_vision") is True
 
     @staticmethod
-    def _stub_nous_portal(seen: dict):
-        """Stub the Nous network boundary, keeping the resolution chain real.
+    def _stub_pulse_portal(seen: dict):
+        """Stub the PULSE network boundary, keeping the resolution chain real.
 
-        Returns a ``_try_nous`` replacement that answers with the Portal's
+        Returns a ``_try_pulse`` replacement that answers with the Portal's
         tier-aware slots: a vision model for ``vision=True``, the text chat
         default otherwise.
         """
-        nous_client = MagicMock()
-        nous_client.api_key = "jwt-test"
-        nous_client.base_url = "https://inference-api.anxious-research.com/v1"
+        pulse_client = MagicMock()
+        pulse_client.api_key = "jwt-test"
+        pulse_client.base_url = "https://inference-api.anxious-research.com/v1"
 
-        def fake_try_nous(vision=False):
+        def fake_try_pulse(vision=False):
             seen["vision"] = vision
-            return nous_client, (
+            return pulse_client, (
                 "stepfun/step-3.7-flash:free" if vision else "tencent/hy3:free"
             )
 
-        return nous_client, fake_try_nous
+        return pulse_client, fake_try_pulse
 
-    def test_nous_main_vision_uses_portal_pick_not_text_chat_model(self):
-        """Nous main → vision runs the Portal's vision slot, not the chat model.
+    def test_pulse_main_vision_uses_portal_pick_not_text_chat_model(self):
+        """PULSE main → vision runs the Portal's vision slot, not the chat model.
 
-        A Nous chat default is routinely text-only (e.g. a ``:free`` chat SKU).
+        A PULSE chat default is routinely text-only (e.g. a ``:free`` chat SKU).
         Letting it reach the vision lane means the image goes to a model that
-        cannot accept one and the Portal 404s. Only the Nous network boundary
+        cannot accept one and the Portal 404s. Only the PULSE network boundary
         is stubbed — the strict vision backend, the provider router, and its
         missing-model pre-fill all run for real, because that pre-fill is where
         the chat model used to clobber the Portal's pick.
         """
         seen: dict = {}
-        nous_client, fake_try_nous = self._stub_nous_portal(seen)
+        pulse_client, fake_try_pulse = self._stub_pulse_portal(seen)
 
         with patch(
-            "agent.auxiliary_client._read_main_provider", return_value="nous",
+            "agent.auxiliary_client._read_main_provider", return_value="pulse",
         ), patch(
             "agent.auxiliary_client._read_main_model", return_value="tencent/hy3:free",
         ), patch(
             "agent.auxiliary_client._resolve_task_provider_model",
             return_value=("auto", None, None, None, None),
         ), patch(
-            "agent.auxiliary_client._try_nous", side_effect=fake_try_nous,
+            "agent.auxiliary_client._try_pulse", side_effect=fake_try_pulse,
         ):
             from agent.auxiliary_client import resolve_vision_provider_client
 
             provider, client, model = resolve_vision_provider_client()
 
-        assert provider == "nous"
-        assert client is nous_client
+        assert provider == "pulse"
+        assert client is pulse_client
         assert seen["vision"] is True
         assert model == "stepfun/step-3.7-flash:free"
 
-    def test_nous_main_vision_honours_explicit_vision_model(self):
+    def test_pulse_main_vision_honours_explicit_vision_model(self):
         """An explicit auxiliary.vision.model still overrides the Portal pick."""
         seen: dict = {}
-        _nous_client, fake_try_nous = self._stub_nous_portal(seen)
+        _pulse_client, fake_try_pulse = self._stub_pulse_portal(seen)
 
         with patch(
-            "agent.auxiliary_client._read_main_provider", return_value="nous",
+            "agent.auxiliary_client._read_main_provider", return_value="pulse",
         ), patch(
             "agent.auxiliary_client._read_main_model", return_value="tencent/hy3:free",
         ), patch(
             "agent.auxiliary_client._resolve_task_provider_model",
             return_value=("auto", "qwen/qwen3-vl-8b-instruct", None, None, None),
         ), patch(
-            "agent.auxiliary_client._try_nous", side_effect=fake_try_nous,
+            "agent.auxiliary_client._try_pulse", side_effect=fake_try_pulse,
         ):
             from agent.auxiliary_client import resolve_vision_provider_client
 
             provider, _client, model = resolve_vision_provider_client()
 
-        assert provider == "nous"
+        assert provider == "pulse"
         assert model == "qwen/qwen3-vl-8b-instruct"
 
-    def test_nous_explicit_vision_provider_also_skips_chat_model(self):
-        """``auxiliary.vision.provider: nous`` takes the same Portal pick.
+    def test_pulse_explicit_vision_provider_also_skips_chat_model(self):
+        """``auxiliary.vision.provider: pulse`` takes the same Portal pick.
 
         The explicit-provider branch reaches the strict vision backend with no
         model too, so it has to resolve the same way the auto branch does.
         """
         seen: dict = {}
-        nous_client, fake_try_nous = self._stub_nous_portal(seen)
+        pulse_client, fake_try_pulse = self._stub_pulse_portal(seen)
 
         with patch(
-            "agent.auxiliary_client._read_main_provider", return_value="nous",
+            "agent.auxiliary_client._read_main_provider", return_value="pulse",
         ), patch(
             "agent.auxiliary_client._read_main_model", return_value="tencent/hy3:free",
         ), patch(
             "agent.auxiliary_client._resolve_task_provider_model",
-            return_value=("nous", None, None, None, None),
+            return_value=("pulse", None, None, None, None),
         ), patch(
-            "agent.auxiliary_client._try_nous", side_effect=fake_try_nous,
+            "agent.auxiliary_client._try_pulse", side_effect=fake_try_pulse,
         ):
             from agent.auxiliary_client import resolve_vision_provider_client
 
             provider, client, model = resolve_vision_provider_client()
 
-        assert provider == "nous"
-        assert client is nous_client
+        assert provider == "pulse"
+        assert client is pulse_client
         assert model == "stepfun/step-3.7-flash:free"
 
-    def test_nous_text_aux_still_uses_main_chat_model(self):
+    def test_pulse_text_aux_still_uses_main_chat_model(self):
         """The vision carve-out must not leak into text aux resolution.
 
-        Text auxiliary work on a Nous main deliberately keeps the user's chat
+        Text auxiliary work on a PULSE main deliberately keeps the user's chat
         model rather than dropping to the Portal's cheap default.
         """
         seen: dict = {}
-        _nous_client, fake_try_nous = self._stub_nous_portal(seen)
+        _pulse_client, fake_try_pulse = self._stub_pulse_portal(seen)
 
         with patch(
-            "agent.auxiliary_client._read_main_provider", return_value="nous",
+            "agent.auxiliary_client._read_main_provider", return_value="pulse",
         ), patch(
             "agent.auxiliary_client._read_main_model", return_value="tencent/hy3:free",
         ), patch(
-            "agent.auxiliary_client._try_nous", side_effect=fake_try_nous,
+            "agent.auxiliary_client._try_pulse", side_effect=fake_try_pulse,
         ):
             from agent.auxiliary_client import resolve_provider_client
 
-            _client, model = resolve_provider_client("nous")
+            _client, model = resolve_provider_client("pulse")
 
         assert model == "tencent/hy3:free"
 
@@ -475,7 +475,7 @@ class TestResolveVisionCustomProvider:
     Regression: a ``custom:<name>`` main provider resolves to the bare
     runtime provider id ``"custom"``.  ``resolve_provider_client("custom")``
     has no built-in endpoint, so without forwarding the live base_url/api_key
-    it returns ``(None, None)`` and vision falls through to OpenRouter / Nous,
+    it returns ``(None, None)`` and vision falls through to OpenRouter / PULSE,
     which an offline / aggregator-less user has never configured — breaking
     vision entirely with ``No LLM provider configured for task=vision
     provider=auto``.  The fix recovers the live endpoint that

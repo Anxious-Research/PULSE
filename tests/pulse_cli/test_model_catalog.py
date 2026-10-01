@@ -42,8 +42,8 @@ def _valid_manifest() -> dict:
                     {"id": "openrouter/elephant-alpha", "description": "free"},
                 ],
             },
-            "nous": {
-                "metadata": {"display_name": "Nous Portal"},
+            "pulse": {
+                "metadata": {"display_name": "Pulse Portal"},
                 "models": [
                     {"id": "anthropic/claude-opus-4.7"},
                     {"id": "moonshotai/kimi-k2.6"},
@@ -209,10 +209,10 @@ class TestCuratedAccessors:
         ]
 
 
-    def test_nous_returns_none_when_catalog_empty(self, isolated_home):
+    def test_pulse_returns_none_when_catalog_empty(self, isolated_home):
         from pulse_cli import model_catalog
         with patch.object(model_catalog, "_fetch_manifest", return_value=None):
-            assert model_catalog.get_curated_nous_models() is None
+            assert model_catalog.get_curated_pulse_models() is None
 
 
 class TestDefaultModelFromCache:
@@ -222,7 +222,7 @@ class TestDefaultModelFromCache:
     def _manifest_with_default(self) -> dict:
         m = _valid_manifest()
         m["providers"]["openrouter"]["models"][1]["default"] = True  # gpt-5.4
-        m["providers"]["nous"]["models"][1]["default"] = True  # kimi-k2.6
+        m["providers"]["pulse"]["models"][1]["default"] = True  # kimi-k2.6
         return m
 
     def test_reads_label_from_disk_cache(self, isolated_home):
@@ -238,7 +238,7 @@ class TestDefaultModelFromCache:
                 == "openai/gpt-5.4"
             )
             assert (
-                model_catalog.get_default_model_from_cache("nous")
+                model_catalog.get_default_model_from_cache("pulse")
                 == "moonshotai/kimi-k2.6"
             )
             fetch.assert_not_called()
@@ -263,7 +263,7 @@ class TestDefaultModelFromCache:
         manifest = json.loads(
             (repo_root / "website" / "static" / "api" / "model-catalog.json").read_text()
         )
-        for provider in ("openrouter", "nous"):
+        for provider in ("openrouter", "pulse"):
             block = manifest["providers"][provider]
             labeled = [m["id"] for m in block["models"] if m.get("default")]
             assert labeled == [PREFERRED_SILENT_DEFAULT_MODEL], (
@@ -325,11 +325,11 @@ class TestRefreshCadence:
             "enabled": True, "url": "http://master", "ttl_hours": 1.0, "providers": {},
         }), patch.object(model_catalog, "get_catalog", return_value=_valid_manifest()) as gc, \
              patch("pulse_cli.models.fetch_openrouter_models") as orm, \
-             patch("pulse_cli.models.fetch_nous_recommended_models") as nous:
+             patch("pulse_cli.models.fetch_pulse_recommended_models") as pulse:
             assert model_catalog.refresh_catalogs() is True
         gc.assert_called_once_with(force_refresh=True)
         orm.assert_called_once_with(force_refresh=True)
-        nous.assert_called_once_with(force_refresh=True)
+        pulse.assert_called_once_with(force_refresh=True)
 
 
 class TestIntegrationWithModelsModule:
@@ -337,8 +337,8 @@ class TestIntegrationWithModelsModule:
 
 
 
-    def test_picker_nous_row_uses_curated_list(self, tmp_path, monkeypatch):
-        """The /model picker surfaces the curated ``_PROVIDER_MODELS["nous"]``
+    def test_picker_pulse_row_uses_curated_list(self, tmp_path, monkeypatch):
+        """The /model picker surfaces the curated ``_PROVIDER_MODELS["pulse"]``
         list in curated order — matching the ``pulse model`` CLI — not the live
         ``/v1/models`` catalog or the manifest. Portal free/paid recommendations
         are unioned in when reachable; offline (as here, with the Portal calls
@@ -352,7 +352,7 @@ class TestIntegrationWithModelsModule:
         # ``_hermetic_environment`` PULSE_HOME directly instead.
         import importlib
         from pulse_cli import model_catalog
-        from pulse_cli.models import get_curated_nous_model_ids
+        from pulse_cli.models import get_curated_pulse_model_ids
         importlib.reload(model_catalog)
         try:
             from pulse_cli.model_switch_providers import list_picker_providers
@@ -361,7 +361,7 @@ class TestIntegrationWithModelsModule:
             (active_home / "auth.json").write_text(
                 json.dumps(
                     {
-                        "providers": {"nous": {"access_token": "fake"}},
+                        "providers": {"pulse": {"access_token": "fake"}},
                         "credential_pool": {},
                     }
                 )
@@ -370,27 +370,27 @@ class TestIntegrationWithModelsModule:
             # Stub the Portal recommendation union so the row is deterministic
             # (the curated list alone) and never touches the network. ``expected``
             # is computed from the same source the picker uses internally
-            # (``curated["nous"] = get_curated_nous_model_ids()``), so the test
+            # (``curated["pulse"] = get_curated_pulse_model_ids()``), so the test
             # stays an invariant — it can't rot as the curated/manifest list grows.
             with patch.object(
                 model_catalog, "_fetch_manifest", return_value=_valid_manifest()
-            ), patch("pulse_cli.models.check_nous_free_tier", return_value=False), patch(
+            ), patch("pulse_cli.models.check_pulse_free_tier", return_value=False), patch(
                 "pulse_cli.models.union_with_portal_free_recommendations",
                 side_effect=lambda ids, *a, **k: (ids, {}),
             ), patch(
                 "pulse_cli.models.union_with_portal_paid_recommendations",
                 side_effect=lambda ids, *a, **k: (ids, {}),
             ):
-                expected = get_curated_nous_model_ids()
+                expected = get_curated_pulse_model_ids()
                 picker = list_picker_providers(
-                    current_provider="nous", max_models=99
+                    current_provider="pulse", max_models=99
                 )
         finally:
             model_catalog.reset_cache()
 
-        nous_row = next((r for r in picker if r["slug"] == "nous"), None)
-        assert nous_row is not None, "nous row must appear when authed"
-        assert nous_row["models"] == expected
+        pulse_row = next((r for r in picker if r["slug"] == "pulse"), None)
+        assert pulse_row is not None, "pulse row must appear when authed"
+        assert pulse_row["models"] == expected
 
     def test_picker_max_models_cap_semantics(self, tmp_path, monkeypatch):
         """The cap argument has three distinct meanings on the real slicing
@@ -401,7 +401,7 @@ class TestIntegrationWithModelsModule:
         """
         import importlib
         from pulse_cli import model_catalog
-        from pulse_cli.models import get_curated_nous_model_ids
+        from pulse_cli.models import get_curated_pulse_model_ids
         importlib.reload(model_catalog)
         try:
             from pulse_cli.model_switch import list_authenticated_providers
@@ -411,46 +411,46 @@ class TestIntegrationWithModelsModule:
             (active_home / "auth.json").write_text(
                 json.dumps(
                     {
-                        "providers": {"nous": {"access_token": "fake"}},
+                        "providers": {"pulse": {"access_token": "fake"}},
                         "credential_pool": {},
                     }
                 )
             )
             with patch.object(
                 model_catalog, "_fetch_manifest", return_value=_valid_manifest()
-            ), patch("pulse_cli.models.check_nous_free_tier", return_value=False), patch(
+            ), patch("pulse_cli.models.check_pulse_free_tier", return_value=False), patch(
                 "pulse_cli.models.union_with_portal_free_recommendations",
                 side_effect=lambda ids, *a, **k: (ids, {}),
             ), patch(
                 "pulse_cli.models.union_with_portal_paid_recommendations",
                 side_effect=lambda ids, *a, **k: (ids, {}),
             ):
-                expected = get_curated_nous_model_ids()
-                full = list_picker_providers(current_provider="nous", max_models=None)
-                one = list_picker_providers(current_provider="nous", max_models=1)
+                expected = get_curated_pulse_model_ids()
+                full = list_picker_providers(current_provider="pulse", max_models=None)
+                one = list_picker_providers(current_provider="pulse", max_models=1)
                 # 0 is exercised on list_authenticated_providers (the slug-only
                 # path); the picker variant drops empty-model rows entirely, so
                 # the empty-list contract lives on the auth-providers call.
                 zero = list_authenticated_providers(
-                    current_provider="nous", max_models=0
+                    current_provider="pulse", max_models=0
                 )
         finally:
             model_catalog.reset_cache()
 
-        def _nous(rows):
-            return next((r for r in rows if r["slug"] == "nous"), None)
+        def _pulse(rows):
+            return next((r for r in rows if r["slug"] == "pulse"), None)
 
         # Only meaningful when the curated list actually exceeds 1 entry.
-        assert len(expected) > 1, "test needs a multi-model curated nous list"
+        assert len(expected) > 1, "test needs a multi-model curated pulse list"
 
-        full_row = _nous(full)
+        full_row = _pulse(full)
         assert full_row is not None and full_row["models"] == expected
 
-        # The Nous row is already curated, so an int cap never trims it (its free tier sits last).
-        one_row = _nous(one)
+        # The PULSE row is already curated, so an int cap never trims it (its free tier sits last).
+        one_row = _pulse(one)
         assert one_row is not None and one_row["models"] == expected
 
-        zero_row = _nous(zero)
+        zero_row = _pulse(zero)
         # 0 means an empty model list — NOT unlimited. total_models still real.
         assert zero_row is not None
         assert zero_row["models"] == []
@@ -461,7 +461,7 @@ class TestIntegrationWithModelsModule:
 # Drift guard — prevent the in-repo curated lists from going out of sync with
 # the docs-hosted manifest at website/static/api/model-catalog.json.
 #
-# History: qwen/qwen3.6-plus was added to _PROVIDER_MODELS["nous"] in commit
+# History: qwen/qwen3.6-plus was added to _PROVIDER_MODELS["pulse"] in commit
 # 9dd6e5510 but website/static/api/model-catalog.json was not regenerated for
 # weeks, so free-tier users on a new install fetched a stale manifest and the
 # free-tier picker showed "No free models currently available." even though
@@ -596,7 +596,7 @@ class TestManifestMatchesInRepoLists:
 
         assert self._strip_volatile(actual) == self._strip_volatile(expected), (
             "website/static/api/model-catalog.json is out of sync with "
-            "_PROVIDER_MODELS['nous'] / OPENROUTER_MODELS. "
+            "_PROVIDER_MODELS['pulse'] / OPENROUTER_MODELS. "
             "Run: python scripts/build_model_catalog.py && "
             "git add website/static/api/model-catalog.json"
         )

@@ -2,7 +2,7 @@
 
 Every consumer of these capabilities sits on a per-request hot path that must
 never block on HTTP, so a process whose in-memory cache is cold answers
-"unknown" — and on that answer the Nous profile drops a "thinking off" disable
+"unknown" — and on that answer the PULSE profile drops a "thinking off" disable
 rather than risk a 400. A short-lived process (``pulse -p``, a cron job, a
 freshly booted gateway) is ALWAYS cold, so without a disk copy that fallback is
 the only behavior those runs ever get and the user keeps paying for reasoning
@@ -57,15 +57,15 @@ def cold_process(monkeypatch):
 
     def _reset():
         for name in (
-            "_nous_reasoning_caps_cache",
-            "_nous_reasoning_caps_failed_at",
+            "_pulse_reasoning_caps_cache",
+            "_pulse_reasoning_caps_failed_at",
             "_openrouter_reasoning_caps_cache",
             "_openrouter_reasoning_caps_failed_at",
         ):
             monkeypatch.setattr(models_mod, name, None)
         for name in (
-            "_nous_caps_disk_checked",
-            "_nous_caps_warm_started",
+            "_pulse_caps_disk_checked",
+            "_pulse_caps_warm_started",
             "_openrouter_caps_disk_checked",
             "_openrouter_caps_warm_started",
         ):
@@ -97,16 +97,16 @@ def test_fetched_catalog_answers_a_later_process_offline(
         models_mod, "_urlopen_model_catalog_request",
         lambda req, *, timeout: _response(_CATALOG),
     )
-    assert models_reasoning_caps.nous_model_reasoning_capabilities(
+    assert models_reasoning_caps.pulse_model_reasoning_capabilities(
         "deepseek/deepseek-v4-pro", allow_fetch=True
     ) is not None
 
     cold_process()
     monkeypatch.setattr(models_mod, "_urlopen_model_catalog_request", offline)
 
-    caps = models_reasoning_caps.nous_model_reasoning_capabilities("deepseek/deepseek-v4-pro")
+    caps = models_reasoning_caps.pulse_model_reasoning_capabilities("deepseek/deepseek-v4-pro")
     assert caps["mandatory"] is False
-    mandatory = models_reasoning_caps.nous_model_reasoning_capabilities(
+    mandatory = models_reasoning_caps.pulse_model_reasoning_capabilities(
         "arcee-ai/trinity-large-thinking"
     )
     assert mandatory["mandatory"] is True
@@ -123,7 +123,7 @@ def test_mirror_is_keyed_by_catalog_url(cold_process, offline, monkeypatch):
         models_mod, "_urlopen_model_catalog_request",
         lambda req, *, timeout: _response(_CATALOG),
     )
-    models_reasoning_caps.nous_model_reasoning_capabilities(
+    models_reasoning_caps.pulse_model_reasoning_capabilities(
         "deepseek/deepseek-v4-pro", allow_fetch=True
     )
 
@@ -142,15 +142,15 @@ def test_staging_portal_does_not_read_productions_mirror(
         models_mod, "_urlopen_model_catalog_request",
         lambda req, *, timeout: _response(_CATALOG),
     )
-    models_reasoning_caps.nous_model_reasoning_capabilities(
+    models_reasoning_caps.pulse_model_reasoning_capabilities(
         "deepseek/deepseek-v4-pro", allow_fetch=True
     )
 
     cold_process()
-    monkeypatch.setenv("NOUS_INFERENCE_BASE_URL", "https://staging.anxious-research.com")
+    monkeypatch.setenv("PULSE_INFERENCE_BASE_URL", "https://staging.anxious-research.com")
     monkeypatch.setattr(models_mod, "_urlopen_model_catalog_request", offline)
 
-    assert models_reasoning_caps.nous_model_reasoning_capabilities(
+    assert models_reasoning_caps.pulse_model_reasoning_capabilities(
         "deepseek/deepseek-v4-pro"
     ) is None
 
@@ -161,7 +161,7 @@ def test_stale_copy_is_still_served(cold_process, offline, monkeypatch):
     Refusing to read an aged mirror would put every long-idle install back on
     the cold-start fallback it exists to prevent.
     """
-    url = models_reasoning_caps.nous_catalog_url()
+    url = models_reasoning_caps.pulse_catalog_url()
     models_reasoning_caps._save_reasoning_caps_disk(
         url, {"deepseek/deepseek-v4-pro": {"supports_reasoning": True, "mandatory": False}}
     )
@@ -172,7 +172,7 @@ def test_stale_copy_is_still_served(cold_process, offline, monkeypatch):
     cold_process()
     monkeypatch.setattr(models_mod, "_urlopen_model_catalog_request", offline)
 
-    caps = models_reasoning_caps.nous_model_reasoning_capabilities("deepseek/deepseek-v4-pro")
+    caps = models_reasoning_caps.pulse_model_reasoning_capabilities("deepseek/deepseek-v4-pro")
     assert caps["mandatory"] is False
 
 
@@ -183,7 +183,7 @@ def test_unreadable_mirror_degrades_to_unknown(cold_process, offline, monkeypatc
     path.write_text("{ this is not json")
 
     monkeypatch.setattr(models_mod, "_urlopen_model_catalog_request", offline)
-    assert models_reasoning_caps.nous_model_reasoning_capabilities("deepseek/deepseek-v4-pro") is None
+    assert models_reasoning_caps.pulse_model_reasoning_capabilities("deepseek/deepseek-v4-pro") is None
 
 
 def test_pricing_fetch_seeds_the_mirror(cold_process, offline, monkeypatch):
@@ -205,7 +205,7 @@ def test_pricing_fetch_seeds_the_mirror(cold_process, offline, monkeypatch):
     cold_process()
     monkeypatch.setattr(models_mod, "_urlopen_model_catalog_request", offline)
 
-    caps = models_reasoning_caps.nous_model_reasoning_capabilities("deepseek/deepseek-v4-pro")
+    caps = models_reasoning_caps.pulse_model_reasoning_capabilities("deepseek/deepseek-v4-pro")
     assert caps is not None
 
 
@@ -217,7 +217,7 @@ def test_a_missing_mirror_is_looked_for_once_per_process(cold_process, monkeypat
     token. Both halves have to be paid at most once.
     """
     counts = {"url": 0, "read": 0}
-    real_url = models_reasoning_caps.nous_catalog_url
+    real_url = models_reasoning_caps.pulse_catalog_url
     real_read = models_reasoning_caps._read_reasoning_caps_disk
 
     def _counting_url():
@@ -228,9 +228,9 @@ def test_a_missing_mirror_is_looked_for_once_per_process(cold_process, monkeypat
         counts["read"] += 1
         return real_read()
 
-    monkeypatch.setattr(models_reasoning_caps, "nous_catalog_url", _counting_url)
+    monkeypatch.setattr(models_reasoning_caps, "pulse_catalog_url", _counting_url)
     monkeypatch.setattr(models_reasoning_caps, "_read_reasoning_caps_disk", _counting_read)
     for _ in range(5):
-        models_reasoning_caps.nous_model_reasoning_capabilities("deepseek/deepseek-v4-pro")
+        models_reasoning_caps.pulse_model_reasoning_capabilities("deepseek/deepseek-v4-pro")
 
     assert counts == {"url": 1, "read": 1}

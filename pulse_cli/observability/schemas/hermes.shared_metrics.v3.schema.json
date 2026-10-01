@@ -1968,7 +1968,7 @@
     "catalog_identifier": {
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$",
-      "description": "A public name Nous publishes (slash-command registry, bundled/optional skills, optional-mcps/ and plugin-catalog/ entries, shipped locales), or the placeholder custom/plugin/skill/unknown/other."
+      "description": "A public name PULSE publishes (slash-command registry, bundled/optional skills, optional-mcps/ and plugin-catalog/ entries, shipped locales), or the placeholder custom/plugin/skill/unknown/other."
     },
     "platform_health_counter": {
       "type": "object",

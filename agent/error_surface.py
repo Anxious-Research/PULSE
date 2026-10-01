@@ -171,7 +171,7 @@ def build_error_surface_from_result(result: Any, provider: str = "", model: str 
             return _surface(LAYER_DISK, "disk_full", False, provider, model)
         if result.get("billing_block") or reason in ("billing", "billing_unverified"):
             return _surface(LAYER_BILLING, reason or "billing", False, provider, model)
-        # The Nous free tier refused or could not serve the turn (``agent/turn_recovery.py``
+        # The PULSE free tier refused or could not serve the turn (``agent/turn_recovery.py``
         # stamps ``free_tier``): its own code, so a client offers the free sign-in rather than an
         # OAuth re-login, and the chat sentence rides along as the card body.
         if isinstance(free_tier := result.get("free_tier"), dict) and free_tier.get("kind"):

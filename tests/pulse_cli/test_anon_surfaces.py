@@ -1,6 +1,6 @@
-"""Nous free tier on the read-only display surfaces and the keepalive.
+"""PULSE free tier on the read-only display surfaces and the keepalive.
 
-Contract (R-USR-1): wherever a free-tier identity renders (``pulse auth status nous``,
+Contract (R-USR-1): wherever a free-tier identity renders (``pulse auth status pulse``,
 ``pulse auth list``, ``pulse status``, ``pulse portal info``) the user sees the free-tier label
 plus the upgrade hint, and never the internal identity vocabulary. A real account keeps its normal
 rendering. The keepalive has nothing to keep alive for the free tier and must not start a thread.
@@ -22,8 +22,8 @@ import pytest
 from pulse_cli import (
     anon_auth,
     auth_commands,
-    nous_account,
-    nous_auth_keepalive,
+    pulse_account,
+    pulse_auth_keepalive,
     portal_cli,
     status_auth,
 )
@@ -43,10 +43,10 @@ def _jwt(**claims) -> str:
     return f"{seg({'alg': 'RS256'})}.{seg(payload)}.sig"
 
 
-def _write_auth(nous_state: dict) -> None:
+def _write_auth(pulse_state: dict) -> None:
     home = Path(get_pulse_home())
     home.mkdir(parents=True, exist_ok=True)
-    (home / "auth.json").write_text(json.dumps({"active_provider": "nous", "providers": {"nous": nous_state}}))
+    (home / "auth.json").write_text(json.dumps({"active_provider": "pulse", "providers": {"pulse": pulse_state}}))
 
 
 def _guest_state() -> dict:
@@ -70,26 +70,26 @@ def _account_state() -> dict:
 def isolated_store(monkeypatch, tmp_path):
     monkeypatch.setenv("PULSE_SHARED_AUTH_DIR", str(tmp_path / "shared-store"))
     monkeypatch.setenv("PULSE_GUEST_ONBOARDING", "1")
-    for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "NOUS_API_KEY"):
+    for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "PULSE_API_KEY"):
         monkeypatch.delenv(var, raising=False)
     # No network: the account lookup is derived from the JWT the store already holds.
-    monkeypatch.setattr(nous_account, "_fetch_nous_account_info",
+    monkeypatch.setattr(pulse_account, "_fetch_pulse_account_info",
                         lambda *a, **k: pytest.fail("portal fetch must not happen on a read-only surface"))
-    nous_account.reset_nous_portal_account_info_cache()
+    pulse_account.reset_pulse_portal_account_info_cache()
     import pulse_cli.auth as auth_mod
-    auth_mod.invalidate_nous_auth_status_cache()
+    auth_mod.invalidate_pulse_auth_status_cache()
     yield
-    nous_account.reset_nous_portal_account_info_cache()
-    auth_mod.invalidate_nous_auth_status_cache()
+    pulse_account.reset_pulse_portal_account_info_cache()
+    auth_mod.invalidate_pulse_auth_status_cache()
 
 
 def _render_all(capsys) -> dict[str, str]:
     out: dict[str, str] = {}
-    auth_commands.auth_status_command(SimpleNamespace(provider="nous"))
+    auth_commands.auth_status_command(SimpleNamespace(provider="pulse"))
     out["auth status"] = capsys.readouterr().out
-    auth_commands.auth_list_command(SimpleNamespace(provider="nous"))
+    auth_commands.auth_list_command(SimpleNamespace(provider="pulse"))
     out["auth list"] = capsys.readouterr().out
-    ctx = SimpleNamespace(config={}, nous_logged_in=False, nous_inference_present=False, nous_account_info=None)
+    ctx = SimpleNamespace(config={}, pulse_logged_in=False, pulse_inference_present=False, pulse_account_info=None)
     status_auth._render_auth_providers(ctx)
     out["pulse status"] = capsys.readouterr().out
     portal_cli._cmd_status(SimpleNamespace())
@@ -107,10 +107,10 @@ def test_free_tier_renders_free_tier_copy_on_every_surface(isolated_store, capsy
         leaked = _FORBIDDEN.search(text)
         assert leaked is None, f"{surface} leaked {leaked.group(0)!r}:\n{text}"
     # Billing / entitlement copy for the free tier points at the upgrade path, never at billing.
-    info = nous_account.get_nous_portal_account_info()
+    info = pulse_account.get_pulse_portal_account_info()
     assert info.is_anonymous_tier
-    message = nous_account.format_nous_portal_entitlement_message(info, capability="managed web tools")
-    assert message == nous_account.FREE_TIER_NEEDS_ACCOUNT
+    message = pulse_account.format_pulse_portal_entitlement_message(info, capability="managed web tools")
+    assert message == pulse_account.FREE_TIER_NEEDS_ACCOUNT
     assert "billing" not in message.lower() and _FORBIDDEN.search(message) is None
 
 
@@ -122,9 +122,9 @@ def test_real_account_keeps_account_rendering(isolated_store, capsys):
         assert anon_auth.UPGRADE_HINT not in text, surface
     assert "logged in" in rendered["auth status"]
     assert "credentials" in rendered["auth list"]
-    info = nous_account.get_nous_portal_account_info()
+    info = pulse_account.get_pulse_portal_account_info()
     assert not info.is_anonymous_tier
-    assert nous_account.format_nous_portal_entitlement_message(info) is None  # paid_access claim entitles
+    assert pulse_account.format_pulse_portal_entitlement_message(info) is None  # paid_access claim entitles
 
 
 def test_keepalive_does_not_start_for_free_tier(isolated_store, monkeypatch):
@@ -139,17 +139,17 @@ def test_keepalive_does_not_start_for_free_tier(isolated_store, monkeypatch):
             return True
         def join(self, timeout=None):
             pass
-    monkeypatch.setattr(nous_auth_keepalive.threading, "Thread", _Thread)
-    monkeypatch.setattr(nous_auth_keepalive, "_keepalive_thread", None)
+    monkeypatch.setattr(pulse_auth_keepalive.threading, "Thread", _Thread)
+    monkeypatch.setattr(pulse_auth_keepalive, "_keepalive_thread", None)
 
     _write_auth(_guest_state())
-    assert nous_auth_keepalive.start_nous_auth_keepalive(interval_seconds=900) is None
+    assert pulse_auth_keepalive.start_pulse_auth_keepalive(interval_seconds=900) is None
     assert started == []
 
     _write_auth(_account_state())
-    thread = nous_auth_keepalive.start_nous_auth_keepalive(interval_seconds=900)
-    assert thread is not None and started == ["nous-auth-keepalive"]
-    monkeypatch.setattr(nous_auth_keepalive, "_keepalive_thread", None)
+    thread = pulse_auth_keepalive.start_pulse_auth_keepalive(interval_seconds=900)
+    assert thread is not None and started == ["pulse-auth-keepalive"]
+    monkeypatch.setattr(pulse_auth_keepalive, "_keepalive_thread", None)
 
 
 def test_no_chat_copy_of_any_sign_in_state_leaks_a_terminal_verb_or_a_forbidden_word():
@@ -165,7 +165,7 @@ def test_no_chat_copy_of_any_sign_in_state_leaks_a_terminal_verb_or_a_forbidden_
         "detail": "private detail",
         "retry_after": 0.0,
     }
-    forbidden = re.compile(r"claim|nous portal|anonymous|guest", re.IGNORECASE)
+    forbidden = re.compile(r"claim|pulse portal|anonymous|guest", re.IGNORECASE)
     terminal_or_url = re.compile(r"pulse |https?://", re.IGNORECASE)
 
     for state_type in anon_auth.SignInState.__subclasses__():
@@ -177,15 +177,15 @@ def test_no_chat_copy_of_any_sign_in_state_leaks_a_terminal_verb_or_a_forbidden_
 
 
 def test_the_paid_tool_notice_switches_wording_inside_a_chat():
-    info = nous_account.NousPortalAccountInfo(
+    info = pulse_account.NousPortalAccountInfo(
         logged_in=True, source="token", fresh=True, account_tier="anonymous"
     )
-    assert nous_account.format_nous_portal_entitlement_message(
+    assert pulse_account.format_pulse_portal_entitlement_message(
         info, in_chat=True
-    ) == nous_account.FREE_TIER_NEEDS_ACCOUNT_CHAT
-    assert nous_account.format_nous_portal_entitlement_message(
+    ) == pulse_account.FREE_TIER_NEEDS_ACCOUNT_CHAT
+    assert pulse_account.format_pulse_portal_entitlement_message(
         info, in_chat=False
-    ) == nous_account.FREE_TIER_NEEDS_ACCOUNT
+    ) == pulse_account.FREE_TIER_NEEDS_ACCOUNT
 
 
 def test_cli_chat_status_names_the_free_tier(isolated_store):
@@ -198,7 +198,7 @@ def test_cli_chat_status_names_the_free_tier(isolated_store):
         session_id="cli-free-tier-status",
         session_start=datetime.now(),
         agent=SimpleNamespace(session_total_tokens=0, reasoning_config=None),
-        provider="nous",
+        provider="pulse",
         model=anon_auth.GUEST_MODEL,
         _agent_running=False,
         reasoning_config=None,

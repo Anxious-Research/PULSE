@@ -637,7 +637,7 @@ key, xAI video, and every memory-provider identity (`MEM0_USER_ID`,
 `.env`, so a secondary profile's memories land in **its** account/bank/project
 (or the provider's per-profile default), never the default profile's. Custom
 endpoints travel with their keys — `OPENAI_BASE_URL`, `XAI_BASE_URL`,
-`NOUS_INFERENCE_BASE_URL`, `GATEWAY_PROXY_URL`, Firecrawl / Browserbase /
+`PULSE_INFERENCE_BASE_URL`, `GATEWAY_PROXY_URL`, Firecrawl / Browserbase /
 RetainDB / Supermemory / Honcho / Hindsight URLs — so a profile's key is never
 sent to another profile's proxy or self-hosted server. `WEIXIN_HOME_CHANNEL`,
 `PULSE_LANGUAGE` and `display.language`, and `hooks.outbound[].secret_env` are
@@ -648,7 +648,7 @@ Per-turn runtime settings follow the routed profile as well: `agent.max_turns`,
 `fallback_providers`, `file_read_max_chars`, `tool_output.*`, `browser.*`
 timeouts, `timezone` (including the `TZ` handed to `execute_code` sandboxes),
 the media-delivery policy (`gateway.strict`, `media_delivery_allow_dirs`,
-`trust_recent_files*`) and the Nous `auth.json` used for auxiliary calls are all
+`trust_recent_files*`) and the PULSE `auth.json` used for auxiliary calls are all
 read from the profile serving the turn, never from the profile the gateway was
 launched under. The same holds for per-profile state files (`processes.json`,
 `checkpoints/`, sandbox snapshot stores, Feishu comment rules/pairing) and for
@@ -679,7 +679,7 @@ profile and never shares with the default or any sibling:
 | Working directory of a turn (unset `terminal.cwd`) | Same rule as a standalone gateway: `$HOME` for the local backend, sandbox default otherwise | Never the directory the multiplexer process was launched from |
 | Command approvals (`command_allowlist`, "always" choices) | The profile's own `config.yaml` | A default-profile "always" never pre-approves a secondary's command; a secondary's choice is saved to its own config |
 | Sandbox credential-file mounts (`terminal.credential_files`), `security.redact_secrets`, `browser.*` engine/headed flags, `lsp.*`, auxiliary-provider health marks, `logs/mcp-stderr.log` | The profile's own `config.yaml` / `.env` | Documented default — never the launch profile's cached value |
-| Cloud-SDK credential clients (Bedrock boto3 clients + model discovery, Azure Entra credential), credential-fetched catalogs (DeepInfra, Copilot context limits, Nous reasoning caps, Ramp Router efforts, xAI / OpenRouter image models, custom-endpoint `/models`), Camofox VNC address, computer-use aux-vision routing, skill-sync push, remote-backend probe text, learned image token costs, `display.skin`, guest-mint back-off, banner skills, Yuanbao "active" adapter, Langfuse client | The profile's own `.env` / `config.yaml` / `<home>/cache` | Documented default — never the launch profile's cached value or its credentials |
+| Cloud-SDK credential clients (Bedrock boto3 clients + model discovery, Azure Entra credential), credential-fetched catalogs (DeepInfra, Copilot context limits, PULSE reasoning caps, Ramp Router efforts, xAI / OpenRouter image models, custom-endpoint `/models`), Camofox VNC address, computer-use aux-vision routing, skill-sync push, remote-backend probe text, learned image token costs, `display.skin`, guest-mint back-off, banner skills, Yuanbao "active" adapter, Langfuse client | The profile's own `.env` / `config.yaml` / `<home>/cache` | Documented default — never the launch profile's cached value or its credentials |
 | Session-search knobs (`sessions.cjk_fts`, `sessions.search_slow_ms`) | The profile's `config.yaml` | Documented default — never the default profile's bridged value |
 | RoomLink capability catalog and the signed execution policy it advertises to a remote Bot (`approvals.mode`, `agent.max_turns`, `platform_toolsets.api_server`) | The served profile named by the request (`/p/<profile>/v1/room-members/...`, the RPC `profile` param); `target_profile` is **required** on every catalog — there is no `PULSE_PROFILE` fallback | Invitation/capabilities fail with the offending `target_profile` named; a profile that does not exist is refused, never resolved from the launch profile's config |
 | Platform proxies (`TELEGRAM_PROXY`, `DISCORD_PROXY`, `HTTPS_PROXY`, …) | The profile's own `.env` | Direct connection — never the default profile's proxy |

@@ -167,33 +167,33 @@ async def get_model_options(
         return await run_in_threadpool(_build_payload_scoped)
 
 
-def _nous_recommended_default() -> dict:
-    from pulse_cli.models import recommended_nous_default_model
-    return recommended_nous_default_model()
+def _pulse_recommended_default() -> dict:
+    from pulse_cli.models import recommended_pulse_default_model
+    return recommended_pulse_default_model()
 
 
 @router.get("/api/model/recommended-default")
 def get_recommended_default_model(provider: str = "", profile: Optional[str] = None):
     """Recommended default model for a freshly-authenticated provider, mirroring
     ``pulse model``'s curation so GUI onboarding lands on a sensible default.
-    Nous honors the user's free/paid tier. Any other provider gets the preferred
+    PULSE honors the user's free/paid tier. Any other provider gets the preferred
     silent default when its curated list carries it, else the first curated model —
     aggregator lists lead with the priciest Anthropic flagship, which must never be
     the model a user lands on without explicitly picking it.
     Response: {"provider", "model", "free_tier": bool | None} — free_tier only for
-    Nous; ``model`` may be empty (caller degrades gracefully)."""
+    PULSE; ``model`` may be empty (caller degrades gracefully)."""
     slug = (provider or "").strip().lower()
 
-    if slug == "nous":
+    if slug == "pulse":
         try:
             # The tier, Portal URL and recommendation caches are all per profile home.
             with _config_profile_scope(profile):
-                return _nous_recommended_default()
+                return _pulse_recommended_default()
         except HTTPException:
             raise  # an unknown ?profile= is the scope's 404, not an empty recommendation
         except Exception:
-            _log.exception("GET /api/model/recommended-default (nous) failed")
-            return {"provider": "nous", "model": "", "free_tier": None}
+            _log.exception("GET /api/model/recommended-default (pulse) failed")
+            return {"provider": "pulse", "model": "", "free_tier": None}
 
     try:
         from pulse_cli.inventory import build_models_payload, load_picker_context

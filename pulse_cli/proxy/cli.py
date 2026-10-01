@@ -24,7 +24,7 @@ def cmd_proxy_start(args: Any) -> int:
     if not AIOHTTP_AVAILABLE:
         _err("pulse proxy requires aiohttp. Run `pulse setup` to install it.")
         return 1
-    provider = getattr(args, "provider", None) or "nous"
+    provider = getattr(args, "provider", None) or "pulse"
     try:
         adapter = get_adapter(provider)
     except ValueError as exc:
@@ -100,7 +100,7 @@ def cmd_proxy(args: Any) -> int:
         "OAuth-authenticated provider credentials to outbound requests.\n"
         "\n"
         "Subcommands:\n"
-        "  pulse proxy start [--provider nous|xai] [--host 127.0.0.1] [--port 8645]\n"
+        "  pulse proxy start [--provider pulse|xai] [--host 127.0.0.1] [--port 8645]\n"
         "      Run the proxy in the foreground.\n"
         "  pulse proxy status\n"
         "      Show which upstream adapters are ready.\n"

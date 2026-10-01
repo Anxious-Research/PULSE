@@ -40,8 +40,8 @@ from tools.image_generation_catalog import (
 )
 from tools.managed_tool_gateway import resolve_managed_tool_gateway
 from tools.tool_backend_helpers import (
-    NOUS_MANAGED_PROVIDER, fal_key_is_configured, managed_nous_tools_enabled,
-    nous_tool_gateway_unavailable_message, read_selection, selection_error)
+    PULSE_MANAGED_PROVIDER, fal_key_is_configured, managed_pulse_tools_enabled,
+    pulse_tool_gateway_unavailable_message, read_selection, selection_error)
 
 logger = logging.getLogger(__name__)
 
@@ -51,21 +51,21 @@ _managed_fal_client_config = None
 _managed_fal_client_lock = threading.Lock()
 
 
-# --- Managed FAL gateway (Nous Subscription) ---
+# --- Managed FAL gateway (PULSE Subscription) ---
 def _resolve_managed_fal_gateway():
     """Managed gateway config for the stored `pulse tools` selection, or ``None`` for direct FAL.
 
-    ``"nous"`` (or legacy ``use_gateway: true``) → managed ONLY (unreachable = selection-naming
+    ``"pulse"`` (or legacy ``use_gateway: true``) → managed ONLY (unreachable = selection-naming
     error, never a silent FAL_KEY fallback). Other stored provider → direct ONLY (missing FAL_KEY
     = error naming the selection). Never configured → autodetect: direct if FAL_KEY, else managed.
     """
     selected = read_selection("image_gen")
-    if selected == NOUS_MANAGED_PROVIDER:
+    if selected == PULSE_MANAGED_PROVIDER:
         gateway = resolve_managed_tool_gateway("fal-queue")
         if gateway is None:
             raise ValueError(selection_error(
-                "image_gen", NOUS_MANAGED_PROVIDER,
-                "the Nous Tool Gateway is not available (not entitled or unreachable)"))
+                "image_gen", PULSE_MANAGED_PROVIDER,
+                "the PULSE Tool Gateway is not available (not entitled or unreachable)"))
         return gateway
     if selected is not None:
         if fal_key_is_configured():
@@ -78,12 +78,12 @@ def _resolve_managed_fal_gateway():
 def _get_managed_fal_client(managed_gateway):
     """Reuse the managed FAL client so its internal httpx.Client is not leaked per call."""
     global _managed_fal_client, _managed_fal_client_config
-    client_config = (managed_gateway.gateway_origin.rstrip("/"), managed_gateway.nous_user_token)
+    client_config = (managed_gateway.gateway_origin.rstrip("/"), managed_gateway.pulse_user_token)
     with _managed_fal_client_lock:
         if _managed_fal_client is None or _managed_fal_client_config != client_config:
             # Resolved on this module so monkeypatching ``image_generation_tool.fal_client`` still applies.
             _managed_fal_client = _ManagedFalSyncClient(
-                _load_fal_client(), key=managed_gateway.nous_user_token,
+                _load_fal_client(), key=managed_gateway.pulse_user_token,
                 queue_run_origin=managed_gateway.gateway_origin)
             _managed_fal_client_config = client_config
         return _managed_fal_client
@@ -139,14 +139,14 @@ def _submit_fal_request(model: str, arguments: Dict[str, Any]):
             billing = _managed_fal_billing_error(exc, "model")
             if billing is not None:
                 raise ValueError(
-                    f"Nous Subscription gateway rejected model '{model}' (HTTP {status}): {billing}") from exc
+                    f"PULSE Subscription gateway rejected model '{model}' (HTTP {status}): {billing}") from exc
             gateway_message = ""
             if status in {401, 402, 403}:
-                gateway_message = "\n\n" + nous_tool_gateway_unavailable_message(
+                gateway_message = "\n\n" + pulse_tool_gateway_unavailable_message(
                     "managed FAL image generation", force_fresh=True)
             raise ValueError(
-                f"Nous Subscription gateway rejected model '{model}' (HTTP {status}). This model "
-                f"may not yet be enabled on the Nous Portal's FAL proxy. Either:\n"
+                f"PULSE Subscription gateway rejected model '{model}' (HTTP {status}). This model "
+                f"may not yet be enabled on the Pulse Portal's FAL proxy. Either:\n"
                 f"  • Set FAL_KEY in your environment to use FAL.ai directly, or\n"
                 f"  • Pick a different model via `pulse tools` → Image Generation."
                 f"{gateway_message}") from exc
@@ -187,9 +187,9 @@ def _read_configured_image_provider():
 
 
 def _plugin_provider_name() -> Optional[str]:
-    """Configured provider that must go through the plugin registry; None for unset/fal/nous."""
+    """Configured provider that must go through the plugin registry; None for unset/fal/pulse."""
     configured = _read_configured_image_provider()
-    if not configured or configured in ("fal", NOUS_MANAGED_PROVIDER):
+    if not configured or configured in ("fal", PULSE_MANAGED_PROVIDER):
         return None
     return configured
 
@@ -500,19 +500,19 @@ def check_fal_api_key() -> bool:
 
 def _build_no_backend_setup_message() -> str:
     """Actionable no-backend error: FAL_KEY signup, managed-gateway status, plugin alternative."""
-    managed = managed_nous_tools_enabled()
+    managed = managed_pulse_tools_enabled()
     lines = ["Image generation is unavailable in this environment.", "", "Missing requirements:"]
     if managed:
         lines.append("  - FAL_KEY is not set and the managed FAL gateway is unreachable")
     else:
         lines.append("  - FAL_KEY environment variable is not set")
-        if gateway_message := nous_tool_gateway_unavailable_message("managed FAL image generation"):
+        if gateway_message := pulse_tool_gateway_unavailable_message("managed FAL image generation"):
             lines.append(f"  - {gateway_message}")
     lines += ["", "To enable image generation, do one of:",
               "  1. Get a free API key at https://fal.ai and set FAL_KEY=<your-key> "
               "(then restart the session)"]
     if managed:
-        lines.append("  2. Sign in to a Nous account that has the managed FAL gateway enabled "
+        lines.append("  2. Sign in to a PULSE account that has the managed FAL gateway enabled "
                      "(`pulse setup`)")
     lines.append("  3. Configure a different image_gen provider via `pulse tools` → Image Generation "
                  "(run `pulse plugins list` to see installed backends)")
@@ -635,7 +635,7 @@ def _dispatch_to_plugin_provider(
     reference_image_urls: Optional[list] = None, upscale: Optional[bool] = None,
     controls: Optional[Dict[str, Any]] = None):
     """JSON result from the selected plugin provider, or ``None`` to fall through to in-tree FAL
-    (provider unset / ``"fal"`` / ``"nous"``). Providers without ``upscale`` ignore it via ``**kwargs``."""
+    (provider unset / ``"fal"`` / ``"pulse"``). Providers without ``upscale`` ignore it via ``**kwargs``."""
     configured = _plugin_provider_name()
     if configured is None:
         return None
@@ -693,7 +693,7 @@ def _managed_model_plugin() -> Optional[tuple]:
     from tools.image_generation_managed import KREA, PORTAL, managed_route
 
     model_id = _read_configured_image_model()
-    return {KREA: ("krea", model_id), PORTAL: ("nous", model_id)}.get(
+    return {KREA: ("krea", model_id), PORTAL: ("pulse", model_id)}.get(
         managed_route(_read_configured_image_provider(), model_id))
 
 
@@ -724,7 +724,7 @@ def _maybe_route_managed_model(
         if plugin_name == "krea":
             return None
         return _provider_error(
-            f"image_gen.model='{model_id}' is a Nous Portal model but the Portal image backend is not "
+            f"image_gen.model='{model_id}' is a Pulse Portal model but the Portal image backend is not "
             f"available. Pick another model via `pulse tools` → Image Generation.", "provider_not_registered")
     kwargs: Dict[str, Any] = {"prompt": prompt, "aspect_ratio": aspect_ratio, "model": model_id}
     try:
@@ -776,7 +776,7 @@ def _handle_image_generate(args, **kw):
     if confine_error is not None:
         return confine_error
     # Order matters: explicit plugin provider, then the model-driven managed gateways (Krea /
-    # Portal — only under the "nous"/unset selection, so BYO/direct FAL stays untouched), then FAL.
+    # Portal — only under the "pulse"/unset selection, so BYO/direct FAL stays untouched), then FAL.
     sources = dict(image_url=image_url, reference_image_urls=reference_image_urls,
                    upscale=upscale if isinstance(upscale, bool) else None)
     controls = {name: args[name] for name in _CREATIVE_CONTROL_PARAMS if name in args}

@@ -341,7 +341,7 @@ export interface Translations {
       turnOffLocal: string
       providedByPlugin: (plugin: string) => string
       openPlugins: string
-      nousLine: string
+      pulseLine: string
       rulesReadOnly: string
       rulesAppOff: (name: string) => string
       rulesSignIn: string
@@ -1996,15 +1996,15 @@ export interface Translations {
       activeBackend: string
       activeBackendHint: string
       useBackend: string
-      nousIncluded: string
-      nousAuthNeededTitle: string
-      nousAuthNeededMessage: (provider: string) => string
-      nousAuthSignIn: string
-      nousAuthDoneTitle: string
-      nousAuthDoneMessage: string
-      nousAuthFailed: string
-      nousAuthFailedMessage: string
-      nousAuthTryAgain: string
+      pulseIncluded: string
+      pulseAuthNeededTitle: string
+      pulseAuthNeededMessage: (provider: string) => string
+      pulseAuthSignIn: string
+      pulseAuthDoneTitle: string
+      pulseAuthDoneMessage: string
+      pulseAuthFailed: string
+      pulseAuthFailedMessage: string
+      pulseAuthTryAgain: string
       noApiKeyRequired: string
       postSetupHint: (step: string) => string
       postSetupInstalledHint: string
@@ -3787,7 +3787,7 @@ export interface Translations {
   }
 
   freeTier: {
-    /** Settings › Providers row title while the Nous identity is the free tier. */
+    /** Settings › Providers row title while the PULSE identity is the free tier. */
     providerRowTitle: string
     /** The featured row's pitch while the identity is the free tier: what signing in adds. */
     providerRowPitch: string
@@ -3850,7 +3850,7 @@ export interface Translations {
       powRequired: string
       locked: string
       generic: string
-      /** The sign-in door, when the account service is reachable: the Nous row sits right below. */
+      /** The sign-in door, when the account service is reachable: the PULSE row sits right below. */
       signInBelow: string
       tryAgain: string
       retrying: string

@@ -5,7 +5,7 @@ interface ProductIdentity {
   store: boolean
   /** Display name. e.g. "PULSE Light" */
   displayName: string
-  /** OS-level app identity. e.g. "com.nousresearch.pulse-light" */
+  /** OS-level app identity. e.g. "com.anxious-research.pulse-light" */
   appId: string
   /** app name in pascal case. e.g. "PULSELight" */
   appNamePascal: string
@@ -15,7 +15,7 @@ interface ProductIdentity {
   windowsExecutableName: string
   /** Exposed payload CLI command. */
   cliName: string
-  /** OS-level app identity w/ org prefix. e.g. "NousResearch.PULSELight" */
+  /** OS-level app identity w/ org prefix. e.g. "AnxiousResearch.PULSELight" */
   msixAppIdWithOrg: string
   /** R2 identity token on channel builds; absent on legacy products. */
   readonly token?: string

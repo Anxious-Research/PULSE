@@ -117,7 +117,7 @@ npm run build:fast --prefix website
 Use a Node/npm version accepted by the corresponding `package.json` engines.
 Native desktop dependencies can also require the platform build toolchain.
 
-Logos and icons are generated from `assets/nous-girl-*.svg` and
+Logos and icons are generated from `assets/pulse-girl-*.svg` and
 `assets/backgrounds/`. `node scripts/generate-icons.mjs` renders them with the
 PULSE runtime Python (`PULSE_PYTHON`, else `python` on PATH): Pillow and
 resvg-py are core dependencies. Do not commit generated PNG/ICO/ICNS outputs.
@@ -302,7 +302,7 @@ When you ask PULSE to review a PR in a repository that has `.agents/checks/`, te
 
 ## Community
 
-- **Discord**: [discord.gg/NousResearch](https://discord.gg/NousResearch)
+- **Discord**: [discord.gg/AnxiousResearch](https://discord.gg/AnxiousResearch)
 - **GitHub Discussions**: For design proposals and architecture discussions
 - **Skills Hub**: Upload specialized skills and share with the community
 

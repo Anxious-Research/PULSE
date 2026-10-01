@@ -736,7 +736,7 @@ const sidebars: SidebarsConfig = {
       collapsed: true,
       items: [
         'integrations/index',
-        'integrations/nous-portal',
+        'integrations/pulse-portal',
         'integrations/providers',
         'integrations/buzz',
         'user-guide/features/mcp',
@@ -752,7 +752,7 @@ const sidebars: SidebarsConfig = {
       collapsed: true,
       items: [
         'guides/run-nemotron-3-ultra-free',
-        'guides/run-pulse-with-nous-portal',
+        'guides/run-pulse-with-pulse-portal',
         'guides/tips',
         'guides/local-llm-on-mac',
         'guides/daily-briefing-bot',

@@ -2,9 +2,9 @@
 
 One real HTTP server on 127.0.0.1 that plays the vendor side of the OAuth providers:
 
-* Nous Portal (RFC 8628 device flow + single-use refresh-token rotation):
+* Pulse Portal (RFC 8628 device flow + single-use refresh-token rotation):
   ``POST /api/oauth/device/code`` and ``POST /api/oauth/token`` (``grant_type`` device_code or
-  refresh_token; the refresh token rides in the ``x-nous-refresh-token`` header). The device poll
+  refresh_token; the refresh token rides in the ``x-pulse-refresh-token`` header). The device poll
   answers the scripted error codes in ``poll_script`` (one per poll) and then issues tokens; every
   poll's arrival time is recorded so a test can measure the client's real polling cadence.
 * MiniMax OAuth refresh: ``POST /oauth/token`` (form ``refresh_token``), MiniMax's
@@ -29,14 +29,14 @@ from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
-NOUS_INVOKE_SCOPE = "inference:invoke"
+PULSE_INVOKE_SCOPE = "inference:invoke"
 
 
 def b64url(obj: dict[str, Any]) -> str:
     return base64.urlsafe_b64encode(json.dumps(obj).encode()).rstrip(b"=").decode()
 
 
-def make_jwt(tag: str, *, ttl_s: int = 3600, scope: str = NOUS_INVOKE_SCOPE) -> str:
+def make_jwt(tag: str, *, ttl_s: int = 3600, scope: str = PULSE_INVOKE_SCOPE) -> str:
     """Unsigned JWT-shaped bearer: the client only decodes claims (``scope``/``exp``)."""
     claims = {"sub": "oauth-e2e-user", "scope": scope, "exp": int(time.time()) + ttl_s, "tag": tag}
     return ".".join([b64url({"alg": "none", "typ": "JWT"}), b64url(claims), "sig"])
@@ -110,7 +110,7 @@ class OAuthFake:
             rt = f"rt-{kind}-{n}"
             self.valid_refresh.add(rt)
             tok = {"access_token": make_jwt(f"{kind}-{n}"), "refresh_token": rt, "token_type": "Bearer",
-                   "expires_in": 3600, "scope": NOUS_INVOKE_SCOPE}
+                   "expires_in": 3600, "scope": PULSE_INVOKE_SCOPE}
             self.issued.append(tok)
             return tok
 
@@ -193,7 +193,7 @@ def _device_code(h: Any, fake: OAuthFake, _req: Req) -> None:
                   "expires_in": 120, "interval": fake.device_interval})
 
 
-def _nous_token(h: Any, fake: OAuthFake, req: Req) -> None:
+def _pulse_token(h: Any, fake: OAuthFake, req: Req) -> None:
     grant = req.form.get("grant_type", "")
     if grant.endswith("device_code"):
         with fake._lock:
@@ -204,10 +204,10 @@ def _nous_token(h: Any, fake: OAuthFake, req: Req) -> None:
         h._json(200, fake._issue("login"))
         return
     if grant == "refresh_token":
-        if not fake._redeem(req.headers.get("x-nous-refresh-token", "")):
+        if not fake._redeem(req.headers.get("x-pulse-refresh-token", "")):
             h._json(400, {"error": "invalid_grant", "error_description": "refresh token already used or unknown"})
             return
-        h._json(200, fake._issue("nous-rot"))
+        h._json(200, fake._issue("pulse-rot"))
         return
     h._json(400, {"error": "unsupported_grant_type"})
 
@@ -272,7 +272,7 @@ def _messages(h: Any, fake: OAuthFake, req: Req) -> None:
 
 _ROUTES = {
     "/api/oauth/device/code": _device_code,
-    "/api/oauth/token": _nous_token,
+    "/api/oauth/token": _pulse_token,
     "/oauth/token": _minimax_token,
 }
 _SUFFIX_ROUTES = (("/chat/completions", _chat), ("/messages", _messages))

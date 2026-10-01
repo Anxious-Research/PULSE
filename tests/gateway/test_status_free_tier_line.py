@@ -1,4 +1,4 @@
-"""The in-chat /status line identifies an active Nous free-tier route."""
+"""The in-chat /status line identifies an active PULSE free-tier route."""
 
 import base64
 import json
@@ -39,11 +39,11 @@ def _jwt(**claims) -> str:
     }
     return f"{segment({'alg': 'RS256'})}.{segment(payload)}.sig"
 
-def _seed_nous(state: dict) -> None:
+def _seed_pulse(state: dict) -> None:
     with _auth_store_lock():
         store = _load_auth_store()
-        store.setdefault("providers", {})["nous"] = state
-        store["active_provider"] = "nous"
+        store.setdefault("providers", {})["pulse"] = state
+        store["active_provider"] = "pulse"
         _save_auth_store(store)
 
 def _free_tier_state() -> dict:
@@ -73,7 +73,7 @@ def isolated_auth_store(tmp_path, monkeypatch):
 async def test_status_names_the_free_tier_and_the_slash_command_when_the_free_tier_carries_inference(
 ):
     runner = _runner()
-    _seed_nous(_free_tier_state())
+    _seed_pulse(_free_tier_state())
 
     result = await runner._handle_message(_make_event("/status"))
 
@@ -82,7 +82,7 @@ async def test_status_names_the_free_tier_and_the_slash_command_when_the_free_ti
 @pytest.mark.asyncio
 async def test_status_omits_the_line_for_a_real_account():
     runner = _runner()
-    _seed_nous(_account_state())
+    _seed_pulse(_account_state())
 
     result = await runner._handle_message(_make_event("/status"))
 
@@ -91,7 +91,7 @@ async def test_status_omits_the_line_for_a_real_account():
 @pytest.mark.asyncio
 async def test_a_status_gate_failure_never_breaks_status(monkeypatch):
     runner = _runner()
-    _seed_nous(_free_tier_state())
+    _seed_pulse(_free_tier_state())
     monkeypatch.setattr(anon_auth, "free_tier_route", lambda: False)
     expected = await runner._handle_message(_make_event("/status"))
 

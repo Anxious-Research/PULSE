@@ -553,12 +553,12 @@ def _validate_anthropic_messages(req: _Request) -> dict[str, Any]:
     )
 
 
-def _nous_portal_recommended_names() -> set[str]:
+def _pulse_portal_recommended_names() -> set[str]:
     """Lower-cased ids from the Portal's live recommended-models feed (empty on any failure)."""
     from pulse_cli import models as _m
 
     try:
-        payload = _m.fetch_nous_recommended_models(_m._resolve_nous_portal_url())
+        payload = _m.fetch_pulse_recommended_models(_m._resolve_pulse_portal_url())
         return {
             name.lower()
             for tier in ("freeRecommendedModels", "paidRecommendedModels")
@@ -665,12 +665,12 @@ def _validate_live_listing(req: _Request) -> Optional[dict[str, Any]]:
     ):
         return _accept_with_note(f"Note: `{req.requested}` was not found in the live /v1/models listing "
                                  "but exists in the curated catalog — accepted.")
-    # Nous: the Portal's recommended-models feed can list a model before the curated list or the
+    # PULSE: the Portal's recommended-models feed can list a model before the curated list or the
     # docs-hosted manifest catches up; `pulse chat` already accepts those at model-list build
     # time, so mirror that source of truth for per-message /model validation.
-    if req.normalized == "nous" and req.lookup.lower() in _nous_portal_recommended_names():
+    if req.normalized == "pulse" and req.lookup.lower() in _pulse_portal_recommended_names():
         return _accept_with_note(f"Note: `{req.requested}` was not found in the live /v1/models listing "
-                                 "but is a current Nous Portal recommendation — accepted.")
+                                 "but is a current Pulse Portal recommendation — accepted.")
     return _reject(f"Model `{req.requested}` was not found in this provider's model listing.{match.suggestion_text}")
 
 

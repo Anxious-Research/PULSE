@@ -152,7 +152,7 @@ def test_page_fields_screenshots_readme_url_and_maintainer_slug(mod, tmp_path):
     catalog.mkdir()
     shot = "https://raw.githubusercontent.com/owner/repo/38fe0fb53eff98d477f807432e965429e665ca33/docs/1.png"
     _write_entry(catalog, "gh", screenshots=[shot, "https://cdn.example.com/x.png"], readme=True, subdir="catalog",
-                 maintainer="Nous Research")
+                 maintainer="Anxious Research")
     _write_entry(catalog, "gl", repo="https://gitlab.com/group/proj", readme=True)
     _write_entry(catalog, "other", repo="https://codeberg.org/o/r", readme=True)
     _write_entry(catalog, "plain")
@@ -163,7 +163,7 @@ def test_page_fields_screenshots_readme_url_and_maintainer_slug(mod, tmp_path):
     assert entries["gh"]["readme"] is True
     assert entries["gh"]["readmeUrl"] == (
         "https://raw.githubusercontent.com/example/gh/38fe0fb53eff98d477f807432e965429e665ca33/catalog/README.md")
-    assert entries["gh"]["maintainerSlug"] == "nous-research"
+    assert entries["gh"]["maintainerSlug"] == "pulse-research"
     assert entries["gl"]["readmeUrl"] == "https://gitlab.com/group/proj/-/raw/38fe0fb53eff98d477f807432e965429e665ca33/README.md"
     assert entries["other"]["readme"] is False and entries["other"]["readmeUrl"] == ""
     assert entries["plain"]["readme"] is True and entries["plain"]["readmeUrl"].endswith("/README.md")

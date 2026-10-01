@@ -83,7 +83,7 @@ export interface ApiKeyOption {
 }
 
 // Curated order mirrors CANONICAL_PROVIDERS: Fireworks sits #2 overall (after
-// Nous Portal OAuth), ahead of OpenRouter and the rest of the key catalog.
+// Pulse Portal OAuth), ahead of OpenRouter and the rest of the key catalog.
 const API_KEY_OPTIONS: ApiKeyOption[] = [
   {
     id: 'fireworks',
@@ -390,7 +390,7 @@ export function DesktopOnboardingOverlay({
 
   // When the free tier itself failed to set up, its own notice explains the
   // picker; the runtime check's technical reason ("No usable credentials
-  // found for nous.") would only restate it in the wrong words.
+  // found for pulse.") would only restate it in the wrong words.
   const reason =
     rawReason &&
     !setupFailure &&
@@ -432,7 +432,7 @@ export function DesktopOnboardingOverlay({
           'relative w-full max-w-[45rem] transition-all duration-500 ease-out',
           bare
             ? ''
-            : 'overflow-hidden rounded-xl border border-(--stroke-nous) bg-(--ui-chat-bubble-background) shadow-nous',
+            : 'overflow-hidden rounded-xl border border-(--stroke-pulse) bg-(--ui-chat-bubble-background) shadow-pulse',
           // Bare confirm screen orchestrates its own per-element exit; the
           // carded states use the simple lift/blur dissolve.
           leaving && !bare
@@ -584,7 +584,7 @@ function Header() {
   )
 }
 
-export const FEATURED_ID = 'nous'
+export const FEATURED_ID = 'pulse'
 const SHOW_ALL_KEY = 'pulse-onboarding-show-all-v1'
 
 const readShowAll = () => {
@@ -654,7 +654,7 @@ export function Picker({ ctx }: { ctx: OnboardingContext }) {
   const select = (p: OAuthProvider) => void startProviderOAuth(p, ctx)
   const featured = ordered.find(p => p.id === FEATURED_ID) ?? null
   const rest = featured ? ordered.filter(p => p.id !== FEATURED_ID) : ordered
-  // Collapse the secondary providers behind a disclosure whenever Nous Portal
+  // Collapse the secondary providers behind a disclosure whenever Pulse Portal
   // is present to anchor the choice — otherwise show the full list. The
   // Fireworks/OpenRouter key rows always live behind the disclosure, so the
   // toggle is warranted even when there are no other OAuth providers.
@@ -687,7 +687,7 @@ export function Picker({ ctx }: { ctx: OnboardingContext }) {
         {showRest ? (
           <>
             {/* Fireworks leads the expanded list, matching CANONICAL_PROVIDERS
-                (Nous → Fireworks), but stays hidden until the user opens it. */}
+                (PULSE → Fireworks), but stays hidden until the user opens it. */}
             <FireworksProviderRow onClick={() => openKeyForm('FIREWORKS_API_KEY')} />
             {rest.map(p => (
               <ProviderRow key={p.id} onSelect={select} provider={p} />

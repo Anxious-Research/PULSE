@@ -496,7 +496,7 @@ describe('OAuth onboarding', () => {
     installApiMock(async ({ body, path }: { body?: unknown; path: string }) => {
       calls.push({ body, path })
 
-      if (path === '/api/providers/oauth/nous/submit') {
+      if (path === '/api/providers/oauth/pulse/submit') {
         return { ok: true, status: 'approved' }
       }
 
@@ -504,8 +504,8 @@ describe('OAuth onboarding', () => {
         return {
           providers: [
             {
-              name: 'Nous Portal',
-              slug: 'nous',
+              name: 'Pulse Portal',
+              slug: 'pulse',
               models: [model]
             }
           ]
@@ -513,11 +513,11 @@ describe('OAuth onboarding', () => {
       }
 
       if (path.startsWith('/api/model/recommended-default?')) {
-        return { provider: 'nous', model, free_tier: false }
+        return { provider: 'pulse', model, free_tier: false }
       }
 
       if (path === '/api/model/set') {
-        return { ok: true, provider: 'nous', model, gateway_tools: [] }
+        return { ok: true, provider: 'pulse', model, gateway_tools: [] }
       }
 
       throw new Error(`unexpected api path: ${path}`)
@@ -533,7 +533,7 @@ describe('OAuth onboarding', () => {
       }
 
       if (method === 'setup.runtime_check') {
-        expect(params).toEqual({ provider: 'nous' })
+        expect(params).toEqual({ provider: 'pulse' })
 
         return { ok: true } as never
       }
@@ -545,7 +545,7 @@ describe('OAuth onboarding', () => {
       baseState({
         flow: {
           status: 'awaiting_user',
-          provider: makeOAuthProvider('nous', 'Nous Portal'),
+          provider: makeOAuthProvider('pulse', 'Pulse Portal'),
           start: {
             auth_url: 'https://portal.example/auth',
             expires_in: 600,
@@ -555,7 +555,7 @@ describe('OAuth onboarding', () => {
           code: 'fresh-code'
         },
         reason:
-          'No access token found for Nous Portal login. setup.status reports configured credentials, but runtime resolution still failed.',
+          'No access token found for Pulse Portal login. setup.status reports configured credentials, but runtime resolution still failed.',
         requested: true
       })
     )
@@ -567,7 +567,7 @@ describe('OAuth onboarding', () => {
     expect(state.flow.status).toBe('confirming_model')
 
     if (state.flow.status === 'confirming_model') {
-      expect(state.flow.label).toBe('Nous Portal')
+      expect(state.flow.label).toBe('Pulse Portal')
       expect(state.flow.currentModel).toBe(model)
     }
 
@@ -585,22 +585,22 @@ describe('OAuth onboarding', () => {
   it('does not advance when the default model assignment is not persisted', async () => {
     const model = 'openai/gpt-5.5-pro'
     installApiMock(async ({ path }: { path: string }) => {
-      if (path === '/api/providers/oauth/nous/submit') {
+      if (path === '/api/providers/oauth/pulse/submit') {
         return { ok: true, status: 'approved' }
       }
 
       if (path.startsWith('/api/model/options')) {
-        return { providers: [{ name: 'Nous Portal', slug: 'nous', models: [model] }] }
+        return { providers: [{ name: 'Pulse Portal', slug: 'pulse', models: [model] }] }
       }
 
       if (path.startsWith('/api/model/recommended-default?')) {
-        return { provider: 'nous', model, free_tier: false }
+        return { provider: 'pulse', model, free_tier: false }
       }
 
       if (path === '/api/model/set') {
         return {
           ok: false,
-          provider: 'nous',
+          provider: 'pulse',
           model,
           confirm_required: true,
           confirm_message: 'Confirm this expensive model.'
@@ -623,7 +623,7 @@ describe('OAuth onboarding', () => {
       baseState({
         flow: {
           status: 'awaiting_user',
-          provider: makeOAuthProvider('nous', 'Nous Portal'),
+          provider: makeOAuthProvider('pulse', 'Pulse Portal'),
           start: {
             auth_url: 'https://portal.example/auth',
             expires_in: 600,
@@ -960,7 +960,7 @@ describe('device-code poll expiry', () => {
   function deviceCodeProvider() {
     // makeOAuthProvider builds a pkce provider; device-code flows need the
     // device_code branch instead.
-    return { ...makeOAuthProvider('nous', 'Nous Portal'), flow: 'device_code' as const }
+    return { ...makeOAuthProvider('pulse', 'Pulse Portal'), flow: 'device_code' as const }
   }
 
   function deviceStart(expiresIn: number) {
@@ -977,11 +977,11 @@ describe('device-code poll expiry', () => {
   it('lapses to an error with actionable guidance when the window expires still pending', async () => {
     vi.useFakeTimers()
     installApiMock(async ({ path }: { path: string }) => {
-      if (path === '/api/providers/oauth/nous/start') {
+      if (path === '/api/providers/oauth/pulse/start') {
         return deviceStart(2)
       }
 
-      if (path === '/api/providers/oauth/nous/poll/device-sess-1') {
+      if (path === '/api/providers/oauth/pulse/poll/device-sess-1') {
         return { status: 'pending' }
       }
 
@@ -1004,11 +1004,11 @@ describe('device-code poll expiry', () => {
   it('keeps polling while the window is open and clears the expiry on cancel', async () => {
     vi.useFakeTimers()
     installApiMock(async ({ path }: { path: string }) => {
-      if (path === '/api/providers/oauth/nous/start') {
+      if (path === '/api/providers/oauth/pulse/start') {
         return deviceStart(600)
       }
 
-      if (path === '/api/providers/oauth/nous/poll/device-sess-1') {
+      if (path === '/api/providers/oauth/pulse/poll/device-sess-1') {
         return { status: 'pending' }
       }
 
@@ -1070,7 +1070,7 @@ describe('setOnboardingModel', () => {
     })
     $desktopOnboarding.set(confirmingModelState())
 
-    await setOnboardingModel('deepseek/deepseek-v4-flash-0731', 'nous', 'Nous Portal')
+    await setOnboardingModel('deepseek/deepseek-v4-flash-0731', 'pulse', 'Pulse Portal')
 
     const flow = $desktopOnboarding.get().flow
     expect(flow.status).toBe('confirming_model')

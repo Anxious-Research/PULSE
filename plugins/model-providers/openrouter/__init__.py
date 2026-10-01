@@ -44,9 +44,9 @@ def _sticky_key(session_id: str | None) -> str | None:
     return _cache_scope_from_session_id(get_affinity_scope() or get_conversation_context() or session_id)
 
 
-# OpenAI speed tiers. Nous Portal serves them as distinct slugs (``-fast``/``-flex``); OpenRouter
+# OpenAI speed tiers. Pulse Portal serves them as distinct slugs (``-fast``/``-flex``); OpenRouter
 # serves them as ENDPOINTS of the base model (tags ``openai/fast``, ``openai/flex``) and silently
-# routes an unknown suffix to the standard tier at standard price. So the picker carries the Nous
+# routes an unknown suffix to the standard tier at standard price. So the picker carries the PULSE
 # slugs for both providers, and here the wire model becomes the base slug with ``provider.only``
 # pinned to that tier's endpoints; the base slug is pinned to the standard endpoints so default
 # routing never lands on flex/fast.
@@ -87,7 +87,7 @@ class OpenRouterProfile(ProviderProfile):
                 return cfg
             # A reasoning-mandatory route 400s on a disable ("Reasoning is
             # mandatory for this endpoint and cannot be disabled") — omit
-            # the field and let the model think, same as the Nous profile.
+            # the field and let the model think, same as the PULSE profile.
             # OpenRouter's catalog lists ``none`` for openai/gpt-6.1-sol, but upstream 400s on it
             # (live 2026-09-29), so the OpenAI ladder in agent.reasoning_effort wins over the catalog.
             if disabled:

@@ -5,7 +5,7 @@ so ``/v1/responses`` and ``/v1/runs`` used to mint a throwaway physical
 session id per request even when the request declared its conversation with
 ``X-PULSE-Session-Key``.  Every conversation-affinity hint PULSE sends is
 derived from that physical id — ``prompt_cache_key`` on both OpenAI-wire
-transports, the OpenRouter/Nous sticky ``session_id``, and xAI's
+transports, the OpenRouter/PULSE sticky ``session_id``, and xAI's
 ``x-grok-conv-id`` — so all four re-keyed on every single reply.
 
 These tests pin the identity contract itself rather than the four consumers:

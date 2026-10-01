@@ -298,7 +298,7 @@ Look at these bundled plugins for idioms:
 | `plugins/model-providers/gemini/` | `thinking_config` translation (native + OpenAI-compat nested forms) |
 | `plugins/model-providers/kimi-coding/` | `OMIT_TEMPERATURE`, `extra_body.thinking`, top-level `reasoning_effort` |
 | `plugins/model-providers/qwen-oauth/` | Message normalization, `cache_control` injection, VL high-res |
-| `plugins/model-providers/nous/` | Attribution tags, "omit reasoning when disabled" |
+| `plugins/model-providers/pulse/` | Attribution tags, "omit reasoning when disabled" |
 | `plugins/model-providers/custom/` | Ollama `num_ctx` + `think: false` quirks |
 | `plugins/model-providers/bedrock/` | `api_mode="bedrock_converse"`, `fetch_models` returns None (no REST endpoint) |
 
@@ -367,8 +367,8 @@ Every `api_mode` gate (`determine_api_mode`, runtime resolution, agent construct
 | `auth_type` | Meaning | Who uses it |
 |---|---|---|
 | `api_key` | Single env var carries a static API key | Most providers |
-| `oauth_device_code` | Device-code OAuth flow | Nous Portal; out-of-tree plugins via `auth_handler` |
-| `oauth_external` | User signs in elsewhere, tokens land in `auth.json` | Anthropic OAuth, MiniMax OAuth, Qwen Portal, Nous Portal |
+| `oauth_device_code` | Device-code OAuth flow | Pulse Portal; out-of-tree plugins via `auth_handler` |
+| `oauth_external` | User signs in elsewhere, tokens land in `auth.json` | Anthropic OAuth, MiniMax OAuth, Qwen Portal, Pulse Portal |
 | `copilot` | GitHub Copilot token refresh cycle | `copilot` plugin only |
 | `aws_sdk` | AWS SDK credential chain (IAM role, profile, env) | `bedrock` plugin only |
 | `external_process` | Auth handled by a subprocess the agent spawns (see [External-process providers](#external-process-acp-providers)) | `copilot-acp` plugin, out-of-tree ACP plugins |

@@ -116,7 +116,7 @@ sudo mkdir -p /etc/pulse
 # Pin some config values for every user on this machine
 sudo tee /etc/pulse/config.yaml >/dev/null <<'YAML'
 model:
-  provider: nous
+  provider: pulse
 security:
   redact_secrets: true
 YAML

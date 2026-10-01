@@ -37,7 +37,7 @@ def test_plugin_metadata_survives_load_save_load():
     assert again["tenant"] == "acme" and again["region"] == "eu"
     assert PooledCredential.from_dict("example-oauth", again).extra == {"tenant": "acme", "region": "eu"}
     # Core-known extra keys keep their attribute surface; unknown ones stay opaque payload.
-    assert PooledCredential.from_dict("nous", {"access_token": "t", "org_id": "o1"}).org_id == "o1"
+    assert PooledCredential.from_dict("pulse", {"access_token": "t", "org_id": "o1"}).org_id == "o1"
     # A stray row-level ``provider`` is pool bookkeeping, not plugin metadata: it must not be swept
     # into ``extra`` and written back over the owning provider's row.
     assert "provider" not in PooledCredential.from_dict(

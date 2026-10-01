@@ -435,7 +435,7 @@ gateway:
     last_activity: "**Laaste aktiwiteit:** {timestamp}"
     model: "**Model:** `{model}`"
     model_provider: "**Model:** `{model}` ({provider})"
-    free_tier: "Nous · gratis vlak · nous/welcome · /login om aan te meld"
+    free_tier: "PULSE · gratis vlak · pulse/welcome · /login om aan te meld"
     context: "**Konteks:** {used} / {total} ({pct}%)"
     context_used: "**Konteks:** ~{used} tokens"
     tokens: "**Lewenslange tokens gefaktureer:** {tokens} _(nie jou huidige konteksgrootte nie; gebruik `/context`)_"
@@ -548,7 +548,7 @@ gateway:
     unknown_subcommand: "Onbekende /usage subopdrag: `{args}`. Probeer `/usage` of `/usage reset [--force]`."
     reset_wrong_provider: "Gebankte gebruikslimiet-terugstellings is slegs beskikbaar op die openai-codex verskaffer. Skakel eers oor met `/model`."
   credits:
-    not_logged_in: "Nie by Nous Portal aangemeld nie. Meld aan om jou kredietsaldo te sien en op te laai."
+    not_logged_in: "Nie by Pulse Portal aangemeld nie. Meld aan om jou kredietsaldo te sien en op te laai."
   verbose:
     not_enabled: "Die `/verbose`-opdrag is nie vir boodskapplatforms geaktiveer nie.\n\nAktiveer dit in `config.yaml`:\n```yaml\ndisplay:\n  tool_progress_command: true\n```"
     mode_off: "⚙️ Gereedskap-vordering: **AF** — geen gereedskap-aktiwiteit word vertoon nie."
@@ -841,7 +841,7 @@ gateway:
   startup:
     handoff_thread_title: "PULSE — {title}"
     restarted: "♻ Gateway suksesvol herbegin. Jou sessie gaan voort."
-    free_tier_line: "Inferensie: Nous gratis vlak (nous/welcome). Meld aan vir meer: /login"
+    free_tier_line: "Inferensie: PULSE gratis vlak (pulse/welcome). Meld aan vir meer: /login"
     online: "♻️ Gateway aanlyn — PULSE is terug en gereed."
     db_corrupt: "⚠️ Sessie-databasis-korrupsie opgespoor. Boodskappe word moontlik nie bewaar nie. Herstelopsies:\n1. Voer `pulse {profile_arg}doctor --fix` uit\n2. Stop die gateway en herstel dan met:\n   pulse {profile_arg}sessions recover --source {db_path} --inspect-only\n   (as dit herstelbaar rapporteer) pulse {profile_arg}sessions recover --source {db_path} --output recovered-state.db\n   — herstel neem eers 'n momentopname van die beskadigde lêer; voer NIE `sqlite3 ... \".recover\"` teen die lewendige state.db uit nie, 'n kwesbare sqlite3 CLI kan dit verder korrupteer\n3. Herstel vanaf 'n rugsteun in {backups_dir}/\nVoer `pulse {profile_arg}doctor` uit vir gesuiwerde diagnostiek."
     db_fts_corrupt: "⚠️ Sessie-databasis het 'n korrupsiefout gerapporteer wat beperk is tot die soekindeks (FTS5); die boodskaptabelle is nie beskadig nie. Boodskappe word moontlik nie bewaar totdat dit herstel is nie: voer `pulse {profile_arg}doctor --fix` uit en herbegin dan die gateway. Voer nie herstelgereedskap uit of herstel 'n rugsteun nie tensy `pulse {profile_arg}doctor` skade bevestig."
@@ -937,7 +937,7 @@ gateway:
   codex_runtime:
     config_load_failed: "❌ Kon nie konfigurasie laai nie: {error}"
   topup:
-    header: "💳 **Nous-saldo**"
+    header: "💳 **PULSE-saldo**"
     portal_link: "Bestuur fakturering op die portaal: {url}"
     hint: "Laai op en bestuur fakturering in die blaaier — jou saldo word daarna hier opgedateer."
   login:
@@ -1660,11 +1660,11 @@ slash:
   usage:
     description: "Wys tokengebruik en tariefperke; `reset` los 'n gebankte Codex-limiet-terugstelling in"
   subscription:
-    description: "Bekyk jou Nous-plan en verander dit in die blaaier"
+    description: "Bekyk jou PULSE-plan en verander dit in die blaaier"
   login:
-    description: "Meld aan met 'n Nous-rekening (behou jou koppelaars)"
+    description: "Meld aan met 'n PULSE-rekening (behou jou koppelaars)"
   topup:
-    description: "Wys jou Nous-saldo en bestuur fakturering op die portaal"
+    description: "Wys jou PULSE-saldo en bestuur fakturering op die portaal"
   platforms:
     description: "Wys gateway-/boodskapplatform-status"
   platform:
@@ -1685,7 +1685,7 @@ cli:
   billing:
     load_failed: "{label}: {error}"
     load_failed_label: "Kon nie faktureringsinligting laai nie"
-    not_logged_in: "Nie by Nous Portal aangemeld nie."
+    not_logged_in: "Nie by Pulse Portal aangemeld nie."
     run_portal_then: "Voer `pulse portal` uit om aan te meld, en dan {cmd}."
     org_line: "Org: {org}"
     org_line_role: "Org: {org} · {role}"
@@ -1775,7 +1775,7 @@ cli:
     confirm_purchase: "Bevestig aankoop"
     total_line: "Totaal: {amount}"
     portal_card_will_be_charged: "Jou kaart wat op die portaal gestoor is, sal afgeskryf word."
-    consent_charge: "Deur te bevestig, laat jy Nous Research toe om jou kaart af te skryf."
+    consent_charge: "Deur te bevestig, laat jy Anxious Research toe om jou kaart af te skryf."
     choice_pay_now: "Betaal nou {amount}"
     desc_submit_charge: "dien die afskrywing in"
     desc_manage_card_billing: "bestuur jou kaart / fakturering in die blaaier"
@@ -1836,7 +1836,7 @@ cli:
     threshold_label: "Wanneer saldo daal onder"
     reload_to_label: "Herlaai saldo tot"
     reload_must_exceed_threshold: "🔴 Die herlaai-tot-bedrag moet groter as die drempel wees."
-    auto_reload_consent: "Deur te bevestig, magtig jy Nous Research om {card} af te skryf wanneer jou saldo {threshold} bereik. Skakel dit enige tyd hier of op die portaal af."
+    auto_reload_consent: "Deur te bevestig, magtig jy Anxious Research om {card} af te skryf wanneer jou saldo {threshold} bereik. Skakel dit enige tyd hier of op die portaal af."
     turn_on_auto_reload_question: "Skakel outo-herlaai aan?"
     auto_reload_enabled: "✅ Outo-herlaai aan: onder {threshold} → herlaai tot {reload_to}."
     auto_reload_disabled: "✅ Outo-herlaai afgeskakel."
@@ -2416,7 +2416,7 @@ cli:
     empty_base_url: "⚠️  Verskaffer-oplosser het 'n leë basis-URL teruggegee. Gaan jou verskaffer-konfigurasie na of voer uit: pulse setup"
     switching_to_fallback: "⚠️  {reason} — skakel oor na terugval: {provider} / {model}"
     first_run_no_provider: "☤ Geen inferensie-verskaffer is nog opgestel nie — kom ons stel dit reg."
-    first_run_pick_provider: "Jy sal 'n verskaffer kies (Nous Portal OAuth is die vinnigste; geen API-sleutel nodig) en 'n model."
+    first_run_pick_provider: "Jy sal 'n verskaffer kies (Pulse Portal OAuth is die vinnigste; geen API-sleutel nodig) en 'n model."
     first_run_prompt: "Stel nou 'n verskaffer op? [J/n]:"
     first_run_skipped: "Oorgeslaan. Voer enige tyd 'pulse model' of 'pulse setup' uit."
     first_run_cancelled: "Opstelling gekanselleer. Voer enige tyd 'pulse model' uit."
@@ -2444,7 +2444,7 @@ cli:
     delivering_leftover_steer: "⏩ Lewer oorblywende /steer as volgende beurt af: '{preview}'"
     reasoning_label: "Redenering"
     reasoning_more_lines: "... ({count} meer reëls — /reasoning full om te wys)"
-    billing_cta_nous: "Voer [bold]/topup[/] uit om krediete by te voeg, of [bold]/subscription[/] om jou plan te verander."
+    billing_cta_pulse: "Voer [bold]/topup[/] uit om krediete by te voeg, of [bold]/subscription[/] om jou plan te verander."
     billing_cta_provider: "Voeg krediete by met {provider}"
     your_provider: "jou verskaffer"
     billing_cta_switch: "Of skakel verskaffer oor met [bold]/model <model> --provider <provider>[/]."
@@ -3088,7 +3088,7 @@ cli:
     fix_lm_studio: "LM Studio-oplossing: Stel kontekslengte in die modelinstellings → herlaai model"
     fix_local_server: "Oplossing: begin jou bediener met ten minste {tokens_k}K konteks (llama.cpp: -c {tokens}), of stel model.ollama_num_ctx in config.yaml op die venster wat dit werklik bedien"
     fix_config: "Oplossing: Stel model.context_length in config.yaml, of verhoog jou bediener se konteksinstelling"
-    pulse_models_not_agentic: "⚠  Nous Research PULSE 3- & 4-modelle is NIE agenties nie en is nie ontwerp vir gebruik met PULSE Agent nie."
+    pulse_models_not_agentic: "⚠  Anxious Research PULSE 3- & 4-modelle is NIE agenties nie en is nie ontwerp vir gebruik met PULSE Agent nie."
     pulse_models_lack_tools: "Hulle het nie die gereedskapsoproep-vermoëns wat agent-werkvloeie vereis nie. Oorweeg 'n agentiese model (Claude, GPT, Gemini, DeepSeek, ens.)."
     pulse_models_switch_hint: "Skakel oor met: /model sonnet  of  /model gpt5"
     project_skills_loaded: "◆ {count} projekvaardigheid/-hede uit hierdie bewaarplek gelaai"
@@ -3654,8 +3654,8 @@ tips:
   t181: "Camofox is 'n anti-opsporingsblaaier — 'n Firefox-vurk met C++-vingerafdrukvervalsing."
   t182: "browser_navigate gee outomaties 'n bladsy-momentopname terug — geen browser_snapshot-oproep daarna nodig nie."
   t183: "browser_vision met annotate=true plaas genommerde etikette oor interaktiewe elemente."
-  t184: "pulse mcp maak 'n interaktiewe kieser van Nous-goedgekeurde MCP's oop wat jy met een toetsdruk kan installeer."
-  t185: "pulse mcp catalog lys Nous-goedgekeurde MCP-bedieners wat saam met die bewaarplek verskeep word."
+  t184: "pulse mcp maak 'n interaktiewe kieser van PULSE-goedgekeurde MCP's oop wat jy met een toetsdruk kan installeer."
+  t185: "pulse mcp catalog lys PULSE-goedgekeurde MCP-bedieners wat saam met die bewaarplek verskeep word."
   t186: "pulse mcp install <name> installeer 'n katalogus-inskrywing, vra vir geloofsbriewe en laat jou kies watter van sy gereedskap om te aktiveer."
   t187: "MCP-bedieners word in config.yaml opgestel — beide stdio- en HTTP-vervoer word ondersteun."
   t188: "Gereedskapfiltrering per bediener: tools.include witlys en tools.exclude swartlys spesifieke gereedskap."
@@ -3682,7 +3682,7 @@ tips:
   t209: "Eie verskaffers: stoor benoemde eindpunte in config.yaml onder custom_providers."
   t210: "PULSE_EPHEMERAL_SYSTEM_PROMPT spuit 'n stelselprompt in wat nooit in die geskiedenis bewaar word nie."
   t211: "credential_pool_strategies ondersteun fill_first-, round_robin-, least_used- en random-rotasie."
-  t212: "pulse auth add nous of pulse auth add openai-codex stel OAuth-gebaseerde verskaffers op."
+  t212: "pulse auth add pulse of pulse auth add openai-codex stel OAuth-gebaseerde verskaffers op."
   t213: "Die API-bediener ondersteun beide die Chat Completions- en Responses API met bedienerkant-toestand."
   t214: "tool_preview_length: 0 in die konfigurasie wys volledige lêerpaaie in die spinner se aktiwiteitsvoer."
   t215: "pulse status --deep voer dieper diagnostiese kontroles oor alle komponente uit."
@@ -3752,7 +3752,7 @@ tips:
   t279: "PULSE_DEV=1 omseil houermodus-bespeuring vir plaaslike ontwikkeling."
   t280: "Elke MCP-bediener kry sy eie gereedskapstel (mcp-servername) wat onafhanklik via pulse tools aan- of afgeskakel kan word."
   t281: "MCP ${ENV_VAR}-plekhouers in die konfigurasie word by bedienerbegin opgelos — insluitend veranderlikes uit ~/.pulse/.env."
-  t282: "Vaardighede uit vertroude bewaarplekke (NousResearch) kry 'n 'trusted'-sekuriteitsvlak; gemeenskapsvaardighede kry ekstra skandering."
+  t282: "Vaardighede uit vertroude bewaarplekke (AnxiousResearch) kry 'n 'trusted'-sekuriteitsvlak; gemeenskapsvaardighede kry ekstra skandering."
   t283: "Die vaardigheidskwarantyn by ~/.pulse/skills/.hub/quarantine/ hou vaardighede wat op sekuriteitshersiening wag."
   t284: "/steer <prompt> voeg 'n nota na die volgende gereedskapsoproep in — stuur die rigting middel in 'n taak sonder om te onderbreek."
   t285: "/goal <text> stel 'n staande Ralph-lus-doelwit — PULSE gaan outomaties beurt na beurt voort totdat 'n beoordelaar sê dit is klaar."
@@ -3778,7 +3778,7 @@ tips:
   t305: "pulse curator rollback herstel vaardighede vanaf 'n momentopname van voor die lopie — rugsteune woon onder skills/.curator_backups/."
   t306: "pulse auth reset <provider> [target] vee afkoeltye en uitputtingsvlae op 'n hele geloofsbriewe-poel uit, of op een geloofsbrief volgens indeks, id of etiket."
   t307: "credential_pool_strategies.<provider>: round_robin roteer sleutels eweredig in plaas van die fill_first-verstek."
-  t308: "use_gateway: true per gereedskap stuur web, image, tts of browser deur jou Nous-subskripsie — geen ekstra sleutels nodig nie."
+  t308: "use_gateway: true per gereedskap stuur web, image, tts of browser deur jou PULSE-subskripsie — geen ekstra sleutels nodig nie."
   t309: "provider_routing.data_collection: deny sluit verskaffers op OpenRouter uit wat data stoor."
   t310: "provider_routing.require_parameters: true stuur net na verskaffers wat elke parameter in jou versoek ondersteun."
   t311: "PULSE_TUI_RESUME=1 herkoppel by die begin outomaties aan die mees onlangse TUI-sessie — handig nadat SSH afgebreek het."

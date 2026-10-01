@@ -53,7 +53,7 @@ describe('ThemeProvider ← backend skin sync', () => {
 
   it('keeps setTheme(default) active and paints Classic PULSE (#76579 / #76743)', () => {
     // Review salvage: selecting registered `default` must go through setTheme /
-    // normalizeSkin (not only resolveTheme/skinPref) and must NOT collapse to nous.
+    // normalizeSkin (not only resolveTheme/skinPref) and must NOT collapse to pulse.
     let latest: ReturnType<typeof useTheme> | null = null
 
     render(
@@ -69,14 +69,14 @@ describe('ThemeProvider ← backend skin sync', () => {
     act(() => ingestBackendSkin(classicDefault, { apply: false }))
 
     expect(latest).not.toBeNull()
-    // Boot default remains nous until the user (or Appearance) selects classic.
-    expect(DEFAULT_SKIN_NAME).toBe('nous')
+    // Boot default remains pulse until the user (or Appearance) selects classic.
+    expect(DEFAULT_SKIN_NAME).toBe('pulse')
 
     act(() => {
       latest!.setTheme('default')
     })
 
-    // Active selection stays `default` (not retired → nous). deriveTheme may
+    // Active selection stays `default` (not retired → pulse). deriveTheme may
     // mode-suffix the seed (default-light / Classic PULSE Light); the
     // selection key and painted palette are what Appearance must preserve.
     expect(latest!.themeName).toBe('default')

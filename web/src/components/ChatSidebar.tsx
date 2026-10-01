@@ -25,9 +25,9 @@
  * terminal pane keeps working unimpaired.
  */
 
-import { Button } from '@nous-research/ui/ui/components/button'
-import { Badge } from '@nous-research/ui/ui/components/badge'
-import { Card } from '@nous-research/ui/ui/components/card'
+import { Button } from '@pulse-research/ui/ui/components/button'
+import { Badge } from '@pulse-research/ui/ui/components/badge'
+import { Card } from '@pulse-research/ui/ui/components/card'
 
 import { ModelPickerDialog } from '@/components/ModelPickerDialog'
 import { ModelReloadConfirm } from '@/components/ModelReloadConfirm'

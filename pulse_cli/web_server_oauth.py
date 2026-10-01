@@ -143,7 +143,7 @@ def _external_process_cli_command(provider_id: str, default: str) -> str:
 # ``flow``: ``device_code`` = show code + URL + poll; ``external`` = delegated to a terminal/CLI.
 _OAUTH_PROVIDER_CATALOG: tuple[Dict[str, Any], ...] = (
     # status_fn None → dispatched via auth.get_<provider>_auth_status.
-    {"id": "nous", "name": "Nous Portal", "flow": "device_code", "cli_command": "pulse auth add nous",
+    {"id": "pulse", "name": "Pulse Portal", "flow": "device_code", "cli_command": "pulse auth add pulse",
      "docs_url": "https://portal.anxious-research.com", "status_fn": None},
     {"id": "openai-codex", "name": "ChatGPT or Codex Subscription", "flow": "device_code",
      "cli_command": "pulse auth add openai-codex", "docs_url": "https://platform.openai.com/docs",
@@ -270,11 +270,11 @@ def _record_sign_in_state(sess: Dict[str, Any], state: Any) -> None:
         sess["error_message"] = state.copy
 
 
-@_oauth_poller("nous")
-def _nous_promotion_poller(session_id: str, sess: Dict[str, Any]) -> None:
+@_oauth_poller("pulse")
+def _pulse_promotion_poller(session_id: str, sess: Dict[str, Any]) -> None:
     """Drain the sign-in the start route began: one shared flow, rendered onto the session.
 
-    The generator was created and advanced to its ``Code`` state by ``_start_nous_device_code``, so
+    The generator was created and advanced to its ``Code`` state by ``_start_pulse_device_code``, so
     it is already holding the transfer's codes and its HTTP client. Nothing here is wrapped in
     ``_profile_scope``: that context manager holds a process-global lock and swaps module
     attributes across its ``yield``, and this loop can last the sign-in code's whole expiry. The
@@ -291,15 +291,15 @@ def _nous_promotion_poller(session_id: str, sess: Dict[str, Any]) -> None:
             gen.close()     # unwinds the suspended HTTP client if we leave early
 
 
-@_oauth_poller("nous")
-def _nous_plain_poller(session_id: str, sess: Dict[str, Any]) -> None:
-    """Background poller for a plain Nous device-code login (no free-tier identity to transfer).
+@_oauth_poller("pulse")
+def _pulse_plain_poller(session_id: str, sess: Dict[str, Any]) -> None:
+    """Background poller for a plain PULSE device-code login (no free-tier identity to transfer).
 
     A sign-in that carries the free tier's connectors runs through ``anon_auth.run_sign_in`` and
-    ``_nous_promotion_poller`` instead; this is the "connect another Nous account" path.
+    ``_pulse_promotion_poller`` instead; this is the "connect another PULSE account" path.
     """
     from pulse_cli.web_server_profiles import _profile_scope
-    from pulse_cli.auth import _poll_for_token, persist_nous_credentials, refresh_nous_oauth_from_state
+    from pulse_cli.auth import _poll_for_token, persist_pulse_credentials, refresh_pulse_oauth_from_state
     from pulse_cli import anon_auth
     import httpx
     portal_base_url, client_id = sess["portal_base_url"], sess["client_id"]
@@ -321,7 +321,7 @@ def _nous_plain_poller(session_id: str, sess: Dict[str, Any]) -> None:
         )
     if _cancelled():
         return
-    # Same post-processing as _nous_device_code_login (validate/refresh JWT)
+    # Same post-processing as _pulse_device_code_login (validate/refresh JWT)
     now = datetime.now(timezone.utc)
     token_ttl = int(token_data.get("expires_in") or 0)
     auth_state = {
@@ -342,14 +342,14 @@ def _nous_plain_poller(session_id: str, sess: Dict[str, Any]) -> None:
     # The profile comes from the poller's own session dict: a cancel or the 15-minute sweep drops
     # the registry entry, and a lookup by id would then save into the dashboard's launch profile.
     with _profile_scope(sess.get("profile")):
-        full_state = refresh_nous_oauth_from_state(auth_state, timeout_seconds=15.0, force_refresh=False)
+        full_state = refresh_pulse_oauth_from_state(auth_state, timeout_seconds=15.0, force_refresh=False)
         # The final cancellation check and the save share the session lock, so a cancel cannot
         # land between them.
         with _oauth_sessions_lock:
             if sess.get("cancelled"):
                 sess["status"] = "cancelled"
                 return
-            persist_nous_credentials(full_state)
+            persist_pulse_credentials(full_state)
         # A config left on the free tier's route by a retired identity still has to move.
         settled = anon_auth.settle_after_upgrade(full_state)
     with _oauth_sessions_lock:
@@ -359,7 +359,7 @@ def _nous_plain_poller(session_id: str, sess: Dict[str, Any]) -> None:
 
 @_oauth_poller("minimax")
 def _minimax_poller(session_id: str, sess: Dict[str, Any]) -> None:
-    """MiniMax poller: PKCE-style ``code_verifier`` + ``user_code`` instead of Nous's
+    """MiniMax poller: PKCE-style ``code_verifier`` + ``user_code`` instead of PULSE's
     ``device_code``. Builds the same auth_state as the CLI's ``_minimax_oauth_login`` and persists
     via ``_minimax_save_auth_state`` so the system ends up as after ``pulse auth add minimax-oauth``.
     Region is fixed to "global" here; cn-region operators use the CLI's ``--region cn``."""
@@ -397,7 +397,7 @@ def _minimax_poller(session_id: str, sess: Dict[str, Any]) -> None:
     }
     with _profile_scope(sess.get("profile")):
         # The cancellation check and the save share the session lock, so a cancel cannot land
-        # between them (the same contract as the Nous and Codex savers).
+        # between them (the same contract as the PULSE and Codex savers).
         with _oauth_sessions_lock:
             if sess.get("cancelled"):
                 sess["status"] = "cancelled"
@@ -429,7 +429,7 @@ def _xai_device_poller(session_id: str, sess: Dict[str, Any]) -> None:
         "token_type": str(token_data.get("token_type") or "Bearer").strip() or "Bearer",
     }
     with _profile_scope(sess.get("profile")), _oauth_sessions_lock:
-        # One critical section with the cancel check, as in the Nous and Codex savers.
+        # One critical section with the cancel check, as in the PULSE and Codex savers.
         if sess.get("cancelled"):
             sess["status"] = "cancelled"
             return

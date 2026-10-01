@@ -31,7 +31,7 @@ contextBridge.exposeInMainWorld('pulseDesktop', {
   // Launch-flag fact: the app was started with --local, so the renderer may
   // show the local-models surfaces. Static for the window's lifetime.
   localModelsEnabled: launchFlags?.localModels === true,
-  // Launch-flag fact: the Nous free tier is on for this launch
+  // Launch-flag fact: the PULSE free tier is on for this launch
   // (PULSE_GUEST_ONBOARDING=1 or --guest-onboarding). Read-only; the same
   // decision is stamped onto every backend the app spawns.
   guestOnboardingEnabled: launchFlags?.guestOnboarding === true,

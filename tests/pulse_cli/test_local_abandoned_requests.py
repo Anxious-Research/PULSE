@@ -63,7 +63,7 @@ def test_no_state_file_means_no_managed_endpoint(tmp_path, monkeypatch):
 
 
 def test_remote_providers_unaffected(managed_state):
-    assert aux._provider_requires_stream("nous",
+    assert aux._provider_requires_stream("pulse",
                                          "https://inference-api.anxious-research.com/v1/") is False
 
 

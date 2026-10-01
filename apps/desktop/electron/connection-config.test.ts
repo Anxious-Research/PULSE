@@ -1001,12 +1001,12 @@ test('resolveProfileApiRequest uses exact method and path eligibility for mixed 
     { backendProfile: null, requestPath: '/api/config/defaults?profile=iris' }
   )
   assert.deepEqual(
-    resolveProfileApiRequest('iris', '/api/model/recommended-default?provider=nous', {
+    resolveProfileApiRequest('iris', '/api/model/recommended-default?provider=pulse', {
       requestMethod: 'GET'
     }),
     {
       backendProfile: null,
-      requestPath: '/api/model/recommended-default?provider=nous&profile=iris'
+      requestPath: '/api/model/recommended-default?provider=pulse&profile=iris'
     }
   )
 })
@@ -1194,7 +1194,7 @@ test('buildGatewayWsUrlWithTicket url-encodes the ticket', () => {
 // --- authModeFromStatus ---
 
 test('authModeFromStatus returns oauth when auth_required is true', () => {
-  assert.equal(authModeFromStatus({ auth_required: true, auth_providers: ['nous'] }), 'oauth')
+  assert.equal(authModeFromStatus({ auth_required: true, auth_providers: ['pulse'] }), 'oauth')
 })
 
 test('authModeFromStatus returns token when auth_required is false/missing', () => {
@@ -1537,7 +1537,7 @@ test('gatewayTicketFailure only copies an integer statusCode, not a message pref
 
 // OAuth integration regression (#85373): the WS-ticket mint boundary runs
 // BEFORE waitForPULSEReady. This mirrors main.ts buildRemoteConnection's
-// catch — classify a Nous Cloud server fault via the shared factory, else
+// catch — classify a Pulse Cloud server fault via the shared factory, else
 // fall through to gatewayTicketFailure. Proves the production composition:
 //   1. Cloud + OAuth ticket mint + 503  -> actionable Cloud-down error
 //   2. Cloud + OAuth ticket mint + 401  -> reauth (never Cloud-down)

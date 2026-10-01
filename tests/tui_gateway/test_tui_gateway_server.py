@@ -4316,10 +4316,10 @@ def test_resolve_model_strips_config_model(monkeypatch):
     monkeypatch.delenv("PULSE_MODEL", raising=False)
     monkeypatch.delenv("PULSE_INFERENCE_MODEL", raising=False)
     monkeypatch.setattr(
-        server, "_load_cfg", lambda: {"model": {"default": " nous/pulse-test "}}
+        server, "_load_cfg", lambda: {"model": {"default": " pulse/pulse-test "}}
     )
 
-    assert server._resolve_model() == "nous/pulse-test"
+    assert server._resolve_model() == "pulse/pulse-test"
 
 
 def _sync_test_session(**extra):
@@ -4341,8 +4341,8 @@ def _patch_config_model(monkeypatch, model, provider=""):
 
 
 def test_config_sync_switches_unpinned_session(monkeypatch):
-    _patch_config_model(monkeypatch, "new/model", provider="nous")
-    session = _sync_test_session(config_model_seen=("old/model", "nous"))
+    _patch_config_model(monkeypatch, "new/model", provider="pulse")
+    session = _sync_test_session(config_model_seen=("old/model", "pulse"))
     calls = []
     monkeypatch.setattr(
         server,
@@ -4355,7 +4355,7 @@ def test_config_sync_switches_unpinned_session(monkeypatch):
     assert calls == [
         (
             "sid",
-            "new/model --provider nous",
+            "new/model --provider pulse",
             {
                 "confirm_expensive_model": True,
                 "pin_session_override": False,
@@ -4364,7 +4364,7 @@ def test_config_sync_switches_unpinned_session(monkeypatch):
             },
         )
     ]
-    assert session["config_model_seen"] == ("new/model", "nous")
+    assert session["config_model_seen"] == ("new/model", "pulse")
 
 
 def test_config_sync_treats_auto_provider_as_unset(monkeypatch):
@@ -4426,7 +4426,7 @@ def test_config_sync_adopts_baseline_when_agent_already_on_target(monkeypatch):
 
 
 def test_config_sync_switches_when_only_provider_differs(monkeypatch):
-    _patch_config_model(monkeypatch, "old/model", provider="nous")
+    _patch_config_model(monkeypatch, "old/model", provider="pulse")
     session = _sync_test_session(config_model_seen=("old/model", ""))
     calls = []
     monkeypatch.setattr(
@@ -4437,7 +4437,7 @@ def test_config_sync_switches_when_only_provider_differs(monkeypatch):
 
     server._sync_agent_model_with_config("sid", session)
 
-    assert calls == ["old/model --provider nous"]
+    assert calls == ["old/model --provider pulse"]
 
 
 def test_config_sync_failure_emits_error_once_per_edit(monkeypatch):
@@ -4514,7 +4514,7 @@ def test_apply_model_switch_persist_override_false_never_persists(monkeypatch):
     result = _types.SimpleNamespace(
         success=True,
         new_model="new/model",
-        target_provider="nous",
+        target_provider="pulse",
         base_url="",
         api_key="key",
         api_mode="chat_completions",
@@ -4540,7 +4540,7 @@ def test_apply_model_switch_persist_override_false_never_persists(monkeypatch):
     session = {"agent": None}
 
     out = server._apply_model_switch(
-        "sid", session, "new/model --provider nous", persist_override=False
+        "sid", session, "new/model --provider pulse", persist_override=False
     )
 
     assert out["value"] == "new/model"
@@ -4548,23 +4548,23 @@ def test_apply_model_switch_persist_override_false_never_persists(monkeypatch):
 
 
 def test_startup_runtime_uses_tui_provider_env(monkeypatch):
-    monkeypatch.setenv("PULSE_MODEL", "nous/pulse-test")
-    monkeypatch.setenv("PULSE_TUI_PROVIDER", "nous")
+    monkeypatch.setenv("PULSE_MODEL", "pulse/pulse-test")
+    monkeypatch.setenv("PULSE_TUI_PROVIDER", "pulse")
     monkeypatch.delenv("PULSE_INFERENCE_PROVIDER", raising=False)
 
-    assert server._resolve_startup_runtime() == ("nous/pulse-test", "nous")
+    assert server._resolve_startup_runtime() == ("pulse/pulse-test", "pulse")
 
 
 def test_startup_runtime_does_not_treat_inference_provider_as_explicit(monkeypatch):
-    monkeypatch.setenv("PULSE_MODEL", "nous/pulse-test")
+    monkeypatch.setenv("PULSE_MODEL", "pulse/pulse-test")
     monkeypatch.delenv("PULSE_TUI_PROVIDER", raising=False)
-    monkeypatch.setenv("PULSE_INFERENCE_PROVIDER", "nous")
+    monkeypatch.setenv("PULSE_INFERENCE_PROVIDER", "pulse")
     monkeypatch.setattr(
         "pulse_cli.models.detect_static_provider_for_model",
         lambda model, provider: None,
     )
 
-    assert server._resolve_startup_runtime() == ("nous/pulse-test", None)
+    assert server._resolve_startup_runtime() == ("pulse/pulse-test", None)
 
 
 
@@ -9518,7 +9518,7 @@ def test_setup_status_answers_from_the_bootstrap_record_once_it_exists(monkeypat
     def slow_bootstrap():
         release.wait(5)
         with fb._lock:
-            fb._record = fb.SetupRecord(provider_configured=True, inference_provider="nous", free_tier_account=True,
+            fb._record = fb.SetupRecord(provider_configured=True, inference_provider="pulse", free_tier_account=True,
                                         has_identity=True, other_providers=False)
             fb._done.set()
     with fb._lock:
@@ -9529,7 +9529,7 @@ def test_setup_status_answers_from_the_bootstrap_record_once_it_exists(monkeypat
         resp = server.handle_request({"id": "1", "method": "setup.status", "params": {}})
         assert resp["result"]["provider_configured"] is True
         assert resp["result"]["ready"] is True and resp["result"]["free_tier_account"] is True
-        assert resp["result"]["inference_provider"] == "nous"
+        assert resp["result"]["inference_provider"] == "pulse"
     finally:
         fb.reset_for_tests()
 
@@ -9672,9 +9672,9 @@ def test_setup_runtime_check_honors_requested_provider(monkeypatch):
     monkeypatch.setattr(server, "_load_cfg", lambda: {})
 
     def fake_resolve(requested=None, **kwargs):
-        if requested == "nous":
+        if requested == "pulse":
             return {
-                "provider": "nous",
+                "provider": "pulse",
                 "api_key": "invoke-jwt",
                 "source": "portal",
             }
@@ -9690,10 +9690,10 @@ def test_setup_runtime_check_honors_requested_provider(monkeypatch):
     )
 
     scoped = server.handle_request(
-        {"id": "1", "method": "setup.runtime_check", "params": {"provider": "nous"}}
+        {"id": "1", "method": "setup.runtime_check", "params": {"provider": "pulse"}}
     )
     assert scoped["result"]["ok"] is True
-    assert scoped["result"]["provider"] == "nous"
+    assert scoped["result"]["provider"] == "pulse"
 
     default = server.handle_request({"id": "1", "method": "setup.runtime_check", "params": {}})
     assert default["result"]["ok"] is False
@@ -17290,13 +17290,13 @@ def test_model_options_does_not_overwrite_curated_models(monkeypatch):
     Regression: earlier versions of this handler unconditionally replaced
     each provider's curated ``models`` field with ``provider_model_ids()``
     (live /models catalog).  That pulled in hundreds of non-agentic models
-    for providers like Nous whose /models endpoint returns image/video
+    for providers like PULSE whose /models endpoint returns image/video
     generators, rerankers, embeddings, and TTS models alongside chat models.
     """
     curated_providers = [
         {
-            "slug": "nous",
-            "name": "Nous",
+            "slug": "pulse",
+            "name": "PULSE",
             "models": ["moonshotai/kimi-k2.5", "anthropic/claude-opus-4.7"],
             "total_models": 30,
             "source": "built-in",
@@ -17323,13 +17323,13 @@ def test_model_options_does_not_overwrite_curated_models(monkeypatch):
 
     assert "result" in resp, resp
     providers = resp["result"]["providers"]
-    nous = next((p for p in providers if p.get("slug") == "nous"), None)
-    assert nous is not None
-    assert nous["models"] == [
+    pulse = next((p for p in providers if p.get("slug") == "pulse"), None)
+    assert pulse is not None
+    assert pulse["models"] == [
         "moonshotai/kimi-k2.5",
         "anthropic/claude-opus-4.7",
     ]
-    assert nous["total_models"] == 30
+    assert pulse["total_models"] == 30
     # Handler must not consult the live catalog — curated is the truth.
     live_fetch.assert_not_called()
 
@@ -20605,7 +20605,7 @@ class _BillingHeaders:
 def test_billing_error_serialization_preserves_server_code(
     status, error, retry_after
 ):
-    import pulse_cli.nous_billing as nb
+    import pulse_cli.pulse_billing as nb
 
     headers = _BillingHeaders({"Retry-After": str(retry_after)}) if retry_after else None
     with pytest.raises(nb.BillingTransient) as ei:
@@ -20619,7 +20619,7 @@ def test_billing_error_serialization_preserves_server_code(
 
 
 def test_billing_rate_limit_without_error_defaults_wire_code():
-    import pulse_cli.nous_billing as nb
+    import pulse_cli.pulse_billing as nb
 
     exc = nb.BillingRateLimited("slow down", status=429, retry_after=10)
 
@@ -20638,7 +20638,7 @@ def _sub_rpc(method, params):
 
 
 def test_subscription_preview_serializes_quote(monkeypatch):
-    import pulse_cli.nous_billing as nb
+    import pulse_cli.pulse_billing as nb
 
     monkeypatch.setattr(
         nb,
@@ -20670,7 +20670,7 @@ def test_subscription_preview_requires_tier():
 
 
 def test_subscription_preview_scope_error_maps_to_step_up(monkeypatch):
-    import pulse_cli.nous_billing as nb
+    import pulse_cli.pulse_billing as nb
 
     def _raise(subscription_type_id):
         raise nb.BillingScopeRequired("billing:manage required")
@@ -20682,7 +20682,7 @@ def test_subscription_preview_scope_error_maps_to_step_up(monkeypatch):
 
 
 def test_subscription_change_cancellation(monkeypatch):
-    import pulse_cli.nous_billing as nb
+    import pulse_cli.pulse_billing as nb
 
     seen = {}
 
@@ -20699,7 +20699,7 @@ def test_subscription_change_cancellation(monkeypatch):
 
 
 def test_subscription_change_tier_downgrade(monkeypatch):
-    import pulse_cli.nous_billing as nb
+    import pulse_cli.pulse_billing as nb
 
     seen = {}
 
@@ -20723,7 +20723,7 @@ def test_subscription_change_requires_tier_or_cancel():
 
 
 def test_subscription_upgrade_echoes_status_and_idempotency(monkeypatch):
-    import pulse_cli.nous_billing as nb
+    import pulse_cli.pulse_billing as nb
 
     seen = {}
 
@@ -20741,7 +20741,7 @@ def test_subscription_upgrade_echoes_status_and_idempotency(monkeypatch):
 
 
 def test_subscription_upgrade_requires_action_surfaces_recovery(monkeypatch):
-    import pulse_cli.nous_billing as nb
+    import pulse_cli.pulse_billing as nb
 
     monkeypatch.setattr(
         nb,

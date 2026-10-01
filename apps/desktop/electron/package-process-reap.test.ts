@@ -7,7 +7,7 @@ import {
   type RunningProcess
 } from './package-process-reap'
 
-const ROOT = 'C:\\Program Files\\WindowsApps\\NousResearch.PULSEBundled_0.21.20.25635_arm64__e60prshbsznhj'
+const ROOT = 'C:\\Program Files\\WindowsApps\\AnxiousResearch.PULSEBundled_0.21.20.25635_arm64__e60prshbsznhj'
 
 const GPG_AGENT: string = `${ROOT}\\app\\tools\\git\\gpg-agent.exe`
 const PAYLOAD_PYTHON: string = `${ROOT}\\app\\tools\\python\\python.exe`
@@ -37,7 +37,7 @@ describe('isUnderInstallRoot', () => {
     // A bare startsWith would kill another package's processes here. The
     // separator check is the whole guard.
     const sibling =
-      'C:\\Program Files\\WindowsApps\\NousResearch.PULSEBundled_0.21.20.256350_arm64__e60prshbsznhj\\app\\PULSE.exe'
+      'C:\\Program Files\\WindowsApps\\AnxiousResearch.PULSEBundled_0.21.20.256350_arm64__e60prshbsznhj\\app\\PULSE.exe'
 
     expect(isUnderInstallRoot(sibling, ROOT)).toBe(false)
   })

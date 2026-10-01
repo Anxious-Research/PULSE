@@ -1,7 +1,7 @@
 """DrainSecretProvider — shared-bearer-secret auth for the drain-control endpoint.
 
 Non-interactive token capability of the ``DashboardAuthProvider`` ABC (``verify_token`` +
-the ``token_auth`` middleware seam): ``nous-account-service`` provisions a per-agent unique
+the ``token_auth`` middleware seam): ``pulse-account-service`` provisions a per-agent unique
 secret (``PULSE_DASHBOARD_DRAIN_SECRET``, env-only — it is a credential); an inbound bearer
 is compared constant-time and vouched for as the ``drain-control`` principal. Fail-CLOSED
 entropy gate at registration (length, distinct chars, Shannon bits); interactive ABC methods

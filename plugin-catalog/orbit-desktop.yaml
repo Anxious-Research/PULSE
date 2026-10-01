@@ -12,7 +12,7 @@ description: >-
   and 100,000-character chat messages, guidance and drafts. Includes Devplan Studio for guided
   interviews, specifications, phased devplans and circular-development handoff exports. Optional
   conversational interviews require explicit service setup and a working PULSE provider login, and
-  send project context to that provider. Includes 14 distinctive interface presets including Nous
+  send project context to that provider. Includes 14 distinctive interface presets including PULSE
   Atelier, with local wallpapers, themed icons and taskbar treatments. Agent chats include inline
   expandable tool activity, running/completed/failed summaries, an activity strip, a workspace agent
   overview and responsive toolbar controls. Missing tool-call IDs are explicitly uncorrelated.
@@ -29,8 +29,8 @@ description: >-
   provisioning. Optional api.typesafe.ai requests require explicit consent and a user-supplied key.
   The 0.2.7 web app's opt-in Show tools panel displays tool call arguments and results for the current
   PULSE conversation, fetched from the local Orbit server and local PULSE session API and kept in
-  the browser only. The Nous Atelier theme contains Nous Research logo artwork and is unofficial;
-  Orbit is not affiliated with Nous Research.
+  the browser only. The PULSE Atelier theme contains Anxious Research logo artwork and is unofficial;
+  Orbit is not affiliated with Anxious Research.
 maintainer: mojomast
 tier: community
 category: desktop

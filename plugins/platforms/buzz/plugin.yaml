@@ -9,7 +9,7 @@ description: >
   channels/DMs and the PULSE agent. Relay operations shell out to the
   buzz CLI binary (JSON in/out); verified inbound media uses PULSE' bundled
   HTTP client.
-author: Nous Research
+author: Anxious Research
 # ``requires_env`` entries are surfaced in ``pulse config`` UI via the
 # platform-plugin env var injector in ``pulse_cli/config.py``.
 requires_env:

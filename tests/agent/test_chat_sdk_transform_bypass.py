@@ -52,7 +52,7 @@ def _wire_body() -> dict:
         "stream": True,
         "temperature": 0.7,
         "stream_options": {"include_usage": True},
-        "extra_body": {"reasoning": {"effort": "high"}, "provider": {"order": ["nous"]}},
+        "extra_body": {"reasoning": {"effort": "high"}, "provider": {"order": ["pulse"]}},
     }
 
 

@@ -469,11 +469,11 @@ def _(rid, params: dict) -> dict:
                     or has_usable_secret(api_key_text) or bool(runtime.get("command"))):
                 return fail(f"No usable credentials found for {blamed}.", runtime.get("source"))
             from pulse_cli.anon_auth import route_is_welcome_host
-            # free_tier_route is keyed on the SELECTED route (the welcome host serves only nous/welcome), not
-            # on profile state: a paid Nous key beside a free-tier identity must not read as free.
+            # free_tier_route is keyed on the SELECTED route (the welcome host serves only pulse/welcome), not
+            # on profile state: a paid PULSE key beside a free-tier identity must not read as free.
             return {"ok": True, "provider": runtime.get("provider"), "model": model,
                     "source": runtime.get("source"),
-                    "free_tier_route": provider == "nous" and route_is_welcome_host(runtime.get("base_url")),
+                    "free_tier_route": provider == "pulse" and route_is_welcome_host(runtime.get("base_url")),
                     **scoped}
         return _readiness_check(rid, params, probe, probe_key=f"runtime:{requested or ''}",
                                 wait_seconds=_READINESS_SHARE_WAIT_SECONDS)
@@ -489,16 +489,16 @@ def _safe_client_label(label: str) -> str:
     return safe.lstrip(".").strip()
 
 
-@method("diagnostics.share_nous")
+@method("diagnostics.share_pulse")
 def _(rid, params: dict) -> dict:
-    """Upload a redacted debug bundle to Nous-internal diagnostics storage — same collection +
-    force-redaction pipeline as ``pulse debug share --nous``; redaction is NOT client-controllable
+    """Upload a redacted debug bundle to PULSE-internal diagnostics storage — same collection +
+    force-redaction pipeline as ``pulse debug share --pulse``; redaction is NOT client-controllable
     and consent lives with the CALLER (privacy notice first). Structured ``ok``/``error`` envelope so
     upload failures render inline. Optional: ``error_context`` (-> ``error-context.txt``),
     ``extra_files`` ({label -> text}), ``log_lines`` (default 200); all force-redacted."""
     try:
-        from pulse_cli.debug import _redact_log_text, build_nous_bundle, collect_share_bundle
-        from pulse_cli.diagnostics_upload import share_to_nous
+        from pulse_cli.debug import _redact_log_text, build_pulse_bundle, collect_share_bundle
+        from pulse_cli.diagnostics_upload import share_to_pulse
         log_lines = params.get("log_lines")
         if not isinstance(log_lines, int) or not (10 <= log_lines <= 2000):
             log_lines = 200
@@ -514,7 +514,7 @@ def _(rid, params: dict) -> dict:
             safe_label = _safe_client_label(label) if isinstance(label, str) else ""
             if safe_label and isinstance(text, str) and text.strip():
                 bundle[f"client/{safe_label}"] = _redact_log_text(text[:524_288])
-        res = share_to_nous(build_nous_bundle(bundle, redact=True))
+        res = share_to_pulse(build_pulse_bundle(bundle, redact=True))
         view_url = res.get("viewUrl") or res.get("view_url")
         upload_id = res.get("id")
         if not view_url and not upload_id:  # an upload the user can't reference is useless to support

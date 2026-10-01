@@ -1,7 +1,7 @@
 ---
 sidebar_position: 16
 title: "Manage PULSE Cloud with MCP"
-description: "Connect PULSE Agent to the Nous Portal MCP server so your local agent can list, start, stop, and manage your PULSE Cloud instances conversationally"
+description: "Connect PULSE Agent to the Pulse Portal MCP server so your local agent can list, start, stop, and manage your PULSE Cloud instances conversationally"
 ---
 
 # Manage PULSE Cloud with MCP
@@ -10,9 +10,9 @@ Python dependency commands on this page use a
 [PM-prepared source checkout](../reference/package-management.md#developer-workflow).
 After a dependency change, reactivate the checkout and restart PULSE.
 
-[PULSE Cloud](https://portal.anxious-research.com/cloud) runs hosted PULSE Agent instances for you. Normally you manage them from the `/agents` page in the [Nous Portal](../integrations/nous-portal.md). This guide connects your **local** PULSE Agent to the Portal's MCP server so you can manage those cloud instances by just asking — "list my cloud agents", "restart the stopped one", "what's it costing me" — without leaving your terminal.
+[PULSE Cloud](https://portal.anxious-research.com/cloud) runs hosted PULSE Agent instances for you. Normally you manage them from the `/agents` page in the [Pulse Portal](../integrations/pulse-portal.md). This guide connects your **local** PULSE Agent to the Portal's MCP server so you can manage those cloud instances by just asking — "list my cloud agents", "restart the stopped one", "what's it costing me" — without leaving your terminal.
 
-It's a standard [MCP](../user-guide/features/mcp.md) server hosted by Nous Research, gated by the same OAuth login you already use for the Portal. Once connected, PULSE gets two tools it can call on your behalf.
+It's a standard [MCP](../user-guide/features/mcp.md) server hosted by Anxious Research, gated by the same OAuth login you already use for the Portal. Once connected, PULSE gets two tools it can call on your behalf.
 
 ## What you can do with it
 
@@ -32,7 +32,7 @@ Every call runs against **your** org with your Portal identity, and membership i
 
 ## Prerequisites
 
-- A [Nous Portal](../integrations/nous-portal.md) account with [PULSE Cloud](https://portal.anxious-research.com/cloud) access (at least one instance, or the ability to create one).
+- A [Pulse Portal](../integrations/pulse-portal.md) account with [PULSE Cloud](https://portal.anxious-research.com/cloud) access (at least one instance, or the ability to create one).
 - MCP support installed. If you used the standard install script it's already there; otherwise:
 
   ```bash
@@ -173,7 +173,7 @@ The OAuth browser callback runs on the machine where PULSE is running. On a remo
 
 ## See also
 
-- **[Nous Portal](../integrations/nous-portal.md)** — the subscription, models, and Tool Gateway behind the same login
+- **[Pulse Portal](../integrations/pulse-portal.md)** — the subscription, models, and Tool Gateway behind the same login
 - **[Use MCP with PULSE](./use-mcp-with-pulse.md)** — connecting and filtering MCP servers in general
 - **[MCP feature overview](../user-guide/features/mcp.md)** — what MCP is and how PULSE uses it
 - **[MCP configuration reference](../reference/mcp-config-reference.md)** — every `mcp_servers` field, including `auth: oauth`

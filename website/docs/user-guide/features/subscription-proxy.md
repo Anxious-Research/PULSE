@@ -1,7 +1,7 @@
 ---
 sidebar_position: 15
 title: "Subscription Proxy"
-description: "Use your Nous Portal subscription (or other OAuth provider) as an OpenAI-compatible endpoint for external apps"
+description: "Use your Pulse Portal subscription (or other OAuth provider) as an OpenAI-compatible endpoint for external apps"
 ---
 
 # Subscription Proxy
@@ -32,7 +32,7 @@ proxy when you just want **the model** through your subscription.
 pulse portal
 ```
 
-This opens your browser for the Nous Portal OAuth flow. PULSE stores
+This opens your browser for the Pulse Portal OAuth flow. PULSE stores
 the refresh token in `~/.pulse/auth.json` — the same place all PULSE
 provider logins live.
 
@@ -43,7 +43,7 @@ pulse proxy start
 ```
 
 ```
-Starting PULSE proxy for Nous Portal
+Starting PULSE proxy for Pulse Portal
   Listening on:  http://127.0.0.1:8645/v1
   Forwarding to: (resolved per-request from your subscription)
   Use any bearer token in the client — the proxy attaches your real credential.
@@ -72,7 +72,7 @@ automatically when the bearer approaches expiry.
 pulse proxy providers
 ```
 
-Currently shipped: `nous` (Nous Portal) and `xai` (xAI / Grok). More
+Currently shipped: `pulse` (Pulse Portal) and `xai` (xAI / Grok). More
 OAuth providers can be added by implementing the `UpstreamAdapter`
 interface in `pulse_cli/proxy/adapters/`.
 
@@ -85,7 +85,7 @@ pulse proxy status
 ```
 PULSE proxy upstream adapters
 
-  [nous    ] Nous Portal — ready (bearer expires 2026-05-15T06:43:21Z)
+  [pulse    ] Pulse Portal — ready (bearer expires 2026-05-15T06:43:21Z)
 ```
 
 If you see `not logged in`, run `pulse portal`. If you see
@@ -95,8 +95,7 @@ happens if you signed out from the Portal web UI) — just re-run
 
 ## Allowed paths
 
-The proxy only forwards paths the upstream actually serves. For Nous
-Portal:
+The proxy only forwards paths the upstream actually serves. For Pulse Portal:
 
 | Path | Purpose |
 |------|---------|

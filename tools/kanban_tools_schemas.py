@@ -495,7 +495,7 @@ KANBAN_CREATE_SCHEMA = _schema(
         )),
         "provider": _prop("string", (
                 "Provider the 'model' belongs to (e.g. 'openrouter', "
-                "'anthropic', 'nous'). Set this whenever the model "
+                "'anthropic', 'pulse'). Set this whenever the model "
                 "is not from the assignee profile's configured "
                 "provider — a model name alone is resolved against "
                 "the profile's provider and will fail if it belongs "

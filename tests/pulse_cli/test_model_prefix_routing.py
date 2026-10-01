@@ -1,6 +1,6 @@
 """Regression tests for vendor-prefix model routing and dict model.aliases (#87189).
 
-``--model nous/deepseek-v4-pro`` / ``--model ollama/qwen3.5:4b`` used to fall
+``--model pulse/deepseek-v4-pro`` / ``--model ollama/qwen3.5:4b`` used to fall
 through provider auto-detection and be sent to the configured default provider
 (api.anthropic.com) with the prefixed name intact, producing HTTP 404. Dict
 entries under ``model.aliases`` (``localqwen: {model: ..., provider: ...}``)
@@ -17,9 +17,9 @@ class TestVendorPrefixRouting:
 
     def test_configured_provider_prefix_routes_to_provider(self, monkeypatch):
         monkeypatch.setattr(models, "_find_openrouter_slug", lambda _name: None)
-        monkeypatch.setattr(models, "_configured_provider_ids", lambda: {"nous"})
-        detected = models.detect_provider_for_model("nous/deepseek-v4-pro", "anthropic")
-        assert detected == ("nous", "deepseek-v4-pro")
+        monkeypatch.setattr(models, "_configured_provider_ids", lambda: {"pulse"})
+        detected = models.detect_provider_for_model("pulse/deepseek-v4-pro", "anthropic")
+        assert detected == ("pulse", "deepseek-v4-pro")
 
     def test_local_provider_prefix_routes_to_provider(self, monkeypatch):
         monkeypatch.setattr(models, "_find_openrouter_slug", lambda _name: None)

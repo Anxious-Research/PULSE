@@ -219,7 +219,7 @@ def _aux_config_menu() -> None:
              "  Side tasks (vision, compression, web extraction, etc.) default",
              '  to your main chat model.  "auto" means "use my main model" —',
              "  PULSE only falls back to a lightweight backend (OpenRouter,",
-             "  Nous Portal) if the main model is unavailable.  Override a",
+             "  Pulse Portal) if the main model is unavailable.  Override a",
              "  task below if you want it pinned to a specific provider/model.", "")
 
         menu_tasks = _all_aux_tasks() + [(_DELEGATION_TASK_KEY, _DELEGATION_TASK_NAME, _DELEGATION_TASK_DESC)]
@@ -921,11 +921,11 @@ def _build_provider_picker_rows(config: dict, active: str, provider_labels: dict
         else:
             slug = row["slug"]
             label = canonical_descs.get(slug, provider_labels.get(slug, slug))
-            if slug == "nous":
+            if slug == "pulse":
                 # Same free-tier rule as the gateway/TUI pickers: relabel for a guest, hide
-                # when nous.guest is off, untouched for a real account.
-                from pulse_cli.model_switch_providers import _free_tier_nous_row
-                tier_row = _free_tier_nous_row({"name": label, "models": []})
+                # when pulse.guest is off, untouched for a real account.
+                from pulse_cli.model_switch_providers import _free_tier_pulse_row
+                tier_row = _free_tier_pulse_row({"name": label, "models": []})
                 if tier_row is None:
                     continue
                 label = tier_row["name"]

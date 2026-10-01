@@ -2,7 +2,7 @@
 name = "pulse-bootstrap"
 version = "0.0.0"
 description = "PULSE Setup — signed installer that drives scripts/install.ps1"
-authors = ["Nous Research <info@anxious-research.com>"]
+authors = ["Anxious Research <info@anxious-research.com>"]
 edition = "2021"
 rust-version = "1.77"
 

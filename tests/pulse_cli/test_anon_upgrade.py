@@ -1,4 +1,4 @@
-"""``pulse auth upgrade``: the free tier signs into a Nous account, keeping its connectors.
+"""``pulse auth upgrade``: the free tier signs into a PULSE account, keeping its connectors.
 
 Driven through a fake portal covering the device-code endpoints plus the promotion intent/status
 surface, so the wire contract (both codes in the intent, status-driven outcome, token grant
@@ -100,13 +100,13 @@ def portal(monkeypatch, tmp_path):
     monkeypatch.setenv("PULSE_ANON_API_SECRET", "test-secret")
     monkeypatch.setenv("PULSE_SHARED_AUTH_DIR", str(tmp_path / "shared-store"))
     monkeypatch.setenv("PULSE_GUEST_ONBOARDING", "1")
-    for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "NOUS_API_KEY"):
+    for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "PULSE_API_KEY"):
         monkeypatch.delenv(var, raising=False)
-    from pulse_cli import auth_nous
+    from pulse_cli import auth_pulse
 
     def _client(timeout_seconds, verify):
         return httpx.Client(transport=httpx.MockTransport(fake.handler), base_url=PORTAL)
-    monkeypatch.setattr(auth_nous, "_nous_http_client", _client)
+    monkeypatch.setattr(auth_pulse, "_pulse_http_client", _client)
     real_client = httpx.Client
 
     class _RoutedClient(real_client):
@@ -120,7 +120,7 @@ def portal(monkeypatch, tmp_path):
 
 
 def _shared_store(tmp_path) -> dict:
-    p = tmp_path / "shared-store" / "nous_auth.json"
+    p = tmp_path / "shared-store" / "pulse_auth.json"
     return json.loads(p.read_text()) if p.exists() else {}
 
 
@@ -165,8 +165,8 @@ class TestUpgrade:
         for banned in ("guest", "anonymous", "claim"):
             assert banned not in lowered, f"{banned!r} leaked into user-facing output:\n{out}"
         store = _load_auth_store()
-        state = store["providers"]["nous"]
-        assert store["active_provider"] == "nous"
+        state = store["providers"]["pulse"]
+        assert store["active_provider"] == "pulse"
         assert "anon_token" not in state
         assert state.get("auth_method") != anon_auth.ANON_AUTH_METHOD
         assert not anon_auth.is_guest_state(state)
@@ -185,11 +185,11 @@ def free_account(monkeypatch):
     free list are the only network egress the default pick has, stubbed at their seams."""
     from pulse_cli import models as m
     from pulse_cli import models_pricing as mp
-    monkeypatch.setattr(m, "check_nous_free_tier", lambda **kw: True)
-    monkeypatch.setattr(m, "fetch_nous_recommended_models", lambda *a, **kw: {
+    monkeypatch.setattr(m, "check_pulse_free_tier", lambda **kw: True)
+    monkeypatch.setattr(m, "fetch_pulse_recommended_models", lambda *a, **kw: {
         "freeRecommendedModels": [{"modelName": FREE_PICK}]})
     monkeypatch.setattr(mp, "get_pricing_for_provider", lambda *a, **kw: {})
-    monkeypatch.setattr(mp, "nous_policy_allowed_ids", lambda **kw: None)
+    monkeypatch.setattr(mp, "pulse_policy_allowed_ids", lambda **kw: None)
 
 
 def _write_model_config(model_cfg: dict) -> None:
@@ -209,7 +209,7 @@ class TestSignInCompletionSettlesTheModel:
             self, portal, free_account, capsys):
         anon_auth.ensure_portal_identity(explicit=True)
         # What picking the free-tier row leaves behind: the welcome model pinned to the welcome host.
-        _write_model_config({"provider": "nous", "default": anon_auth.GUEST_MODEL, "base_url": WELCOME})
+        _write_model_config({"provider": "pulse", "default": anon_auth.GUEST_MODEL, "base_url": WELCOME})
         assert anon_auth.upgrade_guest(_args()) == 0
         model_cfg = _model_config()
         assert model_cfg["default"] == FREE_PICK
@@ -229,10 +229,10 @@ class TestSignInCompletionSettlesTheModel:
             self, portal, free_account, monkeypatch, capsys):
         from pulse_cli import models as m
         anon_auth.ensure_portal_identity(explicit=True)
-        _write_model_config({"provider": "nous", "default": anon_auth.GUEST_MODEL, "base_url": WELCOME})
+        _write_model_config({"provider": "pulse", "default": anon_auth.GUEST_MODEL, "base_url": WELCOME})
         def _portal_down():
             raise RuntimeError("recommended models unavailable")
-        monkeypatch.setattr(m, "recommended_nous_default_model", _portal_down)
+        monkeypatch.setattr(m, "recommended_pulse_default_model", _portal_down)
         assert anon_auth.upgrade_guest(_args()) == 0
         model_cfg = _model_config()
         assert "default" not in model_cfg

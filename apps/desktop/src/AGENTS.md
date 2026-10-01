@@ -106,4 +106,4 @@ sign-in). `deriveBillingView` branches on `billing.free_tier_account` BEFORE `lo
 `logged_out` notice's Sign in opens the same dialog, never a portal link (a link writes no
 credential). The sign-in dialog is a single claimed owner (first mount wins, like the
 real-profile consent prompt); its states map 1:1 to the poll route's `status` + `reason`. Copy is the ruled free-tier copy: never
-"guest", "anonymous", "claim" or "Nous Portal" in user-facing text.
+"guest", "anonymous", "claim" or "Pulse Portal" in user-facing text.

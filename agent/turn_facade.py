@@ -126,7 +126,7 @@ class TurnFacadeMixin:
                     parent_session_id=getattr(self, "_parent_session_id", None) or "",
                 )
                 task_started = True
-            # Ambient Nous Portal tagging: every LLM call in this turn (loop, compression,
+            # Ambient Pulse Portal tagging: every LLM call in this turn (loop, compression,
             # vision, MoA, review forks) inherits `conversation=<root>`; host-declared
             # affinity scope falls back to it; accounting handles route aux usage to the session.
             token = set_conversation_context(self._conversation_root_id())

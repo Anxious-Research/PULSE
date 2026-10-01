@@ -22,7 +22,7 @@ Examples:
     pulse debug share --expire 30  Keep dpaste.com fallback pastes for 30 days
     pulse debug share --local      Print report locally (no upload)
     pulse debug share --no-redact  Disable upload-time secret redaction
-    pulse debug share --nous       Upload to Nous-internal storage (private)
+    pulse debug share --pulse       Upload to PULSE-internal storage (private)
     pulse debug delete <url>       Delete a previously uploaded paste
 """)
     debug_sub = debug_parser.add_subparsers(dest="debug_command")
@@ -51,10 +51,10 @@ Examples:
             "with force=True before upload so credentials are not leaked "
             "into the public paste service.")
     share_parser.add_argument(
-        "--nous", action="store_true",
-        help="Upload the debug bundle to Nous-internal storage (AWS S3) instead "
+        "--pulse", action="store_true",
+        help="Upload the debug bundle to PULSE-internal storage (AWS S3) instead "
             "of a public paste service. The bundle is private — viewable only "
-            "by Nous staff (and allowlisted Discord mods) via a Google-login-"
+            "by PULSE staff (and allowlisted Discord mods) via a Google-login-"
             "gated viewer — and auto-deletes after 14 days. Still force-redacts "
             "secrets unless --no-redact is also passed.")
     delete_parser = debug_sub.add_parser(

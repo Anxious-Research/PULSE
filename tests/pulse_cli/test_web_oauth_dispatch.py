@@ -46,7 +46,7 @@ def _make_profile_home(tmp_path, monkeypatch, profile="coder"):
     return profile_home
 
 
-def _fake_nous_device_data():
+def _fake_pulse_device_data():
     return {
         "device_code": "device-code",
         "user_code": "NOUS-1234",
@@ -464,13 +464,13 @@ def test_codex_worker_final_save_is_atomic_with_cancel_delete(tmp_path, monkeypa
 
 
 
-def test_nous_dashboard_poller_preserves_effective_scope_when_token_omits_scope(monkeypatch):
+def test_pulse_dashboard_poller_preserves_effective_scope_when_token_omits_scope(monkeypatch):
     from pulse_cli import auth as auth_mod
 
-    session_id = "nous-effective-scope-test"
+    session_id = "pulse-effective-scope-test"
     _web_server_oauth._oauth_sessions[session_id] = {
         "session_id": session_id,
-        "provider": "nous",
+        "provider": "pulse",
         "flow": "device_code",
         "created_at": time.time(),
         "status": "pending",
@@ -484,7 +484,7 @@ def test_nous_dashboard_poller_preserves_effective_scope_when_token_omits_scope(
     }
     captured_state = {}
 
-    def fake_refresh_nous_oauth_from_state(state, **kwargs):
+    def fake_refresh_pulse_oauth_from_state(state, **kwargs):
         captured_state.update(state)
         return {**state, "agent_key": "jwt-agent-key"}
 
@@ -500,13 +500,13 @@ def test_nous_dashboard_poller_preserves_effective_scope_when_token_omits_scope(
     )
     monkeypatch.setattr(
         auth_mod,
-        "refresh_nous_oauth_from_state",
-        fake_refresh_nous_oauth_from_state,
+        "refresh_pulse_oauth_from_state",
+        fake_refresh_pulse_oauth_from_state,
     )
-    monkeypatch.setattr(auth_mod, "persist_nous_credentials", lambda state: None)
+    monkeypatch.setattr(auth_mod, "persist_pulse_credentials", lambda state: None)
 
     try:
-        _web_server_oauth._nous_plain_poller(session_id)
+        _web_server_oauth._pulse_plain_poller(session_id)
         assert captured_state["scope"] == auth_mod.DEFAULT_NOUS_SCOPE
         assert _web_server_oauth._oauth_sessions[session_id]["status"] == "approved"
     finally:

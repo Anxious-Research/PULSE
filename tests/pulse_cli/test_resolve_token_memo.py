@@ -1,4 +1,4 @@
-"""Tests for the resolve_nous_access_token startup-burst memo (PR #66016).
+"""Tests for the resolve_pulse_access_token startup-burst memo (PR #66016).
 
 The memo collapses the startup burst of managed-tool check_fn calls into a
 single expensive resolution: within the short TTL, repeat calls return the
@@ -18,7 +18,7 @@ import pulse_cli.auth as auth
 def _fresh_memo(monkeypatch, tmp_path):
     monkeypatch.setenv("PULSE_HOME", str(tmp_path))
     monkeypatch.delenv("PULSE_PORTAL_BASE_URL", raising=False)
-    monkeypatch.delenv("NOUS_PORTAL_BASE_URL", raising=False)
+    monkeypatch.delenv("PULSE_PORTAL_BASE_URL", raising=False)
     monkeypatch.setattr(auth, "_RESOLVE_TOKEN_CACHE", {})
     yield
 
@@ -28,9 +28,9 @@ def _write_valid_auth_file(tmp_path, token="memo-token"):
         json.dumps(
             {
                 "version": 1,
-                "active_provider": "nous",
+                "active_provider": "pulse",
                 "providers": {
-                    "nous": {
+                    "pulse": {
                         "access_token": token,
                         "refresh_token": "r",
                         "client_id": "pulse-cli-vps",
@@ -60,9 +60,9 @@ def test_repeat_calls_within_ttl_hit_memo(monkeypatch, tmp_path):
     _write_valid_auth_file(tmp_path)
     calls = _count_transactions(monkeypatch)
 
-    first = auth.resolve_nous_access_token()
-    second = auth.resolve_nous_access_token()
-    third = auth.resolve_nous_access_token()
+    first = auth.resolve_pulse_access_token()
+    second = auth.resolve_pulse_access_token()
+    third = auth.resolve_pulse_access_token()
 
     assert first == second == third == "memo-token"
     assert calls["n"] == 1, (
@@ -74,7 +74,7 @@ def test_memo_expires_after_ttl(monkeypatch, tmp_path):
     _write_valid_auth_file(tmp_path)
     calls = _count_transactions(monkeypatch)
 
-    auth.resolve_nous_access_token()
+    auth.resolve_pulse_access_token()
     cache_key = auth.pulse_home_key()
     cached_at, tok = auth._RESOLVE_TOKEN_CACHE[cache_key]
     monkeypatch.setattr(
@@ -82,7 +82,7 @@ def test_memo_expires_after_ttl(monkeypatch, tmp_path):
         "_RESOLVE_TOKEN_CACHE",
         {cache_key: (cached_at - auth._RESOLVE_TOKEN_CACHE_TTL_S - 1.0, tok)},
     )
-    auth.resolve_nous_access_token()
+    auth.resolve_pulse_access_token()
 
     assert calls["n"] == 2, "an expired memo must re-resolve"
 
@@ -91,8 +91,8 @@ def test_insecure_callers_bypass_memo(monkeypatch, tmp_path):
     _write_valid_auth_file(tmp_path)
     calls = _count_transactions(monkeypatch)
 
-    auth.resolve_nous_access_token()
-    auth.resolve_nous_access_token(insecure=True)
+    auth.resolve_pulse_access_token()
+    auth.resolve_pulse_access_token(insecure=True)
 
     assert calls["n"] == 2, "insecure callers must bypass the memo entirely"
 
@@ -102,7 +102,7 @@ def test_memo_does_not_leak_across_multiplex_profile_contexts(tmp_path):
     pulse_constants.set_pulse_home_override (gateway/run.py,
     tui_gateway/server.py), not the PULSE_HOME env var — the memo must key
     on that same resolved home, or one profile's context can read another
-    profile's already-cached Nous access token for up to the TTL window.
+    profile's already-cached PULSE access token for up to the TTL window.
     """
     import pulse_constants
 
@@ -116,15 +116,15 @@ def test_memo_does_not_leak_across_multiplex_profile_contexts(tmp_path):
     token_a = token_b = None
     reset_token = pulse_constants.set_pulse_home_override(str(profile_a))
     try:
-        token_a = auth.resolve_nous_access_token()
+        token_a = auth.resolve_pulse_access_token()
     finally:
         pulse_constants.reset_pulse_home_override(reset_token)
 
     # Still well within the 5s TTL — this is exactly the race window: profile
-    # B's context calls resolve_nous_access_token() shortly after profile A's.
+    # B's context calls resolve_pulse_access_token() shortly after profile A's.
     reset_token = pulse_constants.set_pulse_home_override(str(profile_b))
     try:
-        token_b = auth.resolve_nous_access_token()
+        token_b = auth.resolve_pulse_access_token()
     finally:
         pulse_constants.reset_pulse_home_override(reset_token)
 

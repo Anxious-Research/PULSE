@@ -7,7 +7,7 @@ export const esOverrides = {
   sharedMetrics: {
     consentTitle: '¿Nos ayudas a mejorar PULSE?',
     consentBody:
-      'Las métricas compartidas solo contienen contadores acotados. Nunca prompts, archivos, rutas ni textos de error. La recopilación es local. Enviarlas a Nous es una aceptación aparte.',
+      'Las métricas compartidas solo contienen contadores acotados. Nunca prompts, archivos, rutas ni textos de error. La recopilación es local. Enviarlas a PULSE es una aceptación aparte.',
     whatIsCollected: 'Qué se recopila',
     collectedIntro: 'Solo contadores acotados:',
     collectedActivity: 'Actividad, duración de sesiones, resultados y clases de error',
@@ -21,11 +21,11 @@ export const esOverrides = {
     collectedMachine:
       'Datos generales del equipo: rango de RAM, tipo de GPU, antigüedad y canal de la versión de PULSE, actualizaciones pendientes, si se usa un servidor de modelos local',
     installId:
-      'Al enviar, cada paquete diario se sube al servicio de telemetría de Nous. Los paquetes llevan el ID de instalación de este perfil: un UUID aleatorio y estable sin información personal, que se restablece al borrar el directorio de métricas compartidas.',
+      'Al enviar, cada paquete diario se sube al servicio de telemetría de PULSE. Los paquetes llevan el ID de instalación de este perfil: un UUID aleatorio y estable sin información personal, que se restablece al borrar el directorio de métricas compartidas.',
     consentWindow:
       'Solo se envían los paquetes cuyo periodo de recopilación completo cae dentro de una ventana de consentimiento registrada; los datos de antes de aceptar, o de cualquier intervalo con el envío desactivado, se quedan en este equipo. Puedes volver a desactivar el envío cuando quieras.',
     readDocs: 'Leer todos los detalles',
-    share: 'Recopilar y enviar a Nous',
+    share: 'Recopilar y enviar a PULSE',
     local: 'Recopilar solo en local',
     off: 'No, gracias',
     changeLater: 'Puedes cambiarlo cuando quieras en Ajustes → Seguridad.',
@@ -33,12 +33,12 @@ export const esOverrides = {
     collectLabel: 'Recopilar estadísticas de uso',
     collectDesc:
       'Contadores acotados guardados en este dispositivo. Nunca prompts, archivos, rutas ni textos de error.',
-    sendLabel: 'Enviar estadísticas de uso a Nous',
+    sendLabel: 'Enviar estadísticas de uso a PULSE',
     sendDesc:
-      'Sube cada paquete diario al servicio de telemetría de Nous. Solo se envían datos de una ventana de consentimiento. Requiere la recopilación activada.',
+      'Sube cada paquete diario al servicio de telemetría de PULSE. Solo se envían datos de una ventana de consentimiento. Requiere la recopilación activada.',
     unavailable: 'Actualiza el backend de PULSE para cambiar este ajuste.',
     stripBody: 'Solo contadores acotados, nunca prompts ni archivos.',
-    stripChoices: { share: 'Enviar a Nous', local: 'Solo local', off: 'No, gracias' },
+    stripChoices: { share: 'Enviar a PULSE', local: 'Solo local', off: 'No, gracias' },
     stripDetails: 'Detalles'
   },
   intro: introEs,
@@ -158,7 +158,7 @@ export const esOverrides = {
       showAllMatches: 'Mostrar todas las coincidencias',
       segmentNoMatch: (segment: string) => `No hay coincidencias en ${segment}, así que se muestran todas.`,
       freeTierNote: 'Las conexiones se quedan en este equipo hasta que inicies sesión.',
-      signInLine: 'Inicia sesión en Nous para usar las apps administradas.',
+      signInLine: 'Inicia sesión en PULSE para usar las apps administradas.',
       signIn: 'Iniciar sesión',
       managedUnavailable: 'Las apps administradas aún no están disponibles para esta cuenta.',
       writeFailed: 'No se guardó ese cambio.',
@@ -166,7 +166,7 @@ export const esOverrides = {
       disconnectNoAccount:
         'PULSE no tiene ninguna cuenta que desconectar aquí. Actualiza la página e inténtalo de nuevo.',
       disconnectRefused:
-        'Nous no pudo quitar este inicio de sesión ahora. Desactiva la app con el interruptor o inténtalo más tarde.'
+        'PULSE no pudo quitar este inicio de sesión ahora. Desactiva la app con el interruptor o inténtalo más tarde.'
     },
     add: {
       action: 'Añadir el tuyo',
@@ -217,7 +217,7 @@ export const esOverrides = {
       turnOffLocal: 'Desactivar el servidor local',
       providedByPlugin: (plugin: string) => `Proporcionado por el plugin ${plugin}`,
       openPlugins: 'Abrir la pestaña Plugins',
-      nousLine: 'Las apps de Nous siguen a tu cuenta, no al perfil.',
+      pulseLine: 'Las apps de PULSE siguen a tu cuenta, no al perfil.',
       rulesReadOnly: 'Las reglas no se pueden cambiar ahora.',
       rulesAppOff: (name: string) => `Activa ${name} para cambiar sus herramientas.`,
       rulesSignIn: 'Inicia sesión para cambiar lo que PULSE puede hacer aquí.',
@@ -272,7 +272,7 @@ export const esOverrides = {
       remove: 'Quitar',
       offTitle: (name: string) => `${name} está desactivado.`,
       offBody: 'Actívalo con el interruptor de arriba para leer las herramientas que incluye.',
-      signedOutTitle: 'Inicia sesión en Nous para leer la lista de herramientas.',
+      signedOutTitle: 'Inicia sesión en PULSE para leer la lista de herramientas.',
       signedOutBody: 'Tus servidores en este equipo no se ven afectados.',
       conflictTitle: 'Alguien cambió esta regla mientras la editabas.',
       conflictBody: (theyOff: number, theyOn: number) => {
@@ -497,11 +497,11 @@ export const esOverrides = {
         `Cierra la sesión guardada del navegador remoto y abre ${signInLabel}. Usa el gateway local para cambiar al backend incluido.`,
       signOutAndSignIn: 'Cerrar sesión e iniciar sesión',
       remoteFailureHint: 'Revisa la URL e inicia sesión en Configuración del gateway, o cambia al gateway local.',
-      cloudDownTitle: 'El agente de Nous Cloud no está disponible',
+      cloudDownTitle: 'El agente de Pulse Cloud no está disponible',
       cloudDownDescription:
-        'El agente en la nube administrado por Nous al que se conecta este gateway devuelve un error de servidor. No se puede reiniciar desde aquí: revisa su estado, cambia al gateway local o pide ayuda.',
+        'El agente en la nube administrado por PULSE al que se conecta este gateway devuelve un error de servidor. No se puede reiniciar desde aquí: revisa su estado, cambia al gateway local o pide ayuda.',
       cloudDownHint:
-        'Los botones de abajo abren el Nous Portal (estado y controles de la instancia) y nuestro Discord para obtener ayuda.',
+        'Los botones de abajo abren el Pulse Portal (estado y controles de la instancia) y nuestro Discord para obtener ayuda.',
       cloudDownCheckPortal: 'Ver el estado en el Portal',
       cloudDownDiscord: 'Pedir ayuda en Discord',
       hideRecentLogs: 'Ocultar registros recientes',
@@ -623,7 +623,7 @@ export const esOverrides = {
       `Renderizado por software activo — se detectó una pantalla remota (${reason}). Se desactivó la aceleración por GPU para evitar parpadeos.`
   },
   billingBlock: {
-    titleNous: 'Sin créditos de Nous',
+    titleNous: 'Sin créditos de PULSE',
     titleProvider: provider => `Sin créditos — ${provider}`,
     fallbackMessage: 'Tu cuenta se quedó sin créditos. Añade créditos para continuar.',
     openBilling: 'Abrir facturación',
@@ -631,9 +631,9 @@ export const esOverrides = {
     dismiss: 'Descartar'
   },
   sendDiagnostics: {
-    title: 'Enviar diagnóstico a Nous',
+    title: 'Enviar diagnóstico a PULSE',
     privacyNotice:
-      'Esto sube un paquete de depuración a un almacenamiento interno de Nous (no a un sitio público). Incluye información del sistema (SO, versiones, proveedor y qué claves API están configuradas, nunca las claves en sí) y los registros completos del agente, del gateway y de la app de escritorio (hasta 512 KB cada uno), que probablemente contengan contenido de conversaciones, salidas de herramientas y rutas de archivos. Los secretos se ocultan antes de subirlo. Solo el personal de Nous y los moderadores autorizados de Discord pueden ver el paquete, que se elimina automáticamente a los 14 días.',
+      'Esto sube un paquete de depuración a un almacenamiento interno de PULSE (no a un sitio público). Incluye información del sistema (SO, versiones, proveedor y qué claves API están configuradas, nunca las claves en sí) y los registros completos del agente, del gateway y de la app de escritorio (hasta 512 KB cada uno), que probablemente contengan contenido de conversaciones, salidas de herramientas y rutas de archivos. Los secretos se ocultan antes de subirlo. Solo el personal de PULSE y los moderadores autorizados de Discord pueden ver el paquete, que se elimina automáticamente a los 14 días.',
     upload: 'Subir',
     uploading: 'Subiendo…',
     cancel: 'Cancelar',
@@ -645,11 +645,11 @@ export const esOverrides = {
       'Tu paquete se subió de forma privada. Comparte el enlace de abajo en tu hilo de soporte para que el equipo pueda ver tus registros.',
     failedTitle: 'Error al subir',
     failedHint:
-      'También puedes ejecutar `pulse debug share --nous` desde una terminal, o `pulse debug share --local` para mostrar el informe sin subirlo.',
+      'También puedes ejecutar `pulse debug share --pulse` desde una terminal, o `pulse debug share --local` para mostrar el informe sin subirlo.',
     handoffLead: 'Continúa la conversación en:',
     links: {
       github: 'Issues de GitHub',
-      portal: 'Soporte de Nous Portal',
+      portal: 'Soporte de Pulse Portal',
       discord: 'Discord'
     }
   },
@@ -1891,7 +1891,7 @@ export const esOverrides = {
       cloudLoadingAgents: 'Cargando tus agentes…',
       cloudNoAgents: {
         before: 'No se encontraron agentes en esta cuenta. Crea uno en el ',
-        linkText: 'Portal de Nous',
+        linkText: 'Portal de PULSE',
         after: ', y luego actualiza.'
       },
       cloudRefresh: 'Actualizar',
@@ -2295,13 +2295,13 @@ export const esOverrides = {
       usageLabel: (label: string) => `Uso de ${label}`,
       freeTier: {
         signIn: 'Iniciar sesión',
-        title: 'Estás en el plan gratuito de Nous',
-        message: 'Inicia sesión con una cuenta de Nous para desbloquear más modelos y herramientas.',
+        title: 'Estás en el plan gratuito de PULSE',
+        message: 'Inicia sesión con una cuenta de PULSE para desbloquear más modelos y herramientas.',
         caption:
-          'Funciona con nous/welcome, con conectores incluidos. Al iniciar sesión conservas tus conectores y se añaden las herramientas que requieren cuenta y todos los demás modelos.',
-        name: 'Nous · plan gratuito',
+          'Funciona con pulse/welcome, con conectores incluidos. Al iniciar sesión conservas tus conectores y se añaden las herramientas que requieren cuenta y todos los demás modelos.',
+        name: 'PULSE · plan gratuito',
         footnote:
-          'El plan gratuito no tiene saldo ni nada que pagar. El pago y el uso aparecen al iniciar sesión con una cuenta de Nous.',
+          'El plan gratuito no tiene saldo ni nada que pagar. El pago y el uso aparecen al iniciar sesión con una cuenta de PULSE.',
         plan: 'Plan gratuito',
         model: 'Modelo',
         connectors: 'Conectores',
@@ -2408,8 +2408,8 @@ export const esOverrides = {
       state: {
         notice: {
           loggedOut: {
-            title: 'Conecta tu cuenta de Nous',
-            message: 'Inicia sesión con tu cuenta de Nous para ver aquí tu saldo, plan y uso.',
+            title: 'Conecta tu cuenta de PULSE',
+            message: 'Inicia sesión con tu cuenta de PULSE para ver aquí tu saldo, plan y uso.',
             action: 'Iniciar sesión'
           },
           openPortal: 'Abrir el portal ↗',
@@ -2658,16 +2658,16 @@ export const esOverrides = {
       activeBackend: 'Activo',
       activeBackendHint: 'Este es tu backend activo',
       useBackend: 'Usar este backend',
-      nousIncluded: 'Incluido con una suscripción de Nous: inicia sesión con tu cuenta de Nous para activarlo.',
-      nousAuthNeededTitle: 'Inicia sesión con tu cuenta de Nous',
-      nousAuthNeededMessage: (provider: string) =>
-        `${provider} está guardado, pero solo funcionará cuando inicies sesión con tu cuenta de Nous.`,
-      nousAuthSignIn: 'Iniciar sesión',
-      nousAuthDoneTitle: 'Cuenta de Nous conectada',
-      nousAuthDoneMessage: 'Los backends de tu suscripción ya están activos.',
-      nousAuthFailed: 'No se completó el inicio de sesión en Nous',
-      nousAuthFailedMessage: 'Vuelve a intentarlo.',
-      nousAuthTryAgain: 'Reintentar',
+      pulseIncluded: 'Incluido con una suscripción de PULSE: inicia sesión con tu cuenta de PULSE para activarlo.',
+      pulseAuthNeededTitle: 'Inicia sesión con tu cuenta de PULSE',
+      pulseAuthNeededMessage: (provider: string) =>
+        `${provider} está guardado, pero solo funcionará cuando inicies sesión con tu cuenta de PULSE.`,
+      pulseAuthSignIn: 'Iniciar sesión',
+      pulseAuthDoneTitle: 'Cuenta de PULSE conectada',
+      pulseAuthDoneMessage: 'Los backends de tu suscripción ya están activos.',
+      pulseAuthFailed: 'No se completó el inicio de sesión en PULSE',
+      pulseAuthFailedMessage: 'Vuelve a intentarlo.',
+      pulseAuthTryAgain: 'Reintentar',
       noApiKeyRequired: 'No se requiere clave API.',
       postSetupHint: step =>
         `Este backend necesita una instalación única (${step}). Se ejecuta en esta máquina y puede tardar unos minutos.`,
@@ -4289,8 +4289,8 @@ export const esOverrides = {
       '/palette': 'Abrir la paleta de comandos aproximada (también Ctrl+P)',
       '/usage':
         'Mostrar el uso de tokens y los límites de frecuencia; `reset` canjea un restablecimiento de límite de Codex acumulado',
-      '/subscription': 'Ver tu plan de Nous y cambiarlo en el navegador',
-      '/topup': 'Mostrar tu saldo de Nous y gestionar la facturación en el portal',
+      '/subscription': 'Ver tu plan de PULSE y cambiarlo en el navegador',
+      '/topup': 'Mostrar tu saldo de PULSE y gestionar la facturación en el portal',
       '/platform': 'Pausar, reanudar o listar una plataforma del gateway que falla',
       '/version': 'Mostrar la versión de PULSE Agent',
       '/debug': 'Subir un informe de depuración (información del sistema + registros) y obtener enlaces para compartir',
@@ -4923,21 +4923,21 @@ export const esOverrides = {
     docs: provider => `Docs de ${provider}`
   },
   freeTier: {
-    providerRowTitle: 'Nous · plan gratuito',
-    providerRowPitch: 'Inicia sesión con una cuenta de Nous para desbloquear más modelos y herramientas.',
+    providerRowTitle: 'PULSE · plan gratuito',
+    providerRowPitch: 'Inicia sesión con una cuenta de PULSE para desbloquear más modelos y herramientas.',
     readyTitle: 'PULSE está listo.',
     readyCaption: 'Gratis · conectores incluidos',
     begin: 'Empezar',
-    signInInstead: 'Iniciar sesión con una cuenta de Nous',
+    signInInstead: 'Iniciar sesión con una cuenta de PULSE',
     otherProviders: 'Otros proveedores',
-    stripTitle: 'Ya están disponibles la inferencia y los conectores gratuitos de Nous.',
-    stripBody: 'Abre el selector de modelos para probarlos o inicia sesión con una cuenta de Nous.',
+    stripTitle: 'Ya están disponibles la inferencia y los conectores gratuitos de PULSE.',
+    stripBody: 'Abre el selector de modelos para probarlos o inicia sesión con una cuenta de PULSE.',
     openModelPicker: 'Abrir selector de modelos',
     dismiss: 'Descartar',
-    providerName: 'Nous',
-    statusLabel: (model: string) => `Nous · ${model}`,
+    providerName: 'PULSE',
+    statusLabel: (model: string) => `PULSE · ${model}`,
     signIn: 'Iniciar sesión',
-    signInHeading: 'Inicia sesión con una cuenta de Nous para desbloquear más modelos y herramientas.',
+    signInHeading: 'Inicia sesión con una cuenta de PULSE para desbloquear más modelos y herramientas.',
     settingUp: 'Configurando la inferencia gratuita…',
     codeBody: 'Introduce este código en tu navegador para terminar de iniciar sesión.',
     copyLink: 'Copiar enlace',
@@ -4955,39 +4955,39 @@ export const esOverrides = {
     tryAgain: 'Reintentar',
     startAgain: 'Empezar de nuevo',
     didNotComplete: 'No se completó el inicio de sesión',
-    rejectedBody: 'No pasa nada, sigues en el servicio gratuito de Nous. Inicia sesión cuando quieras.',
+    rejectedBody: 'No pasa nada, sigues en el servicio gratuito de PULSE. Inicia sesión cuando quieras.',
     supersededBody:
       'Un código de inicio de sesión más reciente sustituyó a este. Usa el más reciente o empieza de nuevo.',
     timedOutHeading: 'Ese enlace de inicio de sesión caducó',
-    timedOutBody: 'Empieza de nuevo cuando quieras. Sigues en el servicio gratuito de Nous.',
+    timedOutBody: 'Empieza de nuevo cuando quieras. Sigues en el servicio gratuito de PULSE.',
     retiredBody:
       'Tu sesión terminó antes de completar el inicio de sesión. PULSE iniciará una nueva; luego vuelve a iniciar sesión cuando quieras.',
     errorBody: 'No se completó el inicio de sesión. Vuelve a intentarlo cuando quieras.',
     busyHeading: 'Ya casi está',
     busyBody: (wait: string) =>
-      `PULSE no pudo terminar de iniciar tu sesión porque el servicio de Nous está ocupado. Vuelve a intentarlo en ${wait}. Mientras tanto, tu sesión sigue aquí.`,
+      `PULSE no pudo terminar de iniciar tu sesión porque el servicio de PULSE está ocupado. Vuelve a intentarlo en ${wait}. Mientras tanto, tu sesión sigue aquí.`,
     unreachableBody:
-      'PULSE no pudo llegar al servicio de Nous para terminar de iniciar tu sesión. Comprueba tu conexión a internet y vuelve a intentarlo. Tu sesión sigue aquí.',
+      'PULSE no pudo llegar al servicio de PULSE para terminar de iniciar tu sesión. Comprueba tu conexión a internet y vuelve a intentarlo. Tu sesión sigue aquí.',
     alreadySignedInHeading: 'Ya has iniciado sesión.',
-    alreadySignedInBody: 'Este PULSE ya tiene la sesión iniciada en una cuenta de Nous.',
+    alreadySignedInBody: 'Este PULSE ya tiene la sesión iniciada en una cuenta de PULSE.',
     setupFailed: {
       gateClosed:
-        'Esta versión de PULSE no puede iniciarse sin una cuenta de Nous. Inicia sesión o crea una: es gratis y solo lleva un minuto.',
+        'Esta versión de PULSE no puede iniciarse sin una cuenta de PULSE. Inicia sesión o crea una: es gratis y solo lleva un minuto.',
       paused:
         'El uso de PULSE sin iniciar sesión está en pausa por un momento. PULSE seguirá comprobándolo. Iniciar sesión es gratis y te permite empezar ahora mismo.',
       rateLimited: (wait: string) =>
         `Mucha gente está empezando ahora mismo, así que PULSE volverá a intentarlo en ${wait}. Iniciar sesión es gratis y te ahorra la espera.`,
       unreachable:
-        'PULSE no pudo llegar al servicio de Nous. Comprueba tu conexión a internet y pulsa Reintentar. O conecta otro proveedor por ahora.',
+        'PULSE no pudo llegar al servicio de PULSE. Comprueba tu conexión a internet y pulsa Reintentar. O conecta otro proveedor por ahora.',
       serverError:
-        'El servicio de Nous tuvo un fallo. Pulsa Reintentar en un momento o conecta otro proveedor por ahora.',
+        'El servicio de PULSE tuvo un fallo. Pulsa Reintentar en un momento o conecta otro proveedor por ahora.',
       powRequired:
-        'El servidor de Nous pidió una prueba de trabajo, pero tu agente todavía no la implementa. Inicia sesión o crea una cuenta gratuita de Nous para continuar.',
+        'El servidor de PULSE pidió una prueba de trabajo, pero tu agente todavía no la implementa. Inicia sesión o crea una cuenta gratuita de PULSE para continuar.',
       locked:
-        'Esta sesión no puede continuar sin iniciar sesión. Inicia sesión o crea una cuenta gratuita de Nous para seguir.',
+        'Esta sesión no puede continuar sin iniciar sesión. Inicia sesión o crea una cuenta gratuita de PULSE para seguir.',
       generic:
         'PULSE no pudo configurar el acceso gratuito sin iniciar sesión. Iniciar sesión es gratis; también puedes conectar otro proveedor.',
-      signInBelow: 'Iniciar sesión es gratis. Elige Nous abajo.',
+      signInBelow: 'Iniciar sesión es gratis. Elige PULSE abajo.',
       tryAgain: 'Reintentar',
       retrying: 'Reintentando…'
     }
@@ -5005,7 +5005,7 @@ export const esOverrides = {
     localDownloadsHeading: 'Local',
     noAuthenticatedProviders: 'No hay proveedores autenticados.',
     pro: 'Pro',
-    proNeedsSubscription: 'Los modelos Pro necesitan una suscripción de Nous de pago.',
+    proNeedsSubscription: 'Los modelos Pro necesitan una suscripción de PULSE de pago.',
     free: 'Gratis',
     freeTier: 'Nivel gratis',
     priceTitle: 'Precio de entrada / salida por millón de tokens',
@@ -5600,11 +5600,11 @@ export const esOverrides = {
         },
         free_tier_disabled: {
           title: 'El uso de PULSE sin iniciar sesión está desactivado ahora mismo',
-          body: 'Inicia sesión con una cuenta de Nous para seguir chateando; es gratis.'
+          body: 'Inicia sesión con una cuenta de PULSE para seguir chateando; es gratis.'
         },
         free_tier_rate_limited: {
           title: 'Agotaste el cupo para chatear sin iniciar sesión',
-          body: 'Se renueva en breve. Inicia sesión con una cuenta de Nous para tener un cupo mayor; es gratis.'
+          body: 'Se renueva en breve. Inicia sesión con una cuenta de PULSE para tener un cupo mayor; es gratis.'
         },
         free_tier_at_capacity: {
           title: 'Chatear sin iniciar sesión está muy solicitado ahora mismo',
@@ -5612,11 +5612,11 @@ export const esOverrides = {
         },
         free_tier_model_not_free: {
           title: 'Ese modelo no está disponible sin iniciar sesión',
-          body: 'Por ahora PULSE usa el modelo gratuito. Inicia sesión con una cuenta de Nous para tener más modelos; es gratis.'
+          body: 'Por ahora PULSE usa el modelo gratuito. Inicia sesión con una cuenta de PULSE para tener más modelos; es gratis.'
         },
         free_tier_route: {
           title: 'PULSE no pudo llegar al modelo gratuito por esta ruta',
-          body: 'Inicia sesión con una cuenta de Nous (es gratis) o revisa el ajuste NOUS_INFERENCE_BASE_URL.'
+          body: 'Inicia sesión con una cuenta de PULSE (es gratis) o revisa el ajuste PULSE_INFERENCE_BASE_URL.'
         },
         free_tier_outage: {
           title: 'El modelo gratuito tiene problemas para responder ahora mismo',
@@ -5624,7 +5624,7 @@ export const esOverrides = {
         },
         free_tier_refused: {
           title: 'PULSE no pudo enviarlo sin iniciar sesión',
-          body: 'Iniciar sesión con una cuenta de Nous es gratis.'
+          body: 'Iniciar sesión con una cuenta de PULSE es gratis.'
         }
       },
       errorAuthKinds: {
@@ -5654,7 +5654,7 @@ export const esOverrides = {
       errorOpenPULSEFolderFailed: 'No se pudo abrir la carpeta de PULSE',
       errorUpdateApiKey: 'Actualizar clave API',
       errorSignInAgain: (provider: string) => `Volver a iniciar sesión en ${provider}`,
-      errorSignInFreeTier: 'Iniciar sesión con una cuenta de Nous',
+      errorSignInFreeTier: 'Iniciar sesión con una cuenta de PULSE',
       errorOauthExpired: (provider: string) =>
         `Tu sesión de ${provider} caducó o se revocó. Vuelve a iniciar sesión para seguir chateando.`,
       errorOpenLogs: 'Abrir registros',

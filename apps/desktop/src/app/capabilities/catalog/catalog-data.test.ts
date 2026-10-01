@@ -119,7 +119,7 @@ describe('public catalog data', () => {
 
     expect(await fetchCatalog(kind)).toEqual(parseCatalog(kind, rows))
     expect(fetch).toHaveBeenCalledExactlyOnceWith(
-      `https://nousresearch.github.io/pulse-agent/docs/api/${kind}.json`,
+      `https://anxious-research.github.io/pulse-agent/docs/api/${kind}.json`,
       expect.objectContaining({ credentials: 'omit', signal: expect.any(AbortSignal) })
     )
   })

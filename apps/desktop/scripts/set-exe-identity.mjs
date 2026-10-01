@@ -88,8 +88,8 @@ async function stampExeIdentity(
     'version-string': {
       ProductName: 'PULSE',
       FileDescription: 'PULSE',
-      CompanyName: 'Nous Research',
-      LegalCopyright: 'Copyright (c) 2026 Nous Research'
+      CompanyName: 'Anxious Research',
+      LegalCopyright: 'Copyright (c) 2026 Anxious Research'
     }
   }
 

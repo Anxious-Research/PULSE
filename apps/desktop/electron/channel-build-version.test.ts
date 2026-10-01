@@ -29,12 +29,12 @@ function request(sequence: number = 65536, token: string = 'ab12cd34ef56ab78'): 
     identity: {
       token,
       displayName: 'PULSE no-registry-needed',
-      appId: `com.nousresearch.pulse-channel-${token}`,
+      appId: `com.anxious-research.pulse-channel-${token}`,
       appNamePascal: `PULSEChannel${token}`,
       artifactNamePascal: `PULSEChannel${token}`,
       cliName: 'pulse-no-registry-needed',
       windowsExecutableName: 'pulse-no-registry-needed',
-      msixAppIdWithOrg: `NousResearch.PULSEChannel${token}`
+      msixAppIdWithOrg: `AnxiousResearch.PULSEChannel${token}`
     },
     bundleEnv: { PULSE_GUEST_ONBOARDING: '1' },
     publicBase: 'https://builds.example.test'

@@ -123,16 +123,16 @@ class TestTimezoneValidation:
 
     @pytest.mark.skipif(not _has_tz_database(), reason="no tz database in this interpreter")
     def test_invalid_or_non_string_zone_is_an_error(self):
-        [issue] = _tz_issues({"timezone": "Asia/Tokio", "model": {"provider": "nous"}})
+        [issue] = _tz_issues({"timezone": "Asia/Tokio", "model": {"provider": "pulse"}})
         assert issue.severity == "error"
         assert "Asia/Tokio" in issue.message
         assert "IANA" in issue.hint and "PULSE_TIMEZONE" in issue.hint
-        [issue] = _tz_issues({"timezone": 9, "model": {"provider": "nous"}})
+        [issue] = _tz_issues({"timezone": 9, "model": {"provider": "pulse"}})
         assert issue.severity == "error" and "string" in issue.message
 
     def test_valid_blank_missing_or_unverifiable_zone_is_silent(self, monkeypatch):
         for cfg in ({"timezone": "Asia/Tokyo"}, {}, {"timezone": ""}, {"timezone": "   "}, {"timezone": None}):
-            assert _tz_issues({**cfg, "model": {"provider": "nous"}}) == []
+            assert _tz_issues({**cfg, "model": {"provider": "pulse"}}) == []
         # Bare Windows without tzdata: ZoneInfo cannot load anything, including UTC.
         # A name that cannot be checked must not be flagged.
         import zoneinfo
@@ -141,7 +141,7 @@ class TestTimezoneValidation:
             raise zoneinfo.ZoneInfoNotFoundError("no tz database")
 
         monkeypatch.setattr(zoneinfo, "ZoneInfo", no_db)
-        assert _tz_issues({"timezone": "Asia/Tokio", "model": {"provider": "nous"}}) == []
+        assert _tz_issues({"timezone": "Asia/Tokio", "model": {"provider": "pulse"}}) == []
 
 
 class TestUnknownTopLevelKeys:

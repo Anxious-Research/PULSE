@@ -134,7 +134,7 @@
     },
     {
       "name": "billing.state",
-      "summary": "Read-only billing view (no scope); the Nous free tier is answered locally without a portal call.",
+      "summary": "Read-only billing view (no scope); the PULSE free tier is answered locally without a portal call.",
       "params": [
         {
           "name": "params",
@@ -799,8 +799,8 @@
       }
     },
     {
-      "name": "diagnostics.share_nous",
-      "summary": "Upload a force-redacted debug bundle to Nous-internal diagnostics storage.",
+      "name": "diagnostics.share_pulse",
+      "summary": "Upload a force-redacted debug bundle to PULSE-internal diagnostics storage.",
       "params": [
         {
           "name": "params",
@@ -3554,7 +3554,7 @@
     },
     {
       "name": "session.usage",
-      "summary": "Token / context / cost counters for the session (+ Nous credit lines when available).",
+      "summary": "Token / context / cost counters for the session (+ PULSE credit lines when available).",
       "params": [
         {
           "name": "params",
@@ -5618,8 +5618,8 @@
             ],
             "title": "Billing Url"
           },
-          "is_nous": {
-            "title": "Is Nous",
+          "is_pulse": {
+            "title": "Is PULSE",
             "type": "boolean"
           },
           "message": {
@@ -5644,7 +5644,7 @@
           "provider_label",
           "model",
           "billing_url",
-          "is_nous",
+          "is_pulse",
           "message"
         ],
         "title": "BillingBlock",
@@ -19262,7 +19262,7 @@
       },
       "ModelPricing": {
         "additionalProperties": false,
-        "description": "``pulse_cli/inventory.py::_apply_pricing`` \u2014 formatted $/Mtok strings (``\"\"`` unknown,\n``\"free\"``); the sale fields are Nous Portal-only.",
+        "description": "``pulse_cli/inventory.py::_apply_pricing`` \u2014 formatted $/Mtok strings (``\"\"`` unknown,\n``\"free\"``); the sale fields are Pulse Portal-only.",
         "properties": {
           "input": {
             "title": "Input",

@@ -435,7 +435,7 @@ gateway:
     last_activity: "**최종 활동:** {timestamp}"
     model: "**모델:** `{model}`"
     model_provider: "**모델:** `{model}` ({provider})"
-    free_tier: "Nous · 무료 요금제 · nous/welcome · /login 명령으로 로그인"
+    free_tier: "PULSE · 무료 요금제 · pulse/welcome · /login 명령으로 로그인"
     context: "**컨텍스트:** {used} / {total} ({pct}%)"
     context_used: "**컨텍스트:** ~{used} 토큰"
     tokens: "**누적 청구 토큰:** {tokens} _(현재 컨텍스트 크기가 아닙니다. `/context`를 사용하세요)_"
@@ -548,7 +548,7 @@ gateway:
     unknown_subcommand: "알 수 없는 /usage 하위 명령: `{args}`. `/usage` 또는 `/usage reset [--force]`를 사용해 보세요."
     reset_wrong_provider: "적립된 사용량 한도 초기화는 openai-codex 공급자에서만 사용할 수 있습니다. 먼저 `/model`로 전환하세요."
   credits:
-    not_logged_in: "Nous Portal에 로그인되어 있지 않습니다. 로그인하면 크레딧 잔액 확인 및 충전을 할 수 있습니다."
+    not_logged_in: "PULSE Portal에 로그인되어 있지 않습니다. 로그인하면 크레딧 잔액 확인 및 충전을 할 수 있습니다."
   verbose:
     not_enabled: "`/verbose` 명령은 메시징 플랫폼에서 활성화되어 있지 않습니다.\n\n`config.yaml`에서 활성화하세요:\n```yaml\ndisplay:\n  tool_progress_command: true\n```"
     mode_off: "⚙️ 도구 진행 상황: **OFF** — 도구 활동이 표시되지 않습니다."
@@ -841,7 +841,7 @@ gateway:
   startup:
     handoff_thread_title: "PULSE — {title}"
     restarted: "♻ 게이트웨이가 성공적으로 재시작되었어요. 세션은 계속 이어져요."
-    free_tier_line: "추론: Nous 무료 등급 (nous/welcome). 더 많이 사용하려면 로그인하세요: /login"
+    free_tier_line: "추론: PULSE 무료 등급 (pulse/welcome). 더 많이 사용하려면 로그인하세요: /login"
     online: "♻️ 게이트웨이 온라인 — PULSE가 돌아왔고 준비되었어요."
     db_corrupt: "⚠️ 세션 데이터베이스 손상이 감지되었어요. 메시지가 저장되지 않을 수 있어요. 복구 방법:\n1. `pulse {profile_arg}doctor --fix` 실행\n2. 게이트웨이를 중지한 뒤 다음으로 복구:\n   pulse {profile_arg}sessions recover --source {db_path} --inspect-only\n   (복구 가능하다고 나오면) pulse {profile_arg}sessions recover --source {db_path} --output recovered-state.db\n   — 복구는 먼저 손상된 파일의 스냅샷을 만들어요. 실행 중인 state.db에 `sqlite3 ... \\\".recover\\\"`를 실행하지 마세요. 취약한 sqlite3 CLI가 손상을 더 키울 수 있어요\n3. {backups_dir}/의 백업에서 복원\n정리된 진단 정보는 `pulse {profile_arg}doctor`로 확인하세요."
     db_fts_corrupt: "⚠️ 세션 데이터베이스가 검색 인덱스(FTS5)에 한정된 손상 오류를 보고했어요. 메시지 테이블은 손상되지 않았어요. 수리될 때까지 메시지가 저장되지 않을 수 있어요: `pulse {profile_arg}doctor --fix`를 실행한 뒤 게이트웨이를 재시작하세요. `pulse {profile_arg}doctor`가 손상을 확인하지 않는 한 복구 도구를 실행하거나 백업을 복원하지 마세요."
@@ -937,7 +937,7 @@ gateway:
   codex_runtime:
     config_load_failed: "❌ 설정을 불러올 수 없어요: {error}"
   topup:
-    header: "💳 **Nous 잔액**"
+    header: "💳 **PULSE 잔액**"
     portal_link: "포털에서 결제 관리: {url}"
     hint: "브라우저에서 충전과 결제 관리를 하면 잔액이 여기에도 곧 반영돼요."
   login:
@@ -1660,11 +1660,11 @@ slash:
   usage:
     description: "토큰 사용량과 요청 제한 표시; `reset`은 적립된 Codex 한도 초기화 사용"
   subscription:
-    description: "Nous 요금제 확인 및 브라우저에서 변경"
+    description: "PULSE 요금제 확인 및 브라우저에서 변경"
   login:
-    description: "Nous 계정으로 로그인 (커넥터 유지)"
+    description: "PULSE 계정으로 로그인 (커넥터 유지)"
   topup:
-    description: "Nous 잔액 표시 및 포털에서 결제 관리"
+    description: "PULSE 잔액 표시 및 포털에서 결제 관리"
   platforms:
     description: "게이트웨이/메시징 플랫폼 상태 표시"
   platform:
@@ -1685,7 +1685,7 @@ cli:
   billing:
     load_failed: "{label}: {error}"
     load_failed_label: "결제 정보를 불러올 수 없어요"
-    not_logged_in: "Nous Portal에 로그인되어 있지 않아요."
+    not_logged_in: "PULSE Portal에 로그인되어 있지 않아요."
     run_portal_then: "`pulse portal`로 로그인한 뒤 {cmd}을(를) 실행하세요."
     org_line: "조직: {org}"
     org_line_role: "조직: {org} · {role}"
@@ -1775,7 +1775,7 @@ cli:
     confirm_purchase: "구매 확인"
     total_line: "합계: {amount}"
     portal_card_will_be_charged: "포털에 저장된 카드로 결제돼요."
-    consent_charge: "확인하면 Nous Research가 카드에 결제하는 것에 동의하게 돼요."
+    consent_charge: "확인하면 PULSE Research가 카드에 결제하는 것에 동의하게 돼요."
     choice_pay_now: "지금 {amount} 결제"
     desc_submit_charge: "결제 요청 보내기"
     desc_manage_card_billing: "브라우저에서 카드 / 결제 관리"
@@ -1836,7 +1836,7 @@ cli:
     threshold_label: "잔액이 이 금액 미만이면"
     reload_to_label: "이 금액까지 충전"
     reload_must_exceed_threshold: "🔴 충전 금액은 기준 금액보다 커야 해요."
-    auto_reload_consent: "확인하면 잔액이 {threshold}에 도달할 때마다 Nous Research가 {card}에 결제하는 것을 승인하게 돼요. 여기서나 포털에서 언제든 끌 수 있어요."
+    auto_reload_consent: "확인하면 잔액이 {threshold}에 도달할 때마다 PULSE Research가 {card}에 결제하는 것을 승인하게 돼요. 여기서나 포털에서 언제든 끌 수 있어요."
     turn_on_auto_reload_question: "자동 충전을 켤까요?"
     auto_reload_enabled: "✅ 자동 충전 켜짐: {threshold} 미만이면 → {reload_to}까지 충전."
     auto_reload_disabled: "✅ 자동 충전이 꺼졌어요."
@@ -2416,7 +2416,7 @@ cli:
     empty_base_url: "⚠️  제공자 리졸버가 빈 기본 URL을 반환했어요. 제공자 설정을 확인하거나 pulse setup을 실행해 주세요"
     switching_to_fallback: "⚠️  {reason} — 대체 제공자로 전환해요: {provider} / {model}"
     first_run_no_provider: "☤ 아직 설정된 추론 제공자가 없어요 — 지금 설정해 볼게요."
-    first_run_pick_provider: "제공자(Nous Portal OAuth가 가장 빨라요, API 키 불필요)와 모델을 선택하게 돼요."
+    first_run_pick_provider: "제공자(Pulse Portal OAuth가 가장 빨라요, API 키 불필요)와 모델을 선택하게 돼요."
     first_run_prompt: "지금 제공자를 설정할까요? [Y/n]:"
     first_run_skipped: "건너뛰었어요. 언제든 'pulse model' 또는 'pulse setup'을 실행할 수 있어요."
     first_run_cancelled: "설정이 취소됐어요. 언제든 'pulse model'을 실행할 수 있어요."
@@ -2444,7 +2444,7 @@ cli:
     delivering_leftover_steer: "⏩ 남은 /steer를 다음 턴으로 전달해요: '{preview}'"
     reasoning_label: "추론"
     reasoning_more_lines: "... ({count}줄 더 있음 — /reasoning full로 표시)"
-    billing_cta_nous: "[bold]/topup[/]으로 크레딧을 충전하거나 [bold]/subscription[/]으로 요금제를 변경하세요."
+    billing_cta_pulse: "[bold]/topup[/]으로 크레딧을 충전하거나 [bold]/subscription[/]으로 요금제를 변경하세요."
     billing_cta_provider: "{provider}에서 크레딧을 충전하세요"
     your_provider: "사용 중인 제공자"
     billing_cta_switch: "또는 [bold]/model <model> --provider <provider>[/]로 제공자를 전환하세요."
@@ -3088,7 +3088,7 @@ cli:
     fix_lm_studio: "LM Studio 해결법: 모델 설정에서 컨텍스트 길이를 지정 → 모델 다시 불러오기"
     fix_local_server: "해결법: 서버를 최소 {tokens_k}K 컨텍스트로 시작하거나 (llama.cpp: -c {tokens}), config.yaml의 model.ollama_num_ctx를 실제로 제공하는 창 크기로 설정하세요"
     fix_config: "해결법: config.yaml에서 model.context_length를 설정하거나 서버의 컨텍스트 설정을 늘리세요"
-    pulse_models_not_agentic: "⚠  Nous Research PULSE 3 & 4 모델은 에이전트용이 아니며 PULSE Agent와 함께 사용하도록 설계되지 않았어요."
+    pulse_models_not_agentic: "⚠  Anxious Research PULSE 3 & 4 모델은 에이전트용이 아니며 PULSE Agent와 함께 사용하도록 설계되지 않았어요."
     pulse_models_lack_tools: "에이전트 워크플로에 필요한 도구 호출 기능이 없어요. 에이전트용 모델(Claude, GPT, Gemini, DeepSeek 등)을 사용해 보세요."
     pulse_models_switch_hint: "전환 방법: /model sonnet  또는  /model gpt5"
     project_skills_loaded: "◆ 이 저장소에서 프로젝트 스킬 {count}개를 불러왔어요"
@@ -3655,7 +3655,7 @@ tips:
   t182: "browser_navigate는 페이지 스냅샷을 자동으로 반환해요 — 이후에 browser_snapshot을 호출할 필요가 없어요."
   t183: "browser_vision에 annotate=true를 주면 상호작용 가능한 요소 위에 번호 라벨을 겹쳐 표시해요."
   t184: "pulse mcp는 Nous가 승인한 MCP를 키 한 번으로 설치할 수 있는 대화형 선택기를 열어요."
-  t185: "pulse mcp catalog는 저장소에 포함된 Nous 승인 MCP 서버 목록을 보여줘요."
+  t185: "pulse mcp catalog는 저장소에 포함된 PULSE 승인 MCP 서버 목록을 보여줘요."
   t186: "pulse mcp install <name>은 카탈로그 항목을 설치하고 자격 증명을 묻은 뒤, 어떤 도구를 활성화할지 고를 수 있게 해요."
   t187: "MCP 서버는 config.yaml에서 설정해요 — stdio와 HTTP 전송 방식을 모두 지원해요."
   t188: "서버별 도구 필터링: tools.include는 특정 도구만 허용하고 tools.exclude는 특정 도구를 제외해요."
@@ -3682,7 +3682,7 @@ tips:
   t209: "사용자 정의 제공자: config.yaml의 custom_providers 아래에 이름 붙인 엔드포인트를 저장해요."
   t210: "PULSE_EPHEMERAL_SYSTEM_PROMPT는 기록에 절대 저장되지 않는 시스템 프롬프트를 주입해요."
   t211: "credential_pool_strategies는 fill_first, round_robin, least_used, random 순환 방식을 지원해요."
-  t212: "pulse auth add nous 또는 pulse auth add openai-codex로 OAuth 기반 제공자를 설정해요."
+  t212: "pulse auth add pulse 또는 pulse auth add openai-codex로 OAuth 기반 제공자를 설정해요."
   t213: "API 서버는 Chat Completions와 서버 측 상태를 갖는 Responses API를 모두 지원해요."
   t214: "설정에서 tool_preview_length: 0으로 두면 스피너 활동 피드에 전체 파일 경로가 표시돼요."
   t215: "pulse status --deep은 모든 구성 요소에 대해 더 깊은 진단 검사를 실행해요."
@@ -3752,7 +3752,7 @@ tips:
   t279: "PULSE_DEV=1은 로컬 개발을 위해 컨테이너 모드 감지를 건너뛰어요."
   t280: "각 MCP 서버는 자체 도구 세트(mcp-servername)를 가지며, pulse tools로 독립적으로 켜고 끌 수 있어요."
   t281: "설정의 MCP ${ENV_VAR} 자리 표시자는 서버 실행 시점에 해석돼요 — ~/.pulse/.env의 변수도 포함해요."
-  t282: "신뢰된 저장소(NousResearch)의 스킬은 'trusted' 보안 등급을 받고, 커뮤니티 스킬은 추가 검사를 거쳐요."
+  t282: "신뢰된 저장소(AnxiousResearch)의 스킬은 'trusted' 보안 등급을 받고, 커뮤니티 스킬은 추가 검사를 거쳐요."
   t283: "~/.pulse/skills/.hub/quarantine/의 스킬 격리 구역에는 보안 리뷰를 기다리는 스킬이 보관돼요."
   t284: "/steer <prompt>는 다음 도구 호출 뒤에 메모를 끼워 넣어요 — 중단 없이 작업 도중 방향을 조정할 수 있어요."
   t285: "/goal <text>는 지속적인 Ralph 루프 목표를 설정해요 — 판정자가 완료라고 할 때까지 PULSE가 턴을 계속 이어가요."
@@ -3778,7 +3778,7 @@ tips:
   t305: "pulse curator rollback은 실행 전 스냅샷에서 스킬을 복원해요 — 백업은 skills/.curator_backups/ 아래에 있어요."
   t306: "pulse auth reset <provider> [target]은 자격 증명 풀 전체, 또는 인덱스·id·라벨로 지정한 자격 증명 하나의 쿨다운과 소진 플래그를 지워요."
   t307: "credential_pool_strategies.<provider>: round_robin은 기본값 fill_first 대신 키를 균등하게 순환해요."
-  t308: "도구별 use_gateway: true는 web, image, tts, browser를 Nous 구독으로 라우팅해요 — 추가 키가 필요 없어요."
+  t308: "도구별 use_gateway: true는 web, image, tts, browser를 PULSE 구독으로 라우팅해요 — 추가 키가 필요 없어요."
   t309: "provider_routing.data_collection: deny는 OpenRouter에서 데이터를 저장하는 제공자를 제외해요."
   t310: "provider_routing.require_parameters: true는 요청의 모든 파라미터를 지원하는 제공자에게만 라우팅해요."
   t311: "PULSE_TUI_RESUME=1은 실행 시 가장 최근 TUI 세션에 자동으로 다시 연결해요 — SSH가 끊긴 뒤에 유용해요."

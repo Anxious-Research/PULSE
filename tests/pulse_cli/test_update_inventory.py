@@ -70,7 +70,7 @@ class TestCollectInventory:
         monkeypatch.setattr("pulse_cli.config.detect_install_method", lambda *a, **k: "docker")
         monkeypatch.setattr(
             "pulse_cli.config.recommended_update_command_for_method",
-            lambda m: "docker pull nousresearch/pulse-agent:latest",
+            lambda m: "docker pull anxious-research/pulse-agent:latest",
         )
         plan = ui.collect_runtime_inventory()
         assert plan.install_method == "docker"

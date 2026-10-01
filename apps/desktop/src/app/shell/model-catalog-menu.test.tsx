@@ -494,12 +494,12 @@ describe('the catalog renders per-model pricing', () => {
     getGlobalModelOptions.mockResolvedValue({
       providers: [
         {
-          models: ['anthropic/claude-sonnet-5', 'nous/pulse-4'],
-          name: 'Nous Portal',
-          slug: 'nous',
+          models: ['anthropic/claude-sonnet-5', 'pulse/pulse-4'],
+          name: 'Pulse Portal',
+          slug: 'pulse',
           pricing: {
             'anthropic/claude-sonnet-5': { input: '$1.60', output: '$8.00', cache: '$0.16', free: false },
-            'nous/pulse-4': { input: 'free', output: 'free', cache: null, free: true }
+            'pulse/pulse-4': { input: 'free', output: 'free', cache: null, free: true }
           }
         }
       ]
@@ -521,8 +521,8 @@ describe('the catalog renders per-model pricing', () => {
       providers: [
         {
           models: ['anthropic/claude-sonnet-5'],
-          name: 'Nous Portal',
-          slug: 'nous',
+          name: 'Pulse Portal',
+          slug: 'pulse',
           pricing: {
             'anthropic/claude-sonnet-5': {
               input: '$1.60',
@@ -546,11 +546,11 @@ describe('the catalog renders per-model pricing', () => {
     getGlobalModelOptions.mockResolvedValue({
       providers: [
         {
-          models: ['nous/pulse-4'],
-          name: 'Nous Portal',
-          slug: 'nous',
+          models: ['pulse/pulse-4'],
+          name: 'Pulse Portal',
+          slug: 'pulse',
           pricing: {
-            'nous/pulse-4': { input: 'free', output: 'free', cache: null, free: true }
+            'pulse/pulse-4': { input: 'free', output: 'free', cache: null, free: true }
           }
         }
       ]
@@ -566,8 +566,8 @@ describe('the catalog renders per-model pricing', () => {
       providers: [
         {
           models: ['anthropic/claude-sonnet-5'],
-          name: 'Nous Portal',
-          slug: 'nous',
+          name: 'Pulse Portal',
+          slug: 'pulse',
           pricing: {
             'anthropic/claude-sonnet-5': {
               input: '$1.60',
@@ -593,8 +593,8 @@ describe('the catalog renders per-model pricing', () => {
       providers: [
         {
           models: ['anthropic/claude-sonnet-5', 'anthropic/claude-sonnet-5-fast'],
-          name: 'Nous Portal',
-          slug: 'nous',
+          name: 'Pulse Portal',
+          slug: 'pulse',
           pricing: {
             'anthropic/claude-sonnet-5-fast': {
               input: '$0.80',
@@ -617,8 +617,8 @@ describe('the catalog renders per-model pricing', () => {
       providers: [
         {
           models: ['anthropic/claude-sonnet-5'],
-          name: 'Nous Portal',
-          slug: 'nous'
+          name: 'Pulse Portal',
+          slug: 'pulse'
         }
       ]
     })

@@ -38,7 +38,7 @@ PULSE prints the exact port it bound to on the `Waiting for callback on ...` lin
 | `xai-oauth` (Grok SuperGrok) | n/a | No — device code flow |
 | `anthropic` (Claude Pro/Max) | n/a | No — paste-the-code flow |
 | `openai-codex` (ChatGPT Plus/Pro) | n/a (default device code); `1455` with `--browser` / `auth.codex_login_flow: browser` | Only for the opt-in browser PKCE flow, when PULSE is remote |
-| `minimax`, `nous-portal` | n/a | No — device code flow |
+| `minimax`, `pulse-portal` | n/a | No — device code flow |
 | `openrouter` (`pulse auth add openrouter --type oauth`) | OS-assigned, local only | No — over SSH PULSE switches to OpenRouter's headless flow and asks you to paste the code shown in the browser |
 
 If your provider isn't in the table, you don't need a tunnel.

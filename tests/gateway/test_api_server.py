@@ -1015,7 +1015,7 @@ class TestToolsetsEndpoint:
             "pulse_cli.tools_config._get_platform_tools",
             return_value={"default"},
         ), patch(
-            "pulse_cli.tools_config.get_nous_subscription_features",
+            "pulse_cli.tools_config.get_pulse_subscription_features",
             return_value=feature_snapshot,
         ) as resolve_features, patch(
             "pulse_cli.tools_config._toolset_has_keys",

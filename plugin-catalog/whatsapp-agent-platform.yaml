@@ -5,7 +5,7 @@ version: "0.1.1"
 requires_pulse: ">=0.21.4"
 title: WhatsApp Agent Platform
 description: >-
-  Community platform plugin (not affiliated with Meta or Nous Research) that connects a WhatsApp Agent
+  Community platform plugin (not affiliated with Meta or Anxious Research) that connects a WhatsApp Agent
   to PULSE through Meta's WhatsApp Agent Platform API (/agent/v1): long-poll inbound (no webhook or
   public URL), text replies with WhatsApp formatting, read receipts and typing indicators, creator
   verification, and cron/home-channel delivery to the agent's creator. Disclosure — sends the agent

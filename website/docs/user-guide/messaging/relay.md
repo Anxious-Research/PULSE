@@ -59,10 +59,10 @@ pulse gateway enroll \
 
 What it does:
 
-1. Resolves a fresh Nous Portal access token from your existing login
-   (`~/.pulse/auth.json`) — this proves which Nous org (tenant) you own. If
+1. Resolves a fresh Pulse Portal access token from your existing login
+   (`~/.pulse/auth.json`) — this proves which PULSE org (tenant) you own. If
    `gateway.idp.token_url` is configured, your own IdP is used instead (the
-   air-gapped / self-hosted-IdP path, no Nous Portal involved): with
+   air-gapped / self-hosted-IdP path, no Pulse Portal involved): with
    `client_id`/`client_secret` configured it performs a generic OAuth2
    client-credentials grant; with neither configured the URL is treated as an
    ambient token endpoint (plain GET whose response body is the token — the
@@ -130,7 +130,7 @@ Restart the gateway after changing it; an open relay socket is not torn down.
 | `GATEWAY_RELAY_WAKE_URL` / `gateway.relay_wake_url` | env / `config.yaml` | Optional wake-poke target for idle/suspended gateways. |
 | `GATEWAY_RELAY_PLATFORMS` | env | Comma-separated list of platforms this gateway fronts over one connection (e.g. `discord,telegram`). Usually stamped by the deployment/orchestrator. |
 | `GATEWAY_RELAY_BOT_IDS` | env | JSON map of per-platform bot identities, e.g. `{"discord": {"botId": "…"}}`. Paired with `GATEWAY_RELAY_PLATFORMS`. |
-| `gateway.idp.token_url` | `config.yaml` | When set, enrollment/provisioning authenticates against your own IdP instead of Nous Portal: OAuth2 client-credentials when `gateway.idp.client_id`/`client_secret` are also set; otherwise an ambient token endpoint (plain GET returning the token, raw or `{"access_token": …}`). |
+| `gateway.idp.token_url` | `config.yaml` | When set, enrollment/provisioning authenticates against your own IdP instead of Pulse Portal: OAuth2 client-credentials when `gateway.idp.client_id`/`client_secret` are also set; otherwise an ambient token endpoint (plain GET returning the token, raw or `{"access_token": …}`). |
 
 ## Supported capabilities
 
@@ -182,7 +182,7 @@ outbound message tagged for the platform it targets.
 ## Troubleshooting
 
 **Enrollment fails with 401** — the connector could not verify your identity
-token. Re-login with `pulse auth add nous` (or `pulse setup`) and retry.
+token. Re-login with `pulse auth add pulse` (or `pulse setup`) and retry.
 
 **Enrollment fails with 403** — the enrollment token is invalid, expired,
 already used, or belongs to a different tenant. Enrollment tokens are

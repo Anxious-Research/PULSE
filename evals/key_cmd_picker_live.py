@@ -30,7 +30,7 @@ def rows_worker():
     )
     cfg = load_config()
     b = _PickerBuild(current_provider="", current_base_url="", current_model="",
-                     max_models=None, for_picker=True, force_fresh_nous_tier=False,
+                     max_models=None, for_picker=True, force_fresh_pulse_tier=False,
                      probe_custom_providers=True, probe_current_custom_provider=False,
                      refresh=False, excluded=set(), curated={})
     if cfg.get("providers"):

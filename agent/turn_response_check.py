@@ -203,12 +203,12 @@ def check_api_response(
         _last_preflight_pressure = None
 
     _retry.has_retried_429 = False
-    # Clearing Nous rate-limit state proves the limit reset so other sessions may resume.
-    if agent.provider == "nous":
+    # Clearing PULSE rate-limit state proves the limit reset so other sessions may resume.
+    if agent.provider == "pulse":
         try:
-            from agent.nous_rate_guard import clear_nous_rate_limit
+            from agent.pulse_rate_guard import clear_pulse_rate_limit
             from pulse_cli.anon_auth import is_anonymous_agent
-            clear_nous_rate_limit(anonymous=is_anonymous_agent(agent))
+            clear_pulse_rate_limit(anonymous=is_anonymous_agent(agent))
         except Exception:
             pass
     from agent import relay_llm

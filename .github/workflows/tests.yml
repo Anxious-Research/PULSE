@@ -96,7 +96,7 @@ jobs:
           # Ensure tests don't accidentally call real APIs
           OPENROUTER_API_KEY: ""
           OPENAI_API_KEY: ""
-          NOUS_API_KEY: ""
+          PULSE_API_KEY: ""
 
       - name: Save per-file duration cache (main only)
         # Only green first-attempt durations are written by the runner, so
@@ -188,7 +188,7 @@ jobs:
           PULSE_E2E_REQUIRE_TUI: "1"
           OPENROUTER_API_KEY: ""
           OPENAI_API_KEY: ""
-          NOUS_API_KEY: ""
+          PULSE_API_KEY: ""
 
   e2e-upgrade-plan:
     # One e2e-upgrade shard per suite directory: the files directly under
@@ -345,4 +345,4 @@ jobs:
           PULSE_TEST_FILE_TIMEOUT: "3000"
           OPENROUTER_API_KEY: ""
           OPENAI_API_KEY: ""
-          NOUS_API_KEY: ""
+          PULSE_API_KEY: ""

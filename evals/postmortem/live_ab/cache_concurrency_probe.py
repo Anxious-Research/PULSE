@@ -11,19 +11,19 @@ A consecutive pair (call k, k+1) in one session is classified:
   collapse  cache_read(k+1) <  50% of cache_read(k) the whole conversation was re-written
   (pairs whose system sha changed are compaction/aux calls and are excluded)
 
-Results that motivated pulse-agent #104284 / #104421 and NousResearch/api#227 (2026-09-05/06,
+Results that motivated pulse-agent #104284 / #104421 and AnxiousResearch/api#227 (2026-09-05/06,
 Fable 5.1, 20 sessions x 6 calls unless noted):
-  nous, native /v1/messages         13.9% stuck (4 runs 14-20%)     -> chat is the Nous default
-  nous, /v1/chat/completions         0 / 320 pairs
+  pulse, native /v1/messages         13.9% stuck (4 runs 14-20%)     -> chat is the PULSE default
+  pulse, /v1/chat/completions         0 / 320 pairs
   openrouter direct, pinned anthropic 0 / 161 pairs
   openrouter direct, unpinned (40x8)  9.8% collapse
   2 s settle before every call        no change (not a race)
 
 Usage:
-  python -m evals.postmortem.live_ab.cache_concurrency_probe --repo . --provider nous \
+  python -m evals.postmortem.live_ab.cache_concurrency_probe --repo . --provider pulse \
       --workers 20 --calls 6 --out probe.jsonl [--wire chat|native] [--model ID] \
       [--pin anthropic] [--settle 2] [--ttl 5m]
-  providers: nous (Portal creds from PULSE_HOME), openrouter (OPENROUTER_API_KEY or --api-key),
+  providers: pulse (Portal creds from PULSE_HOME), openrouter (OPENROUTER_API_KEY or --api-key),
              anthropic (ANTHROPIC_API_KEY or --api-key)
 Cost: ~$50 per 20x6 arm on Fable 5.1 at the 5m tier. Every run starts from the real PULSE request
 path; the only patch is a read-only wrapper on the SDK stream that records usage and headers.
@@ -45,7 +45,7 @@ import traceback
 def _parse():
     ap = argparse.ArgumentParser(description=(__doc__ or "").split("\n\n")[0])
     ap.add_argument("--repo", required=True, help="pulse-agent checkout to import from")
-    ap.add_argument("--provider", required=True, choices=["nous", "openrouter", "anthropic"])
+    ap.add_argument("--provider", required=True, choices=["pulse", "openrouter", "anthropic"])
     ap.add_argument("--workers", type=int, default=20)
     ap.add_argument("--calls", type=int, default=6, help="tool calls per session")
     ap.add_argument("--out", required=True, help="JSONL of every call; summary written next to it")
@@ -82,7 +82,7 @@ class _Ctx:
             resp = getattr(self.mgr, "response", None)
             hdrs = dict(getattr(resp, "headers", {}) or {})
             self.rec["request_id"] = hdrs.get("request-id") or hdrs.get("x-request-id")
-            self.rec["nous_headers"] = {k: v for k, v in hdrs.items() if k.lower().startswith("x-nous") or k.lower() in ("cf-ray", "x-request-id", "request-id")}
+            self.rec["pulse_headers"] = {k: v for k, v in hdrs.items() if k.lower().startswith("x-pulse") or k.lower() in ("cf-ray", "x-request-id", "request-id")}
         except Exception as e: self.rec["hdr_err"] = repr(e)[:120]
         return self
     def __iter__(self): return iter(self.mgr)
@@ -156,9 +156,9 @@ def patched_create(self, *a, **kw):
 MODEL = ARGS.model or ("claude-fable-5.1" if PROVIDER == "anthropic" else "anthropic/claude-fable-5.1")
 if ARGS.wire:
     API_MODE = "chat_completions" if ARGS.wire == "chat" else "anthropic_messages"
-elif PROVIDER == "nous":
-    from pulse_cli.providers import nous_api_mode
-    API_MODE = nous_api_mode(MODEL)
+elif PROVIDER == "pulse":
+    from pulse_cli.providers import pulse_api_mode
+    API_MODE = pulse_api_mode(MODEL)
 else:
     API_MODE = "chat_completions" if PROVIDER == "openrouter" else "anthropic_messages"
 if API_MODE == "chat_completions": Completions.create = patched_create
@@ -175,9 +175,9 @@ def creds():
     if PROVIDER == "anthropic":
         key = ARGS.api_key or os.environ.get("ANTHROPIC_API_KEY") or sys.exit("ANTHROPIC_API_KEY or --api-key required")
         return dict(api_key=key, base_url="https://api.anthropic.com", provider="anthropic")
-    from pulse_cli.auth_nous import resolve_nous_runtime_credentials
-    c = resolve_nous_runtime_credentials()
-    return dict(api_key=c["api_key"], base_url=c.get("base_url") or "https://inference-api.anxious-research.com/v1", provider="nous")
+    from pulse_cli.auth_pulse import resolve_pulse_runtime_credentials
+    c = resolve_pulse_runtime_credentials()
+    return dict(api_key=c["api_key"], base_url=c.get("base_url") or "https://inference-api.anxious-research.com/v1", provider="pulse")
 CRED = creds()
 WORKDIR = tempfile.mkdtemp(prefix="cacheprobe-")
 # seed ~35K tokens of file content so the loop's context grows fast and realistically (tool results, not user text)
@@ -233,7 +233,7 @@ for w, p, c, kind in bad[:10]:
           f"ids {p.get('message_id')} -> {c.get('message_id')} upstream {p.get('upstream_provider')}->{c.get('upstream_provider')}")
 json.dump(dict(provider=PROVIDER, wire=API_MODE, model=MODEL, workers=N, calls_per_session=CALLS, ttl=ARGS.ttl, pin=ARGS.pin, settle_s=SETTLE_S,
                calls=len(rows), errors=len(errs), hit=tot_read / max(tot_in, 1), pairs=pairs, **{k: v for k, v in cat.items()}, stuck_tokens=stuck_tok, cost_usd=cost,
-               bad_pairs=[dict(kind=k, session=f"cacheprobe-{PROVIDER}-{ARGS.wire or API_MODE}-{N}-{w}", ok_id=p.get("message_id"), ok_cf_ray=(p.get("nous_headers") or {}).get("cf-ray"),
-                              bad_id=c.get("message_id"), bad_cf_ray=(c.get("nous_headers") or {}).get("cf-ray"), read_before=p["cache_read"], read_after=c["cache_read"],
+               bad_pairs=[dict(kind=k, session=f"cacheprobe-{PROVIDER}-{ARGS.wire or API_MODE}-{N}-{w}", ok_id=p.get("message_id"), ok_cf_ray=(p.get("pulse_headers") or {}).get("cf-ray"),
+                              bad_id=c.get("message_id"), bad_cf_ray=(c.get("pulse_headers") or {}).get("cf-ray"), read_before=p["cache_read"], read_after=c["cache_read"],
                               expected_read=p["prompt_tokens"], write_after=c["cache_creation"]) for w, p, c, k in bad]),
           open(OUT.replace(".jsonl", ".summary.json"), "w", encoding="utf-8"), indent=1)

@@ -1088,14 +1088,14 @@ def try_recover_primary_transport(
     agent, api_error: Exception, *, retry_count: int, max_retries: int,
 ) -> bool:
     """Rebuild the primary client once and retry after ``max_retries`` exhaust on a transient
-    transport error. Skipped for aggregators (OpenRouter, Nous) that manage retries server-side."""
+    transport error. Skipped for aggregators (OpenRouter, PULSE) that manage retries server-side."""
     error_type = type(api_error).__name__
     if agent._fallback_activated or error_type not in _TRANSIENT_TRANSPORT_ERRORS or agent._is_openrouter_url():
         return False
     # Portal OpenAI-wire traffic rides aggregator retry infra (skip), but Portal Claude on native
     # Messages holds a local Anthropic client that needs the rebuild.
     if (
-        (agent.provider or "").strip().lower() in {"nous", "nous-portal", "nousresearch"}
+        (agent.provider or "").strip().lower() in {"pulse", "pulse-portal", "anxious-research"}
         and getattr(agent, "api_mode", None) != "anthropic_messages"
     ):
         return False
@@ -1715,8 +1715,8 @@ def anthropic_prompt_cache_policy(
     from agent.anthropic_endpoints import _model_name_is_kimi_family
     is_kimi = _model_name_is_kimi_family(eff_model) or "moonshot" in model_lower
     is_openrouter = base_url_host_matches(eff_base_url, "openrouter.ai")
-    # Nous Portal proxies to OpenRouter; treat as OpenRouter-equivalent for cache layout.
-    is_nous_portal = base_url_host_matches(eff_base_url, "anxious-research.com")
+    # Pulse Portal proxies to OpenRouter; treat as OpenRouter-equivalent for cache layout.
+    is_pulse_portal = base_url_host_matches(eff_base_url, "anxious-research.com")
     is_anthropic_wire = eff_api_mode == "anthropic_messages"
     is_native_anthropic = is_anthropic_wire and (
         eff_provider == "anthropic" or base_url_hostname(eff_base_url) == "api.anthropic.com"
@@ -1759,11 +1759,11 @@ def anthropic_prompt_cache_policy(
         return True, True
     # Envelope layout is OpenAI-wire only; Portal Claude on native Messages must fall through to the
     # anthropic_messages branch (inner-block markers) or it serves 0% cache hits.
-    if (is_openrouter or is_nous_portal) and (is_claude or is_kimi) and not is_anthropic_wire:
+    if (is_openrouter or is_pulse_portal) and (is_claude or is_kimi) and not is_anthropic_wire:
         return True, False
-    # Nous Portal Qwen takes the envelope path too; the alibaba-family check below only matches
+    # Pulse Portal Qwen takes the envelope path too; the alibaba-family check below only matches
     # provider=opencode/alibaba and would leave Portal traffic uncached.
-    if is_nous_portal and "qwen" in model_lower:
+    if is_pulse_portal and "qwen" in model_lower:
         return True, False
     if is_anthropic_wire and is_claude:
         return True, True  # third-party Anthropic-compatible gateway
@@ -2049,7 +2049,7 @@ def _resolve_switch_destination(agent, new_model, new_provider, base_url, api_mo
     from pulse_cli.providers import determine_api_mode, is_actual_route
     from agent.native_compaction import resolve_native_compaction_capabilities
     from pulse_cli.models import opencode_provider_family
-    # Pass model so dual-wire providers (Nous Portal anthropic/* -> Messages) resolve correctly.
+    # Pass model so dual-wire providers (Pulse Portal anthropic/* -> Messages) resolve correctly.
     if not api_mode:
         api_mode = determine_api_mode(new_provider, base_url, model=new_model)
     if not base_url and new_norm == "openai":

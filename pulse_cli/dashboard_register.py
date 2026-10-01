@@ -1,6 +1,6 @@
 """``pulse dashboard register`` — register a self-hosted dashboard OAuth client.
 
-Automates the Nous Portal ``/local-dashboards`` flow: resolve a fresh Nous access token, POST
+Automates the Pulse Portal ``/local-dashboards`` flow: resolve a fresh PULSE access token, POST
 ``{portal}/api/oauth/self-hosted-client`` (the ``agent:`` prefix is applied server-side),
 write ``PULSE_DASHBOARD_OAUTH_CLIENT_ID`` (+ portal/public URL when warranted) into ``.env``
 idempotently, then print the gate-engagement hint.
@@ -48,7 +48,7 @@ def _resolve_portal_base_url(override: Optional[str] = None) -> str:
         return override.rstrip("/")
     try:
         from pulse_cli.auth import DEFAULT_NOUS_PORTAL_URL, get_provider_auth_state
-        base = (get_provider_auth_state("nous") or {}).get("portal_base_url")
+        base = (get_provider_auth_state("pulse") or {}).get("portal_base_url")
         chosen = base if isinstance(base, str) and base.strip() else str(DEFAULT_NOUS_PORTAL_URL)
         return chosen.rstrip("/")
     except Exception:
@@ -82,15 +82,15 @@ def _register_self_hosted_client(
         except Exception:
             detail = ""
         if exc.code == 401:
-            message = ("Nous Portal rejected the access token (401). "
-                       "Try `pulse auth add nous` to re-authenticate.")
+            message = ("Pulse Portal rejected the access token (401). "
+                       "Try `pulse auth add pulse` to re-authenticate.")
         elif exc.code == 403:
             message = detail or "Your account is not permitted to register a self-hosted dashboard."
         else:
             message = f"Portal returned HTTP {exc.code}" + (f": {detail}" if detail else "")
         raise RuntimeError(message) from exc
     except urllib.error.URLError as exc:
-        raise RuntimeError(f"Could not reach Nous Portal at {portal_base_url}: {exc.reason}") from exc
+        raise RuntimeError(f"Could not reach Pulse Portal at {portal_base_url}: {exc.reason}") from exc
     if not isinstance(payload, dict) or not payload.get("client_id"):
         raise RuntimeError("Portal returned an unexpected response (no client_id).")
     return payload
@@ -107,7 +107,7 @@ def _print_post_register_hint(
     if public_url:
         print("    PULSE_DASHBOARD_PUBLIC_URL=" + str(public_url))
     print(
-        "\n  Heads up — Nous login only *engages* on a non-loopback bind. A plain\n"
+        "\n  Heads up — PULSE login only *engages* on a non-loopback bind. A plain\n"
         "  `pulse dashboard` (localhost) leaves the gate off and serves locally\n"
         "  without auth, which is fine for your own machine.\n")
     if custom_redirect_uri:
@@ -116,12 +116,12 @@ def _print_post_register_hint(
         except Exception:
             host = "your-host"
         print(
-            "  To require Nous login on your registered host, run the dashboard\n"
+            "  To require PULSE login on your registered host, run the dashboard\n"
             f"  bound publicly (it must be reachable at https://{host}) and log in\n"
             "  at its /login page.")
     else:
         print(
-            "  To require Nous login (e.g. exposing on your LAN or a public host):\n"
+            "  To require PULSE login (e.g. exposing on your LAN or a public host):\n"
             "    pulse dashboard --host 0.0.0.0\n"
             "  …then log in at the dashboard's /login page.")
     print(
@@ -161,8 +161,8 @@ def _public_url_from_redirect(redirect_uri: Optional[str]) -> str:
 
 
 def cmd_dashboard_register(args) -> None:
-    """Register a self-hosted dashboard OAuth client with Nous Portal."""
-    from pulse_cli.auth import AuthError, resolve_nous_access_token
+    """Register a self-hosted dashboard OAuth client with Pulse Portal."""
+    from pulse_cli.auth import AuthError, resolve_pulse_access_token
     from pulse_cli.config import is_managed, save_env_value
     # Managed installs get the client id stamped in by the orchestrator (save_env_value refuses).
     if is_managed():
@@ -171,13 +171,13 @@ def cmd_dashboard_register(args) -> None:
         sys.exit(1)
 
     try:
-        access_token = resolve_nous_access_token()
+        access_token = resolve_pulse_access_token()
     except Exception as exc:
         if isinstance(exc, AuthError) and getattr(exc, "relogin_required", False):
-            print("✗ You're not logged into Nous Portal.\n"
-                  "  Run `pulse setup` (or `pulse auth add nous`) first, then retry.")
+            print("✗ You're not logged into Pulse Portal.\n"
+                  "  Run `pulse setup` (or `pulse auth add pulse`) first, then retry.")
         else:
-            print(f"✗ Could not resolve a Nous Portal access token: {exc}")
+            print(f"✗ Could not resolve a Pulse Portal access token: {exc}")
         sys.exit(1)
     # An explicitly supplied portal (flag or env) is persisted in place; an inferred one is
     # written only if absent so .env isn't cluttered for the common production case.

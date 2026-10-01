@@ -100,7 +100,7 @@ def test_server_declaration_joins_mcp_and_preserves_liveness(tmp_path: Path) -> 
     _write_json(
         tmp_path / "plugin.json",
         _manifest(extensions={
-            "com.nousresearch.pulse": {"servers": {"worker": {
+            "com.anxious-research.pulse": {"servers": {"worker": {
                 "app": {"darwin": {"presence": "executable", "location": str(app)}},
                 "requires": {"app": True},
                 "liveness": {"kind": "static"},
@@ -123,7 +123,7 @@ def test_orphan_server_declaration_disables_package(tmp_path: Path) -> None:
     _write_json(
         tmp_path / "plugin.json",
         _manifest(extensions={
-            "com.nousresearch.pulse": {"servers": {"orphan": {"requires": {"app": False}}}}
+            "com.anxious-research.pulse": {"servers": {"orphan": {"requires": {"app": False}}}}
         }),
     )
 
@@ -135,7 +135,7 @@ def test_liveness_without_declaration_disables_package(tmp_path: Path) -> None:
     _write_json(
         tmp_path / "plugin.json",
         _manifest(extensions={
-            "com.nousresearch.pulse": {"servers": {"worker": {"liveness": {"kind": "static"}}}}
+            "com.anxious-research.pulse": {"servers": {"worker": {"liveness": {"kind": "static"}}}}
         }),
     )
     _write_json(

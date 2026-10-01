@@ -165,13 +165,13 @@ class TestCreateProfile:
         """
         default_home = profile_env / ".pulse"
         (default_home / "config.yaml").write_text(
-            "model:\n  provider: nous\n  default: some/model\n", encoding="utf-8"
+            "model:\n  provider: pulse\n  default: some/model\n", encoding="utf-8"
         )
 
         profile_dir = create_profile("coder", no_alias=True)
 
         cfg = yaml.safe_load((profile_dir / "config.yaml").read_text(encoding="utf-8-sig"))
-        assert cfg["model"]["provider"] == "nous"
+        assert cfg["model"]["provider"] == "pulse"
         assert cfg["model"]["default"] == "some/model"
 
 
@@ -202,7 +202,7 @@ class TestCreateProfile:
         """
         default_home = profile_env / ".pulse"
         (default_home / "config.yaml").write_text(
-            "model:\n  provider: nous\n  default: some/model\n", encoding="utf-8"
+            "model:\n  provider: pulse\n  default: some/model\n", encoding="utf-8"
         )
         profile_dir = create_profile("coder", no_alias=True)
 
@@ -211,7 +211,7 @@ class TestCreateProfile:
         )
 
         cfg = yaml.safe_load((profile_dir / "config.yaml").read_text(encoding="utf-8-sig"))
-        assert cfg["model"]["provider"] == "nous"
+        assert cfg["model"]["provider"] == "pulse"
         assert cfg["model"]["default"] == "some/model"
 
 

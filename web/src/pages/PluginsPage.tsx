@@ -15,18 +15,18 @@ import type {
   MemoryProviderSetupResult,
   PluginsHubResponse,
 } from "@/lib/api";
-import { Button } from "@nous-research/ui/ui/components/button";
-import { Badge } from "@nous-research/ui/ui/components/badge";
-import { Select, SelectOption } from "@nous-research/ui/ui/components/select";
-import { Switch } from "@nous-research/ui/ui/components/switch";
-import { Spinner } from "@nous-research/ui/ui/components/spinner";
-import { CommandBlock, CopyButton } from "@nous-research/ui/ui/components/command-block";
-import { Card, CardContent, CardHeader, CardTitle } from "@nous-research/ui/ui/components/card";
-import { ConfirmDialog } from "@nous-research/ui/ui/components/confirm-dialog";
-import { Input } from "@nous-research/ui/ui/components/input";
-import { Label } from "@nous-research/ui/ui/components/label";
-import { useToast } from "@nous-research/ui/hooks/use-toast";
-import { Toast } from "@nous-research/ui/ui/components/toast";
+import { Button } from "@pulse-research/ui/ui/components/button";
+import { Badge } from "@pulse-research/ui/ui/components/badge";
+import { Select, SelectOption } from "@pulse-research/ui/ui/components/select";
+import { Switch } from "@pulse-research/ui/ui/components/switch";
+import { Spinner } from "@pulse-research/ui/ui/components/spinner";
+import { CommandBlock, CopyButton } from "@pulse-research/ui/ui/components/command-block";
+import { Card, CardContent, CardHeader, CardTitle } from "@pulse-research/ui/ui/components/card";
+import { ConfirmDialog } from "@pulse-research/ui/ui/components/confirm-dialog";
+import { Input } from "@pulse-research/ui/ui/components/input";
+import { Label } from "@pulse-research/ui/ui/components/label";
+import { useToast } from "@pulse-research/ui/hooks/use-toast";
+import { Toast } from "@pulse-research/ui/ui/components/toast";
 import { useI18n } from "@/i18n";
 import { en } from "@/i18n/en";
 import { PluginSlot } from "@/plugins";
@@ -883,7 +883,7 @@ export default function PluginsPage() {
 
           <p className="text-xs tracking-[0.06em] text-text-tertiary">
             {t.pluginsPage.catalogHint ??
-              "Curated, Nous-reviewed plugins pinned to exact commits."}
+              "Curated, PULSE-reviewed plugins pinned to exact commits."}
           </p>
 
           <Input

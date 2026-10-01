@@ -283,9 +283,9 @@
         }
       ]
     },
-    "nous": {
+    "pulse": {
       "metadata": {
-        "display_name": "Nous Portal",
+        "display_name": "Pulse Portal",
         "note": "The entry labeled \"default\": true is the model PULSE silently lands on when the user never picked one."
       },
       "models": [

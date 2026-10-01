@@ -43,7 +43,7 @@ def test_cli_commit_applies_effort_after_the_agent_swap(monkeypatch):
 
     agent = _Agent()
     cli = SimpleNamespace(
-        model="old", provider="nous", requested_provider="nous", _explicit_api_key="", _explicit_base_url="",
+        model="old", provider="pulse", requested_provider="pulse", _explicit_api_key="", _explicit_base_url="",
         api_key="", base_url="", api_mode="", agent=agent, reasoning_config=None,
         _pending_one_turn_model_restore=None, _pending_model_switch_note="",
         _snapshot_model_runtime=lambda: {}, _persist_model_switch_to_session=lambda *_a: None)
@@ -53,7 +53,7 @@ def test_cli_commit_applies_effort_after_the_agent_swap(monkeypatch):
     saved = {}
     monkeypatch.setattr(cli_mod, "save_config_value", lambda k, v: saved.setdefault(k, v) or True)
 
-    result = ModelSwitchResult(success=True, new_model="new", target_provider="nous")
+    result = ModelSwitchResult(success=True, new_model="new", target_provider="pulse")
     mixin._commit_model_switch(cli, result, persist_global=False, reasoning_effort="high")
 
     assert agent.reasoning_config == {"enabled": True, "effort": "high"}

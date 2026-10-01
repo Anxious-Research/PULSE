@@ -1,7 +1,7 @@
 ---
 sidebar_position: 15
 title: "订阅代理"
-description: "将你的 Nous Portal 订阅（或其他 OAuth 提供商）用作外部应用的 OpenAI 兼容端点"
+description: "将你的 Pulse Portal 订阅（或其他 OAuth 提供商）用作外部应用的 OpenAI 兼容端点"
 ---
 
 # 订阅代理
@@ -27,7 +27,7 @@ description: "将你的 Nous Portal 订阅（或其他 OAuth 提供商）用作�
 pulse portal
 ```
 
-这会打开浏览器进行 Nous Portal OAuth 流程。PULSE 将刷新令牌存储在 `~/.pulse/auth.json` 中——与所有 PULSE 提供商登录信息存放在同一位置。
+这会打开浏览器进行 Pulse Portal OAuth 流程。PULSE 将刷新令牌存储在 `~/.pulse/auth.json` 中——与所有 PULSE 提供商登录信息存放在同一位置。
 
 ### 2. 启动代理
 
@@ -36,7 +36,7 @@ pulse proxy start
 ```
 
 ```
-Starting PULSE proxy for Nous Portal
+Starting PULSE proxy for Pulse Portal
   Listening on:  http://127.0.0.1:8645/v1
   Forwarding to: (resolved per-request from your subscription)
   Use any bearer token in the client — the proxy attaches your real credential.
@@ -62,7 +62,7 @@ Model:      PULSE-4-70B    # 或 PULSE-4.3-36B、PULSE-4-405B
 pulse proxy providers
 ```
 
-当前已内置：`nous`（Nous Portal）。更多 OAuth 提供商可通过在 `pulse_cli/proxy/adapters/` 中实现 `UpstreamAdapter` 接口来添加。
+当前已内置：`pulse`（Pulse Portal）。更多 OAuth 提供商可通过在 `pulse_cli/proxy/adapters/` 中实现 `UpstreamAdapter` 接口来添加。
 
 ## 检查状态
 
@@ -73,14 +73,14 @@ pulse proxy status
 ```
 PULSE proxy upstream adapters
 
-  [nous    ] Nous Portal — ready (bearer expires 2026-05-15T06:43:21Z)
+  [pulse    ] Pulse Portal — ready (bearer expires 2026-05-15T06:43:21Z)
 ```
 
 如果显示 `not logged in`，请运行 `pulse portal`。如果显示 `credentials need attention`，说明你的刷新令牌已被撤销（较少见——通常发生在你从 Portal Web UI 退出登录时）——重新运行 `pulse portal` 即可。
 
 ## 允许的路径
 
-代理仅转发上游实际提供的路径。对于 Nous Portal：
+代理仅转发上游实际提供的路径。对于 Pulse Portal：
 
 | 路径 | 用途 |
 |------|---------|

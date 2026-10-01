@@ -105,7 +105,7 @@ function config(overrides: Partial<ToolsetConfig> = {}): ToolsetConfig {
         tag: 'No API key needed',
         env_vars: [],
         post_setup: null,
-        requires_nous_auth: false,
+        requires_pulse_auth: false,
         is_active: false
       },
       {
@@ -116,7 +116,7 @@ function config(overrides: Partial<ToolsetConfig> = {}): ToolsetConfig {
           { key: 'ELEVENLABS_API_KEY', prompt: 'ElevenLabs API key', url: 'https://x', default: null, is_set: false }
         ],
         post_setup: null,
-        requires_nous_auth: false,
+        requires_pulse_auth: false,
         is_active: false
       }
     ],
@@ -190,7 +190,7 @@ describe('ToolsetConfigPanel', () => {
               { key: 'VOICE_TOOLS_OPENAI_KEY', prompt: 'OpenAI API key', url: 'https://x', default: null, is_set: true }
             ],
             post_setup: null,
-            requires_nous_auth: false,
+            requires_pulse_auth: false,
             is_active: true,
             tts_provider: 'openai'
           }
@@ -233,7 +233,7 @@ describe('ToolsetConfigPanel', () => {
             tag: 'High quality voices',
             env_vars: [],
             post_setup: null,
-            requires_nous_auth: false,
+            requires_pulse_auth: false,
             is_active: true,
             tts_provider: 'openai'
           }
@@ -311,7 +311,7 @@ describe('ToolsetConfigPanel', () => {
             tag: 'Multi-model image generation',
             env_vars: [],
             post_setup: null,
-            requires_nous_auth: false,
+            requires_pulse_auth: false,
             is_active: true
           }
         ]
@@ -377,7 +377,7 @@ describe('ToolsetConfigPanel', () => {
             tag: 'No API key needed',
             env_vars: [],
             post_setup: null,
-            requires_nous_auth: false,
+            requires_pulse_auth: false,
             is_active: false
           },
           {
@@ -394,7 +394,7 @@ describe('ToolsetConfigPanel', () => {
               }
             ],
             post_setup: null,
-            requires_nous_auth: false,
+            requires_pulse_auth: false,
             is_active: true
           }
         ]
@@ -423,7 +423,7 @@ describe('ToolsetConfigPanel', () => {
             tag: 'Stealth local browser',
             env_vars: [],
             post_setup: 'camofox',
-            requires_nous_auth: false,
+            requires_pulse_auth: false,
             is_active: true
           }
         ]
@@ -471,7 +471,7 @@ describe('ToolsetConfigPanel', () => {
             tag: 'Stealth local browser',
             env_vars: [],
             post_setup: 'camofox',
-            requires_nous_auth: false,
+            requires_pulse_auth: false,
             is_active: true
           }
         ]
@@ -504,7 +504,7 @@ describe('ToolsetConfigPanel', () => {
 
   describe('readiness pills', () => {
     it('renders the server status instead of assuming keyless rows are Ready', async () => {
-      // The false-Ready bug: a logged-out Nous Subscription row and a
+      // The false-Ready bug: a logged-out PULSE Subscription row and a
       // never-installed local TTS both have zero env vars — the old client
       // heuristic pilled every such row "Ready". The server now sends an
       // honest per-provider status; the pill must follow it.
@@ -517,17 +517,17 @@ describe('ToolsetConfigPanel', () => {
               tag: 'No API key needed',
               env_vars: [],
               post_setup: null,
-              requires_nous_auth: false,
+              requires_pulse_auth: false,
               is_active: true,
               status: 'ready'
             },
             {
-              name: 'Nous Subscription',
+              name: 'PULSE Subscription',
               badge: 'subscription',
               tag: 'Managed OpenAI TTS',
               env_vars: [],
               post_setup: null,
-              requires_nous_auth: true,
+              requires_pulse_auth: true,
               is_active: false,
               status: 'needs_auth'
             },
@@ -537,7 +537,7 @@ describe('ToolsetConfigPanel', () => {
               tag: 'Lightweight local ONNX TTS',
               env_vars: [],
               post_setup: 'kittentts',
-              requires_nous_auth: false,
+              requires_pulse_auth: false,
               is_active: false,
               status: 'needs_setup'
             }
@@ -588,7 +588,7 @@ describe('ToolsetConfigPanel', () => {
                 }
               ],
               post_setup: null,
-              requires_nous_auth: false,
+              requires_pulse_auth: false,
               is_active: false,
               status: 'needs_keys'
             }
@@ -630,7 +630,7 @@ describe('ToolsetConfigPanel', () => {
               tag: 'Headless Chromium, no API key needed',
               env_vars: [],
               post_setup: 'agent_browser',
-              requires_nous_auth: false,
+              requires_pulse_auth: false,
               is_active: true,
               status: 'ready'
             }
@@ -658,7 +658,7 @@ describe('ToolsetConfigPanel', () => {
               tag: 'Headless Chromium, no API key needed',
               env_vars: [],
               post_setup: 'agent_browser',
-              requires_nous_auth: false,
+              requires_pulse_auth: false,
               is_active: true,
               status: 'ready'
             }
@@ -682,50 +682,50 @@ describe('ToolsetConfigPanel', () => {
     })
   })
 
-  describe('managed Nous provider activation', () => {
-    const nousBrowserConfig = () =>
+  describe('managed PULSE provider activation', () => {
+    const pulseBrowserConfig = () =>
       config({
         name: 'browser',
         active_provider: null,
         providers: [
           {
-            name: 'Nous Subscription (Browser Use cloud)',
+            name: 'PULSE Subscription (Browser Use cloud)',
             badge: 'subscription',
             tag: 'Managed Browser Use billed to your subscription',
             env_vars: [],
             post_setup: 'agent_browser',
-            requires_nous_auth: true,
+            requires_pulse_auth: true,
             is_active: false,
             status: 'needs_auth'
           }
         ]
       })
 
-    it('surfaces a sign-in notice when the PUT reports needs_nous_auth', async () => {
+    it('surfaces a sign-in notice when the PUT reports needs_pulse_auth', async () => {
       // Regression (Windows 11 Capabilities journey): the GUI wrote
       // browser.cloud_provider but skipped the Portal entitlement handshake,
       // so the managed row silently never activated. The endpoint now
-      // reports needs_nous_auth and the panel must surface a sign-in action
+      // reports needs_pulse_auth and the panel must surface a sign-in action
       // instead of the misleading "provider selected" success toast.
       const { notify } = await import('@/store/notifications')
 
-      getToolsetConfig.mockResolvedValue(nousBrowserConfig())
+      getToolsetConfig.mockResolvedValue(pulseBrowserConfig())
       selectToolsetProvider.mockResolvedValue({
         ok: true,
         name: 'browser',
-        provider: 'Nous Subscription (Browser Use cloud)',
-        needs_nous_auth: true,
+        provider: 'PULSE Subscription (Browser Use cloud)',
+        needs_pulse_auth: true,
         feature: 'browser'
       })
 
       render(<ToolsetConfigPanel onConfiguredChange={vi.fn()} toolset="browser" />)
 
-      // The single Nous row auto-expands; activate via the explicit button.
-      await screen.findByRole('button', { name: /Nous Subscription/ })
+      // The single PULSE row auto-expands; activate via the explicit button.
+      await screen.findByRole('button', { name: /PULSE Subscription/ })
       fireEvent.click(await screen.findByRole('button', { name: /Use this backend/ }))
 
       await waitFor(() =>
-        expect(selectToolsetProvider).toHaveBeenCalledWith('browser', 'Nous Subscription (Browser Use cloud)')
+        expect(selectToolsetProvider).toHaveBeenCalledWith('browser', 'PULSE Subscription (Browser Use cloud)')
       )
       await waitFor(() =>
         expect(notify).toHaveBeenCalledWith(
@@ -739,15 +739,15 @@ describe('ToolsetConfigPanel', () => {
       expect(notify).not.toHaveBeenCalledWith(expect.objectContaining({ kind: 'success' }))
     })
 
-    it('drives the existing Nous OAuth device-code flow from the sign-in action and refetches', async () => {
+    it('drives the existing PULSE OAuth device-code flow from the sign-in action and refetches', async () => {
       const { notify } = await import('@/store/notifications')
 
-      getToolsetConfig.mockResolvedValue(nousBrowserConfig())
+      getToolsetConfig.mockResolvedValue(pulseBrowserConfig())
       selectToolsetProvider.mockResolvedValue({
         ok: true,
         name: 'browser',
-        provider: 'Nous Subscription (Browser Use cloud)',
-        needs_nous_auth: true,
+        provider: 'PULSE Subscription (Browser Use cloud)',
+        needs_pulse_auth: true,
         feature: 'browser'
       })
       startOAuthLogin.mockResolvedValue({
@@ -764,7 +764,7 @@ describe('ToolsetConfigPanel', () => {
       try {
         render(<ToolsetConfigPanel onConfiguredChange={vi.fn()} toolset="browser" />)
 
-        await screen.findByRole('button', { name: /Nous Subscription/ })
+        await screen.findByRole('button', { name: /PULSE Subscription/ })
         fireEvent.click(await screen.findByRole('button', { name: /Use this backend/ }))
 
         // Grab the sign-in action off the warning notification and invoke it —
@@ -780,14 +780,14 @@ describe('ToolsetConfigPanel', () => {
         getToolsetConfig.mockClear()
         warning!.action!.onClick()
 
-        await waitFor(() => expect(startOAuthLogin).toHaveBeenCalledWith('nous'))
+        await waitFor(() => expect(startOAuthLogin).toHaveBeenCalledWith('pulse'))
         expect(openSpy).toHaveBeenCalledWith(
           'https://portal.anxious-research.com/device?user_code=NOUS-1234',
           '_blank',
           'noopener,noreferrer'
         )
         // Approved poll → the panel refetches the config so status flips.
-        await waitFor(() => expect(pollOAuthSession).toHaveBeenCalledWith('nous', 'sess-1'), { timeout: 8000 })
+        await waitFor(() => expect(pollOAuthSession).toHaveBeenCalledWith('pulse', 'sess-1'), { timeout: 8000 })
         await waitFor(() => expect(getToolsetConfig).toHaveBeenCalled(), { timeout: 8000 })
       } finally {
         openSpy.mockRestore()
@@ -797,16 +797,16 @@ describe('ToolsetConfigPanel', () => {
     it('shows the plain success toast when the managed row is already entitled', async () => {
       const { notify } = await import('@/store/notifications')
 
-      getToolsetConfig.mockResolvedValue(nousBrowserConfig())
+      getToolsetConfig.mockResolvedValue(pulseBrowserConfig())
       selectToolsetProvider.mockResolvedValue({
         ok: true,
         name: 'browser',
-        provider: 'Nous Subscription (Browser Use cloud)'
+        provider: 'PULSE Subscription (Browser Use cloud)'
       })
 
       render(<ToolsetConfigPanel onConfiguredChange={vi.fn()} toolset="browser" />)
 
-      await screen.findByRole('button', { name: /Nous Subscription/ })
+      await screen.findByRole('button', { name: /PULSE Subscription/ })
       fireEvent.click(await screen.findByRole('button', { name: /Use this backend/ }))
 
       await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: 'success' })))
@@ -834,7 +834,7 @@ describe('ToolsetConfigPanel', () => {
                 }
               ],
               post_setup: null,
-              requires_nous_auth: false,
+              requires_pulse_auth: false,
               is_active: true,
               status: 'ready'
             }
@@ -886,7 +886,7 @@ describe('ToolsetConfigPanel', () => {
             tag: 'Free metasearch',
             env_vars: [],
             post_setup: null,
-            requires_nous_auth: false,
+            requires_pulse_auth: false,
             is_active: true,
             status: 'ready',
             web_backend: 'searxng',
@@ -898,7 +898,7 @@ describe('ToolsetConfigPanel', () => {
             tag: 'Full search + extract',
             env_vars: [],
             post_setup: null,
-            requires_nous_auth: false,
+            requires_pulse_auth: false,
             is_active: false,
             status: 'ready',
             web_backend: 'firecrawl',

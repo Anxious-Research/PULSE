@@ -9,7 +9,7 @@ docs of config.yaml.
 #: user pins one. LEGACY_SANDBOX_IMAGES are the plain defaults that preceded the desktop stack
 #: (the 3.14 pin shipped between the two without a migration); a saved config still holding one
 #: is the template copied, and the config migration unsets it, never a user's own pin.
-DEFAULT_SANDBOX_IMAGE = "nousresearch/pulse-sandbox:desktop"
+DEFAULT_SANDBOX_IMAGE = "anxious-research/pulse-sandbox:desktop"
 LEGACY_SANDBOX_IMAGES = ("nikolaik/python-nodejs:python3.11-nodejs20", "nikolaik/python-nodejs:python3.14-nodejs22")
 LEGACY_SANDBOX_IMAGE = LEGACY_SANDBOX_IMAGES[0]
 # Vercel Sandbox managed image (Vercel deprecated its `runtime` presets in Aug 2026).
@@ -688,7 +688,7 @@ DEFAULT_CONFIG = {
         "in_place": True,
         # Per-model threshold overrides: keys substring-match the model name (longest wins), values
         # replace the global `threshold`, e.g. {"glm-5.2": 0.40}. Prefix a key with "<provider>:" to
-        # scope it to one route ({"openai-codex:astra": 0.85} leaves Astra on OpenRouter/Nous at the
+        # scope it to one route ({"openai-codex:astra": 0.85} leaves Astra on OpenRouter/PULSE at the
         # global value). The <512K floor (0.75) still applies raise-only on top.
         "model_thresholds": {},
         # Opt-in idle compaction (0 = off): a session resuming after this many idle seconds compacts
@@ -885,7 +885,7 @@ DEFAULT_CONFIG = {
         # and was never superseded by a successful write to the same path (catches "half the
         # parallel patches failed, model claims success").
         "file_mutation_verifier": True,
-        # Nous credits status-bar notices (usage bands, grant-spent, depleted/restored). False mutes
+        # PULSE credits status-bar notices (usage bands, grant-spent, depleted/restored). False mutes
         # them; balance data and /usage keep working.
         "credits_notices": True,
         # Append a one-line explanation when a turn ends with no usable reply (empty after retries,
@@ -1036,7 +1036,7 @@ DEFAULT_CONFIG = {
         # leaves disconnected sessions ``ended_at IS NULL`` forever — phantom "active" rows in /resume and
         # dashboards. See #65194.
         "startup_orphan_sweep": True,
-        # OAuth gate (engaged when --host is set and --insecure is not), read by the Nous Portal
+        # OAuth gate (engaged when --host is set and --insecure is not), read by the Pulse Portal
         # plugin. Env PULSE_DASHBOARD_OAUTH_CLIENT_ID / PULSE_DASHBOARD_PORTAL_URL win when
         # non-empty. Empty client_id = no provider; empty portal_url = production.
         "oauth": {
@@ -1819,7 +1819,7 @@ DEFAULT_CONFIG = {
         # provider falls back to the built-in so cron never loses its trigger.
         "provider": "",
         # Chronos settings; consulted only when provider == "chronos". All non-secret — the agent
-        # holds NO scheduler credentials (provision reuses the Nous Portal token).
+        # holds NO scheduler credentials (provision reuses the Pulse Portal token).
         "chronos": {
             # NAS/portal base URL that arms/cancels one-shots and mints the inbound fire JWT (used
             # as the expected issuer).
@@ -2021,7 +2021,7 @@ DEFAULT_CONFIG = {
                 "apply_layout", "read_terminal", "read_window_below", "focus_pane",
             ],
         },
-        # Remote connector discovery/lifecycle through the Nous tool gateway.
+        # Remote connector discovery/lifecycle through the PULSE tool gateway.
         # The flag is the user's off switch; availability additionally requires
         # the portal sign-in every managed tool gates on.
         "connectors": {"enabled": True},
@@ -2031,7 +2031,7 @@ DEFAULT_CONFIG = {
         "max_size_mb": 5,      # max size per log file before rotation
         "backup_count": 3,     # rotated backups to keep
     },
-    # Remote model-catalog manifest: curated OpenRouter / Nous Portal model lists fetched from this
+    # Remote model-catalog manifest: curated OpenRouter / Pulse Portal model lists fetched from this
     # URL (falls back to the in-repo snapshot on network failure), so picker lists update without a
     # release. Default URL is served by the docs-site GitHub Pages deploy.
     "model_catalog": {
@@ -2325,7 +2325,7 @@ DEFAULT_CONFIG = {
         "profile_build": "ask",
     },
     # Privacy-safe aggregate metrics in this profile's local telemetry dir. Collection (`enabled`)
-    # and transmission to Nous (`send`) are SEPARATE opt-ins; see
+    # and transmission to PULSE (`send`) are SEPARATE opt-ins; see
     # website/docs/developer-guide/relay-shared-metrics.md Appendix A for consent/retention.
     "telemetry": {
         "shared_metrics": {
@@ -2536,7 +2536,7 @@ DEFAULT_CONFIG = {
         #   terminal  always inside the terminal backend (error when it cannot host one).
         #   gateway   always on the gateway host, even with a sandbox terminal: the agent's screen, browser
         #             and computer_use then act OUTSIDE the terminal sandbox. Explicit opt-in.
-        # The sandbox image needs the desktop stack: nousresearch/pulse-sandbox:desktop.
+        # The sandbox image needs the desktop stack: anxious-research/pulse-sandbox:desktop.
         "placement": "auto",
     },
     "computer_use": {
@@ -2672,8 +2672,8 @@ DEFAULT_CONFIG = {
         },
     },
 
-    "nous": {
-        # Upper bound (seconds) on the Nous auth keepalive tick, which derives from the
+    "pulse": {
+        # Upper bound (seconds) on the PULSE auth keepalive tick, which derives from the
         # server-issued credential lifetime (raising above it has no effect). 0 disables the
         # keepalive thread.
         "keepalive_interval_seconds": 900,
@@ -2684,10 +2684,10 @@ DEFAULT_CONFIG = {
         # Portal upstream serving the model is one where native is known clean. Native is the
         # better wire but on the OpenRouter-served path it re-writes the previous turn's cache on
         # 14-20% of consecutive calls in concurrent tool loops (measured 2026-09-06;
-        # NousResearch/api#227), so chat is the default until that is fixed.
+        # AnxiousResearch/api#227), so chat is the default until that is fixed.
         "anthropic_wire": "chat",
-        # Nous free tier: with no other provider configured, PULSE sets up a free Nous identity on
-        # first use (inference on nous/welcome + connectors) and offers `/login` (terminal:
+        # PULSE free tier: with no other provider configured, PULSE sets up a free PULSE identity on
+        # first use (inference on pulse/welcome + connectors) and offers `/login` (terminal:
         # `pulse auth upgrade`) to sign in. false turns the free tier off entirely: nothing is set
         # up and nothing is used.
         "guest": True,
@@ -2765,11 +2765,11 @@ def _base_url(name, prompt_name=None):
 # tools=[...] lists the model tools the key unlocks.
 OPTIONAL_ENV_VARS = {
     # ── Provider (handled in provider selection, not shown in checklists) ──
-    "NOUS_BASE_URL": _base_url("Nous Portal"),
+    "PULSE_BASE_URL": _base_url("Pulse Portal"),
     "PULSE_ANON_API_SECRET": _env(
-        "Shared secret for the Nous free-tier sign-up endpoints while they are in their gated "
+        "Shared secret for the PULSE free-tier sign-up endpoints while they are in their gated "
         "integration phase (not needed once the gate is removed)",
-        "Nous free-tier shared secret (leave empty unless given one)", password=True,
+        "PULSE free-tier shared secret (leave empty unless given one)", password=True,
         category="provider", advanced=True),
     "OPENROUTER_API_KEY": _env("OpenRouter API key (for vision, web scraping helpers, and MoA)",
         "OpenRouter API key", url="https://openrouter.ai/keys", password=True, tools=["vision_analyze"],
@@ -2884,7 +2884,7 @@ OPTIONAL_ENV_VARS = {
     "FIRECRAWL_API_URL": _tool("Firecrawl API URL for self-hosted instances (optional)",
         "Firecrawl API URL (leave empty for cloud)", None, password=False, advanced=True),
     "FIRECRAWL_GATEWAY_URL": _tool(
-        "Exact Firecrawl tool-gateway origin override for Nous Subscribers only (optional)",
+        "Exact Firecrawl tool-gateway origin override for PULSE Subscribers only (optional)",
         "Firecrawl gateway URL (leave empty to derive from domain)", None, password=False,
         advanced=True),
     "TOOL_GATEWAY_URL": _tool(
@@ -2896,15 +2896,15 @@ OPTIONAL_ENV_VARS = {
         "Connector-gateway URL (leave empty to derive from domain)", None,
         password=False, advanced=True),
     "TOOL_GATEWAY_DOMAIN": _tool(
-        "Shared tool-gateway domain suffix for Nous Subscribers only, used to derive vendor "
+        "Shared tool-gateway domain suffix for PULSE Subscribers only, used to derive vendor "
         "hosts, e.g. anxious-research.com -> firecrawl-gateway.anxious-research.com",
         "Tool-gateway domain suffix", None, password=False, advanced=True),
     "TOOL_GATEWAY_SCHEME": _tool(
-        "Shared tool-gateway URL scheme for Nous Subscribers only, used to derive vendor hosts "
+        "Shared tool-gateway URL scheme for PULSE Subscribers only, used to derive vendor hosts "
         "(`https` by default, set `http` for local gateway testing)", "Tool-gateway URL scheme",
         None, password=False, advanced=True),
     "TOOL_GATEWAY_USER_TOKEN": _tool(
-        "Explicit Nous Subscriber access token for tool-gateway requests (optional; otherwise "
+        "Explicit PULSE Subscriber access token for tool-gateway requests (optional; otherwise "
         "read from the PULSE auth store)", "Tool-gateway user token", None, advanced=True),
     "TAVILY_API_KEY": _tool(
         "Tavily API key for AI-native web search and extract (optional — keyless works when "

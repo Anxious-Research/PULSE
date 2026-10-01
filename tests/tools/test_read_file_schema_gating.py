@@ -28,7 +28,7 @@ class TestReadFileSchemaStatic(unittest.TestCase):
 
     def test_hosted_ocr_available_gate_states(self):
         """Maintainer decision: ONLY a direct FIRECRAWL_API_KEY unlocks —
-        not config true, not the Nous gateway."""
+        not config true, not the PULSE gateway."""
         import tools.read_extract as rx
 
         # direct key → True
@@ -47,14 +47,14 @@ class TestReadFileSchemaStatic(unittest.TestCase):
             with patch("pulse_cli.config.load_config_readonly",
                        return_value={"file_tools": {"hosted_ocr": True}}):
                 self.assertFalse(rx.hosted_ocr_available())
-        # nothing → False (Nous gateway alone must NOT unlock)
+        # nothing → False (PULSE gateway alone must NOT unlock)
         with patch("pulse_cli.config.load_config_readonly",
                    return_value={}):
             rx.os.environ.pop("FIRECRAWL_API_KEY", None)
             self.assertFalse(rx.hosted_ocr_available())
 
     def test_runtime_route_is_direct_key_only(self):
-        """_hosted_ocr_config never resolves the Nous gateway: api_url is
+        """_hosted_ocr_config never resolves the PULSE gateway: api_url is
         always None (anydoc defaults to api.firecrawl.dev) and enabled
         tracks the key."""
         import tools.read_extract as rx
@@ -80,7 +80,7 @@ class TestReadFileSchemaStatic(unittest.TestCase):
 
 class TestNeedsOcrPath(unittest.TestCase):
     """anydoc>=0.2 NeedsOcrError wiring: hosted OCR attempt + typed warning
-    (maintainer caveats: #1 nous-gateway Parse was live-probed HTTP 500 →
+    (maintainer caveats: #1 pulse-gateway Parse was live-probed HTTP 500 →
     attempt-and-fall-through; #2 warning recommends LOCAL OCR skills)."""
 
     def _fake_mod(self, hosted_result=None, hosted_exc=None):

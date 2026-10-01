@@ -317,8 +317,8 @@ def _sync_status(ssc) -> int:
     elif status.get("logged_in"):
         _err("\nOrg skills: not applicable — this account isn't a member of a shared organisation.")
     if not status.get("logged_in"):
-        _err("\nNot logged into Nous Portal — sync is inert.")
-    elif not status.get("nous_admin"):
+        _err("\nNot logged into Pulse Portal — sync is inert.")
+    elif not status.get("pulse_admin"):
         _err("\nSync is not enabled for your account yet.")
     elif not status.get("feature_enabled"):
         _err("\nSync feature is off for this instance (set PULSE_SYNC_ENABLED=1 "
@@ -380,7 +380,7 @@ def cmd_sync(args):
     except ssc.SyncInertError as e:
         _err(f"sync inert: {e}")
         return 1
-    if not identity.get("nous_admin"):
+    if not identity.get("pulse_admin"):
         _err("sync unavailable: not enabled for your account yet.")
         return 1
     if not ssc.resolve_sync_base_url():

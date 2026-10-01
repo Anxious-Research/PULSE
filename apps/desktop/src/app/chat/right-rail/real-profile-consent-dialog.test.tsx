@@ -63,7 +63,7 @@ vi.mock('../../hooks/use-config-record', () => ({
 
 describe('RealProfileConsentDialog', () => {
   beforeEach(() => {
-    mocks.loadedConfig = { browser: { allow_private_urls: false }, model: { provider: 'nous' } }
+    mocks.loadedConfig = { browser: { allow_private_urls: false }, model: { provider: 'pulse' } }
     mocks.save.mockResolvedValue({ ok: true })
     $realProfilePromptDismissed.set(false)
     $realProfilePromptMuted.set(false)
@@ -90,7 +90,7 @@ describe('RealProfileConsentDialog', () => {
     expect(mocks.save).toHaveBeenCalledWith({ browser: { use_real_profile: true } }, undefined)
     expect(mocks.cache).toHaveBeenCalledWith({
       browser: { allow_private_urls: false, use_real_profile: true },
-      model: { provider: 'nous' }
+      model: { provider: 'pulse' }
     })
     expect(mocks.notify).toHaveBeenCalled()
   })

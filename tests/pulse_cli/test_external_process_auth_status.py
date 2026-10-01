@@ -178,7 +178,7 @@ def test_explicit_filter_keeps_signed_in_external_process_row(tmp_path, monkeypa
     )
 
     class _Ctx:
-        current_provider = "nous"
+        current_provider = "pulse"
 
     rows = [{"slug": "copilot-acp", "models": ["gpt-5.4"]}]
     kept = _filter_explicit_provider_rows(rows, _Ctx())
@@ -195,7 +195,7 @@ def test_explicit_filter_drops_unverified_external_process_row(tmp_path, monkeyp
     monkeypatch.setenv("HOME", str(tmp_path))  # no credential stores
 
     class _Ctx:
-        current_provider = "nous"
+        current_provider = "pulse"
 
     rows = [{"slug": "copilot-acp", "models": ["gpt-5.4"]}]
     kept = _filter_explicit_provider_rows(rows, _Ctx())
@@ -224,7 +224,7 @@ def test_cli_command_reflects_configured_executable(tmp_path, monkeypatch, _clea
 def test_cli_command_untouched_for_non_external_providers(_clean_copilot_env):
     from pulse_cli.web_server_oauth import _external_process_cli_command
 
-    assert _external_process_cli_command("nous", "pulse auth add nous") == "pulse auth add nous"
+    assert _external_process_cli_command("pulse", "pulse auth add pulse") == "pulse auth add pulse"
 
 
 def test_cli_command_default_when_no_override(monkeypatch, _clean_copilot_env):

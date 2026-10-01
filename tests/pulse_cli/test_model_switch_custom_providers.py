@@ -1985,7 +1985,7 @@ def _seed_custom_model_cache(monkeypatch, models, *, age_seconds=10):
 
 
 def _no_probe_local_row(monkeypatch, *, custom_providers=None, user_providers=None,
-                        current_provider="nous", **kwargs):
+                        current_provider="pulse", **kwargs):
     """Run the GUI picker path (no live probing) and return the local row
     plus every base_url a live fetch was attempted against."""
     monkeypatch.setattr("agent.models_dev.fetch_models_dev", lambda: {})
@@ -2210,7 +2210,7 @@ def test_keyless_endpoint_with_saved_catalog_is_still_not_probed(monkeypatch):
     monkeypatch.setattr("pulse_cli.models.fetch_api_models", fetch)
 
     providers = list_authenticated_providers(
-        current_provider="nous",
+        current_provider="pulse",
         user_providers={},
         custom_providers=[
             {
@@ -2270,7 +2270,7 @@ def test_api_mode_rows_do_not_share_a_cached_catalog(monkeypatch):
 
     def _row(entry):
         providers = list_authenticated_providers(
-            current_provider="nous",
+            current_provider="pulse",
             user_providers={},
             custom_providers=[entry],
             for_picker=True,

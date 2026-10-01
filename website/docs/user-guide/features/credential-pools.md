@@ -16,7 +16,7 @@ Provider-side prompt caches (Anthropic, OpenAI, OpenRouter) are scoped to the ac
 :::
 
 :::tip
-Credential pools are mainly for API-key providers (OpenRouter, Anthropic). A single [Nous Portal](../../integrations/nous-portal.md) OAuth covers 300+ models, so most users don't need a pool when on Portal.
+Credential pools are mainly for API-key providers (OpenRouter, Anthropic). A single [Pulse Portal](../../integrations/pulse-portal.md) OAuth covers 300+ models, so most users don't need a pool when on Portal.
 :::
 
 ## How It Works
@@ -107,7 +107,7 @@ What would you like to do?
   5. Exit
 ```
 
-For providers that support both API keys and OAuth (Anthropic, Nous, Codex), the add flow asks which type:
+For providers that support both API keys and OAuth (Anthropic, PULSE, Codex), the add flow asks which type:
 
 ```
 anthropic supports both API keys and OAuth login.
@@ -136,9 +136,9 @@ Each `pulse auth add openai-codex` login becomes its own pool entry, but only **
 | `pulse auth reset <provider> <target>` | Clear the cooldown on one credential by index, id, or label |
 | `pulse auth refresh <provider> [target]` | Refresh one OAuth credential's tokens and return it to rotation (proves the grant is alive; the next request re-checks quota) |
 
-For Nous, `auth refresh` supports only the login's `device_code` singleton.
-Independent Nous pool accounts are rejected before refresh; their tokens and
-cooldowns are preserved. Reauthenticate with `pulse auth add nous --type oauth`
+For PULSE, `auth refresh` supports only the login's `device_code` singleton.
+Independent PULSE pool accounts are rejected before refresh; their tokens and
+cooldowns are preserved. Reauthenticate with `pulse auth add pulse --type oauth`
 to update the singleton; this does not refresh an independent account. Other
 providers retain their existing source-specific refresh support.
 
@@ -227,11 +227,11 @@ cooldown. Billing (`402`, usage-limit) and auth (`401`) failures still bench the
 
 **A dead OAuth login is reported, not benched.** When a refresh token is rejected for good
 (`invalid_grant`, `invalid_token`, `refresh_token_reused` — the token was revoked, or another program
-holding the same login rotated it first — or, for Nous, the profile holds no Portal login or token
+holding the same login rotated it first — or, for PULSE, the profile holds no Portal login or token
 pair to refresh with), the pool logs one WARNING naming the entry and the repair
 command (`pulse auth add <provider>`), and the credential leaves rotation — marked `dead`, or dropped
 when it only mirrored a token file the pool has just cleared — until you sign in again. This applies to Anthropic, Codex, xAI
-and Nous OAuth logins alike. A dead credential never re-enters rotation on a timer, so a lost login
+and PULSE OAuth logins alike. A dead credential never re-enters rotation on a timer, so a lost login
 shows up once in the log instead of failing quietly every hour.
 
 **Every Codex login in an always-on home is dead: sign in again, do not wait for adoption.** PULSE
@@ -286,7 +286,7 @@ PULSE automatically discovers credentials from multiple sources and seeds the po
 |--------|---------|-------------|
 | Environment variables | `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY` | Yes |
 | Numbered env siblings | `OPENROUTER_API_KEY_2`, `OPENROUTER_API_KEY_3`, … | Yes (see below) |
-| OAuth tokens (auth.json) | Codex device code, Nous device code | Yes |
+| OAuth tokens (auth.json) | Codex device code, PULSE device code | Yes |
 | Claude Code credentials | `~/.claude/.credentials.json` | Yes (Anthropic) |
 | PULSE PKCE OAuth | `~/.pulse/auth.json` | Yes (Anthropic) |
 | Custom endpoint config | `model.api_key` in config.yaml | Yes (custom endpoints) |

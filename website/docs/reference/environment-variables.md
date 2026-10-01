@@ -17,8 +17,8 @@ PULSE reads environment variables from the process environment and, for user-man
 | `FIREWORKS_API_KEY` | Fireworks AI API key ([app.fireworks.ai](https://app.fireworks.ai/settings/users/api-keys)). Configure endpoint overrides with `model.base_url` in `config.yaml`. |
 | `PULSE_OPENROUTER_CACHE` | Enable OpenRouter response caching (`1`/`true`/`yes`/`on`). Overrides `openrouter.response_cache` in config.yaml. See [Response Caching](https://openrouter.ai/docs/guides/features/response-caching). |
 | `PULSE_OPENROUTER_CACHE_TTL` | Cache TTL in seconds (1-86400). Overrides `openrouter.response_cache_ttl` in config.yaml. |
-| `NOUS_BASE_URL` | Override Nous Portal base URL (rarely needed; development/testing only) |
-| `NOUS_INFERENCE_BASE_URL` | Override Nous inference endpoint directly |
+| `PULSE_BASE_URL` | Override Pulse Portal base URL (rarely needed; development/testing only) |
+| `PULSE_INFERENCE_BASE_URL` | Override PULSE inference endpoint directly |
 | `AI_GATEWAY_API_KEY` | Vercel AI Gateway API key ([ai-gateway.vercel.sh](https://ai-gateway.vercel.sh)) |
 | `AI_GATEWAY_BASE_URL` | Override AI Gateway base URL (default: `https://ai-gateway.vercel.sh/v1`) |
 | `OPENAI_API_KEY` | OpenAI API key (`openai-api` provider), or the key for a custom OpenAI-compatible endpoint when `OPENAI_BASE_URL` is set. Counts as an OpenRouter key only when it starts with `sk-or-`; put OpenRouter keys in `OPENROUTER_API_KEY` |
@@ -138,10 +138,10 @@ For native Anthropic auth, PULSE prefers Claude Code's own credential files when
 
 | Variable | Description |
 |----------|-------------|
-| `PULSE_PORTAL_BASE_URL` | Override Nous Portal URL (for development/testing). Per-profile under multiplexing: set it in the served profile's `.env`. |
-| `NOUS_INFERENCE_BASE_URL` | Override Nous inference API URL. Also the only non-production host a Portal response may name: when the Portal's returned inference URL matches this override it is accepted and persisted instead of being healed to production. Per-profile under multiplexing. |
+| `PULSE_PORTAL_BASE_URL` | Override Pulse Portal URL (for development/testing). Per-profile under multiplexing: set it in the served profile's `.env`. |
+| `PULSE_INFERENCE_BASE_URL` | Override PULSE inference API URL. Also the only non-production host a Portal response may name: when the Portal's returned inference URL matches this override it is accepted and persisted instead of being healed to production. Per-profile under multiplexing. |
 | `PULSE_NOUS_MIN_KEY_TTL_SECONDS` | Min agent key TTL before re-mint (default: 1800 = 30min) |
-| `PULSE_NOUS_TIMEOUT_SECONDS` | HTTP timeout for Nous credential / token flows |
+| `PULSE_NOUS_TIMEOUT_SECONDS` | HTTP timeout for PULSE credential / token flows |
 | `PULSE_DUMP_REQUESTS` | Dump API request payloads to log files (`true`/`false`) |
 | `PULSE_PREFILL_MESSAGES_FILE` | Path to a JSON file of ephemeral prefill messages injected at API-call time |
 | `PULSE_TIMEZONE` | IANA timezone override (for example `America/New_York`). On Linux/macOS it is also exported as `TZ` to `execute_code` children; on Windows those children keep the OS zone instead, because the Windows C runtime only understands POSIX-form `TZ` strings and mis-parses an IANA name into a wrong offset |
@@ -233,15 +233,15 @@ Environment variables for the bundled [`observability/langfuse`](../user-guide/f
 | `PULSE_LANGFUSE_DEBUG` | `true` enables verbose plugin logging to `agent.log` |
 | `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` / `LANGFUSE_BASE_URL` | Standard Langfuse SDK names. Accepted as fallbacks when the `PULSE_LANGFUSE_*` equivalents are unset. |
 
-### Nous Tool Gateway
+### PULSE Tool Gateway
 
-These variables configure the [Tool Gateway](../user-guide/features/tool-gateway.md) for paid Nous subscribers or self-hosted gateway deployments. Most users don't need to set these — the gateway is configured automatically via `pulse model` or `pulse tools`.
+These variables configure the [Tool Gateway](../user-guide/features/tool-gateway.md) for paid PULSE subscribers or self-hosted gateway deployments. Most users don't need to set these — the gateway is configured automatically via `pulse model` or `pulse tools`.
 
 | Variable | Description |
 |----------|-------------|
 | `TOOL_GATEWAY_DOMAIN` | Base domain for Tool Gateway routing (default: `anxious-research.com`) |
 | `TOOL_GATEWAY_SCHEME` | HTTP or HTTPS scheme for gateway URLs (default: `https`) |
-| `TOOL_GATEWAY_USER_TOKEN` | Auth token for the Tool Gateway (normally auto-populated from Nous auth) |
+| `TOOL_GATEWAY_USER_TOKEN` | Auth token for the Tool Gateway (normally auto-populated from PULSE auth) |
 | `FIRECRAWL_GATEWAY_URL` | Override URL for the Firecrawl gateway endpoint specifically |
 
 ## Terminal Backend
@@ -250,7 +250,7 @@ These variables configure the [Tool Gateway](../user-guide/features/tool-gateway
 |----------|-------------|
 | `TERMINAL_ENV` | Backend: `local`, `docker`, `ssh`, `singularity`, `modal`, `daytona`, `vercel_sandbox` |
 | `PULSE_DOCKER_BINARY` | Override the container binary PULSE shells out to (e.g. `podman`, `/usr/local/bin/docker`). When unset, PULSE auto-discovers `docker` or `podman` on `PATH`. Needed when both are installed and you want the non-default, or when the binary lives outside `PATH`. |
-| `TERMINAL_DOCKER_IMAGE` | Docker image (default: `nousresearch/pulse-sandbox:desktop`) |
+| `TERMINAL_DOCKER_IMAGE` | Docker image (default: `anxious-research/pulse-sandbox:desktop`) |
 | `TERMINAL_DOCKER_FORWARD_ENV` | JSON array of env var names to explicitly forward into Docker terminal sessions. Note: skill-declared `required_environment_variables` are forwarded automatically — you only need this for vars not declared by any skill. |
 | `TERMINAL_DOCKER_VOLUMES` | Additional Docker volume mounts (comma-separated `host:container` pairs) |
 | `TERMINAL_DOCKER_ENV` | JSON object of extra env vars to set inside Docker terminal sessions (e.g. `{"FOO":"bar"}`) |
@@ -562,7 +562,7 @@ These are set automatically by the Docker terminal backend when `proxy.enabled: 
 
 Auth for the [web dashboard](../user-guide/features/web-dashboard.md) and for connecting [PULSE Desktop to a remote backend](../user-guide/features/web-dashboard.md#connecting-pulse-desktop-to-a-remote-backend). Per the secrets-only convention, credentials belong in `~/.pulse/.env`; the OAuth `client_id` is better set under `dashboard.oauth` in `config.yaml` (env wins when set).
 
-Three dashboard-auth providers ship in the box. For a remote PULSE Desktop connection or any internet-facing dashboard, the recommended provider is **OAuth (Nous Portal)** — set `PULSE_DASHBOARD_OAUTH_CLIENT_ID` (provision it with `pulse dashboard register`). The bundled **username/password** provider (`PULSE_DASHBOARD_BASIC_AUTH_*`) is the quickest option for a backend on a trusted LAN or behind a VPN, but is not suitable for direct public-internet exposure. To authenticate against your own identity provider, use the **self-hosted OIDC** provider (`PULSE_DASHBOARD_OIDC_*`). Either way, a non-loopback bind (`pulse dashboard --host 0.0.0.0`) engages the auth gate. See [Web Dashboard → Authentication](../user-guide/features/web-dashboard.md#authentication-gated-mode) for the full picture.
+Three dashboard-auth providers ship in the box. For a remote PULSE Desktop connection or any internet-facing dashboard, the recommended provider is **OAuth (Pulse Portal)** — set `PULSE_DASHBOARD_OAUTH_CLIENT_ID` (provision it with `pulse dashboard register`). The bundled **username/password** provider (`PULSE_DASHBOARD_BASIC_AUTH_*`) is the quickest option for a backend on a trusted LAN or behind a VPN, but is not suitable for direct public-internet exposure. To authenticate against your own identity provider, use the **self-hosted OIDC** provider (`PULSE_DASHBOARD_OIDC_*`). Either way, a non-loopback bind (`pulse dashboard --host 0.0.0.0`) engages the auth gate. See [Web Dashboard → Authentication](../user-guide/features/web-dashboard.md#authentication-gated-mode) for the full picture.
 
 | Variable | Description |
 |----------|-------------|
@@ -571,7 +571,7 @@ Three dashboard-auth providers ship in the box. For a remote PULSE Desktop conne
 | `PULSE_DASHBOARD_BASIC_AUTH_PASSWORD_HASH` | scrypt password hash for the basic provider (preferred — no plaintext at rest). Compute with `python -c "from plugins.dashboard_auth.basic import hash_password; print(hash_password('PW'))"`. Overrides `dashboard.basic_auth.password_hash`. |
 | `PULSE_DASHBOARD_BASIC_AUTH_SECRET` | HMAC key (32+ bytes, base64/hex/raw) signing the basic provider's stateless session tokens. Set explicitly so sessions survive restarts / span multiple workers; blank → random per-process (you'll be logged out on every restart). Overrides `dashboard.basic_auth.secret`. |
 | `PULSE_DASHBOARD_BASIC_AUTH_TTL_SECONDS` | Access-token lifetime for the basic provider (default 12h). Overrides `dashboard.basic_auth.session_ttl_seconds`. |
-| `PULSE_DASHBOARD_OAUTH_CLIENT_ID` | OAuth client id (`agent:{instance_id}`) for the gated/public dashboard, activating the Nous (`plugins/dashboard_auth/nous`) provider. Overrides `dashboard.oauth.client_id`. Provision it with `pulse dashboard register`. |
+| `PULSE_DASHBOARD_OAUTH_CLIENT_ID` | OAuth client id (`agent:{instance_id}`) for the gated/public dashboard, activating the PULSE (`plugins/dashboard_auth/pulse`) provider. Overrides `dashboard.oauth.client_id`. Provision it with `pulse dashboard register`. |
 | `PULSE_DASHBOARD_SESSION_TOKEN` | Per-process session token for the dashboard's sensitive `/api` routes, minted by the launcher that spawns `pulse dashboard` (Desktop shell, link-style integrations). A value injected by the parent process is kept as-is: a `PULSE_DASHBOARD_SESSION_TOKEN` line in `~/.pulse/.env` does not replace it. Unset, the server mints a fresh token per start. |
 | `PULSE_DASHBOARD_PUBLIC_URL` | Complete public URL the dashboard is reached at behind a reverse proxy. It controls OAuth callback construction, adds its exact hostname to the HTTP Host/WebSocket Origin guard, and requires the auth gate for non-loopback public hosts even when the backend binds to loopback. Overrides `dashboard.public_url`. |
 | `PULSE_DASHBOARD_OIDC_ISSUER` | OIDC issuer URL for the bundled self-hosted OIDC provider (`plugins/dashboard_auth/self_hosted`). Required to activate it. Overrides `dashboard.oauth.self_hosted.issuer`. |

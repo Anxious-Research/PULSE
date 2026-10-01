@@ -1089,7 +1089,7 @@ def cmd_mcp_configure(args):
 
 _MCP_USAGE = (
     "pulse mcp                                    Open the catalog picker (default)",
-    "pulse mcp catalog                            List Nous-approved MCPs",
+    "pulse mcp catalog                            List PULSE-approved MCPs",
     "pulse mcp install <name>                     Install a catalog MCP",
     "pulse mcp serve                              Run as MCP server",
     "pulse mcp add <name> --url <endpoint>        Add a custom MCP server",

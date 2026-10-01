@@ -193,14 +193,14 @@ def test_launch_tui_exports_model_provider_and_toolsets(monkeypatch, main_mod):
 
     with pytest.raises(SystemExit):
         main_mod._launch_tui(
-            model="nous/pulse-test", provider="nous", toolsets="web, terminal"
+            model="pulse/pulse-test", provider="pulse", toolsets="web, terminal"
         )
 
     env = captured["env"]
-    assert env["PULSE_MODEL"] == "nous/pulse-test"
-    assert env["PULSE_INFERENCE_MODEL"] == "nous/pulse-test"
-    assert env["PULSE_TUI_PROVIDER"] == "nous"
-    assert env["PULSE_INFERENCE_PROVIDER"] == "nous"
+    assert env["PULSE_MODEL"] == "pulse/pulse-test"
+    assert env["PULSE_INFERENCE_MODEL"] == "pulse/pulse-test"
+    assert env["PULSE_TUI_PROVIDER"] == "pulse"
+    assert env["PULSE_INFERENCE_PROVIDER"] == "pulse"
     assert env["PULSE_TUI_TOOLSETS"] == "web,terminal"
     active_path = Path(env["PULSE_TUI_ACTIVE_SESSION_FILE"])
     assert active_path.name.startswith("pulse-tui-active-session-")

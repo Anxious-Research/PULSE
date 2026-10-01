@@ -29,7 +29,7 @@ load_config = late("load_config", "pulse_cli.config")
 # Labels per hub source id (matches `pulse skills search` provenance); keep in
 # sync with create_source_router()'s source list.
 _SKILL_HUB_SOURCE_LABELS = {
-    "official": "Official (Nous)",
+    "official": "Official (PULSE)",
     "pulse-index": "PULSE Index",
     "skills-sh": "skills.sh",
     "well-known": "Well-Known",

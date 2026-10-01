@@ -33,11 +33,11 @@ describe('custom models', () => {
   })
 
   it('appends each remembered id under its own provider and keeps the input when nothing applies', () => {
-    const providers = [provider('openrouter', ['openai/gpt-5']), provider('nous', ['pulse-4'])]
+    const providers = [provider('openrouter', ['openai/gpt-5']), provider('pulse', ['pulse-4'])]
 
     const customs = [
       { model: 'acme/model-x', provider: 'openrouter' },
-      { model: 'pulse-4', provider: 'nous' },
+      { model: 'pulse-4', provider: 'pulse' },
       { model: 'ghost', provider: 'missing' }
     ]
 

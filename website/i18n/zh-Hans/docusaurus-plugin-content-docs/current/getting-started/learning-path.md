@@ -99,7 +99,7 @@ Cron 任务让 PULSE Agent 按计划执行任务——每日摘要、定期检�
 
 1. [快速入门](./quickstart.md)
 2. [配置](../user-guide/configuration.md)
-3. [Atropos 强化学习环境](https://github.com/NousResearch/atropos)（外部）
+3. [Atropos 强化学习环境](https://github.com/AnxiousResearch/atropos)（外部）
 4. [Provider 路由](../user-guide/features/provider-routing.md)
 5. [架构](../developer-guide/architecture.md)
 
@@ -135,7 +135,7 @@ Cron 任务让 PULSE Agent 按计划执行任务——每日摘要、定期检�
 | **浏览器** | 网页浏览与抓取 | [浏览器](../user-guide/features/browser.md) |
 | **Hooks** | 事件驱动的回调与中间件 | [Hooks](../user-guide/features/hooks.md) |
 | **批处理** | 批量处理多个输入 | [批处理](../user-guide/features/batch-processing.md) |
-| **强化学习训练** | 使用强化学习微调模型 | [Atropos](https://github.com/NousResearch/atropos)（外部） |
+| **强化学习训练** | 使用强化学习微调模型 | [Atropos](https://github.com/AnxiousResearch/atropos)（外部） |
 | **Provider 路由** | 在多个 LLM provider 之间路由请求 | [Provider 路由](../user-guide/features/provider-routing.md) |
 
 ## 下一步阅读

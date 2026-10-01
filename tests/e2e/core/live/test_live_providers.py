@@ -85,10 +85,10 @@ def _live_listing(provider: str, runtime: dict) -> list[str]:
         from pulse_cli.models import fetch_api_models
 
         return list(fetch_api_models(api_key, base_url, timeout=20.0) or [])
-    if provider == "nous":
-        from pulse_cli.auth import fetch_nous_models
+    if provider == "pulse":
+        from pulse_cli.auth import fetch_pulse_models
 
-        return list(fetch_nous_models(inference_base_url=base_url, api_key=api_key) or [])
+        return list(fetch_pulse_models(inference_base_url=base_url, api_key=api_key) or [])
     from providers import get_provider_profile
 
     profile = get_provider_profile(provider)

@@ -84,9 +84,9 @@ export const zhHantDiagnostics = {
   },
 
   sendDiagnostics: {
-    title: '向 Nous 傳送診斷資訊',
+    title: '向 PULSE 傳送診斷資訊',
     privacyNotice:
-      '這會將偵錯套件上傳到 Nous 內部儲存空間（並非公開貼上板）。內容包括系統資訊（作業系統、版本、服務商、已設定的 API 金鑰種類 — 絕不包含金鑰本身）以及完整的 agent、gateway 與桌面端日誌（每個最多 512 KB，很可能包含對話內容、工具輸出與檔案路徑）。上傳前會先遮罩機密資訊。僅 Nous 員工與獲准的 Discord 版主可檢視，14 天後自動刪除。',
+      '這會將偵錯套件上傳到 PULSE 內部儲存空間（並非公開貼上板）。內容包括系統資訊（作業系統、版本、服務商、已設定的 API 金鑰種類 — 絕不包含金鑰本身）以及完整的 agent、gateway 與桌面端日誌（每個最多 512 KB，很可能包含對話內容、工具輸出與檔案路徑）。上傳前會先遮罩機密資訊。僅 PULSE 員工與獲准的 Discord 版主可檢視，14 天後自動刪除。',
     upload: '上傳',
     uploading: '上傳中…',
     cancel: '取消',
@@ -97,11 +97,11 @@ export const zhHantDiagnostics = {
     doneDescription: '偵錯套件已私密上傳。在您的支援討論串中分享以下連結，團隊即可檢視您的日誌。',
     failedTitle: '上傳失敗',
     failedHint:
-      '您也可以在終端機執行 `pulse debug share --nous`，或執行 `pulse debug share --local` 在不上傳的情況下檢視報告。',
+      '您也可以在終端機執行 `pulse debug share --pulse`，或執行 `pulse debug share --local` 在不上傳的情況下檢視報告。',
     handoffLead: '在以下位置繼續討論:',
     links: {
       github: 'GitHub Issues',
-      portal: 'Nous Portal 支援',
+      portal: 'Pulse Portal 支援',
       discord: 'Discord'
     }
   },

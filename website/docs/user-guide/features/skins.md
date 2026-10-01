@@ -235,7 +235,7 @@ The field is capped at 32 KiB and applies to GUI surfaces only — the CLI and T
 
 [PULSE Mod](https://github.com/cocktailpeanut/pulse-mod) is a community-built web UI for creating and managing skins visually. Instead of writing YAML by hand, you get a point-and-click editor with live preview.
 
-![PULSE Mod skin editor](https://raw.githubusercontent.com/cocktailpeanut/pulse-mod/master/nous.png)
+![PULSE Mod skin editor](https://raw.githubusercontent.com/cocktailpeanut/pulse-mod/master/pulse.png)
 
 **What it does:**
 

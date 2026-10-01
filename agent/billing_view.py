@@ -256,7 +256,7 @@ def fetch_portal_state(
     ``portal_fallback(portal_base_url)``.
     """
     try:
-        import pulse_cli.nous_billing as nb
+        import pulse_cli.pulse_billing as nb
     except Exception:
         return failed(error="billing client unavailable")
     try:

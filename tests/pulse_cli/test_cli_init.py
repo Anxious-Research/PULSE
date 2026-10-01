@@ -96,11 +96,11 @@ class TestFallbackChainInit:
             "fallback_providers": [
                 {"provider": "openrouter", "model": "anthropic/claude-sonnet-4.6"},
             ],
-            "fallback_model": {"provider": "nous", "model": "PULSE-4"},
+            "fallback_model": {"provider": "pulse", "model": "PULSE-4"},
         })
         assert cli._fallback_model == [
             {"provider": "openrouter", "model": "anthropic/claude-sonnet-4.6"},
-            {"provider": "nous", "model": "PULSE-4"},
+            {"provider": "pulse", "model": "PULSE-4"},
         ]
 
 
@@ -425,13 +425,13 @@ class TestNestedDictModelDefaultPairing:
     def test_nested_dict_default_keeps_provider_paired(self):
         cli = _make_cli(config_overrides={
             "model": {
-                "default": {"provider": "nous", "model": "nested-default-model"},
+                "default": {"provider": "pulse", "model": "nested-default-model"},
                 "provider": "auto",
             },
         })
         assert cli.model == "nested-default-model"
-        assert cli.requested_provider == "nous"
-        assert cli.provider == "nous"
+        assert cli.requested_provider == "pulse"
+        assert cli.provider == "pulse"
 
     def test_nested_dict_model_alias_keeps_provider_paired(self):
         cli = _make_cli(config_overrides={
@@ -459,7 +459,7 @@ class TestNestedDictModelDefaultPairing:
         cli = _make_cli(
             config_overrides={
                 "model": {
-                    "default": {"provider": "nous", "model": "nested-default-model"},
+                    "default": {"provider": "pulse", "model": "nested-default-model"},
                     "provider": "auto",
                 },
             },
@@ -492,16 +492,16 @@ class TestNestedDictModelDefaultPairing:
                     "provider": "anthropic",
                 },
                 "providers": {
-                    "nous": {
+                    "pulse": {
                         "base_url": "https://inference-api.anxious-research.com/v1",
                     },
                 },
             },
-            model="nous/deepseek-v4-pro",
+            model="pulse/deepseek-v4-pro",
         )
 
         assert cli.model == "deepseek-v4-pro"
-        assert cli.requested_provider == "nous"
+        assert cli.requested_provider == "pulse"
 
 
 class TestRootLevelProviderOverride:
@@ -676,11 +676,11 @@ class TestRootLevelProviderOverride:
 
         result = _normalize_root_model_keys({
             "model": {
-                "default": {"provider": "nous", "model": "nested-default-model"},
+                "default": {"provider": "pulse", "model": "nested-default-model"},
             },
         })
         assert result["model"]["default"] == "nested-default-model"
-        assert result["model"]["provider"] == "nous"
+        assert result["model"]["provider"] == "pulse"
 
     def test_nested_dict_default_provider_wins_over_auto(self):
         """Nested provider replaces the merged default "auto"."""
@@ -688,12 +688,12 @@ class TestRootLevelProviderOverride:
 
         result = _normalize_root_model_keys({
             "model": {
-                "default": {"provider": "nous", "model": "nested-default-model"},
+                "default": {"provider": "pulse", "model": "nested-default-model"},
                 "provider": "auto",
             },
         })
         assert result["model"]["default"] == "nested-default-model"
-        assert result["model"]["provider"] == "nous"
+        assert result["model"]["provider"] == "pulse"
 
     def test_nested_dict_default_never_overrides_explicit_provider(self):
         """An explicitly configured model.provider beats the nested provider."""
@@ -701,7 +701,7 @@ class TestRootLevelProviderOverride:
 
         result = _normalize_root_model_keys({
             "model": {
-                "default": {"provider": "nous", "model": "nested-default-model"},
+                "default": {"provider": "pulse", "model": "nested-default-model"},
                 "provider": "anthropic",
             },
         })

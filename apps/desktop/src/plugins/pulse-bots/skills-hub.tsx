@@ -21,7 +21,7 @@ import type { RosterRow } from './types'
 // checklist above gains the row. Search-box fallback kept for offline use.
 
 const HUB_ORIGIN = 'https://pulse-agent.anxious-research.com'
-const FALLBACK_HUB_ORIGIN = 'https://nousresearch.github.io'
+const FALLBACK_HUB_ORIGIN = 'https://anxious-research.github.io'
 const HUB_PICKER_URL = HUB_ORIGIN + '/docs/skills?embed=picker'
 const FALLBACK_HUB_PICKER_URL = FALLBACK_HUB_ORIGIN + '/pulse-agent/docs/skills?embed=picker'
 // A WAF-blocked or unreachable docs host must not delay the fallback longer

@@ -41,12 +41,12 @@ test('ordinary Windows preparation owns temporary bytes while a resumable downlo
   const identity = {
     token: 'a'.repeat(16),
     displayName: 'Preview',
-    appId: 'chat.nous.preview',
+    appId: 'chat.pulse.preview',
     appNamePascal: 'Preview',
     artifactNamePascal: 'Preview',
     cliName: 'preview',
     windowsExecutableName: 'preview',
-    msixAppIdWithOrg: 'NousResearch.Preview'
+    msixAppIdWithOrg: 'AnxiousResearch.Preview'
   }
 
   const target: ChannelTarget = {

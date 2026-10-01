@@ -269,7 +269,7 @@ def _request_device_code(
     return data
 
 
-def _nous_device_auth_timeout_message(portal_base_url: str) -> str:
+def _pulse_device_auth_timeout_message(portal_base_url: str) -> str:
     """Actionable timeout text: the usual cause is Portal sign-in failing in the browser tab.
 
     A bare "Timed out waiting for device authorization" gives the user nothing to act on. The most common
@@ -318,7 +318,7 @@ def _poll_device_token_generic(
     on_non_json_error: Callable[["httpx.Response"], Exception],
     on_error: Callable[["httpx.Response", Dict[str, Any]], Exception],
     on_timeout: Callable[[], Exception]) -> Dict[str, Any]:
-    """RFC 8628 device-code polling loop shared by the Nous and xAI flows.
+    """RFC 8628 device-code polling loop shared by the PULSE and xAI flows.
 
     ``authorization_pending`` sleeps and retries; ``slow_down`` grows the interval by 1s (cap 30s).
     A non-JSON 408/429/5xx, or a 403 carrying ``x-vercel-mitigated`` (edge/WAF mitigation, never a
@@ -369,7 +369,7 @@ def _poll_device_token_generic(
 def _poll_for_token(
     client: httpx.Client, portal_base_url: str, client_id: str, device_code: str,
     expires_in: int, poll_interval: int) -> Dict[str, Any]:
-    """Poll the Nous token endpoint until the user approves or the code expires."""
+    """Poll the PULSE token endpoint until the user approves or the code expires."""
     def _validate(payload: Dict[str, Any]) -> None:
         if "access_token" not in payload:
             raise ValueError("Token response did not include access_token")
@@ -393,8 +393,8 @@ def _poll_for_token(
         on_non_json_error=lambda _r: RuntimeError(
             "Token endpoint returned a non-JSON error response"),
         # Enriched at the SOURCE so the CLI login and the dashboard/desktop poller
-        # (web_server_oauth._nous_promotion_poller surfaces it to the UI) both inherit the guidance.
-        on_timeout=lambda: TimeoutError(_nous_device_auth_timeout_message(portal_base_url)))
+        # (web_server_oauth._pulse_promotion_poller surfaces it to the UI) both inherit the guidance.
+        on_timeout=lambda: TimeoutError(_pulse_device_auth_timeout_message(portal_base_url)))
 
 
 def _prompt_yes_no(prompt: str, *, default: str) -> bool:

@@ -26,12 +26,12 @@ def test_prepared_aggregator_requests_share_a_byte_identical_prefix_across_itera
     monkeypatch.setattr(moa_loop, "call_llm", lambda **kw: calls.append(kw) or SimpleNamespace(choices=[]))
     monkeypatch.setattr(
         moa_loop, "_slot_runtime",
-        lambda slot: {"provider": "nous", "model": "openai/gpt-6-astra", "api_mode": "chat_completions"},
+        lambda slot: {"provider": "pulse", "model": "openai/gpt-6-astra", "api_mode": "chat_completions"},
     )
     facade = moa_loop.MoAChatCompletions.__new__(moa_loop.MoAChatCompletions)
     facade._pending_trace = None
     facade._agent = None
-    aggregator = {"provider": "nous", "model": "openai/gpt-6-astra"}
+    aggregator = {"provider": "pulse", "model": "openai/gpt-6-astra"}
     guidance = "[Mixture of Agents reference context]\nadvice"
     history = [{"role": "system", "content": "sys"}, {"role": "user", "content": "task"}]
 

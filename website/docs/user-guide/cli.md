@@ -9,7 +9,7 @@ description: "Master the PULSE Agent terminal interface — commands, keybinding
 PULSE Agent's CLI is a full terminal user interface (TUI) — not a web UI. It features multiline editing, slash-command autocomplete, conversation history, interrupt-and-redirect, and streaming tool output. Built for people who live in the terminal.
 
 :::tip First-time setup
-One command — `pulse setup --portal` — and you're ready to `pulse chat`. See [Nous Portal](../integrations/nous-portal.md).
+One command — `pulse setup --portal` — and you're ready to `pulse chat`. See [Pulse Portal](../integrations/pulse-portal.md).
 :::
 
 :::tip
@@ -34,7 +34,7 @@ pulse chat --query-file - < prompt.txt
 pulse chat --model "anthropic/claude-sonnet-4"
 
 # With a specific provider
-pulse chat --provider nous        # Use Nous Portal
+pulse chat --provider pulse        # Use Pulse Portal
 pulse chat --provider openrouter  # Force OpenRouter
 
 # With specific toolsets

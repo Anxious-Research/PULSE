@@ -193,7 +193,7 @@ _SCHEMA_OVERRIDES: Dict[str, Dict[str, Any]] = {
 
 # Small categories fold into a bigger tab to avoid one-field orphan tabs. Several sources
 # (models_dev, onboarding, mcp, computer_use, telemetry, plugins, doctor, runtime, session,
-# nous, telegram) currently surface a single schema field each.
+# pulse, telegram) currently surface a single schema field each.
 _CATEGORY_MERGE: Dict[str, str] = {
     "privacy": "security",
     "context": "agent",
@@ -221,7 +221,7 @@ _CATEGORY_MERGE: Dict[str, str] = {
     # agent tab rather than spawning a one-field orphan category.
     "runtime": "agent",
     "session": "general",
-    "nous": "agent",
+    "pulse": "agent",
     "connections": "agent",
     "auth": "security",
     # `fallback.min_switch_reset_seconds` is the only schema-surfaced fallback field.
@@ -621,18 +621,18 @@ def _resolve_assignment_credentials(model_cfg: dict, provider: str, provider_ent
         model_cfg["api_key"] = raw_key if raw_key.startswith("${") and raw_key.endswith("}") else provider_entry["api_key"]
 
 
-def _apply_nous_gateway_defaults(cfg: dict) -> list:
-    """Mirror the CLI's post-model-selection behaviour when switching main to Nous: route
-    *unconfigured* tools through the Nous Tool Gateway. Purely additive — tools with a direct
+def _apply_pulse_gateway_defaults(cfg: dict) -> list:
+    """Mirror the CLI's post-model-selection behaviour when switching main to PULSE: route
+    *unconfigured* tools through the PULSE Tool Gateway. Purely additive — tools with a direct
     key or explicit backend are skipped. Failures never block saving the assignment."""
     try:
-        from pulse_cli.nous_subscription import apply_nous_managed_defaults
+        from pulse_cli.pulse_subscription import apply_pulse_managed_defaults
         from pulse_cli.tools_config import _get_platform_tools
 
         enabled = _get_platform_tools(cfg, "cli", include_default_mcp_servers=False)
-        return sorted(apply_nous_managed_defaults(cfg, enabled_toolsets=enabled, force_fresh=True))
+        return sorted(apply_pulse_managed_defaults(cfg, enabled_toolsets=enabled, force_fresh=True))
     except Exception:
-        _log.debug("apply_nous_managed_defaults skipped", exc_info=True)
+        _log.debug("apply_pulse_managed_defaults skipped", exc_info=True)
         return []
 
 
@@ -708,7 +708,7 @@ def _apply_main_assignment_sync(cfg: dict, provider: str, model: str, base_url: 
     cfg["model"] = model_cfg
 
     new_provider = provider.strip().lower()
-    gateway_tools = _apply_nous_gateway_defaults(cfg) if new_provider == "nous" else []
+    gateway_tools = _apply_pulse_gateway_defaults(cfg) if new_provider == "pulse" else []
     save_config(cfg)
     if new_provider in {"custom", "local"} and base_url:
         _register_custom_endpoint(base_url, api_key, model)

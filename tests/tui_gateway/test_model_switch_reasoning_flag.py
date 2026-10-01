@@ -14,7 +14,7 @@ import tui_gateway.server as server
 
 class _Agent:
     def __init__(self):
-        self.model, self.provider, self.base_url, self.api_key, self.api_mode = "old", "nous", "", "", ""
+        self.model, self.provider, self.base_url, self.api_key, self.api_mode = "old", "pulse", "", "", ""
         self.reasoning_config = {"enabled": True, "effort": "medium"}
 
     def switch_model(self, **_kw):
@@ -24,7 +24,7 @@ class _Agent:
 @pytest.fixture
 def _quiet_switch(monkeypatch):
     result = SimpleNamespace(
-        success=True, new_model="new/model", target_provider="nous", base_url="", api_key="key",
+        success=True, new_model="new/model", target_provider="pulse", base_url="", api_key="key",
         api_mode="chat_completions", warning_message="", model_info=None, error_message="",
         runtime_capabilities=None)
     monkeypatch.setattr("pulse_cli.model_switch.switch_model", lambda **_kw: result)
@@ -42,7 +42,7 @@ def test_reasoning_flag_survives_the_swap_and_pins_the_session(_quiet_switch):
     agent = _Agent()
     session = {"agent": agent}
 
-    out = server._apply_model_switch("sid", session, "new/model --provider nous --reasoning high --session")
+    out = server._apply_model_switch("sid", session, "new/model --provider pulse --reasoning high --session")
 
     assert out["value"] == "new/model"
     assert agent.reasoning_config == {"enabled": True, "effort": "high"}
@@ -54,7 +54,7 @@ def test_reasoning_flag_with_global_writes_config_and_drops_the_pin(_quiet_switc
     agent = _Agent()
     session = {"agent": agent, "create_reasoning_override": {"enabled": True, "effort": "low"}}
 
-    server._apply_model_switch("sid", session, "new/model --provider nous --reasoning none --global")
+    server._apply_model_switch("sid", session, "new/model --provider pulse --reasoning none --global")
 
     assert agent.reasoning_config == {"enabled": False}
     assert _quiet_switch["agent.reasoning_effort"] == "none"

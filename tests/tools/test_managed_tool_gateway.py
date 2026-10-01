@@ -26,15 +26,15 @@ def test_resolve_managed_tool_gateway_derives_vendor_origin_from_shared_domain()
             "TOOL_GATEWAY_DOMAIN": "anxious-research.com",
         },
         clear=False,
-    ), patch.object(managed_tool_gateway, "managed_nous_tools_enabled", return_value=True):
+    ), patch.object(managed_tool_gateway, "managed_pulse_tools_enabled", return_value=True):
         result = resolve_managed_tool_gateway(
             "firecrawl",
-            token_reader=lambda: "nous-token",
+            token_reader=lambda: "pulse-token",
         )
 
     assert result is not None
     assert result.gateway_origin == "https://firecrawl-gateway.anxious-research.com"
-    assert result.nous_user_token == "nous-token"
+    assert result.pulse_user_token == "pulse-token"
     assert result.managed_mode is True
 
 
@@ -45,24 +45,24 @@ def test_resolve_managed_tool_gateway_uses_vendor_specific_override():
             "BROWSER_USE_GATEWAY_URL": "http://browser-use-gateway.localhost:3009/",
         },
         clear=False,
-    ), patch.object(managed_tool_gateway, "managed_nous_tools_enabled", return_value=True):
+    ), patch.object(managed_tool_gateway, "managed_pulse_tools_enabled", return_value=True):
         result = resolve_managed_tool_gateway(
             "browser-use",
-            token_reader=lambda: "nous-token",
+            token_reader=lambda: "pulse-token",
         )
 
     assert result is not None
     assert result.gateway_origin == "http://browser-use-gateway.localhost:3009"
 
 
-def test_resolve_managed_tool_gateway_is_inactive_without_nous_token():
+def test_resolve_managed_tool_gateway_is_inactive_without_pulse_token():
     with patch.dict(
         os.environ,
         {
             "TOOL_GATEWAY_DOMAIN": "anxious-research.com",
         },
         clear=False,
-    ), patch.object(managed_tool_gateway, "managed_nous_tools_enabled", return_value=True):
+    ), patch.object(managed_tool_gateway, "managed_pulse_tools_enabled", return_value=True):
         result = resolve_managed_tool_gateway(
             "firecrawl",
             token_reader=lambda: None,
@@ -73,22 +73,22 @@ def test_resolve_managed_tool_gateway_is_inactive_without_nous_token():
 
 def test_resolve_managed_tool_gateway_is_disabled_without_subscription():
     with patch.dict(os.environ, {"TOOL_GATEWAY_DOMAIN": "anxious-research.com"}, clear=False), \
-         patch.object(managed_tool_gateway, "managed_nous_tools_enabled", return_value=False):
+         patch.object(managed_tool_gateway, "managed_pulse_tools_enabled", return_value=False):
         result = resolve_managed_tool_gateway(
             "firecrawl",
-            token_reader=lambda: "nous-token",
+            token_reader=lambda: "pulse-token",
         )
 
     assert result is None
 
 
-def test_read_nous_access_token_refreshes_expiring_cached_token(tmp_path, monkeypatch):
+def test_read_pulse_access_token_refreshes_expiring_cached_token(tmp_path, monkeypatch):
     monkeypatch.delenv("TOOL_GATEWAY_USER_TOKEN", raising=False)
     monkeypatch.setenv("PULSE_HOME", str(tmp_path))
     expires_at = (datetime.now(timezone.utc) + timedelta(seconds=30)).isoformat()
     (tmp_path / "auth.json").write_text(json.dumps({
         "providers": {
-            "nous": {
+            "pulse": {
                 "access_token": "stale-token",
                 "refresh_token": "refresh-token",
                 "expires_at": expires_at,
@@ -96,11 +96,11 @@ def test_read_nous_access_token_refreshes_expiring_cached_token(tmp_path, monkey
         }
     }))
     monkeypatch.setattr(
-        "pulse_cli.auth.resolve_nous_access_token",
+        "pulse_cli.auth.resolve_pulse_access_token",
         lambda refresh_skew_seconds=120: "fresh-token",
     )
 
-    assert managed_tool_gateway.read_nous_access_token() == "fresh-token"
+    assert managed_tool_gateway.read_pulse_access_token() == "fresh-token"
 
 
 def test_is_managed_tool_gateway_ready_skips_refresh_for_expired_cached_token(tmp_path, monkeypatch):
@@ -109,7 +109,7 @@ def test_is_managed_tool_gateway_ready_skips_refresh_for_expired_cached_token(tm
     expired_at = (datetime.now(timezone.utc) - timedelta(seconds=30)).isoformat()
     (tmp_path / "auth.json").write_text(json.dumps({
         "providers": {
-            "nous": {
+            "pulse": {
                 "access_token": "expired-token",
                 "refresh_token": "refresh-token",
                 "expires_at": expired_at,
@@ -123,7 +123,7 @@ def test_is_managed_tool_gateway_ready_skips_refresh_for_expired_cached_token(tm
         return "fresh-token"
 
     monkeypatch.setattr(
-        "pulse_cli.auth.resolve_nous_access_token",
+        "pulse_cli.auth.resolve_pulse_access_token",
         _record_refresh,
     )
 
@@ -131,7 +131,7 @@ def test_is_managed_tool_gateway_ready_skips_refresh_for_expired_cached_token(tm
         os.environ,
         {"TOOL_GATEWAY_DOMAIN": "anxious-research.com"},
         clear=False,
-    ), patch.object(managed_tool_gateway, "managed_nous_tools_enabled", return_value=True):
+    ), patch.object(managed_tool_gateway, "managed_pulse_tools_enabled", return_value=True):
         assert is_managed_tool_gateway_ready("modal") is True
 
     assert refresh_calls == []
@@ -156,10 +156,10 @@ def test_managed_gateway_origin_honors_the_harness_override():
     with patch.dict(os.environ, {"TOOL_GATEWAY_URL": "http://127.0.0.1:3009/"}, clear=False):
         os.environ.pop("CONNECTOR_GATEWAY_URL", None)
         assert managed_gateway_auth.managed_gateway_origin() == "http://127.0.0.1:3009"
-        assert managed_gateway_auth.is_managed_nous_gateway_url(
+        assert managed_gateway_auth.is_managed_pulse_gateway_url(
             "http://127.0.0.1:3009/api/vendorx/generations"
         )
-        assert not managed_gateway_auth.is_managed_nous_gateway_url(
+        assert not managed_gateway_auth.is_managed_pulse_gateway_url(
             "https://tools.anxious-research.com/api/vendorx/generations"
         )
 
@@ -180,7 +180,7 @@ def test_connector_gateway_origin_honors_its_own_override():
         assert managed_gateway_auth.managed_gateway_origin() == (
             "https://tool-gateway.anxious-research.com"
         )
-        assert managed_gateway_auth.is_managed_nous_gateway_url(
+        assert managed_gateway_auth.is_managed_pulse_gateway_url(
             "http://127.0.0.1:3009/v1/connectors/search"
         )
 
@@ -199,7 +199,7 @@ def test_default_bearer_gate_accepts_both_deployed_hosts_only():
             "https://connector-gateway.anxious-research.com/v1/connectors/execute",
             "https://tool-gateway.anxious-research.com/api/vendorx/generations",
         ):
-            assert managed_gateway_auth.is_managed_nous_gateway_url(trusted)
+            assert managed_gateway_auth.is_managed_pulse_gateway_url(trusted)
         for untrusted in (
             "https://tools.anxious-research.com/v1/connectors/execute",
             "https://evil-connector-gateway.anxious-research.com.attacker.dev/v1/connectors",
@@ -207,10 +207,10 @@ def test_default_bearer_gate_accepts_both_deployed_hosts_only():
             "http://connector-gateway.anxious-research.com/v1/connectors",
             "http://tool-gateway.anxious-research.com/api/vendorx/generations",
         ):
-            assert not managed_gateway_auth.is_managed_nous_gateway_url(untrusted)
+            assert not managed_gateway_auth.is_managed_pulse_gateway_url(untrusted)
 
 
-def test_read_nous_provider_state_falls_back_to_global_root_for_share_auth_profiles(tmp_path, monkeypatch):
+def test_read_pulse_provider_state_falls_back_to_global_root_for_share_auth_profiles(tmp_path, monkeypatch):
     # A profile created with ``share_auth`` has no auth.json of its own; it signs in with the
     # root identity. The connector gate must see that identity, or manage_connections vanishes
     # from the profile's tool list while every other credential reader still works.
@@ -219,7 +219,7 @@ def test_read_nous_provider_state_falls_back_to_global_root_for_share_auth_profi
     profile.mkdir(parents=True)
     (root / "auth.json").write_text(json.dumps({
         "version": 1,
-        "providers": {"nous": {"auth_method": "anonymous", "access_token": "tok"}},
+        "providers": {"pulse": {"auth_method": "anonymous", "access_token": "tok"}},
     }))
     monkeypatch.setenv("PULSE_HOME", str(profile))
     monkeypatch.setenv("PULSE_GUEST_ONBOARDING", "1")
@@ -233,7 +233,7 @@ def test_read_nous_provider_state_falls_back_to_global_root_for_share_auth_profi
     monkeypatch.setattr(auth_mod, "_global_auth_store_cache", None)
     monkeypatch.setattr(auth_mod, "_auth_file_path", lambda: profile / "auth.json")
 
-    state = managed_tool_gateway._read_nous_provider_state()
+    state = managed_tool_gateway._read_pulse_provider_state()
 
     assert state is not None
     assert state["auth_method"] == "anonymous"

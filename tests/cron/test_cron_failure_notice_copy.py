@@ -41,10 +41,10 @@ def test_auth_failure_names_the_pinned_provider_and_the_failing_profile(monkeypa
 
 def test_rate_and_usage_limit_phrases_still_yield_a_provider_notice(monkeypatch):
     """The old cron regex ladder matched these substrings; the shared classifier must too, or a
-    Nous Portal limit turns into a raw generic notice."""
+    Pulse Portal limit turns into a raw generic notice."""
     _no_chain(monkeypatch)
     for text in (
-        "Nous Portal rate limit active until 15:00",
+        "Pulse Portal rate limit active until 15:00",
         "RuntimeError: usage limit reached for this key",
         "You have hit your weekly usage limit",
         "insufficient quota",

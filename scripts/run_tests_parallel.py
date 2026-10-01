@@ -120,7 +120,7 @@ _DEFAULT_ROOTS = ["tests"]
 #   tests/integration/ — historical; legacy --ignore flags
 #   tests/docker/      — .github/workflows/docker.yml ::
 #                        build-amd64 job (runs against the freshly-loaded
-#                        nousresearch/pulse-agent:test image, via
+#                        anxious-research/pulse-agent:test image, via
 #                        ``PULSE_TEST_IMAGE`` so the fixture skips
 #                        rebuild). The full pytest-shard runner can't
 #                        host these because the session-scoped

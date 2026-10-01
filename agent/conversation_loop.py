@@ -38,7 +38,7 @@ from pulse_cli.observability.shared_metrics_efficiency import record_cache_break
 from agent.turn_retry_state import TurnRetryState
 # Phase helpers of the turn loop, bound at import so a source-tree swap cannot load a
 # skewed phase mid-turn.
-from agent.turn_api_call import handle_api_interrupt, nous_rate_limit_guard, perform_api_call
+from agent.turn_api_call import handle_api_interrupt, pulse_rate_limit_guard, perform_api_call
 from agent.turn_api_error import handle_api_error
 from agent.turn_api_request import build_api_request
 from agent.turn_failure_copy import FAILED_TURN_DISPLAY_KIND, failed_turn_notice, site_copy
@@ -483,14 +483,14 @@ def _ra():
     return run_agent
 
 
-def _nous_entitlement_message(capability: str) -> str:
+def _pulse_entitlement_message(capability: str) -> str:
     try:
-        from pulse_cli.nous_account import (
-            format_nous_portal_entitlement_message,
-            get_nous_portal_account_info,
+        from pulse_cli.pulse_account import (
+            format_pulse_portal_entitlement_message,
+            get_pulse_portal_account_info,
         )
-        account_info = get_nous_portal_account_info(force_fresh=True)
-        return format_nous_portal_entitlement_message(
+        account_info = get_pulse_portal_account_info(force_fresh=True)
+        return format_pulse_portal_entitlement_message(
             account_info, capability=capability, in_chat=True
         ) or ""
     except Exception:
@@ -506,8 +506,8 @@ def _print_guidance(agent, message: str) -> bool:
     return True
 
 
-def _print_nous_entitlement_guidance(agent, capability: str) -> bool:
-    return _print_guidance(agent, _nous_entitlement_message(capability))
+def _print_pulse_entitlement_guidance(agent, capability: str) -> bool:
+    return _print_guidance(agent, _pulse_entitlement_message(capability))
 
 
 def _system_prompt_for_hooks(api_kwargs: Any, request_messages: Any) -> Any:
@@ -523,8 +523,8 @@ def _system_prompt_for_hooks(api_kwargs: Any, request_messages: Any) -> Any:
     return system_prompt
 
 
-def _is_nous_inference_route(provider: str, base_url: str) -> bool:
-    return (provider or "").strip().lower() == "nous" or base_url_host_matches(
+def _is_pulse_inference_route(provider: str, base_url: str) -> bool:
+    return (provider or "").strip().lower() == "pulse" or base_url_host_matches(
         str(base_url or ""), "inference-api.anxious-research.com"
     )
 
@@ -532,8 +532,8 @@ def _is_nous_inference_route(provider: str, base_url: str) -> bool:
 def _billing_or_entitlement_message(
     *, capability: str, provider: str, base_url: str, model: str, unverified: bool = False
 ) -> str:
-    if _is_nous_inference_route(provider, base_url):
-        return _nous_entitlement_message(capability)
+    if _is_pulse_inference_route(provider, base_url):
+        return _pulse_entitlement_message(capability)
 
     provider_label = (provider or "").strip() or "the selected provider"
     model_label = (model or "").strip() or "the selected model"
@@ -1504,7 +1504,7 @@ def _run_api_retry_loop(agent, s: _LoopState) -> Optional[Dict[str, Any]]:
     Returns a turn result dict when a phase ends the turn, else None once the loop is left
     (success, a restart armed on ``s._retry``, interrupt, or retries exhausted)."""
     while s.retry_count < s.max_retries:
-        _ng = _run_phase(nous_rate_limit_guard, agent, s)
+        _ng = _run_phase(pulse_rate_limit_guard, agent, s)
         if _ng.action == "return":
             return _ng.result
         if _ng.action == "break":

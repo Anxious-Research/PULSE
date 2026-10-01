@@ -3,7 +3,7 @@
 HEAD, three-way merge on a 409). Driven by the debounced ``skill_manage`` push hook, the curator
 tick ``maybe_pull_skills`` and ``pulse sync``. Lives under tools/ so it never imports the CLI at
 module load; ``skills_sync_client_wire`` / ``skills_sync_client_org`` are re-exported here.
-ACCESS GATE (pre-launch): INERT unless the user is a Nous admin per the ``tool_gateway_admin``
+ACCESS GATE (pre-launch): INERT unless the user is a PULSE admin per the ``tool_gateway_admin``
 JWT claim (NAS's misleading name for the global portal-admin permission; replace before shipping).
 OPT-IN DEFAULT (provisional): local intent is the ``sync`` flag in ``.usage.json``; the DURABLE
 cross-device state is the ``sync-manifest`` blob in the plane. Only ~/.pulse/skills/ skills qualify."""
@@ -26,24 +26,24 @@ from tools.skills_sync_client_org import (
     ORG_DIR_NAME, list_locally_modified_org_skills, list_org_skill_names, resolve_org_identity)
 
 logger = logging.getLogger(__name__)
-# Gate claim (NAS's wire name; means "Nous admin" / Permissions.ADMIN_ACCESS). The bearer comes
-# from resolve_nous_runtime_credentials(); its payload is decoded unverified to read this.
-NOUS_ADMIN_CLAIM = "tool_gateway_admin"
+# Gate claim (NAS's wire name; means "PULSE admin" / Permissions.ADMIN_ACCESS). The bearer comes
+# from resolve_pulse_runtime_credentials(); its payload is decoded unverified to read this.
+PULSE_ADMIN_CLAIM = "tool_gateway_admin"
 
 
 class SyncInertError(RuntimeError):
-    """Sync must no-op: not logged in, no bearer, or not a Nous admin. Caught by the gate-and-swallow hooks."""
+    """Sync must no-op: not logged in, no bearer, or not a PULSE admin. Caught by the gate-and-swallow hooks."""
 
 
 def resolve_identity() -> Dict[str, Any]:
-    """``{api_key, base_url, owner, nous_admin, claims}``; SyncInertError if not logged in / no bearer.
+    """``{api_key, base_url, owner, pulse_admin, claims}``; SyncInertError if not logged in / no bearer.
     ``owner`` is advisory (local ref naming; the server derives the real one). The JWT is decoded
     WITHOUT verification: safe, the claims only decide whether to attempt sync, never authz."""
     try:
-        from pulse_cli.auth import resolve_nous_runtime_credentials
-        creds = resolve_nous_runtime_credentials() or {}
+        from pulse_cli.auth import resolve_pulse_runtime_credentials
+        creds = resolve_pulse_runtime_credentials() or {}
     except Exception as e:
-        raise SyncInertError(f"no Nous credentials: {e}") from e
+        raise SyncInertError(f"no PULSE credentials: {e}") from e
     if not (api_key := creds.get("api_key")):
         raise SyncInertError("no bearer token available")
     try:
@@ -54,7 +54,7 @@ def resolve_identity() -> Dict[str, Any]:
         claims = {}
     owner = claims.get("sub") or claims.get("privy_did") or claims.get("tid") or "unknown"
     return {"api_key": api_key, "base_url": creds.get("base_url"), "owner": str(owner),
-            "nous_admin": claims.get(NOUS_ADMIN_CLAIM) is True, "claims": claims}
+            "pulse_admin": claims.get(PULSE_ADMIN_CLAIM) is True, "claims": claims}
 
 
 # Configuration -- env-first so PULSE Cloud can enable sync via environment alone. Every knob:
@@ -103,7 +103,7 @@ def _sync_config_bool(env_var: str, config_key: str, *, default: bool) -> bool:
 
 
 def sync_feature_enabled() -> bool:
-    """Master switch; the gate-and-swallow entrypoints ALSO require the Nous-admin gate and a base URL."""
+    """Master switch; the gate-and-swallow entrypoints ALSO require the PULSE-admin gate and a base URL."""
     return _sync_config_bool("PULSE_SYNC_ENABLED", "enabled", default=False)
 
 
@@ -448,10 +448,10 @@ def pull_skills(client: Optional[SyncClient] = None, *, identity: Optional[Dict[
 
 # Gated public entrypoints (gate-and-swallow, like maybe_run_curator): never raise; dict or None.
 def _gate_and_swallow(op: str, run: Callable[[Dict[str, Any]], Optional[Dict[str, Any]]]):
-    """Run *run(identity)* only if all gates hold (Nous admin, feature on, base URL); None if inert/error."""
+    """Run *run(identity)* only if all gates hold (PULSE admin, feature on, base URL); None if inert/error."""
     try:
         identity = resolve_identity()
-        if not identity.get("nous_admin") or not sync_feature_enabled() or not resolve_sync_base_url():
+        if not identity.get("pulse_admin") or not sync_feature_enabled() or not resolve_sync_base_url():
             return None
         return run(identity)
     except Exception as e:
@@ -472,13 +472,13 @@ def maybe_pull_skills() -> Optional[Dict[str, Any]]:
 
 def sync_status() -> Dict[str, Any]:
     """Snapshot for ``pulse sync status``; never raises. ``org_available`` False = not in a shared org."""
-    status: Dict[str, Any] = {"nous_admin": False, "logged_in": False, "feature_enabled": sync_feature_enabled(),
+    status: Dict[str, Any] = {"pulse_admin": False, "logged_in": False, "feature_enabled": sync_feature_enabled(),
                               "default_opt_in": sync_default_opt_in(), "base_url": resolve_sync_base_url(),
                               "opted_in_skills": [], "local_head": None, "owner": None, "org_available": False,
                               "org_id": None, "org_role": None, "org_skills": [], "org_skills_modified": []}
     try:
         identity = resolve_identity()
-        status.update(logged_in=True, owner=identity.get("owner"), nous_admin=bool(identity.get("nous_admin")))
+        status.update(logged_in=True, owner=identity.get("owner"), pulse_admin=bool(identity.get("pulse_admin")))
     except SyncInertError:
         pass
     except Exception as e:

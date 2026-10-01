@@ -17,7 +17,7 @@ Versioned site deploys to GitHub/Cloudflare/Netlify Pages.
 | Source | Optional — install with `pulse skills install official/web-development/publish-site` |
 | Path | `optional-skills/web-development/publish-site` |
 | Version | `1.0.0` |
-| Author | PULSE Agent (Nous Research) |
+| Author | PULSE Agent (Anxious Research) |
 | License | MIT |
 | Platforms | linux, macos, windows |
 | Tags | `publish`, `deploy`, `hosting`, `github-pages`, `cloudflare-pages`, `netlify`, `static-site`, `versioning`, `rollback`, `web-development` |

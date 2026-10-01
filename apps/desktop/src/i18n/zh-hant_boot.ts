@@ -39,10 +39,10 @@ export const zhHantBoot = {
         `先登出已儲存的遠端瀏覽器工作階段，然後開啟${signInLabel}。使用本機閘道可切換至內建後端。`,
       signOutAndSignIn: '登出並重新登入',
       remoteFailureHint: '在「閘道設定」中檢查閘道 URL 與登入，或切換至本機閘道。',
-      cloudDownTitle: 'Nous Cloud 代理已停機',
+      cloudDownTitle: 'Pulse Cloud 代理已停機',
       cloudDownDescription:
-        '此閘道連線的 Nous 託管雲端代理正在回傳伺服器錯誤。無法在此處重新啟動——請檢查其狀態、切換至本機閘道，或取得支援。',
-      cloudDownHint: '使用下方按鈕開啟 Nous Portal（檢視執行個體狀態與操作）或加入 Discord 取得支援。',
+        '此閘道連線的 PULSE 託管雲端代理正在回傳伺服器錯誤。無法在此處重新啟動——請檢查其狀態、切換至本機閘道，或取得支援。',
+      cloudDownHint: '使用下方按鈕開啟 Pulse Portal（檢視執行個體狀態與操作）或加入 Discord 取得支援。',
       cloudDownCheckPortal: '查看 Portal 狀態',
       cloudDownDiscord: '在 Discord 取得協助',
       hideRecentLogs: '隱藏最近記錄',

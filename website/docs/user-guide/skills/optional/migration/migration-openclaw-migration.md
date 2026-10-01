@@ -17,7 +17,7 @@ Import an OpenClaw setup (memories, skills) into PULSE.
 | Source | Optional — install with `pulse skills install official/migration/openclaw-migration` |
 | Path | `optional-skills/migration/openclaw-migration` |
 | Version | `1.0.0` |
-| Author | PULSE Agent (Nous Research) |
+| Author | PULSE Agent (Anxious Research) |
 | License | MIT |
 | Platforms | linux, macos, windows |
 | Tags | `Migration`, `OpenClaw`, `PULSE`, `Memory`, `Persona`, `Import` |

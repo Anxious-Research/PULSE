@@ -1,4 +1,4 @@
-"""Nous free tier core: identity lifecycle, token-acquisition seam, routing pin, opt-out.
+"""PULSE free tier core: identity lifecycle, token-acquisition seam, routing pin, opt-out.
 
 Behaviour contracts on the public seams (``ensure_portal_identity``, ``resolve_provider``,
 ``resolve_runtime_provider``, ``normalize_model_for_provider``), driven through a fake portal so
@@ -24,9 +24,9 @@ def portal(monkeypatch, tmp_path):
     return install_portal(monkeypatch, tmp_path)
 
 
-def _write_config(monkeypatch, **nous):
+def _write_config(monkeypatch, **pulse):
     home = Path(os.environ["PULSE_HOME"])
-    (home / "config.yaml").write_text("nous:\n" + "".join(f"  {k}: {str(v).lower()}\n" for k, v in nous.items()))
+    (home / "config.yaml").write_text("pulse:\n" + "".join(f"  {k}: {str(v).lower()}\n" for k, v in pulse.items()))
     from pulse_cli import config as cfg_mod
     for attr in ("_config_cache", "_cached_config"):
         if hasattr(cfg_mod, attr):
@@ -34,7 +34,7 @@ def _write_config(monkeypatch, **nous):
 
 
 def _shared_store(tmp_path) -> dict:
-    p = tmp_path / "shared-store" / "nous_auth.json"
+    p = tmp_path / "shared-store" / "pulse_auth.json"
     return json.loads(p.read_text()) if p.exists() else {}
 
 
@@ -45,8 +45,8 @@ class TestIdentityLifecycle:
         assert "refresh_token" not in state
         store = _load_auth_store()
         assert "active_provider" not in store
-        assert resolve_provider("auto") == "nous"
-        assert anon_auth.is_guest_state(store["providers"]["nous"])
+        assert resolve_provider("auto") == "pulse"
+        assert anon_auth.is_guest_state(store["providers"]["pulse"])
         assert _shared_store(tmp_path).get("anon_token") == state["anon_token"]
         assert portal.minted == 1
         # Second call: identity exists, zero network.
@@ -70,7 +70,7 @@ class TestIdentityLifecycle:
         with pytest.raises(anon_auth.AuthError) as exc:
             anon_auth.ensure_portal_identity(explicit=True)
         assert exc.value.code == "anon_gate_closed"
-        assert "nous" not in _load_auth_store().get("providers", {})
+        assert "pulse" not in _load_auth_store().get("providers", {})
         # A process tries once: later bootstrap sites must not hit the portal again.
         assert anon_auth.ensure_portal_identity(explicit=True) is None
         assert [p for _, p in portal.calls].count("/api/anonymous/create") == 1
@@ -86,7 +86,7 @@ class TestIdentityLifecycle:
 
     def test_launch_gate_off_means_no_free_tier_at_all(self, portal, monkeypatch):
         """Without ``PULSE_GUEST_ONBOARDING=1`` the free tier does not exist: no mint, no portal
-        traffic, ``nous.guest``'s default is never consulted, and an identity already on disk is
+        traffic, ``pulse.guest``'s default is never consulted, and an identity already on disk is
         not treated as enabled. The env var is the only lever; ``0``/``true``/anything but ``1`` is off."""
         monkeypatch.setattr("agent.bedrock_adapter.has_aws_credentials", lambda: False)
         for raw in ("", "0", "true", "yes", "new"):
@@ -103,18 +103,18 @@ class TestIdentityLifecycle:
 class TestExplicitProvision:
     """``ensure_portal_identity(explicit=True)`` is the one creator (the boot bootstrap and the desktop
     retry call it). It mints once; every later caller adopts that identity through the shared store,
-    so two boots never create two identities. ``nous.guest: false`` still wins."""
+    so two boots never create two identities. ``pulse.guest: false`` still wins."""
 
     def test_provision_mints_once_then_everything_adopts(self, portal, monkeypatch, tmp_path):
         assert anon_auth.is_guest_state(anon_auth.ensure_portal_identity(explicit=True))
         assert portal.minted == 1
-        token = _load_auth_store()["providers"]["nous"]["anon_token"]
-        # A second provision is idempotent, and the runtime now serves nous/welcome on the welcome host.
+        token = _load_auth_store()["providers"]["pulse"]["anon_token"]
+        # A second provision is idempotent, and the runtime now serves pulse/welcome on the welcome host.
         anon_auth.ensure_portal_identity(explicit=True)
         from pulse_cli.runtime_provider import resolve_runtime_provider
-        runtime = resolve_runtime_provider(requested="nous", target_model=anon_auth.GUEST_MODEL)
+        runtime = resolve_runtime_provider(requested="pulse", target_model=anon_auth.GUEST_MODEL)
         assert runtime["base_url"].rstrip("/") == WELCOME
-        assert resolve_provider("auto") == "nous"
+        assert resolve_provider("auto") == "pulse"
         # A sibling profile adopts the same identity implicitly; no second create call.
         sibling = tmp_path / "sibling-profile"
         sibling.mkdir()
@@ -125,11 +125,11 @@ class TestExplicitProvision:
 
     def test_retired_identity_is_replaced(self, portal, monkeypatch):
         anon_auth.ensure_portal_identity(explicit=True)
-        first = _load_auth_store()["providers"]["nous"]["anon_token"]
+        first = _load_auth_store()["providers"]["pulse"]["anon_token"]
         portal.dead_tokens.add(first)
-        from pulse_cli.auth_nous import resolve_nous_runtime_credentials
-        assert resolve_nous_runtime_credentials(force_refresh=True)["api_key"]   # replaced, not refused
-        assert _load_auth_store()["providers"]["nous"]["anon_token"] != first
+        from pulse_cli.auth_pulse import resolve_pulse_runtime_credentials
+        assert resolve_pulse_runtime_credentials(force_refresh=True)["api_key"]   # replaced, not refused
+        assert _load_auth_store()["providers"]["pulse"]["anon_token"] != first
         assert portal.minted == 2
 
     def test_guest_off_beats_an_explicit_provision(self, portal, monkeypatch):
@@ -141,7 +141,7 @@ class TestExplicitProvision:
 class TestResolverIsUnchanged:
     def test_guest_is_last_resort_and_explicit_key_wins(self, portal, monkeypatch):
         anon_auth.ensure_portal_identity(explicit=True)
-        assert resolve_provider("auto") == "nous"
+        assert resolve_provider("auto") == "pulse"
         monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-test")
         assert resolve_provider("auto") == "openrouter"
 
@@ -149,7 +149,7 @@ class TestResolverIsUnchanged:
         anon_auth.ensure_portal_identity(explicit=True)
         from pulse_cli.runtime_provider import resolve_runtime_provider
         runtime = resolve_runtime_provider()
-        assert runtime["provider"] == "nous"
+        assert runtime["provider"] == "pulse"
         assert runtime["base_url"].rstrip("/") == WELCOME
         assert runtime["api_key"]
 
@@ -163,7 +163,7 @@ class TestRouteFallback:
         from pulse_cli.runtime_provider import resolve_runtime_provider
         runtime = resolve_runtime_provider()
         assert runtime["base_url"].rstrip("/") == WELCOME
-        state = _load_auth_store()["providers"]["nous"]
+        state = _load_auth_store()["providers"]["pulse"]
         assert state["inference_base_url"].rstrip("/") == WELCOME
 
     def test_disallowed_inference_host_heals_to_welcome_literal(self, portal):
@@ -174,16 +174,16 @@ class TestRouteFallback:
         assert runtime["base_url"].rstrip("/") == WELCOME
 
     def test_guest_state_without_url_never_resolves_to_the_paid_host(self, portal):
-        from pulse_cli.auth_nous import _nous_effective_routing
+        from pulse_cli.auth_pulse import _pulse_effective_routing
         guest = {"auth_method": "anonymous", "anon_token": "anon_x"}
-        _portal, stored, effective, _client = _nous_effective_routing(guest)
+        _portal, stored, effective, _client = _pulse_effective_routing(guest)
         assert stored.rstrip("/") == WELCOME and effective.rstrip("/") == WELCOME
-        _portal, stored, _effective, _client = _nous_effective_routing({"refresh_token": "r"})
+        _portal, stored, _effective, _client = _pulse_effective_routing({"refresh_token": "r"})
         assert stored.rstrip("/") == "https://inference-api.anxious-research.com/v1"
 
     def test_shared_store_shape_keeps_a_guest_on_the_welcome_host(self, portal):
-        from pulse_cli.auth_nous import _nous_shared_shape
-        shape = _nous_shared_shape({"auth_method": "anonymous", "anon_token": "anon_x"})
+        from pulse_cli.auth_pulse import _pulse_shared_shape
+        shape = _pulse_shared_shape({"auth_method": "anonymous", "anon_token": "anon_x"})
         assert shape["inference_base_url"].rstrip("/") == WELCOME
 
 
@@ -193,12 +193,12 @@ class TestTokenAcquisitionSeam:
         from pulse_cli.auth import _auth_store_lock, _save_auth_store
         with _auth_store_lock():
             store = _load_auth_store()
-            store["providers"]["nous"]["access_token"] = _jwt(exp=int(time.time()) - 10)
-            store["providers"]["nous"]["expires_at"] = "2000-01-01T00:00:00+00:00"
+            store["providers"]["pulse"]["access_token"] = _jwt(exp=int(time.time()) - 10)
+            store["providers"]["pulse"]["expires_at"] = "2000-01-01T00:00:00+00:00"
             _save_auth_store(store)
         portal.calls.clear()
-        from pulse_cli.auth_nous import resolve_nous_runtime_credentials
-        creds = resolve_nous_runtime_credentials()
+        from pulse_cli.auth_pulse import resolve_pulse_runtime_credentials
+        creds = resolve_pulse_runtime_credentials()
         paths = [p for _, p in portal.calls]
         assert paths == ["/api/anonymous/token"]
         assert "/api/oauth/token" not in paths
@@ -208,22 +208,22 @@ class TestTokenAcquisitionSeam:
     def test_dead_credential_is_replaced_by_a_fresh_identity(self, portal):
         first = anon_auth.ensure_portal_identity(explicit=True)
         portal.dead_tokens.add(first["anon_token"])
-        from pulse_cli.auth_nous import resolve_nous_runtime_credentials
-        creds = resolve_nous_runtime_credentials(force_refresh=True)
+        from pulse_cli.auth_pulse import resolve_pulse_runtime_credentials
+        creds = resolve_pulse_runtime_credentials(force_refresh=True)
         assert creds["api_key"]
-        state = _load_auth_store()["providers"]["nous"]
+        state = _load_auth_store()["providers"]["pulse"]
         assert state["anon_token"] != first["anon_token"]
         assert portal.minted == 2
 
     def test_tool_gateway_token_path_reexchanges(self, portal):
         anon_auth.ensure_portal_identity(explicit=True)
-        from pulse_cli.auth import _auth_store_lock, _save_auth_store, resolve_nous_access_token
+        from pulse_cli.auth import _auth_store_lock, _save_auth_store, resolve_pulse_access_token
         with _auth_store_lock():
             store = _load_auth_store()
-            store["providers"]["nous"]["expires_at"] = "2000-01-01T00:00:00+00:00"
+            store["providers"]["pulse"]["expires_at"] = "2000-01-01T00:00:00+00:00"
             _save_auth_store(store)
         portal.calls.clear()
-        token = resolve_nous_access_token()
+        token = resolve_pulse_access_token()
         assert token
         assert [p for _, p in portal.calls] == ["/api/anonymous/token"]
 
@@ -241,12 +241,12 @@ class TestModelPin:
     def test_agent_init_pins_only_on_welcome_route(self, portal):
         anon_auth.ensure_portal_identity(explicit=True)
         from run_agent import AIAgent
-        welcome = AIAgent(provider="nous", base_url=WELCOME, api_key="k", model="openai/gpt-5",
+        welcome = AIAgent(provider="pulse", base_url=WELCOME, api_key="k", model="openai/gpt-5",
                           quiet_mode=True, skip_context_files=True, skip_memory=True)
-        paid = AIAgent(provider="nous", base_url="https://inference-api.anxious-research.com/v1", api_key="k",
-                       model="nous/paid-model", quiet_mode=True, skip_context_files=True, skip_memory=True)
+        paid = AIAgent(provider="pulse", base_url="https://inference-api.anxious-research.com/v1", api_key="k",
+                       model="pulse/paid-model", quiet_mode=True, skip_context_files=True, skip_memory=True)
         assert welcome.model == anon_auth.GUEST_MODEL
-        assert paid.model == "nous/paid-model"
+        assert paid.model == "pulse/paid-model"
 
 
 class TestLogout:
@@ -261,14 +261,14 @@ class TestLogout:
     def test_logout_of_real_account_clears_shared_store(self, portal, tmp_path):
         from types import SimpleNamespace
         from pulse_cli.auth import logout_command
-        from pulse_cli.auth_nous import persist_nous_credentials
-        persist_nous_credentials({"access_token": _jwt(client_id="pulse-cli", account_tier="free"),
+        from pulse_cli.auth_pulse import persist_pulse_credentials
+        persist_pulse_credentials({"access_token": _jwt(client_id="pulse-cli", account_tier="free"),
                                   "refresh_token": "rt-1", "expires_at": "2030-01-01T00:00:00+00:00",
                                   "auth_method": "oauth_device_code"})
         assert _shared_store(tmp_path).get("refresh_token") == "rt-1"
-        logout_command(SimpleNamespace(provider="nous"))
+        logout_command(SimpleNamespace(provider="pulse"))
         assert _shared_store(tmp_path) == {}
-        assert "nous" not in _load_auth_store().get("providers", {})
+        assert "pulse" not in _load_auth_store().get("providers", {})
 
 
 class TestModelSwitchCopy:
@@ -276,7 +276,7 @@ class TestModelSwitchCopy:
         anon_auth.ensure_portal_identity(explicit=True)
         from pulse_cli import model_switch
         monkeypatch.setattr(model_switch, "list_provider_models", lambda *a, **k: [], raising=False)
-        result = model_switch.switch_model("gpt-5", "nous", anon_auth.GUEST_MODEL, WELCOME)
+        result = model_switch.switch_model("gpt-5", "pulse", anon_auth.GUEST_MODEL, WELCOME)
         assert not result.success
 
 
@@ -284,9 +284,9 @@ class TestRotationNeverRewritesTheConversationModel:
     """A credential rotation adopts an entry only if its route can serve the conversation's model.
     The model is never changed by a swap; an ineligible entry is refused (swap returns False)."""
 
-    def _agent(self, api_mode="chat_completions", model="nous/paid-model"):
+    def _agent(self, api_mode="chat_completions", model="pulse/paid-model"):
         from types import SimpleNamespace
-        return SimpleNamespace(provider="nous", api_mode=api_mode, base_url="https://inference-api.anxious-research.com/v1",
+        return SimpleNamespace(provider="pulse", api_mode=api_mode, base_url="https://inference-api.anxious-research.com/v1",
                                api_key="k", model=model, _client_kwargs={}, _credential_pool_entry_id="p",
                                _reapply_route_client_config=lambda **kw: None, _replace_primary_openai_client=lambda **kw: None,
                                _anthropic_client=SimpleNamespace(close=lambda: None),
@@ -295,7 +295,7 @@ class TestRotationNeverRewritesTheConversationModel:
     def test_paid_conversation_refuses_a_welcome_route_on_every_wire_mode(self, portal):
         from types import SimpleNamespace
         from agent.client_lifecycle import ClientLifecycleMixin
-        for mode, model in (("chat_completions", "nous/paid-model"), ("anthropic_messages", "anthropic/claude-sonnet")):
+        for mode, model in (("chat_completions", "pulse/paid-model"), ("anthropic_messages", "anthropic/claude-sonnet")):
             agent = self._agent(mode, model)
             ok = ClientLifecycleMixin._swap_credential(agent, SimpleNamespace(id="g", runtime_api_key="jwt", runtime_base_url=WELCOME))
             assert ok is False
@@ -322,7 +322,7 @@ class TestBootstrapIsTheOneCreator:
         fb = self._fresh()
         record = fb.run_bootstrap()
         assert record.free_tier_account and record.has_identity and record.provider_configured
-        assert record.inference_provider == "nous" and record.other_providers is False
+        assert record.inference_provider == "pulse" and record.other_providers is False
         assert portal.minted == 1
         again = fb.run_bootstrap()
         assert again is record and portal.minted == 1, "a second boot in the same process adopts, never mints"
@@ -334,16 +334,16 @@ class TestBootstrapIsTheOneCreator:
         record = fb.run_bootstrap()
         assert record.other_providers is True and record.has_identity is True
         assert record.free_tier_account is True, "the identity exists for connectors"
-        assert record.inference_provider != "nous"
-        assert _load_auth_store().get("active_provider") != "nous", "a mint beside an own key must not hijack inference"
+        assert record.inference_provider != "pulse"
+        assert _load_auth_store().get("active_provider") != "pulse", "a mint beside an own key must not hijack inference"
         assert portal.minted == 1
 
     def test_reads_never_mint(self, portal, monkeypatch):
         """status, provider resolution and the connector bearer are reads: with no identity they
         answer 'nothing' and touch no network."""
         monkeypatch.setattr("agent.bedrock_adapter.has_aws_credentials", lambda: False)
-        from tools.managed_tool_gateway import read_nous_access_token
-        assert read_nous_access_token() is None
+        from tools.managed_tool_gateway import read_pulse_access_token
+        assert read_pulse_access_token() is None
         with pytest.raises(anon_auth.AuthError):
             resolve_provider("auto")
         from pulse_cli.main import _has_any_provider_configured
@@ -369,39 +369,39 @@ class TestIdentityOfRecordIsTheSharedStore:
     def test_stale_profile_guest_adopts_a_newer_shared_account(self, portal, tmp_path):
         anon_auth.ensure_portal_identity(explicit=True)
         # A sibling profile signed in: the shared store now holds a real account.
-        from pulse_cli.auth_nous import _write_shared_nous_state
-        _write_shared_nous_state({"access_token": _jwt(client_id="pulse-cli", account_tier="free"),
+        from pulse_cli.auth_pulse import _write_shared_pulse_state
+        _write_shared_pulse_state({"access_token": _jwt(client_id="pulse-cli", account_tier="free"),
                                   "refresh_token": "rt-sibling", "expires_at": "2030-01-01T00:00:00+00:00",
                                   "auth_method": "oauth_device_code"})
         state = anon_auth.ensure_portal_identity(explicit=True)
         assert not anon_auth.is_guest_state(state)
         assert state["refresh_token"] == "rt-sibling"
-        assert _load_auth_store()["providers"]["nous"]["refresh_token"] == "rt-sibling"
+        assert _load_auth_store()["providers"]["pulse"]["refresh_token"] == "rt-sibling"
         assert _shared_store(tmp_path)["refresh_token"] == "rt-sibling", "the profile must never overwrite the shared account"
 
     def test_mint_persists_before_any_exchange_and_first_use_exchanges_once(self, portal):
         first = anon_auth.ensure_portal_identity(explicit=True)
         assert anon_auth.is_guest_state(first) and "access_token" not in first
         assert [p for _, p in portal.calls] == ["/api/anonymous/create"], "mint alone; exchange is lazy"
-        from pulse_cli.auth_nous import resolve_nous_runtime_credentials
-        creds = resolve_nous_runtime_credentials()
+        from pulse_cli.auth_pulse import resolve_pulse_runtime_credentials
+        creds = resolve_pulse_runtime_credentials()
         assert creds["api_key"]
         assert portal.minted == 1, "a stored credential is exchanged, never re-minted"
         assert [p for _, p in portal.calls].count("/api/anonymous/token") == 1
 
     def test_clearing_a_dead_guest_leaves_a_sibling_identity_alone(self, portal, tmp_path):
         anon_auth.ensure_portal_identity(explicit=True)
-        from pulse_cli.auth_nous import _write_shared_nous_state
-        _write_shared_nous_state({"access_token": _jwt(client_id="pulse-cli"), "refresh_token": "rt-sibling",
+        from pulse_cli.auth_pulse import _write_shared_pulse_state
+        _write_shared_pulse_state({"access_token": _jwt(client_id="pulse-cli"), "refresh_token": "rt-sibling",
                                   "expires_at": "2030-01-01T00:00:00+00:00", "auth_method": "oauth_device_code"})
         anon_auth.clear_dead_guest("test")
-        assert "nous" not in _load_auth_store().get("providers", {})
+        assert "pulse" not in _load_auth_store().get("providers", {})
         assert _shared_store(tmp_path)["refresh_token"] == "rt-sibling"
 
     def test_lock_order_is_profile_then_shared(self, portal, monkeypatch):
         order = []
-        from pulse_cli import auth as auth_mod, auth_nous
-        real_profile, real_shared = auth_mod._auth_store_lock, auth_nous._nous_shared_store_lock
+        from pulse_cli import auth as auth_mod, auth_pulse
+        real_profile, real_shared = auth_mod._auth_store_lock, auth_pulse._pulse_shared_store_lock
         from contextlib import contextmanager
 
         @contextmanager
@@ -416,7 +416,7 @@ class TestIdentityOfRecordIsTheSharedStore:
             with real_shared(*a, **k):
                 yield
         monkeypatch.setattr(auth_mod, "_auth_store_lock", profile)
-        monkeypatch.setattr(auth_nous, "_nous_shared_store_lock", shared)
+        monkeypatch.setattr(auth_pulse, "_pulse_shared_store_lock", shared)
         anon_auth.ensure_portal_identity(explicit=True)
         assert order[:2] == ["profile", "shared"]
 
@@ -424,25 +424,25 @@ class TestIdentityOfRecordIsTheSharedStore:
 class TestConnectorTokenPath:
     def test_opt_out_hides_the_free_tier_from_connectors_including_cached_tokens(self, portal, monkeypatch):
         anon_auth.ensure_portal_identity(explicit=True)
-        from pulse_cli.auth_nous import resolve_nous_runtime_credentials
-        resolve_nous_runtime_credentials()  # now a cached, valid JWT exists
+        from pulse_cli.auth_pulse import resolve_pulse_runtime_credentials
+        resolve_pulse_runtime_credentials()  # now a cached, valid JWT exists
         from tools import managed_tool_gateway as mtg
-        assert mtg.read_nous_access_token()
+        assert mtg.read_pulse_access_token()
         _write_config(monkeypatch, guest=False)
-        assert mtg.peek_nous_access_token() is None
-        assert mtg.read_nous_access_token() is None
+        assert mtg.peek_pulse_access_token() is None
+        assert mtg.read_pulse_access_token() is None
 
     def test_connector_path_replaces_a_dead_credential_once(self, portal):
         first = anon_auth.ensure_portal_identity(explicit=True)
         from pulse_cli.auth import _auth_store_lock, _save_auth_store
         with _auth_store_lock():
             store = _load_auth_store()
-            store["providers"]["nous"]["expires_at"] = "2000-01-01T00:00:00+00:00"
-            store["providers"]["nous"]["access_token"] = _jwt(exp=1)
+            store["providers"]["pulse"]["expires_at"] = "2000-01-01T00:00:00+00:00"
+            store["providers"]["pulse"]["access_token"] = _jwt(exp=1)
             _save_auth_store(store)
         portal.dead_tokens.add(first["anon_token"])
         from tools import managed_tool_gateway as mtg
-        token = mtg.read_nous_access_token()
+        token = mtg.read_pulse_access_token()
         assert token and token != _jwt(exp=1)
-        assert _load_auth_store()["providers"]["nous"]["anon_token"] != first["anon_token"]
+        assert _load_auth_store()["providers"]["pulse"]["anon_token"] != first["anon_token"]
         assert portal.minted == 2

@@ -33,7 +33,7 @@ def test_remove_dashboard_launchd_jobs_boots_out_and_deletes_matching_plists(
                     agents_dir)
     serve = job("com.user.pulse-serve", ["pulse", "serve"], agents_dir)
     unrelated = job("com.user.keep", ["/usr/bin/say", "hello"], agents_dir)
-    daemon = job("io.nousresearch.pulse-agent.dashboard", ["pulse_cli.main", "dashboard"],
+    daemon = job("io.anxious-research.pulse-agent.dashboard", ["pulse_cli.main", "dashboard"],
                  daemons_dir)
 
     booted = []
@@ -79,8 +79,8 @@ def test_full_uninstall_sweeps_macos_caches_and_dashboard_launchd(monkeypatch, t
 
     removed_caches, removed_jobs = [], []
     cache_dirs = [tmp_path / "caches" / name for name in
-                  ("PULSE", "com.nousresearch.pulse", "pulse-setup",
-                   "com.nousresearch.pulse.setup")]
+                  ("PULSE", "com.anxious-research.pulse", "pulse-setup",
+                   "com.anxious-research.pulse.setup")]
     for d in cache_dirs:
         d.mkdir(parents=True)
         (d / "Cache").write_text("x", encoding="utf-8")

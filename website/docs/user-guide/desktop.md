@@ -287,8 +287,8 @@ the public website consume the same generated CDN snapshots:
 
 | Catalog | Public docs alias | Desktop fetch URL |
 |---|---|---|
-| Skills | [`/docs/api/skills.json`](https://pulse-agent.anxious-research.com/docs/api/skills.json) | `https://nousresearch.github.io/pulse-agent/docs/api/skills.json` |
-| Plugins | [`/docs/api/plugins.json`](https://pulse-agent.anxious-research.com/docs/api/plugins.json) | `https://nousresearch.github.io/pulse-agent/docs/api/plugins.json` |
+| Skills | [`/docs/api/skills.json`](https://pulse-agent.anxious-research.com/docs/api/skills.json) | `https://anxious-research.github.io/pulse-agent/docs/api/skills.json` |
+| Plugins | [`/docs/api/plugins.json`](https://pulse-agent.anxious-research.com/docs/api/plugins.json) | `https://anxious-research.github.io/pulse-agent/docs/api/plugins.json` |
 
 The skills snapshot combines `skills/`, `optional-skills/`, and the centralized
 skills index. The plugin snapshot comes from `plugin-catalog/*.yaml` and cached star
@@ -485,10 +485,10 @@ The connection has two halves: on the backend you protect it with an **auth prov
 
 **Pick a provider based on where the backend lives:**
 
-- **OAuth (Nous Portal) — preferred for anything reachable beyond your own machine.** Logins are verified against your Nous account, so this is the option suitable for a VPS, a public host, or any remote backend. Register the dashboard with `pulse dashboard register` (or the Portal [`/local-dashboards`](https://portal.anxious-research.com/local-dashboards) page) to provision its OAuth client, then sign in from the app with **Sign in with Nous Research**. A self-hosted OIDC provider works the same way if you run your own identity provider.
+- **OAuth (Pulse Portal) — preferred for anything reachable beyond your own machine.** Logins are verified against your PULSE account, so this is the option suitable for a VPS, a public host, or any remote backend. Register the dashboard with `pulse dashboard register` (or the Portal [`/local-dashboards`](https://portal.anxious-research.com/local-dashboards) page) to provision its OAuth client, then sign in from the app with **Sign in with Anxious Research**. A self-hosted OIDC provider works the same way if you run your own identity provider.
 - **Username/password — local / trusted-network use only.** The simplest option when the backend is on the same trusted LAN or reachable only over a VPN (e.g. Tailscale). It protects a single shared credential with no external identity provider, so **do not use it for a dashboard exposed to the public internet** — reach for OAuth there instead.
 
-The rest of this section shows the username/password path because it's the quickest to stand up on a trusted network; for the OAuth path see [Web Dashboard → Default provider: Nous Research](./features/web-dashboard.md#default-provider-nous-research).
+The rest of this section shows the username/password path because it's the quickest to stand up on a trusted network; for the OAuth path see [Web Dashboard → Default provider: Anxious Research](./features/web-dashboard.md#default-provider-pulse-research).
 
 ### On the backend (the remote machine)
 
@@ -520,7 +520,7 @@ Prefer not to keep a plaintext password at rest? Set `PULSE_DASHBOARD_BASIC_AUTH
 Running the backend as a systemd service? Give the unit `EnvironmentFile=%h/.pulse/.env` so the credentials are in the environment at boot.
 
 :::warning
-The backend reads and writes your `.env` (API keys, secrets) and can run agent commands. The **username/password** setup shown above is for a trusted network — never expose a password-protected backend directly to the open internet; put it behind a VPN. [Tailscale](https://tailscale.com/) is the clean option: bind to the machine's tailscale IP (`--host <tailscale-ip>`) and use `http://<tailscale-ip>:9119` as the Remote URL so only your tailnet can reach it. To reach a backend over the public internet, use the **OAuth (Nous Portal)** provider instead.
+The backend reads and writes your `.env` (API keys, secrets) and can run agent commands. The **username/password** setup shown above is for a trusted network — never expose a password-protected backend directly to the open internet; put it behind a VPN. [Tailscale](https://tailscale.com/) is the clean option: bind to the machine's tailscale IP (`--host <tailscale-ip>`) and use `http://<tailscale-ip>:9119` as the Remote URL so only your tailnet can reach it. To reach a backend over the public internet, use the **OAuth (Pulse Portal)** provider instead.
 :::
 
 ### In the app
@@ -528,7 +528,7 @@ The backend reads and writes your `.env` (API keys, secrets) and can run agent c
 **Settings → Gateways → Remote gateway:**
 
 1. **Remote URL** — `http://<backend-host>:9119` (path prefixes like `/pulse` work if you front it with a reverse proxy)
-2. **Sign in** — the app detects which provider the backend advertises and adapts the button. For a username/password backend it shows a **Sign in** button that opens a credential form (enter the credentials from step 1). For an OAuth backend it shows **Sign in with `<provider>`** (e.g. *Sign in with Nous Research*), which runs the provider's browser sign-in. Either way the app ends up with an authenticated session against the backend.
+2. **Sign in** — the app detects which provider the backend advertises and adapts the button. For a username/password backend it shows a **Sign in** button that opens a credential form (enter the credentials from step 1). For an OAuth backend it shows **Sign in with `<provider>`** (e.g. *Sign in with Anxious Research*), which runs the provider's browser sign-in. Either way the app ends up with an authenticated session against the backend.
 3. **Save and reconnect** — switches the desktop shell onto the remote backend. The session refreshes automatically; you stay signed in across restarts when `PULSE_DASHBOARD_BASIC_AUTH_SECRET` is set.
 
 You can also set the backend URL without the UI via the `PULSE_DESKTOP_REMOTE_URL` environment variable before launching the app (it overrides the in-app setting); you still sign in from the Gateways settings panel.
@@ -607,7 +607,7 @@ including one an installer replaced in place.
   half is **not** installed in the selected profile shows **Install here**,
   which pre-fills the install dialog from the package's origin (catalog entry
   or git remote) for that profile only. Optional extras such as the
-  [Accent Picker](https://github.com/NousResearch/pulse-desktop-accent-picker)
+  [Accent Picker](https://github.com/AnxiousResearch/pulse-desktop-accent-picker)
   install from their own repos via **Install from Git**.
 - **Uninstall** — every plugin installed under the selected profile's
   `plugins/` folder (user or git install) has a trash button beside its name.
@@ -671,12 +671,12 @@ generic error toast. The card offers recovery actions matched to the failure:
   or Cloud connection the button reads **Open Desktop logs**: it opens the
   local Desktop-side logs (transport evidence), since the failed turn's
   gateway/agent logs live on the remote machine.
-- **Send diagnostics** — uploads a redacted debug bundle to Nous-internal
+- **Send diagnostics** — uploads a redacted debug bundle to PULSE-internal
   storage after an explicit consent prompt (same pipeline as
-  `pulse debug share --nous`; secrets are always redacted, the bundle is
-  viewable by Nous staff only and auto-deletes after 14 days). On success you
+  `pulse debug share --pulse`; secrets are always redacted, the bundle is
+  viewable by PULSE staff only and auto-deletes after 14 days). On success you
   get a private view link to paste into your support thread, plus quick links
-  to GitHub Issues, Nous Portal Support, and Discord. On a remote or Cloud
+  to GitHub Issues, Pulse Portal Support, and Discord. On a remote or Cloud
   connection the backend bundles its own agent/gateway logs and the local
   Desktop log is attached alongside, so support sees both halves.
 - **Copy error details** — copies a compact plain-text summary (layer, code,
@@ -706,7 +706,7 @@ damaged application files, repair through the
 
 ```bash
 # Reset a stuck macOS microphone prompt
-tccutil reset Microphone com.nousresearch.pulse
+tccutil reset Microphone com.anxious-research.pulse
 ```
 
 ### Windows: the SSH client is missing or broken
@@ -817,7 +817,7 @@ button, so it looks like there is nothing to re-check. If that happens, reset
 the stale grant once and re-grant:
 
 ```bash
-tccutil reset ScreenCapture com.nousresearch.pulse   # repeat per service
+tccutil reset ScreenCapture com.anxious-research.pulse   # repeat per service
 ```
 
 then toggle the fresh entry ON in System Settings and fully quit & relaunch
@@ -855,7 +855,7 @@ detected and never re-signed.
 One-time note: changing the signing identity (including the first update after
 this fix) changes the app's identity once, so macOS will re-prompt one final
 time. Grants are stable from then on. If a permission gets stuck, reset it with
-`tccutil reset All com.nousresearch.pulse` and re-grant.
+`tccutil reset All com.anxious-research.pulse` and re-grant.
 
 ## See also
 

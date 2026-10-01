@@ -17,7 +17,7 @@ Generate one- or two-ink editorial print poster images.
 | Source | Optional — install with `pulse skills install official/creative/mono-color` |
 | Path | `optional-skills/creative/mono-color` |
 | Version | `1.0.0` |
-| Author | Yan Liu (adapted by Nous Research) |
+| Author | Yan Liu (adapted by Anxious Research) |
 | License | MIT |
 | Platforms | linux, macos, windows |
 | Tags | `design`, `poster`, `print`, `duotone`, `risograph`, `editorial`, `image-generation` |

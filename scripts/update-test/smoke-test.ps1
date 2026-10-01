@@ -39,7 +39,7 @@ function Find-RealPython {
   $wa = Join-Path $env:ProgramFiles 'WindowsApps'
   if (Test-Path -LiteralPath $wa) {
     $cands += Get-ChildItem -LiteralPath $wa -Directory -ErrorAction SilentlyContinue |
-      Where-Object { $_.Name -like 'NousResearch.PULSE*' } |
+      Where-Object { $_.Name -like 'AnxiousResearch.PULSE*' } |
       ForEach-Object {
         Get-ChildItem -LiteralPath (Join-Path $_.FullName 'app\resources\agent-payload\tools') -Directory -ErrorAction SilentlyContinue |
           Where-Object { $_.Name -like 'python-*' } | ForEach-Object { Join-Path $_.FullName 'python.exe' }
@@ -163,7 +163,7 @@ function New-Fixture {
   Set-Content -LiteralPath (Join-Path $H 'plugins\mnemosyne-wrapper\mnemosyne-wrapper.json') -Value '{"wrapper":true}'
   Set-Content -LiteralPath (Join-Path $Root 'external-mnemosyne\witness.txt') -Value 'witness'
   Set-Content -LiteralPath (Join-Path $H 'config.yaml') -Value 'timezone: utc'
-  Set-Content -LiteralPath (Join-Path $H '.env') -Value 'NOUS_API_KEY=xxx'
+  Set-Content -LiteralPath (Join-Path $H '.env') -Value 'PULSE_API_KEY=xxx'
   Set-Content -LiteralPath (Join-Path $H 'auth.json') -Value '{"tokens":{}}'
   Set-Content -LiteralPath (Join-Path $H 'memories\note.md') -Value 'recall'
   Set-Content -LiteralPath (Join-Path $H 'cron\jobs.json') -Value 'jobs'
@@ -252,7 +252,7 @@ try {
   $getUrl = (& git -C $Install remote get-url origin | Out-String).Trim()
   Check 'remote get-url resolves to -Source' ($getUrl -eq $Install)
   $configured = (& git -C $Install config --get remote.origin.url | Out-String).Trim()
-  Check 'config --get remote.origin.url stays official' ($configured -match 'NousResearch')
+  Check 'config --get remote.origin.url stays official' ($configured -match 'AnxiousResearch')
 
   Write-Host "`n--- pre changed nothing else ---"
   Check 'checkout untouched by pre' (((& git -C $Install rev-parse HEAD | Out-String).Trim()) -eq $HeadSha)
@@ -291,7 +291,7 @@ try {
   if (-not $cfg2) { $cfg2 = '' }
   Check 'no stale insteadOf left in the checkout' ((([regex]::Matches($cfg2, 'insteadOf', 'IgnoreCase')).Count) -eq 0)
   Check 'upstream-prompt marker removed' (-not (Test-Path -LiteralPath (Join-Path $H '.skip_upstream_prompt')))
-  Check 'origin resolves officially again' (((& git -C $Install remote get-url origin | Out-String).Trim()) -match 'NousResearch')
+  Check 'origin resolves officially again' (((& git -C $Install remote get-url origin | Out-String).Trim()) -match 'AnxiousResearch')
   Check 'bin shim restored' (Test-Path -LiteralPath (Join-Path $H 'bin\pulse.cmd'))
   Check 'post deleted the snapshot' (-not (Get-CimInstance Win32_ShadowCopy | Where-Object { $ShadowIds -contains $_.ID }))
   Check 'post removed its mount link' (-not (Test-Path -LiteralPath (Join-Path $Snap 'vss-C')))

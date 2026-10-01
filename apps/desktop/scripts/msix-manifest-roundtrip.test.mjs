@@ -39,7 +39,7 @@ function makeFakeDesktop(version) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'msix-roundtrip-'))
   fs.writeFileSync(
     path.join(dir, 'product-identity.cjs'),
-    "module.exports = { store: false, light: false, displayName: 'PULSE', appId: 'com.nousresearch.pulse-bundled', channel: 'latest', artifactNamePascal: 'PULSEBundled', msixAppIdWithOrg: 'NousResearch.PULSEBundled' }\n"
+    "module.exports = { store: false, light: false, displayName: 'PULSE', appId: 'com.anxious-research.pulse-bundled', channel: 'latest', artifactNamePascal: 'PULSEBundled', msixAppIdWithOrg: 'AnxiousResearch.PULSEBundled' }\n"
   )
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: 'pulse-desktop', version }))
   return dir

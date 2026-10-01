@@ -240,7 +240,7 @@ class CLIAgentSetupMixin:
         self._credentials_rate_limited = False
         self._credentials_terminal = False
         try:
-            # target_model: the ladder's model-keyed rungs (Zen/Go api_mode, Copilot/Nous
+            # target_model: the ladder's model-keyed rungs (Zen/Go api_mode, Copilot/PULSE
             # api_mode) must see the model this CLI will actually send, not config's `default`,
             # or `pulse -m mimo-v2.5 --provider opencode-go` resolves an api_mode/base_url the
             # sent model cannot use (#112600).
@@ -268,7 +268,7 @@ class CLIAgentSetupMixin:
         api_key = runtime.get("api_key")
         base_url = runtime.get("base_url")
         resolved_provider = runtime.get("provider", "openrouter")
-        if resolved_provider != "nous":
+        if resolved_provider != "pulse":
             # An explicit provider carries inference. The free-tier identity (for connectors) was
             # created by the boot bootstrap before this point, never here; this prints the one-time
             # "free tier is here" notice the first time an identity is seen beside an own key.

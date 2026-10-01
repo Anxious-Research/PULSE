@@ -2,9 +2,9 @@
 
 PULSECLI.__init__ seeds ``self.api_key`` from OPENAI_API_KEY /
 OPENROUTER_API_KEY env vars before provider resolution runs. On any
-non-OpenAI provider (Nous, Anthropic, ...) the constructor value is a
+non-OpenAI provider (PULSE, Anthropic, ...) the constructor value is a
 different vendor's key than the one actually used for requests, so
-``/config`` displayed e.g. an ``sk-proj-...`` OpenAI key next to a Nous
+``/config`` displayed e.g. an ``sk-proj-...`` OpenAI key next to a PULSE
 base URL. ``show_config`` must prefer ``self.agent.api_key`` when an
 agent exists.
 """
@@ -37,10 +37,10 @@ def _make_stand_in(cli_key, agent_key):
 class TestShowConfigCredentialSource:
     def test_prefers_live_agent_key(self, capsys):
         out = _run_show_config(
-            _make_stand_in(cli_key="sk-proj-WRONGVENDORKEY1234", agent_key="nous-REALKEY-abcdef9876"),
+            _make_stand_in(cli_key="sk-proj-WRONGVENDORKEY1234", agent_key="pulse-REALKEY-abcdef9876"),
             capsys,
         )
-        assert "nous-REA" in out
+        assert "pulse-REA" in out
         assert "sk-proj-" not in out
 
     def test_falls_back_to_cli_key_without_agent(self, capsys):

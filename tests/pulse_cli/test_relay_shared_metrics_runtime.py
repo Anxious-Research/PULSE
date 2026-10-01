@@ -2857,7 +2857,7 @@ def test_milestone_install_age_is_the_subscriber_profile_not_the_relay_thread(tm
         subscriber = SharedMetricsSubscriber(SharedMetricsStore(), "1.0")
     finally:
         reset_pulse_home_override(token)
-    subscriber._record_milestones("pulse.setup.completed", {"provider": "nous", "surface": "cli"})
+    subscriber._record_milestones("pulse.setup.completed", {"provider": "pulse", "surface": "cli"})
     ages = [c["dimensions"]["install_age_bucket"] for c in subscriber.store.counter_snapshot()
             if c["metric_name"] == "pulse.install.milestone"]
     assert ages == ["gte_90d"]

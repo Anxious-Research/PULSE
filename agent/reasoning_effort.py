@@ -24,7 +24,7 @@ _KIMI_K3_SLUG_RE = re.compile(r"(?:^|[^a-z0-9])k3(?:[^a-z0-9]|$)")
 # (the Codex product tier): no wire accepts it, every declared set stops at ``max``.
 EFFORT_LADDER: tuple[str, ...] = ("none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra")
 
-#: Widest OpenAI-compatible wire vocabulary (OpenRouter, Nous Portal).
+#: Widest OpenAI-compatible wire vocabulary (OpenRouter, Pulse Portal).
 OPENAI_COMPAT_WIRE_EFFORTS: tuple[str, ...] = ("none", "minimal", "low", "medium", "high", "xhigh", "max")
 
 #: OpenAI/Codex Responses per model generation (live-verified): ``minimal`` is rejected by

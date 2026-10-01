@@ -25,7 +25,7 @@ description: >
   survive compaction and restarts.
 
   Pure stdlib transport (http.server + urllib) — no a2a-sdk dependency required.
-author: Nous Research
+author: Anxious Research
 # The outbound client tools. Declaring them here is what asks discovery to
 # import `tools.py` in CLI/TUI processes, where the plugin is otherwise
 # deferred and the tools would never register at all (#78050). The inbound

@@ -451,7 +451,7 @@ What this means outside `pulse update`:
 
 ### Image-managed installs (Docker): the provenance marker
 
-Published Docker images bake a small read-only marker (`/etc/pulse/image-provenance.json`) that authoritatively identifies the filesystem as image-managed. `pulse update`, `pulse update --check`, and the dashboard's Update button all consult it before touching anything: on an image-managed install they refuse cleanly (exit code 2), print the actual update command (`docker pull nousresearch/pulse-agent:latest`), and write a `refused` receipt so fleet tooling can see the attempt happened. The marker wins even when a source checkout is bind-mounted into the container — the refusal is based on what the running filesystem *is*, not what it looks like. A damaged marker still refuses (fail-closed). Nix- and apt-managed installs refuse through the same gate using the existing detection.
+Published Docker images bake a small read-only marker (`/etc/pulse/image-provenance.json`) that authoritatively identifies the filesystem as image-managed. `pulse update`, `pulse update --check`, and the dashboard's Update button all consult it before touching anything: on an image-managed install they refuse cleanly (exit code 2), print the actual update command (`docker pull anxious-research/pulse-agent:latest`), and write a `refused` receipt so fleet tooling can see the attempt happened. The marker wins even when a source checkout is bind-mounted into the container — the refusal is based on what the running filesystem *is*, not what it looks like. A damaged marker still refuses (fail-closed). Nix- and apt-managed installs refuse through the same gate using the existing detection.
 
 ### Note for Nix users
 

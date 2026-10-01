@@ -16,7 +16,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { translateBots } from './i18n-test-helper'
 
 const HUB_ORIGIN = 'https://pulse-agent.anxious-research.com'
-const FALLBACK_HUB_ORIGIN = 'https://nousresearch.github.io'
+const FALLBACK_HUB_ORIGIN = 'https://anxious-research.github.io'
 
 const mocks = vi.hoisted(() => ({
   notify: vi.fn(),
@@ -159,11 +159,11 @@ describe('hub pick messages', () => {
     const frame = openHubBrowser()
 
     postPick(
-      { identifier: 'nous/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
+      { identifier: 'pulse/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
       { origin: FALLBACK_HUB_ORIGIN, source: frame.contentWindow }
     )
 
-    expect(installCalls()).toEqual([['skills.manage', { action: 'install', query: 'nous/web-research' }]])
+    expect(installCalls()).toEqual([['skills.manage', { action: 'install', query: 'pulse/web-research' }]])
   })
 
   it('pins the hub frame to the required sandbox and clipboard posture (#91612)', async () => {
@@ -184,13 +184,13 @@ describe('hub pick messages', () => {
     const frame = openHubBrowser()
 
     postPick(
-      { identifier: 'nous/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
+      { identifier: 'pulse/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
       {
         source: frame.contentWindow
       }
     )
 
-    expect(installCalls()).toEqual([['skills.manage', { action: 'install', query: 'nous/web-research' }]])
+    expect(installCalls()).toEqual([['skills.manage', { action: 'install', query: 'pulse/web-research' }]])
   })
 
   it('routes an existing source-scoped bot install through its owner connection', async () => {
@@ -214,7 +214,7 @@ describe('hub pick messages', () => {
     const frame = container.querySelector('iframe') as HTMLIFrameElement
 
     postPick(
-      { identifier: 'nous/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
+      { identifier: 'pulse/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
       { source: frame.contentWindow }
     )
 
@@ -231,7 +231,7 @@ describe('hub pick messages', () => {
         {
           action: 'install',
           profile: 'backend-worker',
-          query: 'nous/web-research'
+          query: 'pulse/web-research'
         }
       ]
     ])
@@ -243,7 +243,7 @@ describe('hub pick messages', () => {
 
     // Same origin, different window — the OAuth-popup shape of the hole.
     postPick(
-      { identifier: 'nous/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
+      { identifier: 'pulse/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
       {
         source: window
       }
@@ -256,7 +256,7 @@ describe('hub pick messages', () => {
     const frame = openHubBrowser()
 
     postPick(
-      { identifier: 'nous/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
+      { identifier: 'pulse/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
       {
         origin: 'https://evil.example',
         source: frame.contentWindow
@@ -280,8 +280,8 @@ describe('hub pick messages', () => {
   it('ignores messages that are not a skill pick', () => {
     const frame = openHubBrowser()
 
-    postPick({ identifier: 'nous/web-research', type: 'oauth-callback' }, { source: frame.contentWindow })
-    postPick({ identifier: 'nous/web-research', type: 'pulse-skill-pick' }, { source: frame.contentWindow })
+    postPick({ identifier: 'pulse/web-research', type: 'oauth-callback' }, { source: frame.contentWindow })
+    postPick({ identifier: 'pulse/web-research', type: 'pulse-skill-pick' }, { source: frame.contentWindow })
 
     // The second has no `name`, so it is not a complete pick either.
     expect(installCalls()).toEqual([])
@@ -292,7 +292,7 @@ describe('hub pick messages', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /hide the hub browser/i }))
     postPick(
-      { identifier: 'nous/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
+      { identifier: 'pulse/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
       {
         source: frame.contentWindow
       }

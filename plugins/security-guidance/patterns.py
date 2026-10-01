@@ -20,7 +20,7 @@ Forked from Anthropic's claude-plugins-official repository
   See the License for the specific language governing permissions and
   limitations under the License.
 
-NousResearch modifications: pattern data unchanged from upstream; the upstream RuleId
+AnxiousResearch modifications: pattern data unchanged from upstream; the upstream RuleId
 telemetry table (Claude Code PostToolUse metrics) is dropped — PULSE has no consumer.
 PULSE-side wiring lives in __init__.py.
 """

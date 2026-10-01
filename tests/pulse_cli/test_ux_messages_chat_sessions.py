@@ -37,7 +37,7 @@ def test_chat_error_response_leads_with_plain_copy_and_pointer(exc, pointer, abs
 
 
 def test_chat_error_response_accepts_plain_string_summary():
-    text = chat_error_response("HTTP 401: Invalid API key", provider="nous", model="m")
+    text = chat_error_response("HTTP 401: Invalid API key", provider="pulse", model="m")
     assert "pulse model" in text.splitlines()[0]
 
 

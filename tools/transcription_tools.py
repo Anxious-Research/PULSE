@@ -2,7 +2,7 @@
 """Speech-to-text transcription used by the gateway for voice messages.
 
 Built-in providers: local (faster-whisper, default/free), local_command, groq, openai
-(also serves the managed ``nous`` selection), mistral, xai, elevenlabs, deepinfra; plus
+(also serves the managed ``pulse`` selection), mistral, xai, elevenlabs, deepinfra; plus
 user-declared command providers and plugin providers. ``transcribe_audio(path)`` returns
 ``{"success", "transcript", "error"?, "provider"?}``. This module owns provider resolution,
 the dispatcher and the cached local model + idle-unload state; backends live in
@@ -251,8 +251,8 @@ def _get_provider(stt_config: dict) -> str:
         return "none"
     explicit = "provider" in stt_config
     provider = stt_config.get("provider", DEFAULT_PROVIDER)
-    # The managed "Nous Subscription" selection is the OpenAI backend routed via the managed gateway.
-    if isinstance(provider, str) and provider.strip().lower() == "nous":
+    # The managed "PULSE Subscription" selection is the OpenAI backend routed via the managed gateway.
+    if isinstance(provider, str) and provider.strip().lower() == "pulse":
         provider = "openai"
     if explicit and provider == "local":
         # Legacy DEFAULT_CONFIG seeded ``stt.provider: local`` on every install, so only a

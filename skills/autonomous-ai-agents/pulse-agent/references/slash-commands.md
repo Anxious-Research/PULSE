@@ -96,14 +96,14 @@ it. New commands land often; `/help` in-session is always authoritative.
 /profile                 Active profile info
 /platforms (/gateway)    Platform connection status (CLI)
 /journey (/learning)     Learned skills + memories timeline (CLI)
-/subscription (/upgrade) Nous plan info (CLI)
-/topup                   Nous balance / billing
+/subscription (/upgrade) PULSE plan info (CLI)
+/topup                   PULSE balance / billing
 /copy [N]                Copy last response to clipboard (CLI)
 /paste                   Attach clipboard image (CLI)
 /image <path>            Attach a local image file (CLI)
 /update                  Update PULSE to latest
 /version (/v)            Show version
-/debug [nous|local]      Upload debug report, get shareable links
+/debug [pulse|local]      Upload debug report, get shareable links
 ```
 
 ### Exit

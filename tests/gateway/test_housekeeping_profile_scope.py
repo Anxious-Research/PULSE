@@ -2,7 +2,7 @@
 profile's runtime scope on a multiplexed gateway.
 
 The housekeeping thread has no turn on the stack, so nothing bound a profile for it: under
-``gateway.multiplex_profiles`` the skills-sync pulls resolved Nous credentials through the
+``gateway.multiplex_profiles`` the skills-sync pulls resolved PULSE credentials through the
 fail-closed reader and logged ``no profile secret scope on a multiplexed call`` four times per
 hourly tick, per chore, while the launch profile's home/credentials leaked into every served
 profile's pull. The MCP config reconciler already iterated the served profiles under
@@ -35,9 +35,9 @@ class _Ticks:
 
 def _profile(home: Path, base_url: str) -> None:
     home.mkdir(parents=True, exist_ok=True)
-    (home / "config.yaml").write_text("model:\n  provider: nous\n", encoding="utf-8")
-    (home / ".env").write_text(f"NOUS_INFERENCE_BASE_URL={base_url}\n", encoding="utf-8")
-    (home / "auth.json").write_text(json.dumps({"version": 1, "providers": {"nous": {
+    (home / "config.yaml").write_text("model:\n  provider: pulse\n", encoding="utf-8")
+    (home / ".env").write_text(f"PULSE_INFERENCE_BASE_URL={base_url}\n", encoding="utf-8")
+    (home / "auth.json").write_text(json.dumps({"version": 1, "providers": {"pulse": {
         "access_token": "x.y.z", "refresh_token": "r", "expires_at": 0,
         "portal_base_url": "https://portal.anxious-research.com", "client_id": "c"}}}), encoding="utf-8")
 
@@ -52,7 +52,7 @@ def two_homes(tmp_path, monkeypatch):
     _profile(b, "https://b.example/v1")
     monkeypatch.setattr(Path, "home", classmethod(lambda cls: fake_home))
     monkeypatch.setenv("PULSE_HOME", str(a))
-    monkeypatch.delenv("NOUS_INFERENCE_BASE_URL", raising=False)
+    monkeypatch.delenv("PULSE_INFERENCE_BASE_URL", raising=False)
     # The hermetic conftest pins ``pulse_state.DEFAULT_DB_PATH`` at one sandbox store whenever
     # pulse_state is already imported, and that pin WINS over ``get_pulse_home()`` inside
     # ``_default_db_path()`` — exactly the per-profile resolution these tests exist to prove.
@@ -67,17 +67,17 @@ def two_homes(tmp_path, monkeypatch):
 
 
 def _record_credential_chores(monkeypatch):
-    """Replace the three credential-reading chores with recorders of (home, Nous override) they see."""
+    """Replace the three credential-reading chores with recorders of (home, PULSE override) they see."""
     import agent.curator as curator
     import tools.skills_sync_client as ssc
     import tools.skills_sync_client_org as sso
-    from pulse_cli.auth_nous import _nous_inference_env_override
+    from pulse_cli.auth_pulse import _pulse_inference_env_override
     from pulse_constants import get_pulse_home
 
     seen: dict = {"sync": [], "org": [], "curator": []}
 
     def _rec(key):
-        return lambda *a, **k: seen[key].append((get_pulse_home().name, _nous_inference_env_override()))
+        return lambda *a, **k: seen[key].append((get_pulse_home().name, _pulse_inference_env_override()))
 
     monkeypatch.setattr(ssc, "maybe_pull_skills", _rec("sync"))
     monkeypatch.setattr(sso, "maybe_pull_org_skills", _rec("org"))
@@ -152,7 +152,7 @@ def test_multiplexed_maintenance_tick_prunes_every_served_profile_store(two_home
     homes = two_homes
     for home in homes:
         (home / "config.yaml").write_text(
-            "model:\n  provider: nous\n"
+            "model:\n  provider: pulse\n"
             "sessions:\n"
             "  auto_prune: true\n"
             "  retention_days: 0\n"
@@ -257,7 +257,7 @@ def test_prune_unlinks_transcripts_under_the_configured_sessions_dir(two_homes, 
     override.mkdir()
     for home, transcripts in ((a, override), (b, b / "sessions")):
         (home / "config.yaml").write_text(
-            "model:\n  provider: nous\n"
+            "model:\n  provider: pulse\n"
             "sessions:\n"
             "  auto_prune: true\n"
             "  retention_days: 0\n"

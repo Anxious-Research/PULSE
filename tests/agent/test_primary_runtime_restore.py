@@ -5,7 +5,7 @@ Verifies that:
 2. The fallback chain index resets so all fallbacks are available again
 3. Context compressor state is restored alongside the runtime
 4. Transient transport errors get one recovery cycle before fallback
-5. Recovery is skipped for aggregator providers (OpenRouter, Nous)
+5. Recovery is skipped for aggregator providers (OpenRouter, PULSE)
 6. Non-transport errors don't trigger recovery
 """
 
@@ -43,7 +43,7 @@ def _make_agent(
         patch("agent.process_bootstrap.OpenAI"),
         # Unit tests must not probe live endpoints. The compressor resolves
         # context length lazily via a real network call against base_url; for
-        # reachable hosts (the nous portal case) the endpoint's answer for the
+        # reachable hosts (the pulse portal case) the endpoint's answer for the
         # empty test model (32K) trips agent_init's 64K floor and fails the
         # test on network behavior, not code under test.
         patch(
@@ -498,10 +498,10 @@ class TestTryRecoverPrimaryTransport:
 
 
 
-    def test_allowed_for_nous_anthropic_messages(self):
+    def test_allowed_for_pulse_anthropic_messages(self):
         """Portal Claude holds a local Anthropic SDK client — rebuild it."""
         agent = _make_agent(
-            provider="nous",
+            provider="pulse",
             base_url="https://inference-api.anxious-research.com/v1",
         )
         agent.api_mode = "anthropic_messages"
@@ -509,7 +509,7 @@ class TestTryRecoverPrimaryTransport:
         agent._primary_runtime.update({
             "api_mode": "anthropic_messages",
             "model": "anthropic/claude-opus-4.8",
-            "provider": "nous",
+            "provider": "pulse",
             "anthropic_api_key": "portal-jwt",
             "anthropic_base_url": "https://inference-api.anxious-research.com/v1",
             "is_anthropic_oauth": False,

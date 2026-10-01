@@ -103,7 +103,7 @@ class TestFreeTierBeatsImplicitHostCredentials:
     creates the identity; the boot bootstrap does, before any turn asks."""
 
     @pytest.mark.parametrize("free_tier_on, identity, env_key, login, expected", [
-        (True, True, None, None, "nous"),                 # existing identity beats the AWS chain
+        (True, True, None, None, "pulse"),                 # existing identity beats the AWS chain
         (True, False, None, None, "bedrock"),             # no identity yet: Bedrock, nothing minted
         (False, True, None, None, "bedrock"),             # free tier off: Bedrock as before
         (True, True, "OPENAI_API_KEY", None, "openai-api"),  # env key still wins
@@ -131,6 +131,6 @@ class TestFreeTierBeatsImplicitHostCredentials:
         _logged_out(monkeypatch)
         monkeypatch.setattr("agent.bedrock_adapter.has_aws_credentials", lambda: False)
         _free_tier(monkeypatch, on=True, identity=True)
-        assert resolve_provider("auto") == "nous"
+        assert resolve_provider("auto") == "pulse"
         with pytest.raises(AuthError):
             resolve_provider("auto", skip_free_tier=True)

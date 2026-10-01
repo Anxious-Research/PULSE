@@ -40,10 +40,10 @@ _STATIC_PROVIDER_ENV_BLOCKLIST = frozenset({
     "DAYTONA_API_KEY", "GATEWAY_RELAY_ID", "GATEWAY_RELAY_SECRET",
     "GATEWAY_RELAY_DELIVERY_KEY", "VERCEL_OIDC_TOKEN", "VERCEL_TOKEN",
     "VERCEL_PROJECT_ID", "VERCEL_TEAM_ID",
-    # Keys the OAuth provider profiles (nous, qwen-oauth) also accept when pasted. The auth
+    # Keys the OAuth provider profiles (pulse, qwen-oauth) also accept when pasted. The auth
     # registry mirrors env_vars only for api_key profiles, and discovering the provider plugins
     # from here, at import, would re-mirror them over a plugin's own registry entry.
-    "NOUS_API_KEY", "QWEN_API_KEY",
+    "PULSE_API_KEY", "QWEN_API_KEY",
     # PULSE' own secrets read in code: the anonymous-inference secret, dashboard auth
     # (basic, OIDC, drain) and the Google Meet realtime key.
     "PULSE_ANON_API_SECRET", "PULSE_DASHBOARD_BASIC_AUTH_PASSWORD",

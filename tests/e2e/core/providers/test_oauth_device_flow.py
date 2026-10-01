@@ -1,4 +1,4 @@
-"""RFC 8628 device-code login: the real ``pulse auth add nous`` CLI against a fake portal.
+"""RFC 8628 device-code login: the real ``pulse auth add pulse`` CLI against a fake portal.
 
 The portal base URL override (``--portal-url``) is the product's documented
 channel; the fake portal is the only thing not ours. Poll arrival times are
@@ -76,7 +76,7 @@ def test_device_code_login_poll_cadence(name: str, tmp_path) -> None:
         {"scope": "inference:invoke", "exp": int(time.time()) + 3600, "sub": f"user-{n}"})).start()
     flow = srv.start_device_flow(interval=case.interval, script=list(case.script))
     try:
-        proc = run_pulse(fh, ["auth", "add", "nous", "--type", "oauth", "--no-browser",
+        proc = run_pulse(fh, ["auth", "add", "pulse", "--type", "oauth", "--no-browser",
                                "--portal-url", srv.base_url, "--inference-url", f"{srv.base_url}/v1"],
                           timeout=90)
     finally:
@@ -90,7 +90,7 @@ def test_device_code_login_poll_cadence(name: str, tmp_path) -> None:
         f"expected {len(case.script)} token polls (script {case.script}), got {len(flow.polls)}\n{out}")
     approved = [g for g in srv.grants if g.issued_refresh_token]
     assert len(approved) == 1
-    pool = fh.read_auth().get("credential_pool", {}).get("nous") or []
+    pool = fh.read_auth().get("credential_pool", {}).get("pulse") or []
     assert [e.get("refresh_token") for e in pool] == [approved[0].issued_refresh_token], (
         f"auth.json does not hold the refresh token the portal issued: {pool}")
 

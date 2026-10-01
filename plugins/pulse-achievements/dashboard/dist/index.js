@@ -339,7 +339,7 @@
         tier_part: tierPart,
         name: achievement.name,
       });
-      return tmpl + "\n\n@NousResearch · https://pulse-agent.anxious-research.com";
+      return tmpl + "\n\n@AnxiousResearch · https://pulse-agent.anxious-research.com";
     }
 
     function shareOnX() {

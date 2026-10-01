@@ -200,8 +200,8 @@ def seed_install(root: Path) -> Installed:
     # From here on the checkout talks to the official URL, which only the proxy can serve.
     (sb.home / ".gitconfig").write_text("", encoding="utf-8")
     gitroot = root / "gitroot"
-    (gitroot / "NousResearch").mkdir(parents=True, exist_ok=True)
-    (gitroot / "NousResearch" / "pulse-agent.git").symlink_to(origin)
+    (gitroot / "AnxiousResearch").mkdir(parents=True, exist_ok=True)
+    (gitroot / "AnxiousResearch" / "pulse-agent.git").symlink_to(origin)
     ca = N.TestCA(root / "corporate-ca")
     inst = Installed(root, sb, origin, gitroot, ca, ca.os_trust_store(root / "corporate-ca" / "etc-ssl-certs"))
     assert_isolated(inst)
@@ -243,7 +243,7 @@ def _identity(name: str, token: str) -> dict:
     pascal = f"PULSEChannel{token}"
     return {"token": token, "displayName": f"PULSE {name}", "appId": f"ai.pulse.channel.h{token}",
             "appNamePascal": pascal, "artifactNamePascal": pascal, "cliName": f"pulse-{name}",
-            "windowsExecutableName": pascal, "msixAppIdWithOrg": f"NousResearch.{pascal}"}
+            "windowsExecutableName": pascal, "msixAppIdWithOrg": f"AnxiousResearch.{pascal}"}
 
 
 def stable_objects(commit: str, *, version: str = "2099.1.1", build_id: str = "c" * 32,

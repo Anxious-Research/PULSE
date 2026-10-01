@@ -194,7 +194,7 @@ def test_dead_or_stale_marker_is_abandoned_at_the_next_start_and_live_waits(mark
     parent = os.getppid()
     live = directory / f"tui-{parent}-2.json"
     live.write_text(json.dumps({"pid": parent, "start_time": get_process_start_time(parent), "started_at": now,
-                                "surface": "tui", "provider": "nous"}))
+                                "surface": "tui", "provider": "pulse"}))
     (directory / f"dashboard-{parent}-3.json").write_text(json.dumps(
         {"pid": parent, "start_time": get_process_start_time(parent), "started_at": now - 2 * setup_metrics.STALE_AFTER_S,
          "surface": "dashboard", "provider": "xai"}))
@@ -220,7 +220,7 @@ def test_cli_flow_classifies_landed_backed_out_failed_and_raised(marks, monkeypa
             setup_metrics.note_provider_setup_saved()
         with setup_metrics.cli_provider_setup("anthropic"):
             pass  # returned without saving: backed out
-        with setup_metrics.cli_provider_setup("nous"):
+        with setup_metrics.cli_provider_setup("pulse"):
             setup_metrics.note_provider_setup_failure("no_models")
         with setup_metrics.cli_provider_setup("gemini"):
             route["v"] = ("gemini", "g", None)  # route changed without the save helper
@@ -235,7 +235,7 @@ def test_cli_flow_classifies_landed_backed_out_failed_and_raised(marks, monkeypa
     ends = [r for r in _setup_rows(marks.rows) if r[2] != "started"]
     assert ends == [
         ("cli_setup", "anthropic", "completed", "none"), ("cli_setup", "anthropic", "failed", "cancelled"),
-        ("cli_setup", "nous", "failed", "no_models"), ("cli_setup", "gemini", "completed", "none"),
+        ("cli_setup", "pulse", "failed", "no_models"), ("cli_setup", "gemini", "completed", "none"),
         ("cli_setup", "xai", "failed", "cancelled"), ("cli_setup", "xai", "failed", "network"),
     ]
     setup_metrics.note_provider_setup_saved()  # outside a flow: inert
@@ -259,7 +259,7 @@ def test_cli_setup_navigation_esc_cancels_and_back_resumes_one_flow(marks, monke
             attempt("anthropic", _SetupGoBack(1))  # Back to the provider menu, then the same provider
         attempt("anthropic")
         with pytest.raises(_SetupGoBack):
-            attempt("nous", _SetupGoBack(1))  # Back, then another provider
+            attempt("pulse", _SetupGoBack(1))  # Back, then another provider
         attempt("gemini")
     with pytest.raises(_SetupGoBack):  # a wizard section replay keeps the flow open across the surface
         with setup_metrics.provider_setup_surface("cli_setup"):
@@ -269,7 +269,7 @@ def test_cli_setup_navigation_esc_cancels_and_back_resumes_one_flow(marks, monke
     assert _setup_rows(marks.rows) == [
         ("cli_model", "xai", "started", "none"), ("cli_model", "xai", "failed", "cancelled"),
         ("cli_model", "anthropic", "started", "none"), ("cli_model", "anthropic", "completed", "none"),
-        ("cli_model", "nous", "started", "none"), ("cli_model", "nous", "failed", "cancelled"),
+        ("cli_model", "pulse", "started", "none"), ("cli_model", "pulse", "failed", "cancelled"),
         ("cli_model", "gemini", "started", "none"), ("cli_model", "gemini", "completed", "none"),
         ("cli_setup", "xai", "started", "none"), ("cli_setup", "xai", "failed", "cancelled"),
     ]
@@ -285,7 +285,7 @@ def test_cli_setup_navigation_esc_cancels_and_back_resumes_one_flow(marks, monke
 ])
 def test_oauth_session_endings(marks, monkeypatch, sess, ending):
     monkeypatch.setattr(setup_metrics, "web_setup_surface", lambda: "desktop")
-    flow = setup_metrics.begin_oauth_setup("nous", None)
+    flow = setup_metrics.begin_oauth_setup("pulse", None)
     setup_metrics.attach_oauth_setup(sess, flow)
     setup_metrics.settle_oauth_setup(sess)
     setup_metrics.settle_oauth_setup(sess)

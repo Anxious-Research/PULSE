@@ -7,7 +7,7 @@ export const deOverrides = {
   sharedMetrics: {
     consentTitle: 'PULSE verbessern helfen?',
     consentBody:
-      'Geteilte Metriken enthalten nur begrenzte Zähler. Niemals Prompts, Dateien, Pfade oder Fehlertexte. Die Erfassung bleibt lokal. Das Senden an Nous ist eine separate Zustimmung.',
+      'Geteilte Metriken enthalten nur begrenzte Zähler. Niemals Prompts, Dateien, Pfade oder Fehlertexte. Die Erfassung bleibt lokal. Das Senden an PULSE ist eine separate Zustimmung.',
     whatIsCollected: 'Was erfasst wird',
     collectedIntro: 'Nur begrenzte Zähler:',
     collectedActivity: 'Aktivität, Session-Länge, Ergebnisse und Fehlerklassen',
@@ -21,23 +21,23 @@ export const deOverrides = {
     collectedMachine:
       'Grobe Gerätedaten: RAM-Bereich, GPU-Typ, Alter und Kanal der PULSE-Version, Anzahl ausstehender Updates, ob ein lokaler Modellserver genutzt wird',
     installId:
-      'Beim Senden wird jedes Tagespaket an den Nous-Telemetriedienst hochgeladen. Pakete tragen die Installations-ID dieses Profils: eine feste zufällige UUID ohne persönliche Daten, zurückgesetzt durch Löschen des Shared-Metrics-Ordners.',
+      'Beim Senden wird jedes Tagespaket an den PULSE-Telemetriedienst hochgeladen. Pakete tragen die Installations-ID dieses Profils: eine feste zufällige UUID ohne persönliche Daten, zurückgesetzt durch Löschen des Shared-Metrics-Ordners.',
     consentWindow:
       'Gesendet werden nur Pakete, deren gesamter Erfassungszeitraum in ein erfasstes Zustimmungsfenster fällt – Daten von vor Ihrer Zustimmung oder aus Lücken, in denen das Senden aus war, bleiben auf diesem Rechner. Das Senden lässt sich jederzeit wieder abschalten.',
     readDocs: 'Alle Details lesen',
-    share: 'Erfassen und an Nous senden',
+    share: 'Erfassen und an PULSE senden',
     local: 'Nur lokal erfassen',
     off: 'Nein, danke',
     changeLater: 'Sie können das jederzeit unter Einstellungen → Sicherheit ändern.',
     saveFailed: 'Ihre Auswahl konnte nicht gespeichert werden',
     collectLabel: 'Nutzungsstatistiken erfassen',
     collectDesc: 'Begrenzte Zähler auf diesem Gerät. Niemals Prompts, Dateien, Pfade oder Fehlertexte.',
-    sendLabel: 'Nutzungsstatistiken an Nous senden',
+    sendLabel: 'Nutzungsstatistiken an PULSE senden',
     sendDesc:
-      'Jedes Tagespaket an den Nous-Telemetriedienst hochladen. Nur Daten aus einem Zustimmungsfenster werden gesendet. Erfordert aktive Erfassung.',
+      'Jedes Tagespaket an den PULSE-Telemetriedienst hochladen. Nur Daten aus einem Zustimmungsfenster werden gesendet. Erfordert aktive Erfassung.',
     unavailable: 'Aktualisieren Sie das PULSE-Backend, um diese Einstellung zu ändern.',
     stripBody: 'Nur begrenzte Zähler, niemals Prompts oder Dateien.',
-    stripChoices: { share: 'An Nous senden', local: 'Nur lokal', off: 'Nein danke' },
+    stripChoices: { share: 'An PULSE senden', local: 'Nur lokal', off: 'Nein danke' },
     stripDetails: 'Details'
   },
   intro: introDe,
@@ -157,7 +157,7 @@ export const deOverrides = {
       showAllMatches: 'Alle Treffer anzeigen',
       segmentNoMatch: (segment: string) => `Kein Treffer in ${segment}, daher werden alle Treffer angezeigt.`,
       freeTierNote: 'Verbindungen bleiben auf diesem Computer, bis Sie sich anmelden.',
-      signInLine: 'Melden Sie sich bei Nous an, um verwaltete Apps zu nutzen.',
+      signInLine: 'Melden Sie sich bei PULSE an, um verwaltete Apps zu nutzen.',
       signIn: 'Anmelden',
       managedUnavailable: 'Verwaltete Apps sind für dieses Konto noch nicht verfügbar.',
       writeFailed: 'Diese Änderung wurde nicht gespeichert.',
@@ -165,7 +165,7 @@ export const deOverrides = {
       disconnectNoAccount:
         'PULSE hat hier kein Konto zum Trennen. Aktualisieren Sie die Seite und versuchen Sie es erneut.',
       disconnectRefused:
-        'Nous kann diese Anmeldung gerade nicht entfernen. Schalten Sie die App stattdessen mit dem Schalter aus oder versuchen Sie es später erneut.'
+        'PULSE kann diese Anmeldung gerade nicht entfernen. Schalten Sie die App stattdessen mit dem Schalter aus oder versuchen Sie es später erneut.'
     },
     add: {
       action: 'Eigenen hinzufügen',
@@ -216,7 +216,7 @@ export const deOverrides = {
       turnOffLocal: 'Lokalen Server ausschalten',
       providedByPlugin: (plugin: string) => `Bereitgestellt vom Plugin ${plugin}`,
       openPlugins: 'Tab „Plugins“ öffnen',
-      nousLine: 'Nous-Apps folgen Ihrem Konto, nicht dem Profil.',
+      pulseLine: 'PULSE-Apps folgen Ihrem Konto, nicht dem Profil.',
       rulesReadOnly: 'Die Regeln können gerade nicht geändert werden.',
       rulesAppOff: (name: string) => `Schalten Sie ${name} ein, um die Tools zu ändern.`,
       rulesSignIn: 'Melden Sie sich an, um festzulegen, was PULSE hier darf.',
@@ -271,7 +271,7 @@ export const deOverrides = {
       remove: 'Entfernen',
       offTitle: (name: string) => `${name} ist aus.`,
       offBody: 'Schalten Sie ihn mit dem Schalter oben ein, um seine Tools zu laden.',
-      signedOutTitle: 'Melden Sie sich bei Nous an, um die Tool-Liste zu laden.',
+      signedOutTitle: 'Melden Sie sich bei PULSE an, um die Tool-Liste zu laden.',
       signedOutBody: 'Ihre Server auf diesem Computer sind nicht betroffen.',
       conflictTitle: 'Jemand hat diese Regel geändert, während Sie sie bearbeitet haben.',
       conflictBody: (theyOff: number, theyOn: number) => {
@@ -496,11 +496,11 @@ export const deOverrides = {
       signOutAndSignIn: 'Abmelden & anmelden',
       remoteFailureHint:
         'Überprüfen Sie die Gateway-URL und die Anmeldung in den Gateway-Einstellungen, oder wechseln Sie zum lokalen Gateway.',
-      cloudDownTitle: 'Nous Cloud Agent ist down',
+      cloudDownTitle: 'Pulse Cloud Agent ist down',
       cloudDownDescription:
-        'Der von Nous verwaltete Cloud-Agent, mit dem sich dieses Gateway verbindet, meldet einen Serverfehler. Er kann von hier aus nicht neu gestartet werden – prüfen Sie seinen Status, wechseln Sie zum lokalen Gateway oder wenden Sie sich an den Support.',
+        'Der von PULSE verwaltete Cloud-Agent, mit dem sich dieses Gateway verbindet, meldet einen Serverfehler. Er kann von hier aus nicht neu gestartet werden – prüfen Sie seinen Status, wechseln Sie zum lokalen Gateway oder wenden Sie sich an den Support.',
       cloudDownHint:
-        'Die Schaltflächen unten öffnen das Nous Portal (Instanzstatus und Steuerung) und unseren Discord für Support.',
+        'Die Schaltflächen unten öffnen das Pulse Portal (Instanzstatus und Steuerung) und unseren Discord für Support.',
       cloudDownCheckPortal: 'Portal-Status prüfen',
       cloudDownDiscord: 'Hilfe auf Discord holen',
       hideRecentLogs: 'Neueste Logs ausblenden',
@@ -622,7 +622,7 @@ export const deOverrides = {
       `Software-Rendering aktiv — Remote-Display erkannt (${reason}). GPU-Beschleunigung ist deaktiviert, um Flackern zu verhindern.`
   },
   billingBlock: {
-    titleNous: 'Keine Nous-Credits mehr',
+    titleNous: 'Keine PULSE-Credits mehr',
     titleProvider: provider => `Keine Credits mehr — ${provider}`,
     fallbackMessage: 'Auf Ihrem Konto sind keine Credits mehr übrig. Fügen Sie Credits hinzu, um fortzufahren.',
     openBilling: 'Billing öffnen',
@@ -630,9 +630,9 @@ export const deOverrides = {
     dismiss: 'Schließen'
   },
   sendDiagnostics: {
-    title: 'Diagnosedaten an Nous senden',
+    title: 'Diagnosedaten an PULSE senden',
     privacyNotice:
-      'Damit laden Sie ein Debug-Paket in den internen Nous-Speicher hoch (kein öffentliches Paste). Es enthält Systeminfos (Betriebssystem, Versionen, Provider, welche API-Keys konfiguriert sind – niemals die Keys selbst) sowie vollständige Agent-, Gateway- und Desktop-Logs (bis zu 512 KB je Datei), die sehr wahrscheinlich Gesprächsinhalte, Tool-Ausgaben und Dateipfade enthalten. Geheimnisse werden vor dem Upload geschwärzt. Das Paket ist nur für Nous-Mitarbeitende und freigeschaltete Discord-Moderatoren einsehbar und wird nach 14 Tagen automatisch gelöscht.',
+      'Damit laden Sie ein Debug-Paket in den internen PULSE-Speicher hoch (kein öffentliches Paste). Es enthält Systeminfos (Betriebssystem, Versionen, Provider, welche API-Keys konfiguriert sind – niemals die Keys selbst) sowie vollständige Agent-, Gateway- und Desktop-Logs (bis zu 512 KB je Datei), die sehr wahrscheinlich Gesprächsinhalte, Tool-Ausgaben und Dateipfade enthalten. Geheimnisse werden vor dem Upload geschwärzt. Das Paket ist nur für PULSE-Mitarbeitende und freigeschaltete Discord-Moderatoren einsehbar und wird nach 14 Tagen automatisch gelöscht.',
     upload: 'Hochladen',
     uploading: 'Wird hochgeladen…',
     cancel: 'Abbrechen',
@@ -644,11 +644,11 @@ export const deOverrides = {
       'Ihr Paket wurde privat hochgeladen. Teilen Sie den Link unten in Ihrem Support-Thread, damit das Team Ihre Logs sehen kann.',
     failedTitle: 'Hochladen fehlgeschlagen',
     failedHint:
-      'Sie können auch `pulse debug share --nous` im Terminal ausführen oder `pulse debug share --local`, um den Bericht ohne Hochladen auszugeben.',
+      'Sie können auch `pulse debug share --pulse` im Terminal ausführen oder `pulse debug share --local`, um den Bericht ohne Hochladen auszugeben.',
     handoffLead: 'Diskussion hier fortsetzen:',
     links: {
       github: 'GitHub Issues',
-      portal: 'Nous-Portal-Support',
+      portal: 'PULSE-Portal-Support',
       discord: 'Discord'
     }
   },
@@ -1894,7 +1894,7 @@ export const deOverrides = {
       cloudLoadingAgents: 'Ihre Agents werden geladen…',
       cloudNoAgents: {
         before: 'Keine Agents in diesem Konto gefunden. Legen Sie einen im ',
-        linkText: 'Nous-Portal',
+        linkText: 'PULSE-Portal',
         after: ' an und aktualisieren Sie dann.'
       },
       cloudRefresh: 'Aktualisieren',
@@ -2302,13 +2302,13 @@ export const deOverrides = {
       usageLabel: (label: string) => `${label}-Nutzung`,
       freeTier: {
         signIn: 'Anmelden',
-        title: 'Sie nutzen den kostenlosen Nous-Tarif',
-        message: 'Melden Sie sich mit einem Nous-Konto an, um weitere Modelle und Tools freizuschalten.',
+        title: 'Sie nutzen den kostenlosen PULSE-Tarif',
+        message: 'Melden Sie sich mit einem PULSE-Konto an, um weitere Modelle und Tools freizuschalten.',
         caption:
-          'Läuft mit nous/welcome, Konnektoren inklusive. Nach der Anmeldung bleiben Ihre Konnektoren erhalten, und Sie erhalten die kontopflichtigen Tools sowie alle weiteren Modelle.',
-        name: 'Nous · kostenloser Tarif',
+          'Läuft mit pulse/welcome, Konnektoren inklusive. Nach der Anmeldung bleiben Ihre Konnektoren erhalten, und Sie erhalten die kontopflichtigen Tools sowie alle weiteren Modelle.',
+        name: 'PULSE · kostenloser Tarif',
         footnote:
-          'Der kostenlose Tarif hat kein Guthaben und nichts zu bezahlen. Zahlung und Nutzung werden angezeigt, sobald Sie sich mit einem Nous-Konto anmelden.',
+          'Der kostenlose Tarif hat kein Guthaben und nichts zu bezahlen. Zahlung und Nutzung werden angezeigt, sobald Sie sich mit einem PULSE-Konto anmelden.',
         plan: 'Kostenloser Tarif',
         model: 'Modell',
         connectors: 'Konnektoren',
@@ -2416,8 +2416,8 @@ export const deOverrides = {
       state: {
         notice: {
           loggedOut: {
-            title: 'Nous-Konto verbinden',
-            message: 'Melden Sie sich mit Ihrem Nous-Konto an, um hier Guthaben, Tarif und Nutzung zu sehen.',
+            title: 'PULSE-Konto verbinden',
+            message: 'Melden Sie sich mit Ihrem PULSE-Konto an, um hier Guthaben, Tarif und Nutzung zu sehen.',
             action: 'Anmelden'
           },
           openPortal: 'Portal öffnen ↗',
@@ -2669,16 +2669,16 @@ export const deOverrides = {
       activeBackend: 'Aktiv',
       activeBackendHint: 'Das ist Ihr aktives Backend',
       useBackend: 'Dieses Backend verwenden',
-      nousIncluded: 'In einem Nous-Abo enthalten – melden Sie sich im Nous Portal an, um es zu aktivieren.',
-      nousAuthNeededTitle: 'Im Nous Portal anmelden',
-      nousAuthNeededMessage: provider =>
-        `${provider} ist gespeichert, wird aber erst aktiviert, wenn Sie sich im Nous Portal anmelden.`,
-      nousAuthSignIn: 'Anmelden',
-      nousAuthDoneTitle: 'Nous Portal verbunden',
-      nousAuthDoneMessage: 'Ihre Abo-Backends sind jetzt aktiv.',
-      nousAuthFailed: 'Die Nous-Portal-Anmeldung wurde nicht abgeschlossen',
-      nousAuthFailedMessage: 'Versuchen Sie es erneut.',
-      nousAuthTryAgain: 'Erneut versuchen',
+      pulseIncluded: 'In einem PULSE-Abo enthalten – melden Sie sich im Pulse Portal an, um es zu aktivieren.',
+      pulseAuthNeededTitle: 'Im Pulse Portal anmelden',
+      pulseAuthNeededMessage: provider =>
+        `${provider} ist gespeichert, wird aber erst aktiviert, wenn Sie sich im Pulse Portal anmelden.`,
+      pulseAuthSignIn: 'Anmelden',
+      pulseAuthDoneTitle: 'Pulse Portal verbunden',
+      pulseAuthDoneMessage: 'Ihre Abo-Backends sind jetzt aktiv.',
+      pulseAuthFailed: 'Die PULSE-Portal-Anmeldung wurde nicht abgeschlossen',
+      pulseAuthFailedMessage: 'Versuchen Sie es erneut.',
+      pulseAuthTryAgain: 'Erneut versuchen',
       noApiKeyRequired: 'Kein API-Key erforderlich.',
       postSetupHint: step =>
         `Dieses Backend braucht eine einmalige Installation (${step}). Läuft auf diesem Rechner – kann ein paar Minuten dauern.`,
@@ -4296,8 +4296,8 @@ export const deOverrides = {
       '/browser': 'Browser-CDP-Verbindung verwalten [connect|disconnect|status] (nur lokales Gateway)',
       '/palette': 'Die unscharfe Befehlspalette öffnen (auch Strg+P)',
       '/usage': 'Token-Nutzung und Ratenlimits anzeigen; `reset` löst ein angespartes Codex-Limit-Reset ein',
-      '/subscription': 'Ihren Nous-Tarif ansehen und im Browser ändern',
-      '/topup': 'Ihr Nous-Guthaben anzeigen und die Abrechnung im Portal verwalten',
+      '/subscription': 'Ihren PULSE-Tarif ansehen und im Browser ändern',
+      '/topup': 'Ihr PULSE-Guthaben anzeigen und die Abrechnung im Portal verwalten',
       '/platform': 'Eine fehlerhafte Gateway-Plattform pausieren, fortsetzen oder auflisten',
       '/version': 'PULSE-Agent-Version anzeigen',
       '/debug': 'Debug-Bericht (Systeminfos + Logs) hochladen und teilbare Links erhalten',
@@ -4932,21 +4932,21 @@ export const deOverrides = {
     docs: provider => `${provider}-Doku`
   },
   freeTier: {
-    providerRowTitle: 'Nous · Gratis-Tarif',
-    providerRowPitch: 'Melden Sie sich mit einem Nous-Konto an, um mehr Modelle und Tools freizuschalten.',
+    providerRowTitle: 'PULSE · Gratis-Tarif',
+    providerRowPitch: 'Melden Sie sich mit einem PULSE-Konto an, um mehr Modelle und Tools freizuschalten.',
     readyTitle: 'PULSE ist bereit.',
     readyCaption: 'Kostenlos · Verbindungen inklusive',
     begin: 'Loslegen',
-    signInInstead: 'Stattdessen mit einem Nous-Konto anmelden',
+    signInInstead: 'Stattdessen mit einem PULSE-Konto anmelden',
     otherProviders: 'Andere Anbieter',
-    stripTitle: 'Kostenlose Nous-Inferenz und Verbindungen sind jetzt verfügbar.',
-    stripBody: 'Öffnen Sie die Modellauswahl, um sie auszuprobieren, oder melden Sie sich mit einem Nous-Konto an.',
+    stripTitle: 'Kostenlose PULSE-Inferenz und Verbindungen sind jetzt verfügbar.',
+    stripBody: 'Öffnen Sie die Modellauswahl, um sie auszuprobieren, oder melden Sie sich mit einem PULSE-Konto an.',
     openModelPicker: 'Modellauswahl öffnen',
     dismiss: 'Ausblenden',
-    providerName: 'Nous',
-    statusLabel: model => `Nous · ${model}`,
+    providerName: 'PULSE',
+    statusLabel: model => `PULSE · ${model}`,
     signIn: 'Anmelden',
-    signInHeading: 'Melden Sie sich mit einem Nous-Konto an, um mehr Modelle und Tools freizuschalten.',
+    signInHeading: 'Melden Sie sich mit einem PULSE-Konto an, um mehr Modelle und Tools freizuschalten.',
     settingUp: 'Kostenlose Inferenz wird eingerichtet…',
     codeBody: 'Geben Sie diesen Code in Ihrem Browser ein, um die Anmeldung abzuschließen.',
     copyLink: 'Link kopieren',
@@ -4973,29 +4973,29 @@ export const deOverrides = {
     errorBody: 'Die Anmeldung wurde nicht abgeschlossen; starten Sie sie erneut.',
     busyHeading: 'Fast geschafft',
     busyBody: wait =>
-      `PULSE konnte Ihre Anmeldung nicht abschließen, weil der Nous-Dienst ausgelastet ist. Versuchen Sie es in ${wait} erneut. Ihre Session bleibt so lange erhalten.`,
+      `PULSE konnte Ihre Anmeldung nicht abschließen, weil der PULSE-Dienst ausgelastet ist. Versuchen Sie es in ${wait} erneut. Ihre Session bleibt so lange erhalten.`,
     unreachableBody:
-      'PULSE konnte den Nous-Dienst nicht erreichen, um Ihre Anmeldung abzuschließen. Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut. Ihre Session bleibt erhalten.',
+      'PULSE konnte den PULSE-Dienst nicht erreichen, um Ihre Anmeldung abzuschließen. Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut. Ihre Session bleibt erhalten.',
     alreadySignedInHeading: 'Bereits angemeldet.',
-    alreadySignedInBody: 'Dieses PULSE ist bereits mit einem Nous-Konto angemeldet.',
+    alreadySignedInBody: 'Dieses PULSE ist bereits mit einem PULSE-Konto angemeldet.',
     setupFailed: {
       gateClosed:
-        'Diese PULSE-Version kann ohne Nous-Konto nicht starten. Melden Sie sich an oder legen Sie eines an – kostenlos und in einer Minute erledigt.',
+        'Diese PULSE-Version kann ohne PULSE-Konto nicht starten. Melden Sie sich an oder legen Sie eines an – kostenlos und in einer Minute erledigt.',
       paused:
         'Chatten ohne Anmeldung ist vorübergehend pausiert. PULSE prüft weiter. Die Anmeldung ist kostenlos, und Sie können sofort weitermachen.',
       rateLimited: wait =>
         `Gerade starten sehr viele Leute, deshalb versucht PULSE es in ${wait} erneut. Die Anmeldung ist kostenlos und überspringt das Warten.`,
       unreachable:
-        'PULSE konnte den Nous-Dienst nicht erreichen. Prüfen Sie Ihre Internetverbindung und tippen Sie dann auf „Erneut versuchen“. Oder verbinden Sie vorerst einen anderen Anbieter.',
+        'PULSE konnte den PULSE-Dienst nicht erreichen. Prüfen Sie Ihre Internetverbindung und tippen Sie dann auf „Erneut versuchen“. Oder verbinden Sie vorerst einen anderen Anbieter.',
       serverError:
-        'Beim Nous-Dienst ist ein Fehler aufgetreten. Tippen Sie gleich auf „Erneut versuchen“ oder verbinden Sie vorerst einen anderen Anbieter.',
+        'Beim PULSE-Dienst ist ein Fehler aufgetreten. Tippen Sie gleich auf „Erneut versuchen“ oder verbinden Sie vorerst einen anderen Anbieter.',
       powRequired:
-        'Der Nous-Server verlangt einen Proof of Work, den Ihr Agent noch nicht unterstützt. Melden Sie sich an oder legen Sie ein kostenloses Nous-Konto an, um fortzufahren.',
+        'Der PULSE-Server verlangt einen Proof of Work, den Ihr Agent noch nicht unterstützt. Melden Sie sich an oder legen Sie ein kostenloses PULSE-Konto an, um fortzufahren.',
       locked:
-        'Diese Session kann ohne Anmeldung nicht fortgesetzt werden. Melden Sie sich an oder legen Sie ein kostenloses Nous-Konto an, um weiterzumachen.',
+        'Diese Session kann ohne Anmeldung nicht fortgesetzt werden. Melden Sie sich an oder legen Sie ein kostenloses PULSE-Konto an, um weiterzumachen.',
       generic:
         'PULSE konnte den kostenlosen Zugang ohne Anmeldung nicht einrichten. Die Anmeldung ist kostenlos — oder verbinden Sie einen anderen Anbieter.',
-      signInBelow: 'Die Anmeldung ist kostenlos. Wählen Sie unten Nous.',
+      signInBelow: 'Die Anmeldung ist kostenlos. Wählen Sie unten PULSE.',
       tryAgain: 'Erneut versuchen',
       retrying: 'Wird erneut versucht…'
     }
@@ -5013,7 +5013,7 @@ export const deOverrides = {
     localDownloadsHeading: 'Lokal',
     noAuthenticatedProviders: 'Keine authentifizierten Anbieter.',
     pro: 'Pro',
-    proNeedsSubscription: 'Pro-Modelle benötigen ein bezahltes Nous-Abo.',
+    proNeedsSubscription: 'Pro-Modelle benötigen ein bezahltes PULSE-Abo.',
     free: 'Kostenlos',
     freeTier: 'Kostenlose Stufe',
     priceTitle: 'Eingabe-/Ausgabepreis pro Million Tokens',
@@ -5609,11 +5609,11 @@ export const deOverrides = {
         },
         free_tier_disabled: {
           title: 'Chatten ohne Anmeldung ist gerade abgeschaltet',
-          body: 'Melden Sie sich mit einem Nous-Konto an, um weiterzuschreiben – es ist kostenlos.'
+          body: 'Melden Sie sich mit einem PULSE-Konto an, um weiterzuschreiben – es ist kostenlos.'
         },
         free_tier_rate_limited: {
           title: 'Sie haben das Kontingent für Chats ohne Anmeldung aufgebraucht',
-          body: 'Es wird bald wieder aufgefüllt. Melden Sie sich mit einem Nous-Konto an, um ein größeres Kontingent zu erhalten – es ist kostenlos.'
+          body: 'Es wird bald wieder aufgefüllt. Melden Sie sich mit einem PULSE-Konto an, um ein größeres Kontingent zu erhalten – es ist kostenlos.'
         },
         free_tier_at_capacity: {
           title: 'Chatten ohne Anmeldung ist gerade sehr stark ausgelastet',
@@ -5621,11 +5621,11 @@ export const deOverrides = {
         },
         free_tier_model_not_free: {
           title: 'Dieses Modell gibt es ohne Anmeldung nicht',
-          body: 'PULSE verwendet vorerst das kostenlose Modell. Melden Sie sich mit einem Nous-Konto an, um mehr Modelle zu nutzen – es ist kostenlos.'
+          body: 'PULSE verwendet vorerst das kostenlose Modell. Melden Sie sich mit einem PULSE-Konto an, um mehr Modelle zu nutzen – es ist kostenlos.'
         },
         free_tier_route: {
           title: 'PULSE hat das kostenlose Modell über diese Route nicht erreicht',
-          body: 'Melden Sie sich mit einem Nous-Konto an – es ist kostenlos – oder prüfen Sie die Einstellung NOUS_INFERENCE_BASE_URL.'
+          body: 'Melden Sie sich mit einem PULSE-Konto an – es ist kostenlos – oder prüfen Sie die Einstellung PULSE_INFERENCE_BASE_URL.'
         },
         free_tier_outage: {
           title: 'Das kostenlose Modell antwortet gerade schlecht',
@@ -5633,7 +5633,7 @@ export const deOverrides = {
         },
         free_tier_refused: {
           title: 'PULSE konnte das ohne Anmeldung nicht senden',
-          body: 'Eine Anmeldung mit einem Nous-Konto ist kostenlos.'
+          body: 'Eine Anmeldung mit einem PULSE-Konto ist kostenlos.'
         }
       },
       errorAuthKinds: {
@@ -5663,7 +5663,7 @@ export const deOverrides = {
       errorOpenPULSEFolderFailed: 'Der PULSE-Ordner konnte nicht geöffnet werden',
       errorUpdateApiKey: 'API-Key aktualisieren',
       errorSignInAgain: provider => `Erneut bei ${provider} anmelden`,
-      errorSignInFreeTier: 'Mit einem Nous-Konto anmelden',
+      errorSignInFreeTier: 'Mit einem PULSE-Konto anmelden',
       errorOauthExpired: provider =>
         `Ihre Anmeldung bei ${provider} ist abgelaufen oder wurde widerrufen. Melden Sie sich erneut an, um weiterzuchatten.`,
       errorOpenLogs: 'Logs öffnen',

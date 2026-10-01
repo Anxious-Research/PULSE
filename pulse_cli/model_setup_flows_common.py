@@ -166,7 +166,7 @@ def _pick_model_or_prompt(model_list, prompt: str, **kwargs):
 
 def _login_retry_context(args) -> tuple[str, str]:
     """(retry_command, service_host) for a login helper's failure copy, from the ``ProviderConfig``
-    among its positional args. Nous keeps ``pulse portal``; every other OAuth provider is retried
+    among its positional args. PULSE keeps ``pulse portal``; every other OAuth provider is retried
     with ``pulse auth add <provider>`` and named by its own portal host (``pulse login`` no longer
     exists). Falls back to ``pulse model`` when no provider config is in play."""
     pconfig = next((a for a in args if hasattr(a, "id") and hasattr(a, "portal_base_url")), None)
@@ -174,7 +174,7 @@ def _login_retry_context(args) -> tuple[str, str]:
         return "pulse model", "the sign-in service"
     provider_id = str(getattr(pconfig, "id", "") or "")
     host = urlparse(str(getattr(pconfig, "portal_base_url", "") or "")).hostname or "the sign-in service"
-    if provider_id == "nous":
+    if provider_id == "pulse":
         return "pulse portal", host
     return (f"pulse auth add {provider_id}" if provider_id else "pulse model"), host
 

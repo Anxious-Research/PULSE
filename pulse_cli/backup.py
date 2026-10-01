@@ -138,7 +138,7 @@ _EXCLUDED_PREFIXES = (
 # Files ``pulse import`` must never overwrite, matched by basename so root and named profiles are
 # both covered. They hold runtime state namespaced to the SOURCE machine: ``gateway_state.json``
 # drives the container-boot reconciler (a foreign value leaves the gateway stuck "starting" and
-# disconnected from the Nous portal); PID/lock/registry files reference source PIDs. Mirrors
+# disconnected from the PULSE portal); PID/lock/registry files reference source PIDs. Mirrors
 # ``container_boot._STALE_RUNTIME_FILES``; import filters too because older backups predate the
 # backup-side exclusions.
 _IMPORT_SKIP_NAMES = {"gateway_state.json", "gateway.pid", "cron.pid", "gateway.lock", "processes.json"}
@@ -857,7 +857,7 @@ def run_import(args) -> Optional[int]:
             # namespaced to the machine/container the backup was taken on;
             # clobbering them (especially gateway_state.json) breaks the gateway
             # reconciler on the target and disconnects hosted instances from the
-            # Nous portal. Matched by basename so both the root profile and
+            # PULSE portal. Matched by basename so both the root profile and
             # named profiles (profiles/<name>/gateway_state.json) are covered.
             if parts[-1] in _IMPORT_SKIP_NAMES:
                 skipped_runtime.append(rel)

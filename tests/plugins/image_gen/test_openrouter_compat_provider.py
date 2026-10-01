@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for the OpenRouter-compatible image gen provider (OpenRouter + Nous)."""
+"""Tests for the OpenRouter-compatible image gen provider (OpenRouter + PULSE)."""
 
 from __future__ import annotations
 
@@ -94,13 +94,13 @@ class TestProviderClass:
         assert _openrouter()._resolve_model_chain() == ["black-forest-labs/flux.2-pro"]
 
 
-    def test_nous_honors_top_level_model(self):
+    def test_pulse_honors_top_level_model(self):
         from plugins.image_gen.openrouter import _build_providers
 
         cfg = {"model": "openai/gpt-image-2"}
-        nous = {p.name: p for p in _build_providers()}["nous"]
+        pulse = {p.name: p for p in _build_providers()}["pulse"]
         with patch("plugins.image_gen.openrouter._load_image_gen_config", return_value=cfg):
-            assert nous._resolve_model_chain() == ["openai/gpt-image-2"]
+            assert pulse._resolve_model_chain() == ["openai/gpt-image-2"]
 
     def test_explicit_model_kwarg_wins_over_config(self):
         cfg = {"model": "openai/gpt-image-2"}
@@ -220,14 +220,14 @@ class TestLiveCatalog:
         assert "google/gemini-3-pro-image" in ids          # chat-catalog model present
         assert len(ids) == len(set(ids))                   # deduped
 
-    def test_nous_portal_picker_excludes_image_api_catalog(self):
-        """Nous Portal has no /images route; its picker must not offer
+    def test_pulse_portal_picker_excludes_image_api_catalog(self):
+        """Pulse Portal has no /images route; its picker must not offer
         Image-API-only models it cannot serve."""
         from plugins.image_gen.openrouter import _build_providers
 
-        nous = {p.name: p for p in _build_providers()}["nous"]
+        pulse = {p.name: p for p in _build_providers()}["pulse"]
         with patch(_RUNTIME, side_effect=RuntimeError("no creds")):
-            ids = [m["id"] for m in nous.list_models()]
+            ids = [m["id"] for m in pulse.list_models()]
         from plugins.image_gen.openrouter import DEFAULT_MODEL, _FALLBACK_MODEL
 
         assert ids == [DEFAULT_MODEL, _FALLBACK_MODEL]
@@ -362,20 +362,20 @@ class TestGenerate:
         assert mock_post.call_args.kwargs["json"]["model"] == "openai/gpt-image-2"
 
     def test_posts_to_resolved_base_url(self):
-        """Nous routes to its own base URL — proves the same code serves both."""
-        nous_runtime = _runtime_ok(
-            provider="nous", base_url="https://inference.anxious-research.com/v1", api_key="nous-tok"
+        """PULSE routes to its own base URL — proves the same code serves both."""
+        pulse_runtime = _runtime_ok(
+            provider="pulse", base_url="https://inference.anxious-research.com/v1", api_key="pulse-tok"
         )
-        with patch(_RUNTIME, return_value=nous_runtime), \
+        with patch(_RUNTIME, return_value=pulse_runtime), \
              patch("requests.post", return_value=_mock_chat_response([_PNG_DATA_URI])) as mock_post, \
              patch("plugins.image_gen.openrouter.save_b64_image", return_value=Path("/tmp/x.png")):
             from plugins.image_gen.openrouter import _build_providers
 
-            nous = {p.name: p for p in _build_providers()}["nous"]
-            result = nous.generate(prompt="a pet")
+            pulse = {p.name: p for p in _build_providers()}["pulse"]
+            result = pulse.generate(prompt="a pet")
 
         assert result["success"] is True
-        assert result["provider"] == "nous"
+        assert result["provider"] == "pulse"
         url = mock_post.call_args[0][0]
         assert url == "https://inference.anxious-research.com/v1/chat/completions"
 
@@ -552,18 +552,18 @@ class TestImageApiSurface:
         assert result["success"] is True
         assert mock_post.call_args[0][0].endswith("/chat/completions")
 
-    def test_nous_never_uses_the_image_api(self):
-        """Nous Portal proxies chat-completions and has no /images route."""
+    def test_pulse_never_uses_the_image_api(self):
+        """Pulse Portal proxies chat-completions and has no /images route."""
         from plugins.image_gen.openrouter import _build_providers
 
-        nous_runtime = _runtime_ok(
-            provider="nous", base_url="https://inference.anxious-research.com/v1", api_key="nous-tok"
+        pulse_runtime = _runtime_ok(
+            provider="pulse", base_url="https://inference.anxious-research.com/v1", api_key="pulse-tok"
         )
-        with patch(_RUNTIME, return_value=nous_runtime), \
+        with patch(_RUNTIME, return_value=pulse_runtime), \
              patch("requests.post", return_value=_mock_chat_response([_PNG_DATA_URI])) as mock_post, \
              patch("plugins.image_gen.openrouter.save_b64_image", return_value=Path("/tmp/x.png")):
-            nous = {p.name: p for p in _build_providers()}["nous"]
-            result = nous.generate(prompt="a pet", model="openai/gpt-image-2")
+            pulse = {p.name: p for p in _build_providers()}["pulse"]
+            result = pulse.generate(prompt="a pet", model="openai/gpt-image-2")
 
         assert result["success"] is True
         assert mock_post.call_args[0][0] == "https://inference.anxious-research.com/v1/chat/completions"
@@ -789,9 +789,9 @@ class TestImageApiSurface:
 
         by_name = {p.name: p for p in _build_providers()}
         openrouter_ids = {m["id"] for m in by_name["openrouter"].list_models()}
-        nous_ids = {m["id"] for m in by_name["nous"].list_models()}
+        pulse_ids = {m["id"] for m in by_name["pulse"].list_models()}
         assert set(_IMAGE_API_MODELS) <= openrouter_ids
-        assert not (set(_IMAGE_API_MODELS) & nous_ids)
+        assert not (set(_IMAGE_API_MODELS) & pulse_ids)
 
 
 
@@ -802,10 +802,10 @@ class TestRegistration:
         ctx = MagicMock()
         register(ctx)
         registered = [c.args[0].name for c in ctx.register_image_gen_provider.call_args_list]
-        assert set(registered) == {"openrouter", "nous"}
+        assert set(registered) == {"openrouter", "pulse"}
 
     def test_both_are_reference_capable_for_pets(self):
         from agent.pet.generate.imagegen import _REF_CAPABLE
 
         assert "openrouter" in _REF_CAPABLE
-        assert "nous" in _REF_CAPABLE
+        assert "pulse" in _REF_CAPABLE

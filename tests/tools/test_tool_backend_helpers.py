@@ -1,7 +1,7 @@
 """Unit tests for tools/tool_backend_helpers.py.
 
 Tests cover:
-- managed_nous_tools_enabled() subscription-based gate
+- managed_pulse_tools_enabled() subscription-based gate
 - normalize_browser_cloud_provider() coercion
 - coerce_modal_mode() / normalize_modal_mode() validation
 - has_direct_modal_credentials() detection
@@ -16,12 +16,12 @@ from unittest.mock import patch
 
 import pytest
 
-from pulse_cli.nous_account import NousPaidServiceAccessInfo, NousPortalAccountInfo
+from pulse_cli.pulse_account import NousPaidServiceAccessInfo, NousPortalAccountInfo
 from tools.tool_backend_helpers import (
     coerce_modal_mode,
     has_direct_modal_credentials,
-    managed_nous_tools_enabled,
-    nous_tool_gateway_unavailable_message,
+    managed_pulse_tools_enabled,
+    pulse_tool_gateway_unavailable_message,
     normalize_browser_cloud_provider,
     prefers_gateway,
     resolve_modal_backend_state,
@@ -34,32 +34,32 @@ def _raise_import():
 
 
 # ---------------------------------------------------------------------------
-# managed_nous_tools_enabled
+# managed_pulse_tools_enabled
 # ---------------------------------------------------------------------------
 class TestManagedNousToolsEnabled:
-    """Subscription-based gate: True for paid Nous subscribers."""
+    """Subscription-based gate: True for paid PULSE subscribers."""
 
     def test_disabled_when_not_logged_in(self, monkeypatch):
         monkeypatch.setattr(
-            "pulse_cli.nous_account.get_nous_portal_account_info",
+            "pulse_cli.pulse_account.get_pulse_portal_account_info",
             lambda: NousPortalAccountInfo(logged_in=False, source="none", fresh=False),
         )
-        assert managed_nous_tools_enabled() is False
+        assert managed_pulse_tools_enabled() is False
 
 
     def test_returns_false_on_exception(self, monkeypatch):
         """Should never crash — returns False on any exception."""
         monkeypatch.setattr(
-            "pulse_cli.nous_account.get_nous_portal_account_info",
+            "pulse_cli.pulse_account.get_pulse_portal_account_info",
             _raise_import,
         )
-        assert managed_nous_tools_enabled() is False
+        assert managed_pulse_tools_enabled() is False
 
 
 class TestNousToolGatewayUnavailableMessage:
     def test_uses_entitlement_reason_for_logged_in_user(self, monkeypatch):
         monkeypatch.setattr(
-            "pulse_cli.nous_account.get_nous_portal_account_info",
+            "pulse_cli.pulse_account.get_pulse_portal_account_info",
             lambda force_fresh=False: NousPortalAccountInfo(
                 logged_in=True,
                 source="account_api",
@@ -78,7 +78,7 @@ class TestNousToolGatewayUnavailableMessage:
             ),
         )
 
-        message = nous_tool_gateway_unavailable_message("managed image generation")
+        message = pulse_tool_gateway_unavailable_message("managed image generation")
 
         assert "credits are exhausted" in message
         assert "managed image generation" in message
@@ -187,11 +187,11 @@ class TestResolveModalBackendState:
     """Full matrix of direct vs managed Modal backend selection."""
 
     @staticmethod
-    def _resolve(monkeypatch, mode, *, has_direct, managed_ready, nous_enabled=False):
+    def _resolve(monkeypatch, mode, *, has_direct, managed_ready, pulse_enabled=False):
         """Helper to call resolve_modal_backend_state with feature flag control."""
         monkeypatch.setattr(
-            "tools.tool_backend_helpers.managed_nous_tools_enabled",
-            lambda: nous_enabled,
+            "tools.tool_backend_helpers.managed_pulse_tools_enabled",
+            lambda: pulse_enabled,
         )
         return resolve_modal_backend_state(
             mode, has_direct=has_direct, managed_ready=managed_ready
@@ -200,25 +200,25 @@ class TestResolveModalBackendState:
     # --- auto mode ---
 
     def test_auto_prefers_managed_when_available(self, monkeypatch):
-        result = self._resolve(monkeypatch, "auto", has_direct=True, managed_ready=True, nous_enabled=True)
+        result = self._resolve(monkeypatch, "auto", has_direct=True, managed_ready=True, pulse_enabled=True)
         assert result["selected_backend"] == "managed"
 
 
     # --- direct mode ---
 
     def test_direct_selects_direct_when_available(self, monkeypatch):
-        result = self._resolve(monkeypatch, "direct", has_direct=True, managed_ready=True, nous_enabled=True)
+        result = self._resolve(monkeypatch, "direct", has_direct=True, managed_ready=True, pulse_enabled=True)
         assert result["selected_backend"] == "direct"
 
     def test_direct_none_when_no_credentials(self, monkeypatch):
-        result = self._resolve(monkeypatch, "direct", has_direct=False, managed_ready=True, nous_enabled=True)
+        result = self._resolve(monkeypatch, "direct", has_direct=False, managed_ready=True, pulse_enabled=True)
         assert result["selected_backend"] is None
 
     # --- managed mode ---
 
 
-    def test_managed_blocked_when_nous_disabled(self, monkeypatch):
-        result = self._resolve(monkeypatch, "managed", has_direct=True, managed_ready=True, nous_enabled=False)
+    def test_managed_blocked_when_pulse_disabled(self, monkeypatch):
+        result = self._resolve(monkeypatch, "managed", has_direct=True, managed_ready=True, pulse_enabled=False)
         assert result["selected_backend"] is None
         assert result["managed_mode_blocked"] is True
 

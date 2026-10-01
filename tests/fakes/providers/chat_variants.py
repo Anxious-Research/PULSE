@@ -3,7 +3,7 @@
 The vendor boundary behind PULSE' ``chat_completions`` transport as spoken by the
 routes that bend the base dialect:
 
-* OpenRouter / Nous Portal: a unified ``reasoning_details`` array on the assistant
+* OpenRouter / Pulse Portal: a unified ``reasoning_details`` array on the assistant
   message (streamed as ``delta.reasoning_details``) that the client must replay, and
   provider errors delivered as an ``{"error": {...}}`` chunk INSIDE a 200 SSE stream
   (an upstream ban or moderation block after the stream opened);

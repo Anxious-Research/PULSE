@@ -383,14 +383,14 @@ def _auth_gate_status() -> Dict[str, Any]:
             "auth_flows": auth_flows}
 
 
-def _nous_session_validity() -> str:
-    """Nous bootstrap-session validity for the NAS health sweep: a hosted agent whose Nous
+def _pulse_session_validity() -> str:
+    """PULSE bootstrap-session validity for the NAS health sweep: a hosted agent whose PULSE
     auth dies terminally looks HEALTHY to every liveness probe yet every inference turn
     fails, and this is the ONLY signal that surfaces it (local auth-store state, no token
     needed). Best-effort: never let auth classification break the probe."""
     try:
-        from pulse_cli.auth import get_nous_session_validity
-        return get_nous_session_validity()
+        from pulse_cli.auth import get_pulse_session_validity
+        return get_pulse_session_validity()
     except Exception:
         return "unknown"
 
@@ -519,7 +519,7 @@ async def get_status(profile: Optional[str] = None):
             "gateway_drainable": derive_gateway_drainable(
                 gateway_running=gateway_running, gateway_state=gateway_state),
             "restart_drain_timeout": restart_drain_timeout, "active_sessions": active_sessions,
-            **auth, "nous_session_valid": _nous_session_validity()}
+            **auth, "pulse_session_valid": _pulse_session_validity()}
 
         # Stable per-install identity (first call may touch disk). Omitted (not null) when
         # unpersistable so older-client behavior and the no-identity fallback stay identical.
@@ -718,7 +718,7 @@ async def update_learning_node(body: LearningNodeEdit):
         body.profile, lambda: edit_node(body.id, body.content), 400, "edit failed")
 
 
-# Portal — Nous Portal auth + Tool Gateway routing status (read-only).
+# Portal — Pulse Portal auth + Tool Gateway routing status (read-only).
 
 
 @router.get("/api/portal")
@@ -729,8 +729,8 @@ async def get_portal_status(profile: Optional[str] = None):
 
 
 def _feature_state(feat) -> str:
-    if getattr(feat, "managed_by_nous", False):
-        return "via Nous Portal"
+    if getattr(feat, "managed_by_pulse", False):
+        return "via Pulse Portal"
     if getattr(feat, "active", False):
         return getattr(feat, "current_provider", None) or "active"
     return "not configured"
@@ -740,16 +740,16 @@ def _get_portal_status_sync():
     cfg = load_config() or {}
     auth: Dict[str, Any] = {}
     try:
-        from pulse_cli.auth import get_nous_auth_status_local
+        from pulse_cli.auth import get_pulse_auth_status_local
         # Refresh-free snapshot so polling never performs an OAuth refresh.
-        auth = get_nous_auth_status_local() or {}
+        auth = get_pulse_auth_status_local() or {}
     except Exception:
         auth = {}
 
     features = []
     try:
-        from pulse_cli.nous_subscription import get_nous_subscription_features
-        feats = get_nous_subscription_features(cfg)
+        from pulse_cli.pulse_subscription import get_pulse_subscription_features
+        feats = get_pulse_subscription_features(cfg)
         if feats is not None:
             features = [{"label": getattr(feat, "label", ""), "state": _feature_state(feat)}
                         for feat in feats.items()]

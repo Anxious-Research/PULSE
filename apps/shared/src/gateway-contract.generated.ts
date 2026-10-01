@@ -789,7 +789,7 @@ export interface ModelCapabilities {
   reasoning: boolean
   can_disable_reasoning?: boolean | null
 }
-/** ``pulse_cli/inventory.py::_apply_pricing`` — formatted $/Mtok strings (``""`` unknown, ``"free"``); the sale fields are Nous Portal-only. */
+/** ``pulse_cli/inventory.py::_apply_pricing`` — formatted $/Mtok strings (``""`` unknown, ``"free"``); the sale fields are Pulse Portal-only. */
 export interface ModelPricing {
   input: string
   output: string
@@ -4575,7 +4575,7 @@ export interface BillingBlock {
   provider_label: string
   model: string
   billing_url: string | null
-  is_nous: boolean
+  is_pulse: boolean
   message: string
   unverified?: boolean | null
 }
@@ -4889,7 +4889,7 @@ export interface RpcMethods {
   'billing.charge': { params: BillingChargeParams; result: BillingChargeResult }
   /** Poll one charge by id. */
   'billing.charge_status': { params: BillingChargeStatusParams; result: BillingChargeStatusResult }
-  /** Read-only billing view (no scope); the Nous free tier is answered locally without a portal call. */
+  /** Read-only billing view (no scope); the PULSE free tier is answered locally without a portal call. */
   'billing.state': { params: ProfileParams; result: BillingStateResult }
   /** Run the billing:manage device flow; the URL/code arrive via billing.step_up.verification. */
   'billing.step_up': { params: BillingStepUpParams; result: BillingStepUpResult }
@@ -4963,8 +4963,8 @@ export interface RpcMethods {
   'delegation.pause': { params: DelegationPauseParams; result: DelegationPauseResult }
   /** Running subagent tree plus the spawn pause flag and limits. */
   'delegation.status': { params: ProfileParams; result: DelegationStatusResult }
-  /** Upload a force-redacted debug bundle to Nous-internal diagnostics storage. */
-  'diagnostics.share_nous': { params: DiagnosticsShareNousParams; result: DiagnosticsShareNousResult }
+  /** Upload a force-redacted debug bundle to PULSE-internal diagnostics storage. */
+  'diagnostics.share_pulse': { params: DiagnosticsShareNousParams; result: DiagnosticsShareNousResult }
   /** Run the distro package install on the gateway host; progress streams as display.install.log/.done. */
   'display.install': { params: ProfileParams; result: DisplayInstallResult }
   /** Take over: the human named by a viewer id this connection minted controls the screen. */
@@ -5269,7 +5269,7 @@ export interface RpcMethods {
   'session.title': { params: SessionTitleParams; result: SessionTitleResult }
   /** Drop the last user turn (and everything after it) from an idle session. */
   'session.undo': { params: SessionUndoParams; result: SessionUndoResult }
-  /** Token / context / cost counters for the session (+ Nous credit lines when available). */
+  /** Token / context / cost counters for the session (+ PULSE credit lines when available). */
   'session.usage': { params: SessionUsageParams; result: SessionUsageResult }
   /** Re-home a stored session's workspace; git identity is replaced and a live agent follows. */
   'session.workspace.move': { params: SessionWorkspaceMoveParams; result: SessionWorkspaceMoveResult }
@@ -5424,7 +5424,7 @@ export const RPC_METHODS = [
   'cron.manage',
   'delegation.pause',
   'delegation.status',
-  'diagnostics.share_nous',
+  'diagnostics.share_pulse',
   'display.install',
   'display.lease.acquire',
   'display.lease.release',

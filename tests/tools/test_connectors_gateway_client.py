@@ -52,7 +52,7 @@ def make_client(transport):
     return ConnectorClient(
         transport=transport,
         endpoint_resolver=lambda: "https://tool-gateway.test",
-        header_provider=lambda url: {"Authorization": "Bearer nous-token"},
+        header_provider=lambda url: {"Authorization": "Bearer pulse-token"},
     )
 
 
@@ -113,7 +113,7 @@ def test_execute_sends_one_request_with_camelcase_body_and_key():
         ]
     }
     assert request["headers"]["x-idempotency-key"]  # present, non-empty
-    assert request["headers"]["Authorization"] == "Bearer nous-token"
+    assert request["headers"]["Authorization"] == "Bearer pulse-token"
     assert results == [
         {"data": {"id": "m1"}, "error": None},
         {"data": "ok", "error": None},

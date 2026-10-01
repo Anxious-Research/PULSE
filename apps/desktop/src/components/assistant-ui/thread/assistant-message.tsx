@@ -829,7 +829,7 @@ const ErrorRecoveryActions: FC = () => {
   // One table decides which buttons this failure gets (lib/error-surface.ts).
   const plan = errorRecoveryPlan(surface)
 
-  // An expired/revoked OAuth grant (HTTP 401 on nous / openai-codex / ...):
+  // An expired/revoked OAuth grant (HTTP 401 on pulse / openai-codex / ...):
   // the one-click fix is re-running that provider's sign-in, which the
   // onboarding overlay already owns end to end (device code → poll →
   // reload.env → model confirm). Scoped to the gateway profile the failed

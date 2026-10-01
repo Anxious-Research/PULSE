@@ -313,7 +313,7 @@ class TestRunDebugShare:
         args.lines = 50
         args.expire = 7
         args.local = False
-        args.nous = False
+        args.pulse = False
 
         call_count = [0]
         uploaded_content = []
@@ -395,7 +395,7 @@ class TestRunDebugShareRedaction:
         args.lines = 50
         args.expire = 7
         args.local = False
-        args.nous = False
+        args.pulse = False
         args.no_redact = False
 
         captured: list[str] = []
@@ -480,7 +480,7 @@ class TestRunDebugShareRedaction:
             f"    {field}: {yaml_value}\n", encoding="utf-8")
 
         uploaded: list[str] = []
-        args = MagicMock(lines=20, expire=1, local=False, nous=False, no_redact=False)
+        args = MagicMock(lines=20, expire=1, local=False, pulse=False, no_redact=False)
         with patch("pulse_cli.debug._sweep_expired_pastes", return_value=(0, 0)), \
              patch("pulse_cli.debug._schedule_auto_delete"), \
              patch("pulse_cli.debug.upload_to_pastebin",
@@ -557,7 +557,7 @@ class TestRunDebugShareRedaction:
         args.lines = 50
         args.expire = 7
         args.local = False
-        args.nous = False
+        args.pulse = False
         args.no_redact = False
 
         captured: list[str] = []
@@ -586,7 +586,7 @@ class TestRunDebugShareRedaction:
         args.lines = 50
         args.expire = 7
         args.local = False
-        args.nous = False
+        args.pulse = False
         args.no_redact = True
 
         captured: list[str] = []
@@ -848,7 +848,7 @@ class TestBuildDebugShare:
 
 
 # ---------------------------------------------------------------------------
-# Shared bundle collection + Nous-S3 path
+# Shared bundle collection + PULSE-S3 path
 # ---------------------------------------------------------------------------
 
 class TestCollectShareBundle:
@@ -899,10 +899,10 @@ class TestBuildNousBundle:
         import gzip
         import json as _json
 
-        from pulse_cli.debug import build_nous_bundle
+        from pulse_cli.debug import build_pulse_bundle
 
         files = {"report": "hello", "agent.log": "log line"}
-        blob = build_nous_bundle(files, redact=True)
+        blob = build_pulse_bundle(files, redact=True)
 
         # It's gzip — magic bytes.
         assert blob[:2] == b"\x1f\x8b"
@@ -916,9 +916,9 @@ class TestBuildNousBundle:
         import gzip
         import json as _json
 
-        from pulse_cli.debug import build_nous_bundle
+        from pulse_cli.debug import build_pulse_bundle
 
-        blob = build_nous_bundle({"report": "x"}, redact=False)
+        blob = build_pulse_bundle({"report": "x"}, redact=False)
         envelope = _json.loads(gzip.decompress(blob).decode())
         assert envelope["redacted"] is False
 
@@ -929,7 +929,7 @@ class TestRunDebugShareNous:
             lines = 50
             expire = 7
             local = False
-            nous = True
+            pulse = True
             no_redact = False
             yes = True
 
@@ -938,7 +938,7 @@ class TestRunDebugShareNous:
             setattr(a, k, v)
         return a
 
-    def test_nous_success_prints_view_url(self, pulse_home, capsys):
+    def test_pulse_success_prints_view_url(self, pulse_home, capsys):
         from pulse_cli.debug import run_debug_share
 
         res = {
@@ -947,22 +947,22 @@ class TestRunDebugShareNous:
             "expiresAt": "2026-06-20T00:00:00Z",
         }
         with patch("pulse_cli.dump.run_dump"), patch(
-            "pulse_cli.diagnostics_upload.share_to_nous", return_value=res
+            "pulse_cli.diagnostics_upload.share_to_pulse", return_value=res
         ) as share:
             run_debug_share(self._args())
 
         out = capsys.readouterr().out
         assert "https://support.example.com/diagnostics/id-1" in out
         assert "2026-06-20T00:00:00Z" in out
-        # The blob passed to share_to_nous must be gzip bytes.
+        # The blob passed to share_to_pulse must be gzip bytes.
         blob = share.call_args[0][0]
         assert isinstance(blob, (bytes, bytearray)) and blob[:2] == b"\x1f\x8b"
 
-    def test_nous_failure_suggests_local(self, pulse_home, capsys):
+    def test_pulse_failure_suggests_local(self, pulse_home, capsys):
         from pulse_cli.debug import run_debug_share
 
         with patch("pulse_cli.dump.run_dump"), patch(
-            "pulse_cli.diagnostics_upload.share_to_nous",
+            "pulse_cli.diagnostics_upload.share_to_pulse",
             side_effect=RuntimeError("service down"),
         ):
             with pytest.raises(SystemExit) as exc:
@@ -971,19 +971,19 @@ class TestRunDebugShareNous:
         err = capsys.readouterr().err
         assert "--local" in err
 
-    def test_nous_does_not_touch_pastebin(self, pulse_home):
+    def test_pulse_does_not_touch_pastebin(self, pulse_home):
         from pulse_cli.debug import run_debug_share
 
         res = {"id": "id-1", "viewUrl": "https://v"}
         with patch("pulse_cli.dump.run_dump"), patch(
-            "pulse_cli.diagnostics_upload.share_to_nous", return_value=res
+            "pulse_cli.diagnostics_upload.share_to_pulse", return_value=res
         ), patch("pulse_cli.debug.upload_to_pastebin") as paste:
             run_debug_share(self._args())
         paste.assert_not_called()
 
 
 class TestDebugSlashCommand:
-    """`/debug [nous|local]` parsing in the CLI/TUI handler.
+    """`/debug [pulse|local]` parsing in the CLI/TUI handler.
 
     The classic CLI and the TUI slash worker both dispatch through
     ``PULSECLI.process_command`` → ``_handle_debug_command(cmd_original)``,
@@ -1011,7 +1011,7 @@ class TestDebugSlashCommand:
 
     def test_bare_debug_defaults_to_paste(self):
         c = self._captured("/debug")
-        assert c["nous"] is False and c["local"] is False
+        assert c["pulse"] is False and c["local"] is False
         # The slash command IS the consent action → skip the [y/N] prompt
         # (input() would hang inside prompt_toolkit's event loop).
         assert c["yes"] is True
@@ -1019,7 +1019,7 @@ class TestDebugSlashCommand:
 
     def test_word_parsing_is_case_insensitive(self):
         c = self._captured("/debug NOUS")
-        assert c["nous"] is True
+        assert c["pulse"] is True
 
 
 
@@ -1035,7 +1035,7 @@ class TestShareConsentGate:
     def _args(self, **over):
         from types import SimpleNamespace
 
-        base = dict(lines=50, expire=7, local=False, nous=False,
+        base = dict(lines=50, expire=7, local=False, pulse=False,
                     no_redact=False, yes=False)
         base.update(over)
         return SimpleNamespace(**base)

@@ -63,7 +63,7 @@ Bundled skills (in `skills/`) ship with every PULSE install. They should be **br
 
 If your skill is official and useful but not universally needed (e.g., a paid service integration, a heavyweight dependency), put it in **`optional-skills/`** — it ships with the repo but isn't activated by default. Users can discover it via `pulse skills browse` (labeled "official") and install it with `pulse skills install` (no third-party warning, built-in trust).
 
-If your skill is specialized, community-contributed, or niche, it's better suited for a **Skills Hub** — upload it to a skills registry and share it in the [Nous Research Discord](https://discord.gg/NousResearch). Users can install it with `pulse skills install`.
+If your skill is specialized, community-contributed, or niche, it's better suited for a **Skills Hub** — upload it to a skills registry and share it in the [Anxious Research Discord](https://discord.gg/AnxiousResearch). Users can install it with `pulse skills install`.
 
 ---
 
@@ -96,7 +96,7 @@ Publish these as a **standalone plugin repo** instead:
 - Implement the relevant ABC and use the existing plugin discovery path (`~/.pulse/plugins/`, project `.pulse/plugins/`, or a pip entry point) — see [Build a PULSE Plugin](https://pulse-agent.anxious-research.com/docs/guides/build-a-pulse-plugin)
 - Register lifecycle hooks (`pre_tool_call`, `post_tool_call`, `pre_llm_call`, `post_llm_call`, `on_session_start`, `on_session_end`), tools (`ctx.register_tool`), and CLI subcommands (`ctx.register_cli_command`) through the surface we already expose — no core changes needed
 - If your plugin needs a capability the framework doesn't expose, that's a feature request to **widen the generic plugin surface** (a new hook or `ctx` method) — never special-case your plugin in core
-- Promote it in the [Nous Research Discord](https://discord.gg/NousResearch) `#plugins-skills-and-skins` channel so users can find and install it
+- Promote it in the [Anxious Research Discord](https://discord.gg/AnxiousResearch) `#plugins-skills-and-skins` channel so users can find and install it
 
 A well-built third-party-product plugin can clear automated review and still be closed for this reason — it's a placement decision, not a verdict on the code. PRs that add such a directory under `plugins/` will be closed with a pointer to publish it as its own repo.
 
@@ -194,7 +194,7 @@ npm run build:fast --prefix website
 Use a Node/npm version accepted by the corresponding `package.json` engines.
 Native desktop dependencies can also require the platform build toolchain.
 
-Logos and icons are generated from `assets/nous-girl-*.svg` and
+Logos and icons are generated from `assets/pulse-girl-*.svg` and
 `assets/backgrounds/`. `node scripts/generate-icons.mjs` renders them with the
 PULSE runtime Python (`PULSE_PYTHON`, else `python` on PATH): Pillow and
 resvg-py are core dependencies. Generated outputs are committed and CI fails if
@@ -247,7 +247,7 @@ pulse-agent/
 │   ├── cli_*_mixin.py            # PULSECLI mixins (slash commands, display, session, ...)
 │   ├── config.py                 # Config management, migration, env var definitions
 │   ├── setup.py                  # Interactive setup wizard
-│   ├── auth.py                   # Provider resolution, OAuth, Nous Portal (facade + auth_*.py siblings)
+│   ├── auth.py                   # Provider resolution, OAuth, Pulse Portal (facade + auth_*.py siblings)
 │   ├── models.py                 # OpenRouter model selection lists
 │   ├── banner.py                 # Welcome banner, ASCII art
 │   ├── commands.py               # Central slash command registry (CommandDef), autocomplete, gateway helpers
@@ -304,7 +304,7 @@ pulse-agent/
 |------|---------|
 | `~/.pulse/config.yaml` | Settings (model, terminal, toolsets, compression, etc.) |
 | `~/.pulse/.env` | API keys and secrets |
-| `~/.pulse/auth.json` | OAuth credentials (Nous Portal) |
+| `~/.pulse/auth.json` | OAuth credentials (Pulse Portal) |
 | `~/.pulse/skills/` | All active skills (bundled + hub-installed + agent-created) |
 | `~/.pulse/memories/` | Persistent memory (MEMORY.md, USER.md) |
 | `~/.pulse/state.db` | SQLite session database |
@@ -339,7 +339,7 @@ User message → AIAgent._run_agent_loop()
 - **Toolset grouping**: Tools are grouped into toolsets (`web`, `terminal`, `file`, `browser`, etc.) that can be enabled/disabled per platform.
 - **Session persistence**: All conversations are stored in SQLite (`pulse_state.py`) with full-text search and unique session titles. Automatic per-session JSON snapshots have been removed. Existing files are left untouched; use `/save json` or `pulse sessions export` for an explicit export.
 - **Ephemeral injection**: System prompts and prefill messages are injected at API call time, never persisted to the database or logs.
-- **Provider abstraction**: The agent works with any OpenAI-compatible API. Provider resolution happens at init time (Nous Portal OAuth, OpenRouter API key, or custom endpoint).
+- **Provider abstraction**: The agent works with any OpenAI-compatible API. Provider resolution happens at init time (Pulse Portal OAuth, OpenRouter API key, or custom endpoint).
 - **Provider routing**: When using OpenRouter, `provider_routing` in config.yaml controls provider selection (sort by throughput/latency/price, allow/ignore specific providers, data retention policies). These are injected as `extra_body.provider` in API requests.
 
 ---
@@ -1008,7 +1008,7 @@ test(tools): add unit tests for file_operations
 
 ## Community
 
-- **Discord**: [discord.gg/NousResearch](https://discord.gg/NousResearch) — for questions, showcasing projects, and sharing skills
+- **Discord**: [discord.gg/AnxiousResearch](https://discord.gg/AnxiousResearch) — for questions, showcasing projects, and sharing skills
 - **GitHub Discussions**: For design proposals and architecture discussions
 - **Skills Hub**: Upload specialized skills to a registry and share them with the community
 

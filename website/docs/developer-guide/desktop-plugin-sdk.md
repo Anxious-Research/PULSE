@@ -79,7 +79,7 @@ differences. Radio ships as a bundled SDK-only plugin, off by default. Enable it
 in **Capabilities → Plugins** for free live streams, station search, and status-bar
 playback controls with an audio-reactive waveform. It uses the existing plugin
 toggle and contributes nothing while disabled. Reference demos live in the companion
-[`pulse-example-plugins`](https://github.com/NousResearch/pulse-example-plugins)
+[`pulse-example-plugins`](https://github.com/AnxiousResearch/pulse-example-plugins)
 repo.
 
 ## Quick start — your first plugin
@@ -418,7 +418,7 @@ host.onEvent('gateway.ready', () => {
 Both doors persist per profile, so a plugin-driven switch sticks exactly like a
 manual pick. To tint the *active* theme rather than replace it, use
 `setAccentOverride(hex)` and clear it in `ctx.onDispose` — the standalone
-[Accent Picker](https://github.com/NousResearch/pulse-desktop-accent-picker)
+[Accent Picker](https://github.com/AnxiousResearch/pulse-desktop-accent-picker)
 plugin is the worked example (it is also a complete, installable disk plugin).
 
 ### Composer extensions
@@ -1569,7 +1569,7 @@ enable/disable contract as a disk plugin. The two differences:
 
 No desktop plugins ship in the core tree today; the shipped app stays uncluttered
 and demos live in the
-[`pulse-example-plugins`](https://github.com/NousResearch/pulse-example-plugins)
+[`pulse-example-plugins`](https://github.com/AnxiousResearch/pulse-example-plugins)
 companion repo.
 
 ## Security model

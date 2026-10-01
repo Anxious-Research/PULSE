@@ -10,7 +10,7 @@ PULSE can optionally hand `openai/*`, `openai-codex/*` and [named custom provide
 This is **opt-in only**. Default PULSE behavior is unchanged unless you flip the flag. PULSE never auto-routes you onto this runtime.
 
 :::tip
-Not using OpenAI Codex? `pulse setup --portal` configures a non-Codex backend with Claude/Gemini/etc. in one step. See [Nous Portal](../../integrations/nous-portal.md).
+Not using OpenAI Codex? `pulse setup --portal` configures a non-Codex backend with Claude/Gemini/etc. in one step. See [Pulse Portal](../../integrations/pulse-portal.md).
 :::
 
 ## Why

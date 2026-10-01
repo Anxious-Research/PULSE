@@ -1,4 +1,4 @@
-"""The messaging gateway is a boot owner of the Nous free tier.
+"""The messaging gateway is a boot owner of the PULSE free tier.
 
 Rung 5 made every demand-time site a read (provider resolution, ``/login``, the connector token), so a
 process that never runs the bootstrap can never have an identity. `cmd_chat` and `pulse serve` run it;

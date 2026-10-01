@@ -1,5 +1,5 @@
 name: nvidia-app
-repo: https://github.com/NousResearch/pulse-nvidia
+repo: https://github.com/AnxiousResearch/pulse-nvidia
 sha: 65bb8d89263f920e8599432823d2d4e05cc113e3
 subdir: nvidia-app
 description: "NVIDIA App control through its local MCP server: overlay capture and state, driver status
@@ -9,11 +9,11 @@ description: "NVIDIA App control through its local MCP server: overlay capture a
   connection, so a changed port or token needs no reconfiguration. Disclosure: the tools read and change
   NVIDIA App settings on this machine; nothing leaves loopback."
 title: NVIDIA App
-maintainer: NousResearch
+maintainer: AnxiousResearch
 tier: official
 category: tools
 requires_pulse: ">=0.21.4"
-docs_url: https://github.com/NousResearch/pulse-nvidia/tree/main/nvidia-app
+docs_url: https://github.com/AnxiousResearch/pulse-nvidia/tree/main/nvidia-app
 version: "0.1.0"
 platforms: [windows]
 onboarding: true

@@ -426,8 +426,8 @@ def test_canary_publisher_consumes_staged_bytes_and_writes_pointer_last(tmp_path
     bundle = release / filename
     with zipfile.ZipFile(bundle, 'w') as archive:
         archive.writestr('AppxMetadata/AppxBundleManifest.xml',
-                         '<Bundle><Identity Name="NousResearch.PULSEBundledCanary" '
-                         'Publisher="CN=Nous Research Inc., O=Nous Research Inc., L=Austin, S=Texas, C=US" '
+                         '<Bundle><Identity Name="AnxiousResearch.PULSEBundledCanary" '
+                         'Publisher="CN=Anxious Research Inc., O=Anxious Research Inc., L=Austin, S=Texas, C=US" '
                          f'Version="{version}"/></Bundle>')
     tested_bytes = bundle.read_bytes()
     jobs = _workflow()['jobs']
@@ -465,7 +465,7 @@ def test_canary_publisher_consumes_staged_bytes_and_writes_pointer_last(tmp_path
     # Filename, tag base, and baked identity must still agree. Reading the
     # accepted assembly version is not permission to trust arbitrary metadata.
     staged_bundle = tmp_path / 'staged' / filename
-    for field, wrong in [('Version', '0.28.1.0'), ('Name', 'NousResearch.Other'), ('Publisher', 'CN=Other')]:
+    for field, wrong in [('Version', '0.28.1.0'), ('Name', 'AnxiousResearch.Other'), ('Publisher', 'CN=Other')]:
         with zipfile.ZipFile(bundle) as archive:
             manifest = ET.fromstring(archive.read('AppxMetadata/AppxBundleManifest.xml'))
         native = manifest.find('Identity')

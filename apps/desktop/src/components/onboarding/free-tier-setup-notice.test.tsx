@@ -12,8 +12,8 @@ const NO_IDENTITY: FreeTierStatus = {
   available: false,
   enabled: true,
   has_guest: false,
-  label: 'Nous · free tier',
-  model: 'nous/welcome',
+  label: 'PULSE · free tier',
+  model: 'pulse/welcome',
   notice_pending: false
 }
 

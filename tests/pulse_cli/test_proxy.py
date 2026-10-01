@@ -13,7 +13,7 @@ import pytest
 
 from pulse_cli.proxy.adapters import ADAPTERS, get_adapter
 from pulse_cli.proxy.adapters.base import UpstreamAdapter, UpstreamCredential
-from pulse_cli.proxy.adapters.nous_portal import NousPortalAdapter
+from pulse_cli.proxy.adapters.pulse_portal import NousPortalAdapter
 from pulse_cli.proxy.adapters.xai import XAIGrokAdapter
 
 
@@ -33,19 +33,19 @@ from pulse_cli.proxy.adapters.xai import XAIGrokAdapter
 # ---------------------------------------------------------------------------
 
 
-def _write_auth_store(pulse_home: Path, nous_state: Dict[str, Any]) -> Path:
-    """Write an auth.json with the given nous state into a hermetic PULSE_HOME."""
+def _write_auth_store(pulse_home: Path, pulse_state: Dict[str, Any]) -> Path:
+    """Write an auth.json with the given pulse state into a hermetic PULSE_HOME."""
     auth_path = pulse_home / "auth.json"
     auth_path.write_text(json.dumps({
         "version": 1,
-        "providers": {"nous": nous_state},
+        "providers": {"pulse": pulse_state},
     }))
     return auth_path
 
 
 
 
-def test_nous_adapter_concurrent_refresh_serialized(tmp_path, monkeypatch):
+def test_pulse_adapter_concurrent_refresh_serialized(tmp_path, monkeypatch):
     """Two parallel get_credential() calls must serialize through the lock."""
     monkeypatch.setenv("PULSE_HOME", str(tmp_path))
     _write_auth_store(tmp_path, {
@@ -90,7 +90,7 @@ def test_nous_adapter_concurrent_refresh_serialized(tmp_path, monkeypatch):
             errors.append(exc)
 
     with patch(
-        "pulse_cli.proxy.adapters.nous_portal.resolve_nous_runtime_credentials",
+        "pulse_cli.proxy.adapters.pulse_portal.resolve_pulse_runtime_credentials",
         side_effect=serializing_refresh,
     ):
         threads = [threading.Thread(target=worker) for _ in range(3)]

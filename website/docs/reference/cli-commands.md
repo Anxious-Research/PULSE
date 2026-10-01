@@ -58,7 +58,7 @@ The install also ships `pulse-agent`, a minimal runner that sends one query and 
 | `pulse whatsapp` | Configure and pair the WhatsApp bridge. |
 | `pulse whatsapp-cloud` | Configure the official Meta WhatsApp Business Cloud API adapter (Business account + public webhook required). Distinct from `pulse whatsapp` (Baileys personal-account bridge). |
 | `pulse slack` | Slack helpers (currently: generate the app manifest with every command as a native slash). |
-| `pulse auth` | Manage credentials — add, list, remove, reset, status, logout. Handles OAuth flows for Codex/Nous/Anthropic. |
+| `pulse auth` | Manage credentials — add, list, remove, reset, status, logout. Handles OAuth flows for Codex/PULSE/Anthropic. |
 | `pulse login` / `logout` | **Deprecated** — use `pulse auth` instead. |
 | `pulse send` | Send a one-shot message to a configured messaging platform (Telegram, Discord, Slack, Signal, SMS, …). Useful from shell scripts, cron jobs, CI hooks, and monitoring daemons — no agent loop, no LLM. |
 | `pulse peer` | Register peer PULSE gateways on other machines and DM their agents' canonical Bot Chats (`pulse peer dm <peer>[/<agent>] "…"`). The transport behind cross-machine bot-to-bot messaging. |
@@ -95,7 +95,7 @@ The install also ships `pulse-agent`, a minimal runner that sends one query and 
 | `pulse acp` | Run PULSE as an ACP server for editor integration. |
 | `pulse mcp` | Manage MCP server configurations and run PULSE as an MCP server. |
 | `pulse plugins` | Manage PULSE Agent plugins (install, enable, disable, remove). |
-| `pulse portal` | Nous Portal status, subscription link, and Tool Gateway routing. See [Tool Gateway](../user-guide/features/tool-gateway.md). |
+| `pulse portal` | Pulse Portal status, subscription link, and Tool Gateway routing. See [Tool Gateway](../user-guide/features/tool-gateway.md). |
 | `pulse tools` | Configure enabled tools per platform. |
 | `pulse computer-use` | Install or check the Computer Use (cua-driver) backend (macOS/Windows/Linux). |
 | `pulse pets` | Browse, install, and select [petdex](../user-guide/features/pets.md) animated pets shown across the CLI, TUI, and desktop app. Subcommands: `list`, `install`, `select`, `show`, `off`, `scale`, `remove`, `doctor`. |
@@ -127,7 +127,7 @@ Common options:
 | `--oneshot` | With `-q`/`--query-file`: answer the query and exit (the pre-0.21 single-query behavior) instead of seeding an interactive session. Implied on non-TTY stdio and by `-Q`. |
 | `-m`, `--model <model>` | Override the model for this run. |
 | `-t`, `--toolsets <csv>` | Enable a comma-separated set of toolsets. |
-| `--provider <provider>` | Force a provider: `auto`, `openrouter`, `nous`, `openai-codex` (aliases `chatgpt`, `chatgpt-codex`), `copilot-acp`, `copilot`, `anthropic`, `gemini`, `huggingface`, `novita` (aliases `novita-ai`, `novitaai`), `openai-api`, `zai`, `kimi-coding`, `kimi-coding-cn`, `minimax`, `minimax-cn`, `minimax-oauth`, `kilocode`, `xiaomi`, `arcee`, `gmi`, `upstage` (alias `solar`), `alibaba`, `alibaba-cn`, `alibaba-coding-plan` (alias `alibaba_coding`), `alibaba-coding-plan-cn`, `alibaba-token-plan`, `alibaba-token-plan-cn`, `deepseek`, `nvidia`, `ollama-cloud`, `xai` (alias `grok`), `xai-oauth` (alias `grok-oauth`), `qwen-oauth`, `bedrock`, `opencode-zen`, `opencode-go`, `commandcode`, `commandcode-anthropic`, `ai-gateway`, `azure-foundry`, `lmstudio`, `stepfun`, `tencent-tokenhub` (alias `tencent`, `tokenhub`), `router` (aliases `ramp-router`, `ramp`), `nebius-token-factory` (aliases `nebius`, `nebius-tf`, `tokenfactory`), `tencent-tokenplan` (aliases `tokenplan`, `tencent-lkeap`). |
+| `--provider <provider>` | Force a provider: `auto`, `openrouter`, `pulse`, `openai-codex` (aliases `chatgpt`, `chatgpt-codex`), `copilot-acp`, `copilot`, `anthropic`, `gemini`, `huggingface`, `novita` (aliases `novita-ai`, `novitaai`), `openai-api`, `zai`, `kimi-coding`, `kimi-coding-cn`, `minimax`, `minimax-cn`, `minimax-oauth`, `kilocode`, `xiaomi`, `arcee`, `gmi`, `upstage` (alias `solar`), `alibaba`, `alibaba-cn`, `alibaba-coding-plan` (alias `alibaba_coding`), `alibaba-coding-plan-cn`, `alibaba-token-plan`, `alibaba-token-plan-cn`, `deepseek`, `nvidia`, `ollama-cloud`, `xai` (alias `grok`), `xai-oauth` (alias `grok-oauth`), `qwen-oauth`, `bedrock`, `opencode-zen`, `opencode-go`, `commandcode`, `commandcode-anthropic`, `ai-gateway`, `azure-foundry`, `lmstudio`, `stepfun`, `tencent-tokenhub` (alias `tencent`, `tokenhub`), `router` (aliases `ramp-router`, `ramp`), `nebius-token-factory` (aliases `nebius`, `nebius-tf`, `tokenfactory`), `tencent-tokenplan` (aliases `tokenplan`, `tencent-lkeap`). |
 | `-s`, `--skills <name>` | Preload one or more skills for the session (can be repeated or comma-separated). |
 | `-v`, `--verbose` | Verbose output. |
 | `-Q`, `--quiet` | Programmatic mode: suppress banner/spinner/tool previews. |
@@ -276,7 +276,7 @@ pulse model
 
 Use this when you want to:
 - **add a new provider** (OpenRouter, Anthropic, Copilot, DeepSeek, custom, etc.)
-- log into OAuth-backed providers (Anthropic, Copilot, Codex, Nous Portal)
+- log into OAuth-backed providers (Anthropic, Copilot, Codex, Pulse Portal)
 - enter or update API keys
 - pick from provider-specific model lists
 - configure a custom/self-hosted endpoint
@@ -396,7 +396,7 @@ the full guide, supported languages, and configuration knobs.
 pulse setup [model|tts|terminal|gateway|tools|agent] [--non-interactive] [--reset] [--quick] [--reconfigure] [--portal]
 ```
 
-**Easiest path:** `pulse setup --portal` — OAuth into Nous Portal and opt into the [Tool Gateway](../user-guide/features/tool-gateway.md) in one shot.
+**Easiest path:** `pulse setup --portal` — OAuth into Pulse Portal and opt into the [Tool Gateway](../user-guide/features/tool-gateway.md) in one shot.
 
 **First run:** launches the first-time wizard.
 
@@ -420,7 +420,7 @@ Options:
 | `--non-interactive` | Use defaults / environment values without prompts. |
 | `--reset` | Reset configuration to defaults before setup. |
 | `--reconfigure` | Backwards-compat alias — bare `pulse setup` on an existing install now does this by default. |
-| `--portal` | One-shot Nous Portal setup: log in via OAuth, set Nous as the inference provider, and opt into the [Tool Gateway](../user-guide/features/tool-gateway.md). Skips the rest of the wizard. |
+| `--portal` | One-shot Pulse Portal setup: log in via OAuth, set PULSE as the inference provider, and opt into the [Tool Gateway](../user-guide/features/tool-gateway.md). Skips the rest of the wizard. |
 
 ## `pulse portal`
 
@@ -428,13 +428,13 @@ Options:
 pulse portal [status|open|tools]
 ```
 
-Inspect Nous Portal auth, Tool Gateway routing, and reach the subscription page. Subcommand-less invocation runs `status`.
+Inspect Pulse Portal auth, Tool Gateway routing, and reach the subscription page. Subcommand-less invocation runs `status`.
 
 | Subcommand | Description |
 |------------|-------------|
 | `status` (default) | Portal auth state + per-tool Tool Gateway routing summary. Also shown when no subcommand is given. |
 | `open` | Open `portal.anxious-research.com/manage-subscription` in your default browser. |
-| `tools` | List every Tool Gateway partner (Firecrawl, FAL, OpenAI TTS, Browser Use, Modal) and which are routed via Nous. |
+| `tools` | List every Tool Gateway partner (Firecrawl, FAL, OpenAI TTS, Browser Use, Modal) and which are routed via PULSE. |
 
 For configuration of the gateway itself, see [Tool Gateway](../user-guide/features/tool-gateway.md). For the one-shot setup path, see `pulse setup --portal` above.
 
@@ -633,11 +633,11 @@ Runs the `~/.codex/config.toml` migration that `/codex-runtime codex_app_server`
 pulse proxy <subcommand>
 ```
 
-Run a local OpenAI-compatible HTTP server that forwards requests to an OAuth-authenticated upstream provider (e.g. Nous Portal, xAI). External apps can point at the proxy with any bearer token; the proxy attaches your real OAuth credentials on the way out. See [Subscription Proxy](../user-guide/features/subscription-proxy.md) for the full guide.
+Run a local OpenAI-compatible HTTP server that forwards requests to an OAuth-authenticated upstream provider (e.g. Pulse Portal, xAI). External apps can point at the proxy with any bearer token; the proxy attaches your real OAuth credentials on the way out. See [Subscription Proxy](../user-guide/features/subscription-proxy.md) for the full guide.
 
 | Subcommand | Description |
 |------------|-------------|
-| `start` | Run the proxy in the foreground. Flags: `--provider <nous\|xai>` (default `nous`), `--host <addr>` (default `127.0.0.1`; use `0.0.0.0` to expose on LAN), `--port <int>` (default `8645`). |
+| `start` | Run the proxy in the foreground. Flags: `--provider <pulse\|xai>` (default `pulse`), `--host <addr>` (default `127.0.0.1`; use `0.0.0.0` to expose on LAN), `--port <int>` (default `8645`). |
 | `status` | Show which proxy upstreams are ready (credentials present, OAuth valid). |
 | `providers` | List available proxy upstream providers. |
 
@@ -1034,7 +1034,7 @@ api_keys:
   openrouter           set
   openai               not set
   anthropic            set
-  nous                 not set
+  pulse                 not set
   firecrawl            set
   ...
 
@@ -1077,13 +1077,13 @@ Upload a debug report (system info + recent logs) to a paste service and get a s
 |--------|-------------|
 | `--lines <N>` | Number of log lines to include per log file (default: 200). |
 | `--expire <days>` | Paste expiry in days (default: 7). |
-| `--nous` | Upload to Nous-internal diagnostics storage instead of a public paste service. Use this when Nous support asks for a private diagnostic bundle. |
+| `--pulse` | Upload to PULSE-internal diagnostics storage instead of a public paste service. Use this when PULSE support asks for a private diagnostic bundle. |
 | `--local` | Print the report locally instead of uploading. |
 | `--no-redact` | Disable upload-time secret redaction. By default, uploads are redacted. |
 
 The report includes system info (OS, Python version, PULSE version), recent agent, gateway, GUI/dashboard, and desktop logs (512 KB limit per file), plus the update and Desktop update hand-off logs when present, and redacted API key status. By default, uploads are redacted so secrets are not included; this covers the system dump (including config values such as `fallback_providers` entries and credentials in their URLs) as well as the logs, and the gateway `/debug` report too.
 
-Default uploads use public paste services tried in order: paste.rs, dpaste.com. `--nous` uploads the same debug bundle to private Nous diagnostics storage instead; the returned viewer link is for the Nous team and auto-deletes after 14 days.
+Default uploads use public paste services tried in order: paste.rs, dpaste.com. `--pulse` uploads the same debug bundle to private PULSE diagnostics storage instead; the returned viewer link is for the PULSE team and auto-deletes after 14 days.
 
 ### Examples
 
@@ -1091,7 +1091,7 @@ Default uploads use public paste services tried in order: paste.rs, dpaste.com. 
 pulse debug share              # Upload debug report, print URL
 pulse debug share --lines 500  # Include more log lines
 pulse debug share --expire 30  # Keep paste for 30 days
-pulse debug share --nous       # Upload a private diagnostics bundle for Nous support
+pulse debug share --pulse       # Upload a private diagnostics bundle for PULSE support
 pulse debug share --local      # Print report to terminal (no upload)
 ```
 
@@ -1613,8 +1613,8 @@ Manage MCP (Model Context Protocol) server configurations and run PULSE as an MC
 
 | Subcommand | Description |
 |------------|-------------|
-| *(none)* or `picker` | Interactive catalog picker — browse Nous-approved MCPs and install/enable/disable. |
-| `catalog` | List Nous-approved MCPs (plain text, scriptable). |
+| *(none)* or `picker` | Interactive catalog picker — browse PULSE-approved MCPs and install/enable/disable. |
+| `catalog` | List PULSE-approved MCPs (plain text, scriptable). |
 | `install <name>` | Install a catalog entry (e.g. `pulse mcp install deepwiki`). |
 | `serve [-v\|--verbose]` | Run PULSE as an MCP server — expose conversations to other agents. |
 | `add <name> [--url URL] [--command CMD] [--auth oauth\|header] [--args ...]` | Add a custom MCP server with automatic tool discovery. `--args` passes the remaining argv to the stdio command, so put it last. |
@@ -1882,13 +1882,13 @@ Launch the web dashboard to manage configuration, API keys, and sessions. For a 
 
 ### `pulse dashboard register`
 
-Register this install as a self-hosted dashboard with your Nous Portal account. Creates an OAuth client, writes `PULSE_DASHBOARD_OAUTH_CLIENT_ID` into `~/.pulse/.env`, and prints how to engage the login gate. Requires being logged in (`pulse setup`).
+Register this install as a self-hosted dashboard with your Pulse Portal account. Creates an OAuth client, writes `PULSE_DASHBOARD_OAUTH_CLIENT_ID` into `~/.pulse/.env`, and prints how to engage the login gate. Requires being logged in (`pulse setup`).
 
 | Option | Description |
 |--------|-------------|
 | `--name` | Human-readable label for the dashboard (default: auto-generated). |
 | `--redirect-uri` | Public HTTPS OAuth redirect URI (e.g. `https://pulse.example.com/auth/callback`). Omit for localhost-only use. |
-| `--portal-url` | Override the Nous Portal base URL for registration (default: the portal you logged into). Also settable via `PULSE_DASHBOARD_PORTAL_URL`. |
+| `--portal-url` | Override the Pulse Portal base URL for registration (default: the portal you logged into). Also settable via `PULSE_DASHBOARD_PORTAL_URL`. |
 
 ```bash
 # Default — opens browser to http://127.0.0.1:9119

@@ -11,7 +11,7 @@ const config: Config = {
   url: 'https://pulse-agent.anxious-research.com',
   baseUrl: '/docs/',
 
-  organizationName: 'NousResearch',
+  organizationName: 'AnxiousResearch',
   projectName: 'pulse-agent',
 
   onBrokenLinks: 'warn',
@@ -166,7 +166,7 @@ const config: Config = {
           position: 'right',
         },
         {
-          href: 'https://discord.gg/NousResearch',
+          href: 'https://discord.gg/AnxiousResearch',
           label: 'Discord',
           position: 'right',
         },
@@ -187,7 +187,7 @@ const config: Config = {
         {
           title: 'Community',
           items: [
-            { label: 'Discord', href: 'https://discord.gg/NousResearch' },
+            { label: 'Discord', href: 'https://discord.gg/AnxiousResearch' },
             { label: 'GitHub Issues', href: 'https://github.com/Anxious-Research/PULSE/issues' },
             { label: 'Skills Hub', href: 'https://agentskills.io' },
           ],
@@ -197,11 +197,11 @@ const config: Config = {
           items: [
             { label: 'Desktop Download', href: 'https://pulse-agent.anxious-research.com/' },
             { label: 'GitHub', href: 'https://github.com/Anxious-Research/PULSE' },
-            { label: 'Nous Research', href: 'https://anxious-research.com' },
+            { label: 'Anxious Research', href: 'https://anxious-research.com' },
           ],
         },
       ],
-      copyright: `Built by <a href="https://anxious-research.com">Nous Research</a> · MIT License · ${new Date().getFullYear()}`,
+      copyright: `Built by <a href="https://anxious-research.com">Anxious Research</a> · MIT License · ${new Date().getFullYear()}`,
     },
     prism: {
       theme: prismThemes.github,

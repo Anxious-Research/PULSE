@@ -292,7 +292,7 @@ test('store carries the Partner Center MSIX identity and no other variant does',
   assert.deepEqual(store.storeMsix, {
     identityName: 'NousResearchInc.PULSEAgent',
     publisher: 'CN=EE6D86E4-606F-4E38-B940-AD7248C9D519',
-    publisherDisplayName: 'Nous Research Inc.'
+    publisherDisplayName: 'Anxious Research Inc.'
   })
 
   for (const v of [undefined, 'bundled', 'light'] as const) {

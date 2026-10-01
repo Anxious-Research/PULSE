@@ -110,7 +110,7 @@ class TestSameEndpoint:
 
     def test_unknown_url_falls_back_to_provider_default(self):
         assert same_endpoint(_id("openrouter", "m1"), _id("openrouter", "m2"))
-        assert not same_endpoint(_id("openrouter", "m"), _id("nous", "m"))
+        assert not same_endpoint(_id("openrouter", "m"), _id("pulse", "m"))
 
 
 class TestUnknownAxesNeverStrand:

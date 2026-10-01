@@ -475,7 +475,7 @@ gateway:
     last_activity: "**Dernière activité :** {timestamp}"
     model: "**Modèle :** `{model}`"
     model_provider: "**Modèle :** `{model}` ({provider})"
-    free_tier: "Nous · offre gratuite · nous/welcome · /login pour se connecter"
+    free_tier: "PULSE · offre gratuite · pulse/welcome · /login pour se connecter"
     context: "**Contexte :** {used} / {total} ({pct}%)"
     context_used: "**Contexte :** ~{used} jetons"
     tokens: "**Jetons facturés au total :** {tokens} _(pas la taille actuelle de votre contexte ; utilisez `/context`)_"
@@ -635,7 +635,7 @@ gateway:
     unknown_subcommand: "Sous-commande /usage inconnue : `{args}`. Essayez `/usage` ou `/usage reset [--force]`."
     reset_wrong_provider: "Les réinitialisations de limite en réserve ne sont disponibles qu'avec le fournisseur openai-codex. Changez d'abord avec `/model`."
   credits:
-    not_logged_in: "Non connecté à Nous Portal. Connecte-toi pour voir ton solde de crédits et recharger."
+    not_logged_in: "Non connecté à Pulse Portal. Connecte-toi pour voir ton solde de crédits et recharger."
   verbose:
     not_enabled: "La commande `/verbose` n'est pas activée pour les plateformes de messagerie.\n\nActivez-la dans `config.yaml` :\n```yaml\ndisplay:\n  tool_progress_command: true\n```"
     mode_off: "⚙️ Progression des outils : **OFF** — aucune activité d'outil affichée."
@@ -992,12 +992,12 @@ gateway:
     action_shutting_down: "en cours d'arrêt"
     action_restarting: "en cours de redémarrage"
     cron_interrupted: "⚠️ La tâche planifiée '{job}' a été interrompue car PULSE est {action} ; aucun résultat pour cette exécution. Elle se relancera selon son planning, ou lancez-la maintenant avec `pulse cron run {job}` une fois PULSE de retour."
-    notice_shutdown: "⚠️ PULSE s'arrête — votre tâche en cours va être interrompue. Une fois de retour en ligne, envoyez n'importe quel message et j'essaierai de reprendre là où nous en étions."
+    notice_shutdown: "⚠️ PULSE s'arrête — votre tâche en cours va être interrompue. Une fois de retour en ligne, envoyez n'importe quel message et j'essaierai de reprendre là où pulse en étions."
     notice_restart: "⚠️ PULSE redémarre — votre tâche en cours va être interrompue. Envoyez n'importe quel message après le redémarrage et j'essaierai de reprendre là où vous en étiez."
   startup:
     handoff_thread_title: "PULSE — {title}"
     restarted: "♻ Gateway redémarré avec succès. Votre session continue."
-    free_tier_line: "Inférence : offre gratuite Nous (nous/welcome). Connectez-vous pour en obtenir plus : /login"
+    free_tier_line: "Inférence : offre gratuite PULSE (pulse/welcome). Connectez-vous pour en obtenir plus : /login"
     online: "♻️ Gateway en ligne — PULSE est de retour et prêt."
     db_corrupt: |-
       ⚠️ Corruption détectée dans la base de données des sessions. Les messages risquent de ne pas être persistés. Options de récupération :
@@ -1126,7 +1126,7 @@ gateway:
   codex_runtime:
     config_load_failed: "❌ Impossible de charger la configuration : {error}"
   topup:
-    header: "💳 **Solde Nous**"
+    header: "💳 **Solde PULSE**"
     portal_link: "Gérez votre facturation sur le portail : {url}"
     hint: "Rechargez et gérez votre facturation dans le navigateur — votre solde sera mis à jour ici ensuite."
   login:
@@ -1912,11 +1912,11 @@ slash:
   usage:
     description: "Afficher la consommation de tokens et les limites de débit ; `reset` utilise une réinitialisation de limite Codex mise en réserve"
   subscription:
-    description: "Voir votre forfait Nous et le modifier dans le navigateur"
+    description: "Voir votre forfait PULSE et le modifier dans le navigateur"
   login:
-    description: "Se connecter avec un compte Nous (conserve vos connecteurs)"
+    description: "Se connecter avec un compte PULSE (conserve vos connecteurs)"
   topup:
-    description: "Afficher votre solde Nous et gérer la facturation sur le portail"
+    description: "Afficher votre solde PULSE et gérer la facturation sur le portail"
   platforms:
     description: "Afficher l'état du gateway et des plateformes de messagerie"
   platform:
@@ -1937,7 +1937,7 @@ cli:
   billing:
     load_failed: "{label} : {error}"
     load_failed_label: "Facturation indisponible"
-    not_logged_in: "Non connecté à Nous Portal."
+    not_logged_in: "Non connecté à Pulse Portal."
     run_portal_then: "Lancez `pulse portal` pour vous connecter, puis {cmd}."
     org_line: "Org : {org}"
     org_line_role: "Org : {org} · {role}"
@@ -2027,7 +2027,7 @@ cli:
     confirm_purchase: "Confirmer l'achat"
     total_line: "Total : {amount}"
     portal_card_will_be_charged: "Votre carte enregistrée sur le portail sera débitée."
-    consent_charge: "En confirmant, vous autorisez Nous Research à débiter votre carte."
+    consent_charge: "En confirmant, vous autorisez Anxious Research à débiter votre carte."
     choice_pay_now: "Payer {amount} maintenant"
     desc_submit_charge: "soumettre le débit"
     desc_manage_card_billing: "gérer votre carte / facturation dans le navigateur"
@@ -2088,7 +2088,7 @@ cli:
     threshold_label: "Quand le solde passe sous"
     reload_to_label: "Recharger le solde jusqu'à"
     reload_must_exceed_threshold: "🔴 Le montant de recharge doit être supérieur au seuil."
-    auto_reload_consent: "En confirmant, vous autorisez Nous Research à débiter {card} chaque fois que votre solde atteint {threshold}. Désactivable à tout moment ici ou sur le portail."
+    auto_reload_consent: "En confirmant, vous autorisez Anxious Research à débiter {card} chaque fois que votre solde atteint {threshold}. Désactivable à tout moment ici ou sur le portail."
     turn_on_auto_reload_question: "Activer la recharge automatique ?"
     auto_reload_enabled: "✅ Recharge automatique activée : sous {threshold} → recharger jusqu'à {reload_to}."
     auto_reload_disabled: "✅ Recharge automatique désactivée."
@@ -2689,7 +2689,7 @@ cli:
     empty_base_url: "⚠️  Le résolveur de fournisseur a renvoyé une URL de base vide. Vérifiez la configuration de votre fournisseur ou exécutez : pulse setup"
     switching_to_fallback: "⚠️  {reason} — bascule vers le fournisseur de secours : {provider} / {model}"
     first_run_no_provider: "☤ Aucun fournisseur d'inférence n'est encore configuré — réglons cela."
-    first_run_pick_provider: "Vous allez choisir un fournisseur (Nous Portal OAuth est le plus rapide ; aucune clé API requise) puis un modèle."
+    first_run_pick_provider: "Vous allez choisir un fournisseur (Pulse Portal OAuth est le plus rapide ; aucune clé API requise) puis un modèle."
     first_run_prompt: "Configurer un fournisseur maintenant ? [Y/n] :"
     first_run_skipped: "Ignoré. Exécutez 'pulse model' ou 'pulse setup' à tout moment."
     first_run_cancelled: "Configuration annulée. Exécutez 'pulse model' à tout moment."
@@ -2722,7 +2722,7 @@ cli:
     delivering_leftover_steer: "⏩ /steer restant transmis comme prochain tour : '{preview}'"
     reasoning_label: "Raisonnement"
     reasoning_more_lines: "... ({count} lignes de plus — /reasoning full pour les afficher)"
-    billing_cta_nous: "Exécutez [bold]/topup[/] pour ajouter des crédits, ou [bold]/subscription[/] pour changer de formule."
+    billing_cta_pulse: "Exécutez [bold]/topup[/] pour ajouter des crédits, ou [bold]/subscription[/] pour changer de formule."
     billing_cta_provider: "Ajoutez des crédits chez {provider}"
     your_provider: "votre fournisseur"
     billing_cta_switch: "Ou changez de fournisseur avec [bold]/model <model> --provider <provider>[/]."
@@ -3395,7 +3395,7 @@ cli:
     fix_lm_studio: "Correctif LM Studio : réglez la longueur de contexte dans les paramètres du modèle → rechargez le modèle"
     fix_local_server: "Correctif : démarrez votre serveur avec au moins {tokens_k}K de contexte (llama.cpp : -c {tokens}), ou réglez model.ollama_num_ctx dans config.yaml sur la fenêtre réellement servie"
     fix_config: "Correctif : réglez model.context_length dans config.yaml, ou augmentez le paramètre de contexte de votre serveur"
-    pulse_models_not_agentic: "⚠  Les modèles Nous Research PULSE 3 et 4 ne sont PAS agentiques et ne sont pas conçus pour PULSE Agent."
+    pulse_models_not_agentic: "⚠  Les modèles Anxious Research PULSE 3 et 4 ne sont PAS agentiques et ne sont pas conçus pour PULSE Agent."
     pulse_models_lack_tools: "Ils ne disposent pas des capacités d'appel d'outils requises pour les workflows agentiques. Préférez un modèle agentique (Claude, GPT, Gemini, DeepSeek, etc.)."
     pulse_models_switch_hint: "Changez avec : /model sonnet  ou  /model gpt5"
     project_skills_loaded: "◆ {count} skill(s) de projet chargée(s) depuis ce dépôt"
@@ -3979,8 +3979,8 @@ tips:
   t181: "Camofox est un navigateur anti-détection — un fork de Firefox avec falsification d'empreinte en C++."
   t182: "browser_navigate renvoie automatiquement un instantané de la page — inutile d'appeler browser_snapshot ensuite."
   t183: "browser_vision avec annotate=true superpose des étiquettes numérotées sur les éléments interactifs."
-  t184: "pulse mcp ouvre un sélecteur interactif de MCP approuvés par Nous, installables en une touche."
-  t185: "pulse mcp catalog liste les serveurs MCP approuvés par Nous fournis avec le dépôt."
+  t184: "pulse mcp ouvre un sélecteur interactif de MCP approuvés par PULSE, installables en une touche."
+  t185: "pulse mcp catalog liste les serveurs MCP approuvés par PULSE fournis avec le dépôt."
   t186: "pulse mcp install <name> installe une entrée du catalogue, demande les identifiants et vous laisse choisir les outils à activer."
   t187: "Les serveurs MCP se configurent dans config.yaml — transports stdio et HTTP pris en charge."
   t188: "Filtrage d'outils par serveur : tools.include met des outils en liste blanche, tools.exclude en liste noire."
@@ -4007,7 +4007,7 @@ tips:
   t209: "Fournisseurs personnalisés : enregistrez des endpoints nommés dans config.yaml sous custom_providers."
   t210: "PULSE_EPHEMERAL_SYSTEM_PROMPT injecte un prompt système qui n'est jamais conservé dans l'historique."
   t211: "credential_pool_strategies prend en charge les rotations fill_first, round_robin, least_used et random."
-  t212: "pulse auth add nous ou pulse auth add openai-codex configure des fournisseurs basés sur OAuth."
+  t212: "pulse auth add pulse ou pulse auth add openai-codex configure des fournisseurs basés sur OAuth."
   t213: "Le serveur API prend en charge à la fois Chat Completions et l'API Responses avec état côté serveur."
   t214: "tool_preview_length: 0 dans la configuration affiche les chemins de fichiers complets dans le flux d'activité du spinner."
   t215: "pulse status --deep effectue des vérifications de diagnostic approfondies sur tous les composants."
@@ -4077,7 +4077,7 @@ tips:
   t279: "PULSE_DEV=1 contourne la détection du mode conteneur pour le développement local."
   t280: "Chaque serveur MCP obtient son propre jeu d'outils (mcp-servername) activable indépendamment via pulse tools."
   t281: "Les marqueurs ${ENV_VAR} des MCP dans la configuration sont résolus au lancement du serveur — y compris les variables de ~/.pulse/.env."
-  t282: "Les skills provenant de dépôts de confiance (NousResearch) reçoivent le niveau de sécurité 'trusted' ; les skills communautaires subissent une analyse supplémentaire."
+  t282: "Les skills provenant de dépôts de confiance (AnxiousResearch) reçoivent le niveau de sécurité 'trusted' ; les skills communautaires subissent une analyse supplémentaire."
   t283: "La quarantaine des skills dans ~/.pulse/skills/.hub/quarantine/ conserve les skills en attente de revue de sécurité."
   t284: "/steer <prompt> injecte une note après le prochain appel d'outil — réorientez la tâche en cours sans l'interrompre."
   t285: "/goal <text> fixe un objectif permanent en boucle Ralph — PULSE enchaîne les tours automatiquement jusqu'à ce qu'un juge déclare la tâche terminée."
@@ -4103,7 +4103,7 @@ tips:
   t305: "pulse curator rollback restaure les skills depuis un instantané pré-exécution — les sauvegardes vivent sous skills/.curator_backups/."
   t306: "pulse auth reset <provider> [target] efface les temps de repos et les indicateurs d'épuisement d'un pool d'identifiants entier, ou d'un seul identifiant par index, id ou libellé."
   t307: "credential_pool_strategies.<provider>: round_robin fait tourner les clés de façon équitable au lieu du fill_first par défaut."
-  t308: "use_gateway: true par outil route web, image, tts ou browser via votre abonnement Nous — aucune clé supplémentaire."
+  t308: "use_gateway: true par outil route web, image, tts ou browser via votre abonnement PULSE — aucune clé supplémentaire."
   t309: "provider_routing.data_collection: deny exclut les fournisseurs qui conservent les données sur OpenRouter."
   t310: "provider_routing.require_parameters: true ne route que vers les fournisseurs prenant en charge chaque paramètre de votre requête."
   t311: "PULSE_TUI_RESUME=1 se rattache automatiquement à la session TUI la plus récente au lancement — pratique après une coupure SSH."

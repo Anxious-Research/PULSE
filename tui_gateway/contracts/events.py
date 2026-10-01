@@ -163,7 +163,7 @@ class BillingBlock(Payload):
     provider_label: str
     model: str
     billing_url: str | None
-    is_nous: bool
+    is_pulse: bool
     message: str
     unverified: bool | None = None
 

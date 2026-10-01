@@ -297,7 +297,7 @@ offline (no network call, no subprocess):
 These answer product questions the activity counters cannot: what makes people
 stay, where new users drop off, which surfaces and models carry real usage, and
 which extensions are worth investing in. Every dimension is a closed enum, a
-bucket, a provider/model identifier (as on model routes) or a public name Nous
+bucket, a provider/model identifier (as on model routes) or a public name PULSE
 itself ships.
 
 | Metric | Dimensions | Question it answers |
@@ -562,7 +562,7 @@ Transmission is a **separate opt-in** from collection, under a new config key:
 telemetry:
   shared_metrics:
     enabled: false   # collect locally
-    send: false      # NEW: transmit to the Nous telemetry service
+    send: false      # NEW: transmit to the PULSE telemetry service
 ```
 
 - `send` defaults to **false**. Collection alone never transmits.
@@ -573,7 +573,7 @@ telemetry:
   managed-scope configuration.
 
 Both keys are asked once per profile, with the same three answers everywhere
-(Send to Nous / Local only / No thanks):
+(Send to PULSE / Local only / No thanks):
 
 | Surface | Where the offer appears |
 | --- | --- |

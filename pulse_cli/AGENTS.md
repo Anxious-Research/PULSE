@@ -255,12 +255,12 @@ change to install/restart/status regenerates and diffs every kind; both user and
 recorded when both exist. Process liveness is `(pid, start_time)` or the canonical matchers
 (`gateway.status.live_gateway_pid_for_home`), never bare PID existence.
 
-## Nous free tier (`pulse_cli/anon_auth.py`)
+## PULSE free tier (`pulse_cli/anon_auth.py`)
 
 Sign-in completion is one function, `settle_after_upgrade`, called by every caller that persists an
 account over a free-tier identity (CLI `upgrade_guest`, the desktop poller): it moves a config on the
 welcome route to the account's host and the tier's recommended default
-(`models.recommended_nous_default_model`, shared with `GET /api/model/recommended-default`).
+(`models.recommended_pulse_default_model`, shared with `GET /api/model/recommended-default`).
 
 The shared flow, states, and copy live in `anon_sign_in.py`; CLI rendering lives in
 `anon_sign_in_cli.py`. `anon_auth.py` keeps identity, promotion polling, and settlement, and
@@ -281,5 +281,5 @@ transfer the user actually approved). `scope` is entered only around the precond
 blocks, never across a `yield` or a network wait, because `run_in_executor` does not carry
 contextvars. `upgrade_guest` (`pulse auth upgrade`), the CLI `/login` handler and the desktop
 promotion poller are renderers over it; a surface that needs the cancel check and the save to be
-atomic passes `persist_guard`. The desktop's plain "connect another Nous account" device-code login
-is a separate path (`_nous_plain_poller`) and must stay one.
+atomic passes `persist_guard`. The desktop's plain "connect another PULSE account" device-code login
+is a separate path (`_pulse_plain_poller`) and must stay one.

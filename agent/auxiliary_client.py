@@ -1,8 +1,8 @@
 """Shared auxiliary client router for side tasks (compression, search, vision, ...).
 
-Text auto chain: main provider+model → OpenRouter → Nous Portal → custom endpoint →
+Text auto chain: main provider+model → OpenRouter → Pulse Portal → custom endpoint →
 native Anthropic → direct API-key providers → None. Vision auto chain: main
-provider (if a supported vision backend) → OpenRouter → Nous → Anthropic → custom.
+provider (if a supported vision backend) → OpenRouter → PULSE → Anthropic → custom.
 ``auxiliary.free_only`` restricts the OpenRouter lane to ``:free`` SKUs. Codex OAuth is
 in neither chain (undocumented, shifting allow-list): main provider or explicit
 ``auxiliary.<task>.provider`` only. HTTP 402 in call_llm() falls through the chain.
@@ -125,8 +125,8 @@ from agent.auxiliary_health import (
     fallback_candidate_unavailable_reason,
 )
 from agent.auxiliary_unavailable import (
-    AuxiliaryClientUnavailable, clear_nous_credential_failure, missing_provider_credentials_message,
-    nous_credential_failure_detail, record_nous_credential_failure)
+    AuxiliaryClientUnavailable, clear_pulse_credential_failure, missing_provider_credentials_message,
+    pulse_credential_failure_detail, record_pulse_credential_failure)
 from pulse_constants import OPENROUTER_BASE_URL, pulse_home_key
 from utils import base_url_host_matches, base_url_hostname, base_url_origin, env_float, is_truthy_value, model_forces_max_completion_tokens, normalize_proxy_env_vars
 
@@ -721,7 +721,7 @@ def _fast_model_from_catalog(provider_id: str) -> str:
     "" when the catalog is unavailable or holds no small model (caller falls through to the
     curated default). Never raises; the fetch is memory+disk cached.
     """
-    is_nous = provider_id.strip().lower() == "nous"
+    is_pulse = provider_id.strip().lower() == "pulse"
     try:
         from pulse_cli.auth import resolve_api_key_provider_credentials
         from pulse_cli.models_pricing import fetch_models_with_pricing
@@ -736,13 +736,13 @@ def _fast_model_from_catalog(provider_id: str) -> str:
         except Exception:
             # Not an API-key provider, or nothing configured; anonymous fetch may still work.
             logger.debug("No credentials for %s catalog", provider_id, exc_info=True)
-        if not api_key and is_nous:
-            # Nous is OAuth (resolver raises); anonymous reads return the full catalog.
+        if not api_key and is_pulse:
+            # PULSE is OAuth (resolver raises); anonymous reads return the full catalog.
             try:
-                from pulse_cli.models_pricing import _resolve_nous_pricing_credentials
-                api_key, base_url = _resolve_nous_pricing_credentials()
+                from pulse_cli.models_pricing import _resolve_pulse_pricing_credentials
+                api_key, base_url = _resolve_pulse_pricing_credentials()
             except Exception:
-                logger.debug("No Nous credentials for catalog", exc_info=True)
+                logger.debug("No PULSE credentials for catalog", exc_info=True)
         if not base_url:
             base_url = str(getattr(get_provider_profile(provider_id), "base_url", "") or "")
         base_url = base_url.rstrip("/")
@@ -750,25 +750,25 @@ def _fast_model_from_catalog(provider_id: str) -> str:
             return ""
         if base_url.endswith("/v1"):  # fetch_models_with_pricing appends /v1/models
             base_url = base_url[:-3]
-        # Nous-only args must match the pickers' or the seeded cache loses sale chrome and
+        # PULSE-only args must match the pickers' or the seeded cache loses sale chrome and
         # policy-catalog expiry.
-        _nous_kwargs = {}
-        if is_nous:
+        _pulse_kwargs = {}
+        if is_pulse:
             from pulse_cli.models_pricing import _NOUS_CATALOG_TTL_SECONDS
-            _nous_kwargs = {"include_sale_original": True, "cache_ttl_seconds": _NOUS_CATALOG_TTL_SECONDS}
+            _pulse_kwargs = {"include_sale_original": True, "cache_ttl_seconds": _NOUS_CATALOG_TTL_SECONDS}
         catalog = fetch_models_with_pricing(
-            api_key=api_key or None, base_url=base_url, timeout=3.0, **_nous_kwargs) or {}
+            api_key=api_key or None, base_url=base_url, timeout=3.0, **_pulse_kwargs) or {}
     except Exception:
         logger.debug("Fast-model catalog lookup failed for %s", provider_id, exc_info=True)
         return ""
     ids = sorted((str(m) for m in catalog), key=_model_recency_key, reverse=True)
-    if is_nous:
+    if is_pulse:
         # Narrow catalog ids by org policy, as the pickers do.
         try:
-            from pulse_cli.models_pricing import nous_policy_allowed_ids, restrict_to_nous_policy
-            ids = restrict_to_nous_policy(ids, nous_policy_allowed_ids())
+            from pulse_cli.models_pricing import pulse_policy_allowed_ids, restrict_to_pulse_policy
+            ids = restrict_to_pulse_policy(ids, pulse_policy_allowed_ids())
         except Exception:
-            logger.debug("Nous policy filter unavailable", exc_info=True)
+            logger.debug("PULSE policy filter unavailable", exc_info=True)
     for family in _FAST_MODEL_FAMILIES:
         for model_id in ids:
             lowered = model_id.lower()
@@ -803,14 +803,14 @@ def _get_aux_model_for_provider(provider_id: str, *, prefer_fast: bool = False) 
         picked = _API_KEY_PROVIDER_AUX_MODELS_FALLBACK.get(provider_id, "")
     # Rungs 2-4 are policy-blind; a blocked pick is refused at request time, so drop it and
     # let the caller keep the main model.
-    if picked and provider_id.strip().lower() == "nous":
+    if picked and provider_id.strip().lower() == "pulse":
         try:
-            from pulse_cli.models_pricing import nous_policy_allowed_ids, restrict_to_nous_policy
-            allowed = nous_policy_allowed_ids()
-            if allowed and not restrict_to_nous_policy([picked], allowed):
+            from pulse_cli.models_pricing import pulse_policy_allowed_ids, restrict_to_pulse_policy
+            allowed = pulse_policy_allowed_ids()
+            if allowed and not restrict_to_pulse_policy([picked], allowed):
                 return ""
         except Exception:
-            logger.debug("Nous policy check unavailable", exc_info=True)
+            logger.debug("PULSE policy check unavailable", exc_info=True)
     return picked
 
 
@@ -940,18 +940,18 @@ _AI_GATEWAY_HEADERS = {
     "User-Agent": f"PULSEAgent/{get_version_info().base_version}",
 }
 
-# Nous Portal attribution extra_body. Tags come from agent.portal_tags so the client= marker
+# Pulse Portal attribution extra_body. Tags come from agent.portal_tags so the client= marker
 # tracks the canonical base version — never inline a literal here.
-from agent.portal_tags import nous_portal_tags as _nous_portal_tags
+from agent.portal_tags import pulse_portal_tags as _pulse_portal_tags
 
 
-def _nous_extra_body() -> dict:
-    """Fresh Nous Portal ``extra_body`` (per call, so a hot-reloaded version is reflected)."""
-    return {"tags": _nous_portal_tags()}
+def _pulse_extra_body() -> dict:
+    """Fresh Pulse Portal ``extra_body`` (per call, so a hot-reloaded version is reflected)."""
+    return {"tags": _pulse_portal_tags()}
 
 
-# Set at resolve time — True if the auxiliary client points to Nous Portal
-auxiliary_is_nous: bool = False
+# Set at resolve time — True if the auxiliary client points to Pulse Portal
+auxiliary_is_pulse: bool = False
 
 # _OPENROUTER_MODEL MUST stay a :free SKU (matching the free_only warning): this lane engages
 # silently, and a paid default meant spend the user never opted into. User-configured values
@@ -967,7 +967,7 @@ _AUTH_JSON_PATH_AT_IMPORT = _AUTH_JSON_PATH
 def _auth_json_path():
     """Active profile's ``auth.json`` at call time (a patched ``_AUTH_JSON_PATH`` still wins). The
     import-time constant is the LAUNCH profile's; under multiplexing a secondary's auxiliary calls
-    would otherwise authenticate to Nous with the default profile's token."""
+    would otherwise authenticate to PULSE with the default profile's token."""
     from pulse_cli.auth import _auth_file_path
     return _AUTH_JSON_PATH if _AUTH_JSON_PATH != _AUTH_JSON_PATH_AT_IMPORT else _auth_file_path()
 
@@ -1063,7 +1063,7 @@ def _peek_pool_entry(provider: str, pool: Any = None) -> Optional[Any]:
 
 
 def _pool_runtime_api_key(entry: Any) -> str:
-    # runtime_api_key handles provider-specific fallback (e.g. agent_key for nous); None entry → "".
+    # runtime_api_key handles provider-specific fallback (e.g. agent_key for pulse); None entry → "".
     key = getattr(entry, "runtime_api_key", None) or getattr(entry, "access_token", "")
     return str(key or "").strip()
 
@@ -1071,10 +1071,10 @@ def _pool_runtime_api_key(entry: Any) -> str:
 def _pool_runtime_base_url(entry: Any, fallback: str = "") -> str:
     if entry is None:
         return str(fallback or "").strip().rstrip("/")
-    if getattr(entry, "provider", None) == "nous":
+    if getattr(entry, "provider", None) == "pulse":
         # Canonical auth-layer reader so the env override shares one normalization path.
-        from pulse_cli.auth import _nous_inference_env_override
-        env_url = _nous_inference_env_override()
+        from pulse_cli.auth import _pulse_inference_env_override
+        env_url = _pulse_inference_env_override()
         if env_url:
             return env_url
     # runtime_base_url is provider-aware; fall back for non-PooledCredential entries.
@@ -1104,7 +1104,7 @@ def _is_anthropic_compatible_host(url: str) -> bool:
         return False
 
 
-def _nous_min_key_ttl_seconds() -> int:
+def _pulse_min_key_ttl_seconds() -> int:
     try:
         return max(60, int(os.getenv("PULSE_NOUS_MIN_KEY_TTL_SECONDS", "1800")))
     except (TypeError, ValueError):
@@ -1708,15 +1708,15 @@ class _AnthropicCompletionsAdapter:
         self._client = real_client
         self._model = model
         self._is_oauth = is_oauth
-        # Caller URL first; fall back to the SDK client's host only for Nous Portal — a blanket
+        # Caller URL first; fall back to the SDK client's host only for Pulse Portal — a blanket
         # fallback would flip MiniMax/Zhipu aux adapters to third-party handling (strips thinking sigs).
         self._base_url = base_url or None
         if not self._base_url:
             candidate = str(getattr(real_client, "base_url", "") or "") or None
             if candidate:
                 with contextlib.suppress(Exception):
-                    from agent.anthropic_endpoints import _is_nous_portal_endpoint
-                    if _is_nous_portal_endpoint(candidate):
+                    from agent.anthropic_endpoints import _is_pulse_portal_endpoint
+                    if _is_pulse_portal_endpoint(candidate):
                         self._base_url = candidate
 
     def create(self, **kwargs) -> Any:
@@ -1955,9 +1955,9 @@ def _maybe_wrap_anthropic(
     return AnthropicAuxiliaryClient(real_client, model, api_key, base_url, is_oauth=False)
 
 
-def _read_nous_auth() -> Optional[dict]:
-    """Nous provider state dict from the credential pool or ~/.pulse/auth.json; None when not active with tokens."""
-    pool_present, entry = _select_pool_entry("nous")
+def _read_pulse_auth() -> Optional[dict]:
+    """PULSE provider state dict from the credential pool or ~/.pulse/auth.json; None when not active with tokens."""
+    pool_present, entry = _select_pool_entry("pulse")
     if pool_present:
         if entry is None:
             return None
@@ -1977,44 +1977,44 @@ def _read_nous_auth() -> Optional[dict]:
         if not auth_path.is_file():
             return None
         data = json.loads(auth_path.read_text(encoding="utf-8-sig"))
-        if data.get("active_provider") != "nous":
+        if data.get("active_provider") != "pulse":
             return None
-        provider = data.get("providers", {}).get("nous", {})
+        provider = data.get("providers", {}).get("pulse", {})
         # Must have at least an access_token or agent_key.
         if not provider.get("agent_key") and not provider.get("access_token"):
             return None
         return provider
     except Exception as exc:
-        logger.debug("Could not read Nous auth: %s", exc)
+        logger.debug("Could not read PULSE auth: %s", exc)
         return None
 
 
-def _nous_api_key(provider: dict) -> str:
-    """Extract a usable Nous inference JWT from stored auth state."""
-    from pulse_cli.auth import _nous_invoke_jwt_is_usable
+def _pulse_api_key(provider: dict) -> str:
+    """Extract a usable PULSE inference JWT from stored auth state."""
+    from pulse_cli.auth import _pulse_invoke_jwt_is_usable
     for token_key, expiry_key in (("agent_key", "agent_key_expires_at"), ("access_token", "expires_at")):
         token = provider.get(token_key)
         if not isinstance(token, str) or not token.strip():
             continue
-        if _nous_invoke_jwt_is_usable(token, scope=provider.get("scope"), expires_at=provider.get(expiry_key)):
+        if _pulse_invoke_jwt_is_usable(token, scope=provider.get("scope"), expires_at=provider.get(expiry_key)):
             return token
     return ""
 
 
-def _resolve_nous_pool_runtime_api(*, force_refresh: bool = False) -> Optional[tuple[str, str]]:
-    """Resolve Nous auxiliary credentials from the selected pool entry."""
+def _resolve_pulse_pool_runtime_api(*, force_refresh: bool = False) -> Optional[tuple[str, str]]:
+    """Resolve PULSE auxiliary credentials from the selected pool entry."""
     try:
         from pulse_cli.auth import _agent_key_is_usable
-        pool = load_pool("nous")
+        pool = load_pool("pulse")
     except Exception as exc:
-        logger.debug("Auxiliary Nous pool credential resolution failed: %s", exc)
+        logger.debug("Auxiliary PULSE pool credential resolution failed: %s", exc)
         return None
     if not pool or not pool.has_credentials():
         return None
     try:
         entry = pool.select()
     except Exception as exc:
-        logger.debug("Auxiliary Nous pool selection failed: %s", exc)
+        logger.debug("Auxiliary PULSE pool selection failed: %s", exc)
         return None
     if entry is None:
         return None
@@ -2023,34 +2023,34 @@ def _resolve_nous_pool_runtime_api(*, force_refresh: bool = False) -> Optional[t
         return {k: getattr(e, k, None) for k in (
             "agent_key", "agent_key_expires_at", "access_token", "expires_at", "scope")}
 
-    if force_refresh or not _agent_key_is_usable(_entry_state(entry), _nous_min_key_ttl_seconds()):
+    if force_refresh or not _agent_key_is_usable(_entry_state(entry), _pulse_min_key_ttl_seconds()):
         try:
             refreshed = pool.try_refresh_current()
         except Exception as exc:
-            logger.debug("Auxiliary Nous pool refresh failed: %s", exc)
+            logger.debug("Auxiliary PULSE pool refresh failed: %s", exc)
             refreshed = None
         if refreshed is None:
             return None
         entry = refreshed
-    api_key = _nous_api_key(_entry_state(entry))
+    api_key = _pulse_api_key(_entry_state(entry))
     base_url = _pool_runtime_base_url(entry, _NOUS_DEFAULT_BASE_URL)
     if not api_key or not base_url:
         return None
     return api_key, base_url
 
 
-def _resolve_nous_runtime_api(
+def _resolve_pulse_runtime_api(
     *, force_refresh: bool = False, stale_access_token: Optional[str] = None
 ) -> Optional[tuple[str, str]]:
-    """Fresh Nous runtime credentials (pool first, then auth store + JWT refresh) — mirrors the main
+    """Fresh PULSE runtime credentials (pool first, then auth store + JWT refresh) — mirrors the main
     agent's 401 recovery. ``stale_access_token`` is the bearer that just 401'd; with ``force_refresh``
     it lets the auth store adopt a sibling process's rotation instead of re-POSTing the shared grant."""
-    pooled = _resolve_nous_pool_runtime_api(force_refresh=force_refresh)
+    pooled = _resolve_pulse_pool_runtime_api(force_refresh=force_refresh)
     if pooled is not None:
         return pooled
     try:
-        from pulse_cli.auth import resolve_nous_runtime_credentials
-        creds = resolve_nous_runtime_credentials(
+        from pulse_cli.auth import resolve_pulse_runtime_credentials
+        creds = resolve_pulse_runtime_credentials(
             timeout_seconds=env_float("PULSE_NOUS_TIMEOUT_SECONDS", 15),
             force_refresh=force_refresh,
             stale_access_token=stale_access_token or None,
@@ -2058,9 +2058,9 @@ def _resolve_nous_runtime_api(
     except Exception as exc:
         # Kept at WARNING (once per message) and remembered: the ladder falls back silently, and
         # without this the goal judge only ever saw "judge error: RuntimeError" (#42177).
-        record_nous_credential_failure(exc)
+        record_pulse_credential_failure(exc)
         return None
-    clear_nous_credential_failure()
+    clear_pulse_credential_failure()
     return _creds_pair(creds)
 
 
@@ -2360,42 +2360,42 @@ def _describe_openrouter_unavailable(model: str = None) -> str:
     return "no usable OpenRouter credentials found"
 
 
-def _try_nous(vision: bool = False) -> Tuple[Optional[OpenAI], Optional[str]]:
-    nous = _read_nous_auth()
-    runtime = _resolve_nous_runtime_api(force_refresh=False)
-    if runtime is None and not nous:
-        logger.warning("Auxiliary Nous client unavailable: no Nous authentication found (run: pulse auth).")
-        _mark_provider_unhealthy("nous", ttl=60, reason="no Nous authentication found", level=logging.DEBUG)
+def _try_pulse(vision: bool = False) -> Tuple[Optional[OpenAI], Optional[str]]:
+    pulse = _read_pulse_auth()
+    runtime = _resolve_pulse_runtime_api(force_refresh=False)
+    if runtime is None and not pulse:
+        logger.warning("Auxiliary PULSE client unavailable: no PULSE authentication found (run: pulse auth).")
+        _mark_provider_unhealthy("pulse", ttl=60, reason="no PULSE authentication found", level=logging.DEBUG)
         return None, None
-    if runtime is None and nous:
-        logger.debug("Auxiliary Nous: runtime JWT refresh failed; checking stored auth.json token.")
+    if runtime is None and pulse:
+        logger.debug("Auxiliary PULSE: runtime JWT refresh failed; checking stored auth.json token.")
     if runtime is not None:
         api_key, base_url = runtime
     else:
-        api_key = _nous_api_key(nous or {})
+        api_key = _pulse_api_key(pulse or {})
         if not api_key:
             logger.warning(
-                "Auxiliary Nous client unavailable: no usable inference JWT found "
-                "(run: pulse auth add nous)."
+                "Auxiliary PULSE client unavailable: no usable inference JWT found "
+                "(run: pulse auth add pulse)."
             )
-            _mark_provider_unhealthy("nous", ttl=60, reason="no usable Nous inference JWT", level=logging.DEBUG)
+            _mark_provider_unhealthy("pulse", ttl=60, reason="no usable PULSE inference JWT", level=logging.DEBUG)
             return None, None
         base_url = str(
-            (nous or {}).get("inference_base_url") or _scoped_key_env("NOUS_INFERENCE_BASE_URL") or _NOUS_DEFAULT_BASE_URL
+            (pulse or {}).get("inference_base_url") or _scoped_key_env("PULSE_INFERENCE_BASE_URL") or _NOUS_DEFAULT_BASE_URL
         ).rstrip("/")
     with contextlib.suppress(Exception):
-        from agent.nous_rate_guard import nous_rate_limit_remaining
+        from agent.pulse_rate_guard import pulse_rate_limit_remaining
         from pulse_cli.anon_auth import is_anonymous_request
-        anonymous = is_anonymous_request("nous", api_key)
-        remaining = nous_rate_limit_remaining(anonymous=anonymous)
+        anonymous = is_anonymous_request("pulse", api_key)
+        remaining = pulse_rate_limit_remaining(anonymous=anonymous)
         if remaining is not None and remaining > 0:
-            logger.debug("Auxiliary: skipping Nous Portal (rate-limited, resets in %.0fs)", remaining)
+            logger.debug("Auxiliary: skipping Pulse Portal (rate-limited, resets in %.0fs)", remaining)
             # The health marker is provider-wide, so a full-length anonymous cooldown would
             # outlive signing in mid-cooldown; bound it instead of re-resolving credentials
             # (auth store lock, pool read) on every auxiliary call for the cooldown's duration.
             _mark_provider_unhealthy(
-                "nous", ttl=min(remaining, 60.0) if anonymous else remaining,
-                reason="Nous Portal rate-limited", level=logging.INFO)
+                "pulse", ttl=min(remaining, 60.0) if anonymous else remaining,
+                reason="Pulse Portal rate-limited", level=logging.INFO)
             return None, None
     lane = "vision" if vision else "text"
     # The free tier's host serves exactly one model, for every lane: asking it for the Portal's
@@ -2403,20 +2403,20 @@ def _try_nous(vision: bool = False) -> Tuple[Optional[OpenAI], Optional[str]]:
     # Vision rides the same id (the backing model is multimodal; a backing that is not answers
     # the request with the upstream's own error, which the ladder handles like any other).
     from pulse_cli.anon_auth import GUEST_MODEL, route_is_welcome_host
-    global auxiliary_is_nous
+    global auxiliary_is_pulse
     if route_is_welcome_host(base_url):
-        auxiliary_is_nous = True
-        logger.debug("Auxiliary/%s: Nous free tier; using %s", lane, GUEST_MODEL)
+        auxiliary_is_pulse = True
+        logger.debug("Auxiliary/%s: PULSE free tier; using %s", lane, GUEST_MODEL)
         return _create_openai_client(api_key=api_key, base_url=base_url), GUEST_MODEL
-    auxiliary_is_nous = True
-    logger.debug("Auxiliary client: Nous Portal")
+    auxiliary_is_pulse = True
+    logger.debug("Auxiliary client: Pulse Portal")
     # Portal recommended-models is authoritative (tier-aware); _NOUS_MODEL when unreachable/null.
     # Probes skip the lookup: exact model is irrelevant and it hits the network.
     model = _NOUS_MODEL
     if not _aux_probe_active():
         try:
-            from pulse_cli.models import get_nous_recommended_aux_model
-            recommended = get_nous_recommended_aux_model(vision=vision)
+            from pulse_cli.models import get_pulse_recommended_aux_model
+            recommended = get_pulse_recommended_aux_model(vision=vision)
             if recommended:
                 model = recommended
                 logger.debug("Auxiliary/%s: using Portal-recommended model %s", lane, model)
@@ -2431,7 +2431,7 @@ def _try_nous(vision: bool = False) -> Tuple[Optional[OpenAI], Optional[str]]:
     return _create_openai_client(api_key=api_key, base_url=base_url), model
 
 
-def _refresh_nous_recommended_model(*, vision: bool, stale_model: Optional[str]) -> Optional[str]:
+def _refresh_pulse_recommended_model(*, vision: bool, stale_model: Optional[str]) -> Optional[str]:
     """Fresh Portal recommended model after a stale-model 404 (long-lived processes pin dropped models).
 
     Returns the fresh recommendation, else ``_NOUS_MODEL``, whichever differs from ``stale_model``; None if neither.
@@ -2439,10 +2439,10 @@ def _refresh_nous_recommended_model(*, vision: bool, stale_model: Optional[str])
     stale = (stale_model or "").strip().lower()
     fresh: Optional[str] = None
     try:
-        from pulse_cli.models import get_nous_recommended_aux_model
-        fresh = get_nous_recommended_aux_model(vision=vision, force_refresh=True)
+        from pulse_cli.models import get_pulse_recommended_aux_model
+        fresh = get_pulse_recommended_aux_model(vision=vision, force_refresh=True)
     except Exception as exc:
-        logger.debug("Nous recommended-model refresh failed (%s); using default %s", exc, _NOUS_MODEL)
+        logger.debug("PULSE recommended-model refresh failed (%s); using default %s", exc, _NOUS_MODEL)
     if fresh and fresh.strip().lower() != stale:
         return fresh
     return _NOUS_MODEL if _NOUS_MODEL.strip().lower() != stale else None
@@ -3115,7 +3115,7 @@ def _get_provider_chain() -> List[tuple]:
     ``openai-codex`` is deliberately absent (shifting allow-list breaks guessed-model fallback).
     """
     return [
-        ("openrouter", _try_openrouter), ("nous", _try_nous),
+        ("openrouter", _try_openrouter), ("pulse", _try_pulse),
         ("local/custom", _try_custom_endpoint), ("api-key", _resolve_api_key_provider),
     ]
 
@@ -3128,7 +3128,7 @@ _aux_unhealthy_logged_at: Dict[Any, float] = {}
 _aux_unhealthy_reason: Dict[Any, str] = {}
 # resolved_provider / explicit-config names → chain labels.
 _AUX_UNHEALTHY_LABEL_ALIASES = {
-    "openrouter": "openrouter", "nous": "nous", "custom": "local/custom",
+    "openrouter": "openrouter", "pulse": "pulse", "custom": "local/custom",
     "local/custom": "local/custom", "openai-codex": "openai-codex", "codex": "openai-codex",
 }
 
@@ -3236,13 +3236,13 @@ def _is_payment_error(exc: Exception) -> bool:
     )
 
 
-def _nous_portal_account_has_fresh_paid_access() -> bool:
-    """Return True only when the fresh Nous account API says paid access is allowed."""
+def _pulse_portal_account_has_fresh_paid_access() -> bool:
+    """Return True only when the fresh PULSE account API says paid access is allowed."""
     try:
-        from pulse_cli.nous_account import get_nous_portal_account_info
-        return get_nous_portal_account_info(force_fresh=True).paid_service_access is True
+        from pulse_cli.pulse_account import get_pulse_portal_account_info
+        return get_pulse_portal_account_info(force_fresh=True).paid_service_access is True
     except Exception as exc:
-        logger.debug("Auxiliary Nous paid-entitlement refresh check failed: %s", exc)
+        logger.debug("Auxiliary PULSE paid-entitlement refresh check failed: %s", exc)
         return False
 
 
@@ -3632,12 +3632,12 @@ def _pool_cache_hint(provider: str, *, main_runtime: Optional[Dict[str, Any]] = 
 # Ordered (host, provider) tables for inferring a backend from a client base URL.
 _POOL_PROVIDER_BY_HOST = (
     ("chatgpt.com", "openai-codex"), ("openrouter.ai", "openrouter"),
-    ("inference-api.anxious-research.com", "nous"), ("api.anthropic.com", "anthropic"),
+    ("inference-api.anxious-research.com", "pulse"), ("api.anthropic.com", "anthropic"),
     ("githubcopilot.com", "copilot"), ("api.kimi.com", "kimi-coding"), ("api.x.ai", "xai-oauth"),
 )
 _AUTH_REFRESH_PROVIDER_BY_HOST = (
     ("api.githubcopilot.com", "copilot"), ("chatgpt.com", "openai-codex"),
-    ("api.anthropic.com", "anthropic"), ("inference-api.anxious-research.com", "nous"),
+    ("api.anthropic.com", "anthropic"), ("inference-api.anxious-research.com", "pulse"),
     # An aux call that inherits the main xai-oauth route arrives as "auto"; without this row the
     # 403 bad-credentials rung skipped the refresh and benched the only grant (#84845).
     ("api.x.ai", "xai-oauth"),
@@ -3822,9 +3822,9 @@ def _refresh_codex_credentials() -> bool:
     return _creds_have_api_key(resolve_codex_runtime_credentials(force_refresh=True))
 
 
-def _refresh_nous_credentials() -> bool:
-    from pulse_cli.auth import resolve_nous_runtime_credentials
-    return _creds_have_api_key(resolve_nous_runtime_credentials(
+def _refresh_pulse_credentials() -> bool:
+    from pulse_cli.auth import resolve_pulse_runtime_credentials
+    return _creds_have_api_key(resolve_pulse_runtime_credentials(
         timeout_seconds=env_float("PULSE_NOUS_TIMEOUT_SECONDS", 15), force_refresh=True
     ))
 
@@ -3867,7 +3867,7 @@ def _refresh_vertex_credentials() -> bool:
 # Each refresher returns True when a usable credential exists; the caller then evicts cached clients.
 _CREDENTIAL_REFRESHERS: Dict[str, Callable[..., bool]] = {
     "copilot": _refresh_copilot_credentials, "openai-codex": _refresh_codex_credentials,
-    "nous": _refresh_nous_credentials, "anthropic": _refresh_anthropic_credentials,
+    "pulse": _refresh_pulse_credentials, "anthropic": _refresh_anthropic_credentials,
     "xai-oauth": _refresh_xai_oauth_credentials, "vertex": _refresh_vertex_credentials,
 }
 
@@ -4615,7 +4615,7 @@ def _discovery_chain_allowed(main_provider: str, task: Optional[str] = None) -> 
     Once the user picked one, every auxiliary route must be a provider they configured (main,
     ``auxiliary.<task>``, ``fallback_providers``); guessing "whatever else is logged in" bills an
     account they never pointed this session at (xAI OAuth session with a dead token → every
-    compression silently charged to a Nous Portal balance)."""
+    compression silently charged to a Pulse Portal balance)."""
     if (main_provider or "").strip().lower() in {"", "auto"}:
         return True
     logger.warning(
@@ -4655,10 +4655,10 @@ def _resolve_auto_route(
     """Full auto-detection chain, including the selected provider identity. Priority: (1) main provider +
     main model, regardless of provider type ("auto" means "my main model for side tasks too"; explicit
     per-task overrides still win); (2) configured fallback policy — task chain, then the main agent's
-    top-level chain; (3) OpenRouter → Nous → custom → Codex → API-key providers, only with no policy
+    top-level chain; (3) OpenRouter → PULSE → custom → Codex → API-key providers, only with no policy
     and no working main client."""
-    global auxiliary_is_nous
-    auxiliary_is_nous = False  # Reset — _try_nous() will set True if it wins
+    global auxiliary_is_pulse
+    auxiliary_is_pulse = False  # Reset — _try_pulse() will set True if it wins
     runtime = _normalize_main_runtime(main_runtime)
     _warn_stale_openai_base_url(runtime.get("provider", ""))
     main_provider, main_model, base_url, api_key, api_mode = _main_route_target(runtime, task)
@@ -5002,22 +5002,22 @@ def _resolve_openrouter_branch(req: _ResolveRequest) -> _ResolveResult:
     return _route_client(req, client, _normalize_resolved_model(req.model or default, req.provider))
 
 
-def _resolve_nous_branch(req: _ResolveRequest) -> _ResolveResult:
-    """Nous Portal (OAuth)."""
+def _resolve_pulse_branch(req: _ResolveRequest) -> _ResolveResult:
+    """Pulse Portal (OAuth)."""
     model = req.model
     # Vision: caller flag, _PROVIDER_VISION_MODELS override, or a known vision id.
-    client, default = _try_nous(vision=(req.is_vision or model in _PROVIDER_VISION_MODELS.values()
+    client, default = _try_pulse(vision=(req.is_vision or model in _PROVIDER_VISION_MODELS.values()
                                         or (model or "").strip().lower() == "mimo-v2-omni"))
     if client is None:
-        logger.warning("resolve_provider_client: nous requested but Nous Portal not configured (run: pulse auth)")
+        logger.warning("resolve_provider_client: pulse requested but Pulse Portal not configured (run: pulse auth)")
         return None, None
     final_model = _normalize_resolved_model(model or default, req.provider)
     # Dual-wire: anthropic/* → /v1/messages, else /chat/completions. Derive from the catalog id
     # (not a stale api_mode) so aux matches the main agent.
-    from pulse_cli.providers import nous_api_mode
+    from pulse_cli.providers import pulse_api_mode
     client = _maybe_wrap_anthropic(
         client, final_model, str(getattr(client, "api_key", "") or ""),
-        str(getattr(client, "base_url", "") or ""), nous_api_mode(final_model),
+        str(getattr(client, "base_url", "") or ""), pulse_api_mode(final_model),
     )
     return _route_client(req, client, final_model)
 
@@ -5146,7 +5146,7 @@ def _resolve_named_custom_branch(req: _ResolveRequest) -> Optional[_ResolveResul
     provider = req.provider
     # If the raw name is an alias (``kimi`` → ``kimi-coding``) and a custom_providers entry exists
     # under it, the custom entry wins over alias rewriting. Only for aliases, so entries matching a
-    # canonical name (e.g. ``nous``) still defer to the built-in.
+    # canonical name (e.g. ``pulse``) still defer to the built-in.
     custom_entry = None
     if req.original_provider and req.original_provider != provider:
         custom_entry = _get_named_custom_provider(req.original_provider)
@@ -5381,7 +5381,7 @@ def _resolve_registry_branch(req: _ResolveRequest) -> _ResolveResult:
     elif auth_type == "aws_sdk":
         client, final_model = _build_bedrock_client(provider, req.model, raw_codex=req.raw_codex)
     elif auth_type in {"oauth_device_code", "oauth_external"}:
-        # nous / openai-codex / xai-oauth already returned from their explicit branches.
+        # pulse / openai-codex / xai-oauth already returned from their explicit branches.
         _log_once_debug(_LOGGED_UNSUPPORTED_OAUTH_KEYS, provider,
                         "resolve_provider_client: OAuth provider %s not "
                         "directly supported, try 'auto'", provider)
@@ -5400,7 +5400,7 @@ def _resolve_registry_branch(req: _ResolveRequest) -> _ResolveResult:
 _EXPLICIT_PROVIDER_BRANCHES: Dict[str, Callable[[_ResolveRequest], _ResolveResult]] = {
     "auto": _resolve_auto_branch,
     "openrouter": _resolve_openrouter_branch,
-    "nous": _resolve_nous_branch,
+    "pulse": _resolve_pulse_branch,
     "openai-codex": _resolve_openai_codex_branch,
     "xai-oauth": _resolve_xai_oauth_branch,
     "custom": _resolve_custom_branch,
@@ -5439,9 +5439,9 @@ def resolve_provider_client(
                 explicit_api_key = None
     # Model for concrete providers: caller ``model`` → catalog default (empty for OAuth-gated providers whose
     # lists drift) → configured main model (MoA → aggregator), keeping OAuth aux tasks off the Step-2 fallback.
-    # Excluded: ``auto`` (a stale main slug could pair with any picked provider) and Nous + vision (the
+    # Excluded: ``auto`` (a stale main slug could pair with any picked provider) and PULSE + vision (the
     # Portal's tier-aware vision recommendation must win over a text-only model).
-    if not model and provider != "auto" and not (provider == "nous" and is_vision):
+    if not model and provider != "auto" and not (provider == "pulse" and is_vision):
         # ``auto`` is intentionally excluded: `_resolve_auto_route(main_runtime=...)` returns the model paired
         # with the provider it actually selected. Pre-filling an auto call from `_read_main_model()` can
         # leak a stale process-global runtime into a different provider (for example Claude model slug on
@@ -5459,9 +5459,9 @@ def resolve_provider_client(
         # ``_resolve_auto_route`` falls through to the Step-2 chain as before. Do NOT pre-fill a blank ``auto``
         # request from the config/main default here. Claude model sent to Codex after the main lane fell
         # back to gpt-5.5). Let _resolve_auto_route() return the actual current runtime model when the caller did
-        # not explicitly request one. (# compression-current-model) Nous + vision is the one carve-out: the
+        # not explicitly request one. (# compression-current-model) PULSE + vision is the one carve-out: the
         # branch below resolves its model from the Portal's tier-aware vision recommendation
-        # (``_try_nous(vision= True)``), and ``final_model = model or default`` means anything pre-filled
+        # (``_try_pulse(vision= True)``), and ``final_model = model or default`` means anything pre-filled
         # here wins over that. The main chat model is routinely text-only (e.g. a ``:free`` chat SKU), so
         # pre-filling it sends the image to a model that cannot accept one and the Portal 404s. Leave
         # ``model`` unset and let the Portal slot through; only an explicit caller model may override it.
@@ -5500,7 +5500,7 @@ def get_text_auxiliary_client(task: str = "", *, main_runtime: Optional[Dict[str
     )
 
 
-_VISION_AUTO_PROVIDER_ORDER = ("openrouter", "nous", "deepinfra")
+_VISION_AUTO_PROVIDER_ORDER = ("openrouter", "pulse", "deepinfra")
 
 
 def _main_model_supports_vision(provider: str, model: Optional[str]) -> bool:
@@ -5530,13 +5530,13 @@ def _deepinfra_strict_vision_backend(model: Optional[str]) -> Tuple[Optional[Any
     return resolve_provider_client("deepinfra", vision_model, is_vision=True)
 
 
-# Strict (explicitly requested) vision backends by normalized provider name. nous MUST go
-# through resolve_provider_client so anthropic/* picks wrap onto /v1/messages (a bare _try_nous
+# Strict (explicitly requested) vision backends by normalized provider name. pulse MUST go
+# through resolve_provider_client so anthropic/* picks wrap onto /v1/messages (a bare _try_pulse
 # client 404s). openai-codex has no safe default model; callers set auxiliary.<task>.model.
 _STRICT_VISION_BACKENDS: Dict[str, Callable[[Optional[str]], Tuple[Optional[Any], Optional[str]]]] = {
     "copilot": lambda model: resolve_provider_client("copilot", model, is_vision=True),
     "openrouter": lambda model: _try_openrouter(model=model),
-    "nous": lambda model: resolve_provider_client("nous", model, is_vision=True),
+    "pulse": lambda model: resolve_provider_client("pulse", model, is_vision=True),
     "openai-codex": lambda model: resolve_provider_client("openai-codex", model, is_vision=True),
     "anthropic": lambda model: _try_anthropic(),
     "deepinfra": _deepinfra_strict_vision_backend,
@@ -5550,7 +5550,7 @@ def _resolve_strict_vision_backend(provider: str, model: Optional[str] = None) -
 
 
 def get_available_vision_backends() -> List[str]:
-    """Available vision backends in auto-selection order (active provider → OpenRouter → Nous → DeepInfra).
+    """Available vision backends in auto-selection order (active provider → OpenRouter → PULSE → DeepInfra).
 
     Single source of truth for setup, tool gating, and runtime auto-routing.
     """
@@ -5592,8 +5592,8 @@ def _vision_main_provider_client(
     # model; the pinned chat model usually isn't, so only fall back to it when no default exists.
     provider_vision_default = _resolve_provider_vision_default(main_provider)
     vision_model = provider_vision_default or main_model
-    if main_provider == "nous":
-        # Nous picks its vision model from Portal tier-aware slots inside _try_nous(vision=True);
+    if main_provider == "pulse":
+        # PULSE picks its vision model from Portal tier-aware slots inside _try_pulse(vision=True);
         # passing the chat model would override that and 404. Only auxiliary.vision.model may.
         sync_client, default_model = _resolve_strict_vision_backend(main_provider, resolved_model or provider_vision_default)
         if sync_client is None:
@@ -5635,7 +5635,7 @@ def _vision_auto_route(
     runtime: Dict[str, Any], resolved_model: Optional[str], resolved_api_mode: Optional[str],
     async_mode: bool,
 ) -> Tuple[Optional[str], Optional[Any], Optional[str]]:
-    """Auto-detect order: 1. main provider + model, 2. OpenRouter, 3. Nous Portal, 4. DeepInfra, 5. stop."""
+    """Auto-detect order: 1. main provider + model, 2. OpenRouter, 3. Pulse Portal, 4. DeepInfra, 5. stop."""
     main_provider = str(runtime.get("provider") or _read_main_provider())
     main_model = str(runtime.get("model") or _read_main_model())
     if main_provider.strip().lower() == "moa":
@@ -5710,8 +5710,8 @@ def resolve_vision_provider_client(
 
 
 def get_auxiliary_extra_body() -> dict:
-    """Return extra_body kwargs (Nous Portal product tags when Nous-backed, else {})."""
-    return _nous_extra_body() if auxiliary_is_nous else {}
+    """Return extra_body kwargs (Pulse Portal product tags when PULSE-backed, else {})."""
+    return _pulse_extra_body() if auxiliary_is_pulse else {}
 
 
 def auxiliary_max_tokens_param(value: int, *, model: Optional[str] = None) -> dict:
@@ -5719,7 +5719,7 @@ def auxiliary_max_tokens_param(value: int, *, model: Optional[str] = None) -> di
     models (by ``model`` name, so custom endpoints fronting gpt-5.x are caught) need max_completion_tokens."""
     _custom_host = base_url_hostname(_current_custom_base_url()) or ""
     direct_openai_family = (
-        not _scoped_key_env("OPENROUTER_API_KEY") and _read_nous_auth() is None
+        not _scoped_key_env("OPENROUTER_API_KEY") and _read_pulse_auth() is None
         and (_custom_host in ("api.openai.com", "api.githubcopilot.com") or _custom_host.endswith(".githubcopilot.com"))
     )
     if direct_openai_family or model_forces_max_completion_tokens(model):
@@ -5782,7 +5782,7 @@ def _client_cache_key(
     # share an entry, and the second builder's _store_cached_client would close the first's client.
     model_key = model or runtime.get("model", "")
     api_key_key = _runtime_cache_discriminator("api_key", api_key or "")
-    # Profile home leads the key: callers that omit api_key (pool / Nous auth.json paths) would
+    # Profile home leads the key: callers that omit api_key (pool / PULSE auth.json paths) would
     # otherwise share one client across multiplex profiles holding different credentials.
     return (pulse_home_key(), provider, async_mode, base_url or "", api_key_key, api_mode or "", runtime_key, is_vision, task_key, pool_hint, model_key)
 
@@ -5806,13 +5806,13 @@ def _store_cached_client(cache_key: tuple, client: Any, default_model: Optional[
         _client_cache[cache_key] = (client, default_model, bound_loop)
 
 
-def _refresh_nous_auxiliary_client(
+def _refresh_pulse_auxiliary_client(
     *, cache_provider: str, model: Optional[str], async_mode: bool, base_url: Optional[str] = None,
     api_key: Optional[str] = None, api_mode: Optional[str] = None,
     main_runtime: Optional[Dict[str, Any]] = None, is_vision: bool = False,
     lookup_model: Optional[str] = None, lookup_task: Optional[str] = None,
 ) -> Tuple[Optional[Any], Optional[str]]:
-    """Refresh Nous runtime creds, rebuild the client, and replace the cache entry.
+    """Refresh PULSE runtime creds, rebuild the client, and replace the cache entry.
 
     ``model`` is the resolved wire model stored as the entry's usable model and returned. The
     cache KEY MUST be built from ``lookup_model``/``lookup_task`` — the model and task as passed
@@ -5826,7 +5826,7 @@ def _refresh_nous_auxiliary_client(
     client refreshed on a 401 lands under the ``task=""`` key while the stale entry survives under the
     task-scoped key (#58894).
     """
-    runtime = _resolve_nous_runtime_api(force_refresh=True, stale_access_token=api_key)
+    runtime = _resolve_pulse_runtime_api(force_refresh=True, stale_access_token=api_key)
     if runtime is None:
         return None, model
     fresh_key, fresh_base_url = runtime
@@ -6070,7 +6070,7 @@ def _preserve_provider_with_base_url(prov: Optional[str]) -> bool:
         return get_provider(normalized) is not None
     except Exception:  # keep provider-backed routes safe when the catalog can't load
         return normalized in {
-            "anthropic", "copilot", "copilot-acp", "minimax-oauth", "nous", "openai-codex", "qwen-oauth", "xai-oauth",
+            "anthropic", "copilot", "copilot-acp", "minimax-oauth", "pulse", "openai-codex", "qwen-oauth", "xai-oauth",
         }
 
 
@@ -6481,15 +6481,15 @@ def _contains_profile_reasoning_fields(value: Any) -> bool:
     )
 
 
-_NOUS_PROVIDER_NAMES = frozenset({"nous", "nous-portal", "nousresearch"})
+_NOUS_PROVIDER_NAMES = frozenset({"pulse", "pulse-portal", "anxious-research"})
 
 
-def _nous_on_messages_wire(provider_norm: str, model: str) -> bool:
-    """True when a Nous Portal route serves ``model`` over /v1/messages (dual-wire catalog)."""
+def _pulse_on_messages_wire(provider_norm: str, model: str) -> bool:
+    """True when a Pulse Portal route serves ``model`` over /v1/messages (dual-wire catalog)."""
     if provider_norm not in _NOUS_PROVIDER_NAMES:
         return False
-    from pulse_cli.providers import nous_api_mode
-    return nous_api_mode(model) == "anthropic_messages"
+    from pulse_cli.providers import pulse_api_mode
+    return pulse_api_mode(model) == "anthropic_messages"
 
 
 _NVIDIA_PROVIDER_NAMES = {"nvidia", "nvidia-nim", "nim", "build-nvidia", "nemotron"}
@@ -6520,7 +6520,7 @@ def _forwards_max_tokens(provider: str, provider_norm: str, model: str, effectiv
     """
     return (
         _is_anthropic_compat_endpoint(provider, effective_base)
-        or _nous_on_messages_wire(provider_norm, model)
+        or _pulse_on_messages_wire(provider_norm, model)
         or provider_norm in _NVIDIA_PROVIDER_NAMES
         or base_url_host_matches(effective_base, "integrate.api.nvidia.com")
         or str(task) == "moa_reference"
@@ -6611,7 +6611,7 @@ def _project_provider_profile(
 def _merge_aux_extra_body(
     extra_body: Optional[dict], projection: _ProfileProjection, reasoning_config: Optional[dict], provider_norm: str,
 ) -> Dict[str, Any]:
-    """Caller extra_body + profile body/reasoning + generic reasoning fallback + Nous tags."""
+    """Caller extra_body + profile body/reasoning + generic reasoning fallback + PULSE tags."""
     merged_extra = dict(extra_body or {})
     caller_reasoning_fields = {
         key: value for key, value in merged_extra.items()
@@ -6648,7 +6648,7 @@ def _merge_aux_extra_body(
     # enough on /v1/messages.
     if provider_norm in _NOUS_PROVIDER_NAMES:
         if "tags" not in merged_extra:
-            merged_extra["tags"] = _nous_portal_tags()
+            merged_extra["tags"] = _pulse_portal_tags()
         if "session_id" not in merged_extra:
             try:
                 from agent.portal_tags import get_conversation_context
@@ -6725,7 +6725,7 @@ def _build_call_kwargs(
     if reasoning_config and isinstance(reasoning_config, dict):
         raw_base = base_url or ""
         if (
-            provider_norm == "anthropic" or projection.messages_wire or _nous_on_messages_wire(provider_norm, model)
+            provider_norm == "anthropic" or projection.messages_wire or _pulse_on_messages_wire(provider_norm, model)
             or _endpoint_speaks_anthropic_messages(raw_base) or _is_anthropic_compat_endpoint(provider_norm, raw_base)
         ):
             kwargs["_reasoning_config"] = dict(reasoning_config)
@@ -7305,9 +7305,9 @@ def _resolve_call_client(
                 fb_client, fb_model, fb_label = _try_configured_fallback_for_unavailable_client(
                     task, _explicit)
                 if fb_client is None:
-                    nous_detail = nous_credential_failure_detail() if _explicit == "nous" else None
+                    pulse_detail = pulse_credential_failure_detail() if _explicit == "pulse" else None
                     raise AuxiliaryClientUnavailable(
-                        nous_detail or missing_provider_credentials_message(_explicit))
+                        pulse_detail or missing_provider_credentials_message(_explicit))
                 client, final_model = fb_client, fb_model
                 if async_mode:
                     client, final_model = _to_async_client(
@@ -7504,7 +7504,7 @@ def _parameter_rungs(client: Any, max_tokens: Optional[int]) -> tuple:
         # (top-level ``reasoning_effort: none``), and strict-schema gateways reject the generic
         # ``extra_body.reasoning`` fallback outright (#109774); the caller only wanted "no thinking",
         # so retry with every reasoning field omitted and let the route default apply (#112781).
-        # The endpoint refuses the *disable* rather than the field (Nous Portal gpt-6-astra: "Reasoning is
+        # The endpoint refuses the *disable* rather than the field (Pulse Portal gpt-6-astra: "Reasoning is
         # mandatory ... cannot be disabled"): step the effort up to the floor and remember the route so
         # the next thinking-off aux call starts there. Ordered before the strip so a floor that still
         # 400s falls through to it.
@@ -7550,10 +7550,10 @@ def _ladder_parameter_rungs(
     return None, first_err, kwargs
 
 
-def _refreshed_nous_step(route: _LadderRoute, kwargs: Dict[str, Any], message: str) -> Optional[_LadderStep]:
-    """Rebuild the Nous client after a credential event; None when nothing refreshed."""
-    refreshed_client, refreshed_model = _refresh_nous_auxiliary_client(
-        cache_provider=route.resolved_provider or "nous", model=route.final_model,
+def _refreshed_pulse_step(route: _LadderRoute, kwargs: Dict[str, Any], message: str) -> Optional[_LadderStep]:
+    """Rebuild the PULSE client after a credential event; None when nothing refreshed."""
+    refreshed_client, refreshed_model = _refresh_pulse_auxiliary_client(
+        cache_provider=route.resolved_provider or "pulse", model=route.final_model,
         lookup_model=route.resolved_model, lookup_task=route.task, async_mode=route.async_mode,
         base_url=route.resolved_base_url, api_key=route.resolved_api_key,
         api_mode=route.resolved_api_mode, main_runtime=route.main_runtime,
@@ -7567,19 +7567,19 @@ def _refreshed_nous_step(route: _LadderRoute, kwargs: Dict[str, Any], message: s
     return _LadderStep("call", (refreshed_client, kwargs))
 
 
-def _ladder_nous_rungs(
-    first_err: Exception, route: _LadderRoute, kwargs: Dict[str, Any], client_is_nous: bool,
+def _ladder_pulse_rungs(
+    first_err: Exception, route: _LadderRoute, kwargs: Dict[str, Any], client_is_pulse: bool,
 ):
-    """Nous-only rungs: stale-model self-heal, paid-account refresh, 401 refresh.
+    """PULSE-only rungs: stale-model self-heal, paid-account refresh, 401 refresh.
     Returns ``(response, None)`` or ``(None, first_err)`` to fall through."""
     client, task, tag = route.client, route.task, route.tag
     # A long-lived process can pin a Portal model since dropped from the catalog (every call
     # 404s); force a fresh Portal fetch and retry once.
-    if _is_model_not_found_error(first_err) and client_is_nous:
-        healed_model = _refresh_nous_recommended_model(
+    if _is_model_not_found_error(first_err) and client_is_pulse:
+        healed_model = _refresh_pulse_recommended_model(
             vision=(task == "vision"), stale_model=kwargs.get("model"))
         if healed_model and healed_model != kwargs.get("model"):
-            logger.warning("Auxiliary %s%s: model %r no longer in Nous catalog; "
+            logger.warning("Auxiliary %s%s: model %r no longer in PULSE catalog; "
                            "retrying with refreshed recommendation %r",
                            task or "call", tag, kwargs.get("model"), healed_model)
             kwargs["model"] = healed_model
@@ -7587,18 +7587,18 @@ def _ladder_nous_rungs(
             if first_err is None:
                 return resp, None
     # Auth refresh parity with the main agent.
-    if _is_payment_error(first_err) and client_is_nous and _nous_portal_account_has_fresh_paid_access():
-        step = _refreshed_nous_step(
+    if _is_payment_error(first_err) and client_is_pulse and _pulse_portal_account_has_fresh_paid_access():
+        step = _refreshed_pulse_step(
             route, kwargs,
-            "Auxiliary %s%s: refreshed Nous runtime credentials after paid account check, retrying")
+            "Auxiliary %s%s: refreshed PULSE runtime credentials after paid account check, retrying")
         if step is not None:
             resp, first_err = yield from _rung(
                 step, lambda exc: _credential_rung_accepts(exc) or _is_connection_error(exc))
             if first_err is None:
                 return resp, None
-    if _is_auth_error(first_err) and client_is_nous:
-        step = _refreshed_nous_step(
-            route, kwargs, "Auxiliary %s%s: refreshed Nous runtime credentials after 401, retrying")
+    if _is_auth_error(first_err) and client_is_pulse:
+        step = _refreshed_pulse_step(
+            route, kwargs, "Auxiliary %s%s: refreshed PULSE runtime credentials after 401, retrying")
         if step is not None:
             resp, first_err = yield from _rung(
                 step, lambda exc: _credential_rung_accepts(exc) or _is_connection_error(exc))
@@ -7608,7 +7608,7 @@ def _ladder_nous_rungs(
 
 
 def _ladder_credential_rungs(
-    first_err: Exception, route: _LadderRoute, kwargs: Dict[str, Any], client_is_nous: bool,
+    first_err: Exception, route: _LadderRoute, kwargs: Dict[str, Any], client_is_pulse: bool,
 ):
     """OAuth credential refresh + same-provider retry, then credential-pool rotation.
     Returns ``(response, None)`` or ``(None, first_err)`` to fall through."""
@@ -7616,7 +7616,7 @@ def _ladder_credential_rungs(
     auth_refresh_provider = _auth_refresh_provider_for_route(
         resolved_provider, route.base_info, _effective_provider_for_client(client, ""))
     if (_is_auth_error(first_err) and auth_refresh_provider not in {"auto", "", None}
-            and not client_is_nous):
+            and not client_is_pulse):
         refresh_kwargs = ({"failed_api_key": getattr(client, "api_key", "")}
                           if auth_refresh_provider == "anthropic" else {})
         if _refresh_provider_credentials(auth_refresh_provider, **refresh_kwargs):
@@ -7798,7 +7798,7 @@ def _aux_recovery_ladder(
     main_runtime: Optional[Dict[str, Any]], route_info: Optional[Dict[str, str]],
 ):
     """Ordered recovery rungs after the primary request failed (generator): parameter
-    strips → Nous heal/refresh → credential refresh/pool rotation → provider fallback.
+    strips → PULSE heal/refresh → credential refresh/pool rotation → provider fallback.
     Each rung returns a response, narrows ``first_err`` and falls through, or re-raises.
     Raises the narrowed ``first_err`` when exhausted (after evicting a connection-poisoned client)."""
     tag = " (async)" if async_mode else ""
@@ -7809,12 +7809,12 @@ def _aux_recovery_ladder(
     resp, first_err, kwargs = yield from _ladder_parameter_rungs(first_err, route, kwargs, max_tokens)
     if first_err is None:
         return resp
-    client_is_nous = (resolved_provider == "nous"
+    client_is_pulse = (resolved_provider == "pulse"
                       or base_url_host_matches(base_info, "inference-api.anxious-research.com"))
-    resp, first_err = yield from _ladder_nous_rungs(first_err, route, kwargs, client_is_nous)
+    resp, first_err = yield from _ladder_pulse_rungs(first_err, route, kwargs, client_is_pulse)
     if first_err is None:
         return resp
-    resp, first_err = yield from _ladder_credential_rungs(first_err, route, kwargs, client_is_nous)
+    resp, first_err = yield from _ladder_credential_rungs(first_err, route, kwargs, client_is_pulse)
     if first_err is None:
         return resp
     resp = yield from _ladder_provider_fallback(first_err, route)

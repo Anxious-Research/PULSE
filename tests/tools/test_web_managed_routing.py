@@ -39,12 +39,12 @@ def local_gateway(monkeypatch):
     thread = Thread(target=server.serve_forever, daemon=True)
     thread.start()
     base = f"http://127.0.0.1:{server.server_port}"
-    monkeypatch.setenv("TOOL_GATEWAY_USER_TOKEN", "test-nous-token")
+    monkeypatch.setenv("TOOL_GATEWAY_USER_TOKEN", "test-pulse-token")
     monkeypatch.setenv("PERPLEXITY_GATEWAY_URL", base + "/perplexity")
     monkeypatch.setenv("FIRECRAWL_GATEWAY_URL", base)
     monkeypatch.setenv("PERPLEXITY_BASE_URL", base + "/direct")
     # Only entitlement is stubbed: route and credential resolution remain real.
-    monkeypatch.setattr(managed_tool_gateway, "managed_nous_tools_enabled", lambda **kw: True)
+    monkeypatch.setattr(managed_tool_gateway, "managed_pulse_tools_enabled", lambda **kw: True)
 
     # CI omits the firecrawl extra; stand in for the SDK, still over real HTTP.
     class FirecrawlSDK:
@@ -71,11 +71,11 @@ def local_gateway(monkeypatch):
 @pytest.mark.parametrize(
     "selection,direct_key,expected_paths",
     [
-        ({"backend": "nous"}, False, ["/perplexity/search", "/v2/search"]),
-        ({"backend": "nous"}, True, ["/direct/search"]),
-        ({"backend": "nous", "search_backend": "perplexity"}, True, ["/direct/search"]),
+        ({"backend": "pulse"}, False, ["/perplexity/search", "/v2/search"]),
+        ({"backend": "pulse"}, True, ["/direct/search"]),
+        ({"backend": "pulse", "search_backend": "perplexity"}, True, ["/direct/search"]),
         ({"search_backend": "perplexity"}, False, []),
-        ({"backend": "nous", "search_backend": "perplexity"}, False, []),
+        ({"backend": "pulse", "search_backend": "perplexity"}, False, []),
         ({"backend": "perplexity"}, False, []),
         ({"backend": "firecrawl", "search_backend": "perplexity"}, False, []),
         ({}, False, ["/perplexity/search", "/v2/search"]),
@@ -99,7 +99,7 @@ def test_only_managed_search_may_use_billed_fallback(
         monkeypatch.delenv("PERPLEXITY_API_KEY", raising=False)
     register_all_web_providers()
     expected = [
-        (path, "Bearer test-direct-key" if path == "/direct/search" else "Bearer test-nous-token")
+        (path, "Bearer test-direct-key" if path == "/direct/search" else "Bearer test-pulse-token")
         for path in expected_paths
     ]
     for attempt in (1, 2):
@@ -125,12 +125,12 @@ def test_unentitled_managed_search_names_the_gateway(monkeypatch, tmp_path, loca
     from tests.tools.conftest import register_all_web_providers
 
     monkeypatch.setenv("PULSE_HOME", str(tmp_path))
-    atomic_config_write(tmp_path / "config.yaml", {"web": {"backend": "nous", "keyless_rescue": False}})
+    atomic_config_write(tmp_path / "config.yaml", {"web": {"backend": "pulse", "keyless_rescue": False}})
     monkeypatch.delenv("PERPLEXITY_API_KEY", raising=False)
-    monkeypatch.setattr(managed_tool_gateway, "managed_nous_tools_enabled", lambda **kw: False)
+    monkeypatch.setattr(managed_tool_gateway, "managed_pulse_tools_enabled", lambda **kw: False)
     register_all_web_providers()
 
     error = json.loads(web_tools.web_search_tool("local fixture", limit=3))["error"]
-    assert "Nous Tool Gateway" in error and "pulse tools" in error
+    assert "PULSE Tool Gateway" in error and "pulse tools" in error
     assert "PERPLEXITY_API_KEY" not in error
     assert local_gateway == []

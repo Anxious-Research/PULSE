@@ -180,7 +180,7 @@ def test_bulk_model_override(client):
         json={
             "ids": [t1["id"], t2["id"]],
             "model_override": "fallback-model",
-            "provider_override": "nous",
+            "provider_override": "pulse",
         },
     )
     assert r.status_code == 200, r.text
@@ -188,7 +188,7 @@ def test_bulk_model_override(client):
     for tid in (t1["id"], t2["id"]):
         got = client.get(f"/api/plugins/kanban/tasks/{tid}").json()["task"]
         assert got["model_override"] == "fallback-model"
-        assert got["provider_override"] == "nous"
+        assert got["provider_override"] == "pulse"
 
 
 def test_model_options_endpoint_shape(client, monkeypatch):

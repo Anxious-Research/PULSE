@@ -26,7 +26,7 @@ from agent.auxiliary_client import (
     _is_model_not_found_error,
     _is_model_incompatible_error,
     _is_statusless_structured_provider_error,
-    _refresh_nous_recommended_model,
+    _refresh_pulse_recommended_model,
     _normalize_aux_provider,
     _try_payment_fallback,
     _try_openrouter,
@@ -68,7 +68,7 @@ def _clean_env(monkeypatch):
     """Strip provider env vars so each test starts clean."""
     for key in (
         "OPENROUTER_API_KEY", "OPENAI_BASE_URL", "OPENAI_API_KEY",
-        "OPENAI_MODEL", "LLM_MODEL", "NOUS_INFERENCE_BASE_URL",
+        "OPENAI_MODEL", "LLM_MODEL", "PULSE_INFERENCE_BASE_URL",
         "ANTHROPIC_API_KEY", "ANTHROPIC_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN",
         "NVIDIA_API_KEY", "NVIDIA_BASE_URL",
     ):
@@ -91,7 +91,7 @@ class TestResolveTaskProviderModel:
         [
             "anthropic",
             "minimax-oauth",
-            "nous",
+            "pulse",
             "openai-codex",
             "qwen-oauth",
             "xai-oauth",
@@ -271,13 +271,13 @@ class TestMoaAggregatorSharedResolution:
                                     "model": "anthropic/claude-opus-4.8",
                                 },
                             },
-                            "nous-mix": {
+                            "pulse-mix": {
                                 "enabled": True,
                                 "reference_models": [
-                                    {"provider": "nous", "model": "pulse-4-70b"}
+                                    {"provider": "pulse", "model": "pulse-4-70b"}
                                 ],
                                 "aggregator": {
-                                    "provider": "nous",
+                                    "provider": "pulse",
                                     "model": "pulse-4-405b",
                                 },
                             },
@@ -375,7 +375,7 @@ class TestBuildCallKwargsMaxTokens:
             ("zai", "glm-5.2", "https://api.z.ai/api/coding/paas/v4", "max_tokens"),
             ("openrouter", "deepseek/deepseek-v4-flash:nitro", "https://openrouter.ai/api/v1", "max_tokens"),
             ("copilot", "gpt-5.5", "https://api.githubcopilot.com", "max_completion_tokens"),
-            ("nous", "pulse-4", "https://inference-api.anxious-research.com/v1", "max_tokens"),
+            ("pulse", "pulse-4", "https://inference-api.anxious-research.com/v1", "max_tokens"),
         ],
     )
     def test_moa_task_sends_max_tokens_on_openai_compatible(self, provider, model, base_url, expected_key):
@@ -442,23 +442,23 @@ class TestBuildCallKwargsMaxTokens:
 
 
 class TestNousTagsScoping:
-    def test_tags_injected_when_provider_is_nous(self, monkeypatch):
+    def test_tags_injected_when_provider_is_pulse(self, monkeypatch):
         import agent.auxiliary_client as aux
 
-        monkeypatch.setattr(aux, "auxiliary_is_nous", False)
+        monkeypatch.setattr(aux, "auxiliary_is_pulse", False)
 
         kwargs = aux._build_call_kwargs(
-            provider="nous",
+            provider="pulse",
             model="pulse-4",
             messages=[{"role": "user", "content": "hi"}],
         )
 
-        assert kwargs["extra_body"]["tags"] == aux._nous_portal_tags()
+        assert kwargs["extra_body"]["tags"] == aux._pulse_portal_tags()
 
-    def test_tags_not_injected_for_gemini_when_main_is_nous(self, monkeypatch):
+    def test_tags_not_injected_for_gemini_when_main_is_pulse(self, monkeypatch):
         import agent.auxiliary_client as aux
 
-        monkeypatch.setattr(aux, "auxiliary_is_nous", True)
+        monkeypatch.setattr(aux, "auxiliary_is_pulse", True)
 
         kwargs = aux._build_call_kwargs(
             provider="gemini",
@@ -813,7 +813,7 @@ class TestResolveProviderClientUniversalModelFallback:
     ``(None, None)`` on an empty model — both lack a catalog default
     because their accepted-model lists drift on the backend.  That
     silent failure caused ``_resolve_auto_route`` to drop to its Step-2
-    fallback chain (OpenRouter / Nous / etc.), so aux tasks billed
+    fallback chain (OpenRouter / PULSE / etc.), so aux tasks billed
     against the wrong subscription.
     """
 
@@ -1154,7 +1154,7 @@ class TestGetTextAuxiliaryClient:
         monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
         monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
-        with patch("agent.auxiliary_client._read_nous_auth", return_value=None), \
+        with patch("agent.auxiliary_client._read_pulse_auth", return_value=None), \
              patch("agent.auxiliary_client._resolve_codex_credential_and_base",
                    return_value=(None, "https://chatgpt.com/backend-api/codex")), \
              patch("agent.auxiliary_client._resolve_api_key_provider", return_value=(None, None)):
@@ -1165,8 +1165,8 @@ class TestGetTextAuxiliaryClient:
     def test_custom_endpoint_uses_codex_wrapper_when_runtime_requests_responses_api(self):
         with patch("agent.auxiliary_client._resolve_custom_runtime",
                    return_value=("https://api.openai.com/v1", "sk-test", "codex_responses")), \
-             patch("agent.auxiliary_client._read_nous_auth", return_value=None), \
-             patch("agent.auxiliary_client._resolve_nous_runtime_api", return_value=None), \
+             patch("agent.auxiliary_client._read_pulse_auth", return_value=None), \
+             patch("agent.auxiliary_client._resolve_pulse_runtime_api", return_value=None), \
              patch("agent.auxiliary_client._read_main_model", return_value="gpt-5.3-codex"), \
              patch("agent.auxiliary_client.OpenAI") as mock_openai:
             client, model = get_text_auxiliary_client()
@@ -1185,7 +1185,7 @@ class TestVisionClientFallback:
         """Active provider appears in available backends when credentials exist."""
         monkeypatch.setenv("ANTHROPIC_API_KEY", "***")
         with (
-            patch("agent.auxiliary_client._read_nous_auth", return_value=None),
+            patch("agent.auxiliary_client._read_pulse_auth", return_value=None),
             patch("agent.auxiliary_client._read_main_provider", return_value="anthropic"),
             patch("agent.auxiliary_client._read_main_model", return_value="claude-sonnet-4"),
             patch("agent.anthropic_adapter.build_anthropic_client", return_value=MagicMock()),
@@ -1230,7 +1230,7 @@ class TestVisionClientFallback:
 
 class TestAuxiliaryPoolAwareness:
 
-    def test_try_nous_refreshes_stale_pool_entry(self):
+    def test_try_pulse_refreshes_stale_pool_entry(self):
         stale_token = _jwt_with_claims({
             "scope": "inference:invoke",
             "exp": int(time.time() - 60),
@@ -1265,11 +1265,11 @@ class TestAuxiliaryPoolAwareness:
         with (
             patch("agent.auxiliary_client.load_pool", return_value=pool),
             patch("agent.auxiliary_client.OpenAI") as mock_openai,
-            patch("pulse_cli.models.get_nous_recommended_aux_model", return_value=None),
+            patch("pulse_cli.models.get_pulse_recommended_aux_model", return_value=None),
         ):
-            from agent.auxiliary_client import _try_nous
+            from agent.auxiliary_client import _try_pulse
 
-            client, model = _try_nous()
+            client, model = _try_pulse()
 
         assert pool.refreshed is True
         assert client is not None
@@ -1281,24 +1281,24 @@ class TestAuxiliaryPoolAwareness:
 
 
 
-    def test_call_llm_retries_nous_after_401(self):
+    def test_call_llm_retries_pulse_after_401(self):
         class _Auth401(Exception):
             status_code = 401
 
         stale_client = MagicMock()
         stale_client.base_url = "https://inference-api.anxious-research.com/v1"
-        stale_client.chat.completions.create.side_effect = _Auth401("stale nous key")
+        stale_client.chat.completions.create.side_effect = _Auth401("stale pulse key")
 
         fresh_client = MagicMock()
         fresh_client.base_url = "https://inference-api.anxious-research.com/v1"
         fresh_client.chat.completions.create.return_value = {"ok": True}
 
         with (
-            patch("agent.auxiliary_client._resolve_task_provider_model", return_value=("nous", "nous-model", None, None, None)),
-            patch("agent.auxiliary_client._get_cached_client", return_value=(stale_client, "nous-model")),
+            patch("agent.auxiliary_client._resolve_task_provider_model", return_value=("pulse", "pulse-model", None, None, None)),
+            patch("agent.auxiliary_client._get_cached_client", return_value=(stale_client, "pulse-model")),
             patch("agent.auxiliary_client.OpenAI", return_value=fresh_client),
             patch("agent.auxiliary_client._validate_llm_response", side_effect=lambda resp, _task, **_kw: resp),
-            patch("agent.auxiliary_client._resolve_nous_runtime_api", return_value=("fresh-agent-key", "https://inference-api.anxious-research.com/v1")),
+            patch("agent.auxiliary_client._resolve_pulse_runtime_api", return_value=("fresh-agent-key", "https://inference-api.anxious-research.com/v1")),
         ):
             result = call_llm(
                 task="compression",
@@ -1401,9 +1401,9 @@ class TestIsModelNotFoundError:
     """_is_model_not_found_error detects stale/invalid model 404s, distinct
     from payment errors."""
 
-    def test_nous_openrouter_catalog_404(self):
+    def test_pulse_openrouter_catalog_404(self):
         """The exact incident error: a Portal-recommended model dropped from
-        the Nous → OpenRouter catalog."""
+        the PULSE → OpenRouter catalog."""
         exc = Exception(
             "Model 'gpt-5.4-mini' not found. The requested model does not "
             "exist in our configuration or OpenRouter catalog."
@@ -1468,7 +1468,7 @@ class TestIsModelIncompatibleError:
 
 
 class TestRefreshNousRecommendedModel:
-    """_refresh_nous_recommended_model picks a fresh model after a stale 404."""
+    """_refresh_pulse_recommended_model picks a fresh model after a stale 404."""
 
 
 
@@ -1476,8 +1476,8 @@ class TestRefreshNousRecommendedModel:
         def _boom(**kw):
             raise RuntimeError("portal down")
         monkeypatch.setattr(
-            "pulse_cli.models.get_nous_recommended_aux_model", _boom)
-        out = _refresh_nous_recommended_model(
+            "pulse_cli.models.get_pulse_recommended_aux_model", _boom)
+        out = _refresh_pulse_recommended_model(
             vision=False, stale_model="some/dead-model")
         assert out == _NOUS_MODEL
 
@@ -1485,10 +1485,10 @@ class TestRefreshNousRecommendedModel:
         """When the failed model IS the default and the Portal has nothing
         else, there's no usable alternative."""
         monkeypatch.setattr(
-            "pulse_cli.models.get_nous_recommended_aux_model",
+            "pulse_cli.models.get_pulse_recommended_aux_model",
             lambda **kw: _NOUS_MODEL,
         )
-        out = _refresh_nous_recommended_model(
+        out = _refresh_pulse_recommended_model(
             vision=False, stale_model=_NOUS_MODEL)
         assert out is None
 
@@ -1539,23 +1539,23 @@ class TestTryPaymentFallback:
         fails never hops to another logged-in account (test_auxiliary_auto_never_guesses_provider)."""
         mock_client = MagicMock()
         with patch("agent.auxiliary_client._try_openrouter", return_value=(None, None)), \
-             patch("agent.auxiliary_client._try_nous", return_value=(mock_client, "nous-model")), \
+             patch("agent.auxiliary_client._try_pulse", return_value=(mock_client, "pulse-model")), \
              patch("agent.auxiliary_client._read_main_provider", return_value="auto"):
             client, model, label = _try_payment_fallback("openrouter", task="compression")
         assert client is mock_client
-        assert model == "nous-model"
-        assert label == "nous"
+        assert model == "pulse-model"
+        assert label == "pulse"
 
 
 
     def test_codex_not_in_fallback_chain(self):
         """Codex is deliberately NOT a fallback rung (shifting model allow-list).
 
-        When OR/Nous/custom/api-key all fail, payment-fallback returns None —
+        When OR/PULSE/custom/api-key all fail, payment-fallback returns None —
         Codex is never tried with a guessed model.
         """
         with patch("agent.auxiliary_client._try_openrouter", return_value=(None, None)), \
-             patch("agent.auxiliary_client._try_nous", return_value=(None, None)), \
+             patch("agent.auxiliary_client._try_pulse", return_value=(None, None)), \
              patch("agent.auxiliary_client._try_custom_endpoint", return_value=(None, None)), \
              patch("agent.auxiliary_client._resolve_api_key_provider", return_value=(None, None)), \
              patch("agent.auxiliary_client._read_main_provider", return_value="auto"):
@@ -2571,7 +2571,7 @@ class TestAuxiliaryTaskExtraBody:
     def test_profile_projection_receives_wire_clamped_effort(self, monkeypatch):
         """Profiles clamp only against their own narrower sets (or a catalog that may be cold), so
         ``ultra`` must already be a wire level when the projection sees it — the MoA aggregator on
-        an OpenRouter/Nous slot 400'd otherwise (#112010)."""
+        an OpenRouter/PULSE slot 400'd otherwise (#112010)."""
         import agent.auxiliary_client as aux
 
         seen = {}
@@ -3545,7 +3545,7 @@ class TestVisionAutoSkipsKimiCoding:
         def fake_strict(provider, model=None):
             if provider == "openrouter":
                 return fake_or_client, "google/gemini-3-flash-preview"
-            if provider == "nous":
+            if provider == "pulse":
                 return None, None
             raise AssertionError(
                 f"strict vision backend should not be called for {provider!r} "
@@ -4247,14 +4247,14 @@ class TestOpenRouterExplicitApiKey:
             )
 
 
-def test_pool_runtime_base_url_uses_nous_env_override(monkeypatch):
+def test_pool_runtime_base_url_uses_pulse_env_override(monkeypatch):
     entry = SimpleNamespace(
-        provider="nous",
+        provider="pulse",
         runtime_base_url="https://inference-api.anxious-research.com/v1",
         inference_base_url="https://inference-api.anxious-research.com/v1",
         base_url="https://inference-api.anxious-research.com/v1",
     )
-    monkeypatch.setenv("NOUS_INFERENCE_BASE_URL", "https://ai.wildebeest-newton.ts.net/v1")
+    monkeypatch.setenv("PULSE_INFERENCE_BASE_URL", "https://ai.wildebeest-newton.ts.net/v1")
 
     assert _pool_runtime_base_url(entry) == "https://ai.wildebeest-newton.ts.net/v1"
 
@@ -4332,18 +4332,18 @@ class TestAuxUnhealthyCache:
             _try_payment_fallback,
             _mark_provider_unhealthy,
         )
-        nous_client = MagicMock()
+        pulse_client = MagicMock()
         # Mark BOTH the failed provider (openrouter) and a sibling (custom)
-        # unhealthy. The chain should still find nous.
+        # unhealthy. The chain should still find pulse.
         _mark_provider_unhealthy("local/custom")
         with patch("agent.auxiliary_client._read_main_provider", return_value="auto"), \
              patch("agent.auxiliary_client._try_openrouter") as or_try, \
-             patch("agent.auxiliary_client._try_nous", return_value=(nous_client, "n-model")), \
+             patch("agent.auxiliary_client._try_pulse", return_value=(pulse_client, "n-model")), \
              patch("agent.auxiliary_client._try_custom_endpoint") as custom_try, \
              patch("agent.auxiliary_client._resolve_api_key_provider", return_value=(None, None)):
             client, model, label = _try_payment_fallback("openrouter", task="compression")
-        assert client is nous_client
-        assert label == "nous"
+        assert client is pulse_client
+        assert label == "pulse"
         # OR is skipped via skip_chain_labels (failed provider), custom via unhealthy cache.
         or_try.assert_not_called()
         custom_try.assert_not_called()
@@ -4379,17 +4379,17 @@ class TestAuxUnhealthyCache:
         err.status_code = 402
         primary_client.chat.completions.create.side_effect = err
 
-        nous_client = MagicMock()
-        nous_resp = MagicMock()
-        nous_resp.choices = [MagicMock(message=MagicMock(content="ok"))]
-        nous_client.chat.completions.create.return_value = nous_resp
+        pulse_client = MagicMock()
+        pulse_resp = MagicMock()
+        pulse_resp.choices = [MagicMock(message=MagicMock(content="ok"))]
+        pulse_client.chat.completions.create.return_value = pulse_resp
 
         with patch("agent.auxiliary_client._get_cached_client",
                     return_value=(primary_client, "google/gemini-3-flash-preview")), \
              patch("agent.auxiliary_client._resolve_task_provider_model",
                     return_value=("auto", "google/gemini-3-flash-preview", None, None, None)), \
              patch("agent.auxiliary_client._try_payment_fallback",
-                    return_value=(nous_client, "n-model", "nous")), \
+                    return_value=(pulse_client, "n-model", "pulse")), \
              patch("agent.auxiliary_client._build_call_kwargs",
                     return_value={"model": "n-model", "messages": [{"role": "user", "content": "hi"}]}):
             assert _is_provider_unhealthy("openrouter") is False
@@ -4494,7 +4494,7 @@ class TestAuxiliaryMaxTokensParam:
         with (
             patch("agent.auxiliary_client._current_custom_base_url",
                   return_value="https://openrouter.ai/api/v1"),
-            patch("agent.auxiliary_client._read_nous_auth", return_value=None),
+            patch("agent.auxiliary_client._read_pulse_auth", return_value=None),
         ):
             assert auxiliary_max_tokens_param(4096) == {"max_tokens": 4096}
 
@@ -4508,7 +4508,7 @@ class TestAuxiliaryMaxTokensParam:
         with (
             patch("agent.auxiliary_client._current_custom_base_url",
                   return_value="https://my-gateway.example.com/v1"),
-            patch("agent.auxiliary_client._read_nous_auth", return_value=None),
+            patch("agent.auxiliary_client._read_pulse_auth", return_value=None),
         ):
             assert auxiliary_max_tokens_param(4096, model="") == {"max_tokens": 4096}
             assert auxiliary_max_tokens_param(4096, model=None) == {"max_tokens": 4096}
@@ -5160,7 +5160,7 @@ class TestFastModelTier:
             "stepfun/step-3.7-flash:free": {},
         }
         with patch("pulse_cli.models_pricing.fetch_models_with_pricing", return_value=catalog):
-            assert ac._fast_model_from_catalog("nous") == "~openai/gpt-mini-latest"
+            assert ac._fast_model_from_catalog("pulse") == "~openai/gpt-mini-latest"
 
     def test_catalog_match_skips_reasoning_batch_and_embedding_lookalikes(self):
         """Substring matching must not pick a thinker, a queue, or an encoder."""
@@ -5173,7 +5173,7 @@ class TestFastModelTier:
             "google/gemini-3.6-flash": {},
         }
         with patch("pulse_cli.models_pricing.fetch_models_with_pricing", return_value=catalog):
-            assert ac._fast_model_from_catalog("nous") == "google/gemini-3.6-flash"
+            assert ac._fast_model_from_catalog("pulse") == "google/gemini-3.6-flash"
 
     def test_catalog_match_skips_the_non_chat_siblings_of_a_chat_model(self):
         """A provider names its speech and image endpoints after the chat model
@@ -5187,7 +5187,7 @@ class TestFastModelTier:
             "openai/gpt-4o-mini": {},
         }
         with patch("pulse_cli.models_pricing.fetch_models_with_pricing", return_value=catalog):
-            assert ac._fast_model_from_catalog("nous") == "openai/gpt-4o-mini"
+            assert ac._fast_model_from_catalog("pulse") == "openai/gpt-4o-mini"
 
     def test_catalog_match_takes_the_newest_of_a_family(self):
         """The bare family rungs must land on the current generation.
@@ -5204,7 +5204,7 @@ class TestFastModelTier:
             "openai/gpt-10-mini": {},
         }
         with patch("pulse_cli.models_pricing.fetch_models_with_pricing", return_value=catalog):
-            assert ac._fast_model_from_catalog("nous") == "openai/gpt-10-mini"
+            assert ac._fast_model_from_catalog("pulse") == "openai/gpt-10-mini"
 
     def test_catalog_fetch_is_authenticated(self):
         """Most /v1/models endpoints need a key; anonymously they 401.
@@ -5240,7 +5240,7 @@ class TestFastModelTier:
         from agent import auxiliary_client as ac
 
         with patch.object(ac, "_fast_model_from_catalog") as spy:
-            ac._get_aux_model_for_provider("nous")
+            ac._get_aux_model_for_provider("pulse")
         spy.assert_not_called()
 
     def test_only_titling_is_in_the_fast_tier(self):

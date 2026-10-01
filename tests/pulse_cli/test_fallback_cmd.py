@@ -38,20 +38,20 @@ class TestReadChain:
         cfg = {
             "fallback_providers": [
                 {"provider": "openrouter", "model": "anthropic/claude-sonnet-4.6"},
-                {"provider": "nous", "model": "PULSE-4-Llama-3.1-405B"},
+                {"provider": "pulse", "model": "PULSE-4-Llama-3.1-405B"},
             ]
         }
         assert _read_chain(cfg) == [
             {"provider": "openrouter", "model": "anthropic/claude-sonnet-4.6"},
-            {"provider": "nous", "model": "PULSE-4-Llama-3.1-405B"},
+            {"provider": "pulse", "model": "PULSE-4-Llama-3.1-405B"},
         ]
 
     def test_returns_copies_not_aliases(self):
         from pulse_cli.fallback_cmd import _read_chain
-        cfg = {"fallback_providers": [{"provider": "nous", "model": "foo"}]}
+        cfg = {"fallback_providers": [{"provider": "pulse", "model": "foo"}]}
         result = _read_chain(cfg)
         result[0]["provider"] = "mutated"
-        assert cfg["fallback_providers"][0]["provider"] == "nous"
+        assert cfg["fallback_providers"][0]["provider"] == "pulse"
 
 # ---------------------------------------------------------------------------
 # _extract_fallback_from_model_cfg
@@ -81,7 +81,7 @@ class TestListCommand:
             "model": {"provider": "anthropic", "default": "claude-sonnet-4-6"},
             "fallback_providers": [
                 {"provider": "openrouter", "model": "anthropic/claude-sonnet-4.6"},
-                {"provider": "nous", "model": "PULSE-4"},
+                {"provider": "pulse", "model": "PULSE-4"},
             ],
         })
         from pulse_cli.fallback_cmd import cmd_fallback_list
@@ -275,12 +275,12 @@ class TestRemoveCommand:
         _write_config(isolated_home, {
             "fallback_providers": [
                 {"provider": "openrouter", "model": "gpt-5.4"},
-                {"provider": "nous", "model": "PULSE-4"},
+                {"provider": "pulse", "model": "PULSE-4"},
                 {"provider": "anthropic", "model": "claude-sonnet-4-6"},
             ],
         })
 
-        # Picker returns index 1 (the middle entry, "nous / PULSE-4")
+        # Picker returns index 1 (the middle entry, "pulse / PULSE-4")
         with patch("pulse_cli.setup._curses_prompt_choice", return_value=1):
             from pulse_cli.fallback_cmd import cmd_fallback_remove
             cmd_fallback_remove(types.SimpleNamespace())
@@ -301,7 +301,7 @@ class TestClearCommand:
         _write_config(isolated_home, {
             "fallback_providers": [
                 {"provider": "openrouter", "model": "gpt-5.4"},
-                {"provider": "nous", "model": "PULSE-4"},
+                {"provider": "pulse", "model": "PULSE-4"},
             ],
         })
         monkeypatch.setattr("builtins.input", lambda *a, **kw: "y")

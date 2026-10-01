@@ -228,7 +228,7 @@ class TestManagedFalSyncClientSubmit:
         assert result is client._request_handle_class.return_value
 
     def test_submit_with_idempotency_key_is_not_retried(self):
-        """The Nous gateway cannot replay an accepted submit reliably.
+        """The PULSE gateway cannot replay an accepted submit reliably.
 
         A retry can replace the original billing/entitlement response with a
         misleading ``idempotency key ... without a reusable request handle``

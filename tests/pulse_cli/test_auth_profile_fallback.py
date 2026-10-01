@@ -118,13 +118,13 @@ def test_provider_auth_state_falls_back_to_global_when_profile_has_none(profile_
     from pulse_cli.auth import get_provider_auth_state
 
     _write(profile_env["global"] / "auth.json", _make_auth_store(providers={
-        "nous": {"access_token": "nous-global", "refresh_token": "rt-global"},
+        "pulse": {"access_token": "pulse-global", "refresh_token": "rt-global"},
     }))
     _write(profile_env["profile"] / "auth.json", _make_auth_store(providers={}))
 
-    state = get_provider_auth_state("nous")
+    state = get_provider_auth_state("pulse")
     assert state is not None
-    assert state["access_token"] == "nous-global"
+    assert state["access_token"] == "pulse-global"
 
 
 def test_provider_auth_state_returns_none_when_neither_has_it(profile_env):
@@ -133,18 +133,18 @@ def test_provider_auth_state_returns_none_when_neither_has_it(profile_env):
     _write(profile_env["global"] / "auth.json", _make_auth_store(providers={}))
     _write(profile_env["profile"] / "auth.json", _make_auth_store(providers={}))
 
-    assert get_provider_auth_state("nous") is None
+    assert get_provider_auth_state("pulse") is None
 
 
 # ---------------------------------------------------------------------------
 # _load_provider_state — internal global fallback (issue #18594 follow-up)
 #
-# Several runtime helpers (notably ``resolve_nous_runtime_credentials`` and
-# ``resolve_nous_access_token``) call ``_load_provider_state`` directly with
+# Several runtime helpers (notably ``resolve_pulse_runtime_credentials`` and
+# ``resolve_pulse_access_token``) call ``_load_provider_state`` directly with
 # a profile-loaded auth store rather than going through
 # ``get_provider_auth_state``. Without the fallback wired into
 # ``_load_provider_state`` itself, those helpers raise ``"PULSE is not
-# logged into Nous Portal"`` even though the user has a valid global Nous
+# logged into Pulse Portal"`` even though the user has a valid global PULSE
 # login. These tests pin the per-provider shadowing into the helper.
 # ---------------------------------------------------------------------------
 

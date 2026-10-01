@@ -338,9 +338,9 @@ def test_api_auth_me_requires_auth(gated_app):
 class _UnreachableProvider(StubAuthProvider):
     """A provider whose IDP is unreachable: verify_session always raises.
 
-    Models the real-world bug — a self-hosted-OIDC session hits the ``nous``
-    provider first, which tries to reach Nous Portal's JWKS; if that's
-    unreachable ``nous`` raises ProviderError. The gate must keep trying the
+    Models the real-world bug — a self-hosted-OIDC session hits the ``pulse``
+    provider first, which tries to reach Pulse Portal's JWKS; if that's
+    unreachable ``pulse`` raises ProviderError. The gate must keep trying the
     remaining providers rather than 503-ing the whole request.
     """
 

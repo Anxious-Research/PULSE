@@ -22,7 +22,7 @@ from agent import empty_response_guard as guard
 def _agent(**overrides):
     base = dict(
         model="anthropic/claude-fable-5",
-        provider="nous",
+        provider="pulse",
         api_mode="chat_completions",
         base_url=None,
         api_key=None,

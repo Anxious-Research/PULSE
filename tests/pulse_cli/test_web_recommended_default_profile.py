@@ -1,6 +1,6 @@
-"""``GET /api/model/recommended-default?provider=nous`` answers for the requested profile.
+"""``GET /api/model/recommended-default?provider=pulse`` answers for the requested profile.
 
-The Nous branch returned before the route entered the profile scope, so ``?profile=b`` got the
+The PULSE branch returned before the route entered the profile scope, so ``?profile=b`` got the
 tier read, Portal URL and caches of the profile that launched the dashboard, and an unknown
 profile answered 200 instead of the scope's 404. Only the Portal account read is stubbed.
 """
@@ -22,10 +22,10 @@ def client(_isolate_pulse_home, monkeypatch):
     (freebie / "config.yaml").write_text("model: {}\n", encoding="utf-8")
 
     from pulse_constants import get_pulse_home
-    import pulse_cli.nous_account as nous_account
+    import pulse_cli.pulse_account as pulse_account
 
     # The launch profile's account is paid, the "freebie" profile's is free tier.
-    monkeypatch.setattr(nous_account, "get_nous_portal_account_info", lambda **_k: SimpleNamespace(
+    monkeypatch.setattr(pulse_account, "get_pulse_portal_account_info", lambda **_k: SimpleNamespace(
         is_free_tier=get_pulse_home().name == "freebie"))
 
     from pulse_cli.web_server import app, _SESSION_HEADER_NAME, _SESSION_TOKEN
@@ -35,12 +35,12 @@ def client(_isolate_pulse_home, monkeypatch):
     return c
 
 
-def test_nous_recommendation_reads_the_requested_profile(client):
-    launch = client.get("/api/model/recommended-default", params={"provider": "nous"})
+def test_pulse_recommendation_reads_the_requested_profile(client):
+    launch = client.get("/api/model/recommended-default", params={"provider": "pulse"})
     named = client.get("/api/model/recommended-default",
-                       params={"provider": "nous", "profile": "freebie"})
+                       params={"provider": "pulse", "profile": "freebie"})
     unknown = client.get("/api/model/recommended-default",
-                         params={"provider": "nous", "profile": "no-such-profile"})
+                         params={"provider": "pulse", "profile": "no-such-profile"})
 
     assert launch.status_code == named.status_code == 200
     assert launch.json()["free_tier"] is False

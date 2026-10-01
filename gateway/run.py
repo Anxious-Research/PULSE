@@ -4838,7 +4838,7 @@ def _start_gateway_housekeeping(
         # already ended (#111010). Runs every tick so the outage is bounded by one housekeeping interval.
         chores.append((1, "Cron ticker supervisor", cron_thread.restart_if_dead))
     chores += [
-        # Per served profile: each profile has its own skills tree, curator state, Nous login
+        # Per served profile: each profile has its own skills tree, curator state, PULSE login
         # and state.db.
         (60, "Curator tick", profile_scoped_chore(runner, _housekeeping_curator)),
         (60, "Sync pull tick", profile_scoped_chore(runner, _housekeeping_skill_sync)),
@@ -5780,8 +5780,8 @@ async def _start_gateway_shutdown_tail(
             logger.debug("Control socket stop failed (non-fatal)", exc_info=True)
 
     def _stop_keepalive() -> None:
-        from pulse_cli.nous_auth_keepalive import stop_nous_auth_keepalive
-        stop_nous_auth_keepalive()
+        from pulse_cli.pulse_auth_keepalive import stop_pulse_auth_keepalive
+        stop_pulse_auth_keepalive()
 
     _best_effort(_stop_keepalive)
 
@@ -5939,11 +5939,11 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
         record_startup()
 
     def _start_keepalive() -> None:
-        from pulse_cli.nous_auth_keepalive import start_nous_auth_keepalive
-        start_nous_auth_keepalive()
+        from pulse_cli.pulse_auth_keepalive import start_pulse_auth_keepalive
+        start_pulse_auth_keepalive()
 
     _best_effort(_lifecycle_record_startup, "Lifecycle ledger startup record failed: %s")
-    _best_effort(_start_keepalive, "Nous auth keepalive did not start: %s")
+    _best_effort(_start_keepalive, "PULSE auth keepalive did not start: %s")
     _ensure_windows_gateway_venv_imports()
 
     # discover_mcp_tools() blocks up to 120s; on the loop thread it would freeze platform heartbeats.

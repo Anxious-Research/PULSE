@@ -199,11 +199,11 @@ export const roseTheme: DashboardTheme = {
   },
 };
 
-/** Light mode — vivid Nous-blue accents on a cream canvas. */
-export const nousBlueTheme: DashboardTheme = {
-  name: "nous-blue",
-  label: "Nous Blue",
-  description: "Light mode — vivid Nous-blue accents on cream canvas",
+/** Light mode — vivid PULSE-blue accents on a cream canvas. */
+export const pulseBlueTheme: DashboardTheme = {
+  name: "pulse-blue",
+  label: "PULSE Blue",
+  description: "Light mode — vivid PULSE-blue accents on cream canvas",
   palette: {
     background: { hex: "#E8F2FD", alpha: 1 },
     midground: { hex: "#0053FD", alpha: 1 },
@@ -246,7 +246,7 @@ export const defaultLargeTheme: DashboardTheme = {
 export const BUILTIN_THEMES: Record<string, DashboardTheme> = {
   default: defaultTheme,
   "default-large": defaultLargeTheme,
-  "nous-blue": nousBlueTheme,
+  "pulse-blue": pulseBlueTheme,
   midnight: midnightTheme,
   ember: emberTheme,
   mono: monoTheme,

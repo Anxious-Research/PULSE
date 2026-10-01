@@ -39,7 +39,7 @@ def _voided(reason: str) -> dict:
 
 def test_a_completed_sign_in_yields_code_waiting_then_completed(portal, free_account):
     _seed_free_tier()
-    _write_model_config({"provider": "nous", "default": anon_auth.GUEST_MODEL, "base_url": WELCOME})
+    _write_model_config({"provider": "pulse", "default": anon_auth.GUEST_MODEL, "base_url": WELCOME})
 
     states = _drain()
 
@@ -77,7 +77,7 @@ def test_a_timeout_yields_timed_out_and_keeps_the_enriched_detail(portal, monkey
 
     # The token poll can time out too, and its guidance is enriched at the source.
     from pulse_cli import auth_device_flow
-    enriched = auth_device_flow._nous_device_auth_timeout_message(PORTAL)
+    enriched = auth_device_flow._pulse_device_auth_timeout_message(PORTAL)
     _stub_wait(monkeypatch, {"status": "completed", "account_email": EMAIL})
 
     def _timeout(**kwargs):
@@ -107,7 +107,7 @@ def test_a_retired_identity_yields_retired_and_clears_the_free_tier(portal, monk
     assert state.copy == anon_auth.UPGRADE_REASON_COPY["account_retired"]
     assert cleared == [("retired", guest["anon_token"])]
     from pulse_cli.auth import _load_auth_store
-    assert "nous" not in _load_auth_store().get("providers", {})
+    assert "pulse" not in _load_auth_store().get("providers", {})
 
 def test_a_server_superseded_outcome_yields_superseded(portal, tmp_path):
     _seed_free_tier()
@@ -174,9 +174,9 @@ def test_a_transport_error_yields_failed_without_leaking_the_detail_into_chat_co
 def test_a_persist_failure_yields_failed_rather_than_raising(portal, free_account, monkeypatch):
     _seed_free_tier()
     settles = []
-    from pulse_cli import auth_nous
+    from pulse_cli import auth_pulse
     monkeypatch.setattr(
-        auth_nous, "persist_nous_credentials", lambda *a, **kw: (_ for _ in ()).throw(OSError("read-only home")))
+        auth_pulse, "persist_pulse_credentials", lambda *a, **kw: (_ for _ in ()).throw(OSError("read-only home")))
     monkeypatch.setattr(anon_auth, "settle_after_upgrade", lambda state: settles.append(state) or {})
 
     states = _drain()
@@ -189,10 +189,10 @@ def test_a_persist_failure_yields_failed_rather_than_raising(portal, free_accoun
 def test_a_settle_failure_yields_failed_rather_than_raising(portal, free_account, monkeypatch):
     _seed_free_tier()
     persists = []
-    from pulse_cli import auth_nous
-    real_persist = auth_nous.persist_nous_credentials
+    from pulse_cli import auth_pulse
+    real_persist = auth_pulse.persist_pulse_credentials
     monkeypatch.setattr(
-        auth_nous, "persist_nous_credentials",
+        auth_pulse, "persist_pulse_credentials",
         lambda state, **kw: (persists.append(state), real_persist(state, **kw))[1])
 
     def _boom(state):
@@ -208,7 +208,7 @@ def test_a_settle_failure_yields_failed_rather_than_raising(portal, free_account
 def test_already_signed_in_short_circuits_before_any_network(portal):
     from pulse_cli.auth import _load_auth_store, _save_auth_store, _save_provider_state
     store = _load_auth_store()
-    _save_provider_state(store, "nous", {"auth_method": "oauth_device_code", "access_token": "x"})
+    _save_provider_state(store, "pulse", {"auth_method": "oauth_device_code", "access_token": "x"})
     _save_auth_store(store)
     portal.calls.clear()
 
@@ -310,7 +310,7 @@ def test_cancelling_during_a_completed_status_request_obeys_the_surface_policy(
     assert states[-1].kind == ("superseded" if cancel_wins else "completed")
     assert portal.token_grants == (0 if cancel_wins else 1)
     from pulse_cli.auth import _load_auth_store
-    state = _load_auth_store()["providers"]["nous"]
+    state = _load_auth_store()["providers"]["pulse"]
     assert anon_auth.is_guest_state(state) is cancel_wins
 
 def _cancel_after_a_completed_promotion(portal, monkeypatch, *, cancel_wins: bool):
@@ -342,7 +342,7 @@ def test_a_gateway_style_supersede_after_a_completed_promotion_still_signs_in(
     assert states[-1].kind == "completed"
     assert portal.token_grants == 1
     from pulse_cli.auth import _load_auth_store
-    state = _load_auth_store()["providers"]["nous"]
+    state = _load_auth_store()["providers"]["pulse"]
     assert not anon_auth.is_guest_state(state)
 
 def test_a_persist_guard_that_refuses_persists_nothing_and_never_settles(

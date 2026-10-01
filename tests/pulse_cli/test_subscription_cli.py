@@ -14,7 +14,7 @@ import pytest
 
 import agent.billing_usage as bu
 import agent.subscription_view as sv
-import pulse_cli.nous_billing as nb
+import pulse_cli.pulse_billing as nb
 from agent.subscription_view import CurrentSubscription, SubscriptionState, SubscriptionTier
 from cli import PULSECLI
 

@@ -2972,11 +2972,11 @@ class APIServerAdapter(OpenAICompatRoutesMixin, BasePlatformAdapter):
             from pulse_cli.config import load_config
             from pulse_cli.tools_config import (
                 _get_effective_configurable_toolsets, _get_platform_tools, _toolset_has_keys,
-                get_nous_subscription_features)
+                get_pulse_subscription_features)
             from toolsets import resolve_toolset
             config = load_config()
             enabled_toolsets = _get_platform_tools(config, "api_server", include_default_mcp_servers=False)
-            features = get_nous_subscription_features(config)
+            features = get_pulse_subscription_features(config)
             data: List[Dict[str, Any]] = []
             for name, label, desc in _get_effective_configurable_toolsets():
                 try:

@@ -295,7 +295,7 @@ async def _lifespan(app: "FastAPI"):
 
     threading.Thread(target=_boot_local_runtime, daemon=True, name="local-runtime-boot").start()
 
-    # Nous free tier: the ONE place its identity is created. Inventories credentials, mints only
+    # PULSE free tier: the ONE place its identity is created. Inventories credentials, mints only
     # when PULSE_GUEST_ONBOARDING=1, records the answer for setup.status / free_tier.status and
     # broadcasts `setup.ready`. Off-thread so a slow portal never delays the socket; the desktop's
     # first setup.status waits on the record (bounded) instead.
@@ -1059,10 +1059,10 @@ def _no_auth_provider_message(host: str) -> str:
     """
     skip_reasons: list[str] = []
     try:
-        from plugins.dashboard_auth import nous as _nous_plugin
+        from plugins.dashboard_auth import pulse as _pulse_plugin
 
-        if _nous_plugin.LAST_SKIP_REASON:
-            skip_reasons.append(f"  • nous: {_nous_plugin.LAST_SKIP_REASON}")
+        if _pulse_plugin.LAST_SKIP_REASON:
+            skip_reasons.append(f"  • pulse: {_pulse_plugin.LAST_SKIP_REASON}")
     except Exception:
         pass
 
@@ -1097,7 +1097,7 @@ def _no_auth_provider_message(host: str) -> str:
         "    (hash with: python -c \"from "
         "plugins.dashboard_auth.basic import hash_password; "
         "print(hash_password('your-password'))\")\n"
-        "  • OAuth: run `pulse dashboard register` (Nous Portal) or "
+        "  • OAuth: run `pulse dashboard register` (Pulse Portal) or "
         "install a DashboardAuthProvider plugin.\n"
         "There is no unauthenticated public-dashboard option. For "
         "local-only use, bind 127.0.0.1 and leave dashboard.public_url "
@@ -1554,11 +1554,11 @@ def start_server(
     import uvicorn  # noqa: F401 — fail fast (before any side effects) when the dashboard extra is missing
 
     try:
-        from pulse_cli.nous_auth_keepalive import start_nous_auth_keepalive
+        from pulse_cli.pulse_auth_keepalive import start_pulse_auth_keepalive
 
-        start_nous_auth_keepalive()
+        start_pulse_auth_keepalive()
     except Exception as exc:
-        _log.debug("Nous auth keepalive did not start: %s", exc)
+        _log.debug("PULSE auth keepalive did not start: %s", exc)
 
     _configure_auth_gate(host, allow_public, ssh_session_token, ssh_owner_nonce)
 

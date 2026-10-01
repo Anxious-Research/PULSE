@@ -94,7 +94,7 @@ foreach ($asset in @(@('Square44x44Logo.png',44,44), @('Square150x150Logo.png',1
     identity: { token: 'ab12cd34ef56ab78', displayName: 'PULSE sdk-preview',
       appId: 'ai.pulse.channel.hab12cd34ef56ab78', appNamePascal: 'PULSEChannelab12cd34ef56ab78',
       artifactNamePascal: 'PULSEChannelab12cd34ef56ab78', cliName: 'pulse-sdk-preview',
-      windowsExecutableName: 'PULSEChannelab12cd34ef56ab78', msixAppIdWithOrg: 'NousResearch.PULSEChannelab12cd34ef56ab78' },
+      windowsExecutableName: 'PULSEChannelab12cd34ef56ab78', msixAppIdWithOrg: 'AnxiousResearch.PULSEChannelab12cd34ef56ab78' },
     bundleEnv: {}, publicBase: 'https://example.invalid'
   })
   const cases = [

@@ -19,11 +19,11 @@ SCRIPT = REPO_ROOT / "scripts" / "validate_plugin_catalog.py"
 
 VALID_ENTRY = {
     "name": "example-plugin",
-    "repo": "https://github.com/NousResearch/pulse-example-plugins",
+    "repo": "https://github.com/AnxiousResearch/pulse-example-plugins",
     "sha": "38fe0fb53eff98d477f807432e965429e665ca33",
     "subdir": "",
     "description": "One-line description.",
-    "maintainer": "NousResearch",
+    "maintainer": "AnxiousResearch",
     "tier": "official",
     "requires_pulse": ">=0.19",
     "docs_url": "",

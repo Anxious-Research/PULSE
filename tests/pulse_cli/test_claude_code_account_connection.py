@@ -46,7 +46,7 @@ def test_disconnect_is_not_success_when_nothing_was_cleared(monkeypatch):
 
     monkeypatch.setattr(auth_mod, "clear_provider_auth", lambda _provider: False)
 
-    resp = client.delete("/api/providers/oauth/nous", headers=HEADERS)
+    resp = client.delete("/api/providers/oauth/pulse", headers=HEADERS)
 
     assert resp.status_code == 409, resp.text
     assert resp.json().get("ok") is not True
@@ -62,7 +62,7 @@ def test_disconnect_failure_does_not_echo_the_store_error(monkeypatch):
 
     monkeypatch.setattr(auth_mod, "clear_provider_auth", fail_clear)
 
-    resp = client.delete("/api/providers/oauth/nous", headers=HEADERS)
+    resp = client.delete("/api/providers/oauth/pulse", headers=HEADERS)
 
     assert resp.status_code == 500, resp.text
     assert secret not in resp.text

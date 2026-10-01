@@ -179,7 +179,7 @@ jobs:
           # test may reach a real provider API.
           OPENROUTER_API_KEY: ''
           OPENAI_API_KEY: ''
-          NOUS_API_KEY: ''
+          PULSE_API_KEY: ''
 
   install-update-e2e:
     # The real scripts/install.ps1 -> `pulse update` HEAD -> NEXT journey on a real Windows
@@ -233,7 +233,7 @@ jobs:
           PULSE_TEST_FILE_RETRIES: '0'
           OPENROUTER_API_KEY: ''
           OPENAI_API_KEY: ''
-          NOUS_API_KEY: ''
+          PULSE_API_KEY: ''
 
       - name: No leftover Python / PULSE processes
         # Backstop for the per-test ownership checks: a file killed by its 900 s timeout,

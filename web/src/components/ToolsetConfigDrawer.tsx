@@ -7,14 +7,14 @@ import type {
   ToolsetInfo,
   ToolsetProvider,
 } from "@/lib/api";
-import { useToast } from "@nous-research/ui/hooks/use-toast";
-import { Button } from "@nous-research/ui/ui/components/button";
-import { Input } from "@nous-research/ui/ui/components/input";
-import { Label } from "@nous-research/ui/ui/components/label";
-import { Badge } from "@nous-research/ui/ui/components/badge";
-import { Switch } from "@nous-research/ui/ui/components/switch";
-import { Spinner } from "@nous-research/ui/ui/components/spinner";
-import { Toast } from "@nous-research/ui/ui/components/toast";
+import { useToast } from "@pulse-research/ui/hooks/use-toast";
+import { Button } from "@pulse-research/ui/ui/components/button";
+import { Input } from "@pulse-research/ui/ui/components/input";
+import { Label } from "@pulse-research/ui/ui/components/label";
+import { Badge } from "@pulse-research/ui/ui/components/badge";
+import { Switch } from "@pulse-research/ui/ui/components/switch";
+import { Spinner } from "@pulse-research/ui/ui/components/spinner";
+import { Toast } from "@pulse-research/ui/ui/components/toast";
 import { cn, themedBody } from "@/lib/utils";
 
 interface Props {
@@ -300,9 +300,9 @@ export function ToolsetConfigDrawer({ toolset, profile, onClose, onChanged }: Pr
                           {provider.badge}
                         </Badge>
                       )}
-                      {provider.requires_nous_auth && (
+                      {provider.requires_pulse_auth && (
                         <Badge tone="outline" className="text-xs">
-                          Nous Portal
+                          Pulse Portal
                         </Badge>
                       )}
                     </div>

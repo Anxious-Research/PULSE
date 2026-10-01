@@ -222,7 +222,7 @@ async def test_session_model_lock_persists_off_the_event_loop(adapter, session_d
         async with TestClient(TestServer(app)) as cli:
             resp = await cli.post(
                 f"/api/sessions/{session_id}/model",
-                json={"provider": "nous", "model": "x-ai/grok-4.5", "require_model_lock": True})
+                json={"provider": "pulse", "model": "x-ai/grok-4.5", "require_model_lock": True})
             assert resp.status == 200, await resp.text()
     assert seen and all(tid != loop_thread for tid in seen)
     assert session_db.get_session(session_id)["model"] == "x-ai/grok-4.5"
@@ -735,7 +735,7 @@ async def test_create_session_respects_browser_source_and_model_lock(adapter, se
             json={
                 "id": "browser-lock-session",
                 "source": "pulse_browser",
-                "provider": "nous",
+                "provider": "pulse",
                 "model": "x-ai/grok-4.5",
                 "require_model_lock": True,
                 "title": "Browser lock",
@@ -754,7 +754,7 @@ async def test_create_session_respects_browser_source_and_model_lock(adapter, se
     model_config = row.get("model_config")
     if isinstance(model_config, str):
         model_config = _json.loads(model_config)
-    assert model_config["browser_model_lock"]["provider"] == "nous"
+    assert model_config["browser_model_lock"]["provider"] == "pulse"
     assert model_config["browser_model_lock"]["model"] == "x-ai/grok-4.5"
     assert model_config["browser_model_lock"]["confirmed"] is True
 
@@ -808,7 +808,7 @@ async def test_session_model_lock_endpoint_then_chat_reuses_persisted_lock_and_p
             lock_resp = await cli.post(
                 f"/api/sessions/{session_id}/model",
                 json={
-                    "provider": "nous",
+                    "provider": "pulse",
                     "model": "x-ai/grok-4.5",
                     "require_model_lock": True,
                 },
@@ -822,14 +822,14 @@ async def test_session_model_lock_endpoint_then_chat_reuses_persisted_lock_and_p
             assert resp.status == 200, await resp.text()
             payload = await resp.json()
 
-    assert captured["provider"] == "nous"
+    assert captured["provider"] == "pulse"
     assert captured["model"] == "x-ai/grok-4.5"
-    assert captured["api_key"] == "sk-nous"
-    assert captured["base_url"] == "https://nous.example/v1"
-    assert payload["runtime"]["provider"] == "nous"
+    assert captured["api_key"] == "sk-pulse"
+    assert captured["base_url"] == "https://pulse.example/v1"
+    assert payload["runtime"]["provider"] == "pulse"
     assert payload["runtime"]["model"] == "x-ai/grok-4.5"
     assert payload["runtime"]["requested"] == {
-        "provider": "nous",
+        "provider": "pulse",
         "model": "x-ai/grok-4.5",
     }
     assert payload["runtime"]["route_source"] == "session_model_lock"
@@ -851,18 +851,18 @@ async def test_session_model_lock_endpoint_then_chat_stream_reuses_persisted_loc
                 "final_response": "hi",
                 "session_id": session_id,
                 "runtime": {
-                    "provider": "nous",
+                    "provider": "pulse",
                     "model": "x-ai/grok-4.5",
-                    "requested": {"provider": "nous", "model": "x-ai/grok-4.5"},
+                    "requested": {"provider": "pulse", "model": "x-ai/grok-4.5"},
                     "route_source": "session_model_lock",
                 },
             },
             {
                 "total_tokens": 1,
                 "runtime": {
-                    "provider": "nous",
+                    "provider": "pulse",
                     "model": "x-ai/grok-4.5",
-                    "requested": {"provider": "nous", "model": "x-ai/grok-4.5"},
+                    "requested": {"provider": "pulse", "model": "x-ai/grok-4.5"},
                     "route_source": "session_model_lock",
                 },
             },
@@ -879,7 +879,7 @@ async def test_session_model_lock_endpoint_then_chat_stream_reuses_persisted_loc
             lock_resp = await cli.post(
                 f"/api/sessions/{session_id}/model",
                 json={
-                    "provider": "nous",
+                    "provider": "pulse",
                     "model": "x-ai/grok-4.5",
                     "require_model_lock": True,
                 },
@@ -893,8 +893,8 @@ async def test_session_model_lock_endpoint_then_chat_stream_reuses_persisted_loc
             assert resp.status == 200, await resp.text()
             body = await resp.text()
 
-    assert captured["route"] == {"provider": "nous", "model": "x-ai/grok-4.5"}
-    assert captured["requested_runtime"]["provider"] == "nous"
+    assert captured["route"] == {"provider": "pulse", "model": "x-ai/grok-4.5"}
+    assert captured["requested_runtime"]["provider"] == "pulse"
     assert captured["requested_runtime"]["model"] == "x-ai/grok-4.5"
     assert captured["route_source"] == "session_model_lock"
     assert "x-ai/grok-4.5" in body
@@ -964,8 +964,8 @@ async def test_confirmed_runtime_lock_rejects_actual_runtime_mismatch(adapter, m
             user_message="hello",
             conversation_history=[],
             session_id="mismatch-session",
-            route={"provider": "nous", "model": "x-ai/grok-4.5"},
-            requested_runtime={"provider": "nous", "model": "x-ai/grok-4.5"},
+            route={"provider": "pulse", "model": "x-ai/grok-4.5"},
+            requested_runtime={"provider": "pulse", "model": "x-ai/grok-4.5"},
             route_source="session_model_lock",
             confirmed_runtime_lock=True,
         )
@@ -976,7 +976,7 @@ def test_confirmed_runtime_lock_rejects_provider_only_mismatch(adapter):
         provider = "fallback-provider"
         model = "some-model"
         _pulse_api_runtime = {
-            "provider": "nous",
+            "provider": "pulse",
             "model": "some-model",
             "route_source": "session_model_lock",
         }
@@ -984,8 +984,8 @@ def test_confirmed_runtime_lock_rejects_provider_only_mismatch(adapter):
     with pytest.raises(RuntimeError, match="confirmed model lock runtime mismatch"):
         adapter._turn_runtime_metadata(
             FakeAgent(),
-            route={"provider": "nous", "model": "some-model"},
-            requested_runtime={"provider": "nous", "model": "some-model"},
+            route={"provider": "pulse", "model": "some-model"},
+            requested_runtime={"provider": "pulse", "model": "some-model"},
             route_source="session_model_lock",
             confirmed_runtime_lock=True,
         )
@@ -1029,7 +1029,7 @@ def test_confirmed_runtime_lock_disables_global_fallback_model(adapter, monkeypa
     captured = {}
 
     class FakeAgent:
-        provider = "nous"
+        provider = "pulse"
         model = "x-ai/grok-4.5"
 
         def __init__(self, **kwargs):
@@ -1039,7 +1039,7 @@ def test_confirmed_runtime_lock_disables_global_fallback_model(adapter, monkeypa
 
     adapter._create_agent(
         session_id="locked-session",
-        route={"provider": "nous", "model": "x-ai/grok-4.5"},
+        route={"provider": "pulse", "model": "x-ai/grok-4.5"},
         confirmed_runtime_lock=True,
     )
 
@@ -1051,7 +1051,7 @@ async def test_unconfirmed_request_does_not_replace_confirmed_session_lock(adapt
     session_id = session_db.create_session("one-off-override", "api_server")
     session_db.update_session_runtime_lock(
         session_id,
-        provider="nous",
+        provider="pulse",
         model="x-ai/grok-4.5",
         route_source="raw_request",
         confirmed=True,
@@ -1089,7 +1089,7 @@ async def test_unconfirmed_request_does_not_replace_confirmed_session_lock(adapt
     config = row["model_config"]
     if isinstance(config, str):
         config = _json.loads(config)
-    assert config["browser_model_lock"]["provider"] == "nous"
+    assert config["browser_model_lock"]["provider"] == "pulse"
     assert config["browser_model_lock"]["model"] == "x-ai/grok-4.5"
     assert config["browser_model_lock"]["confirmed"] is True
 
@@ -1106,7 +1106,7 @@ async def test_require_model_lock_hard_fails_when_global_default_would_be_used(a
                 f"/api/sessions/{session_id}/chat",
                 json={
                     "message": "hello",
-                    "provider": "nous",
+                    "provider": "pulse",
                     "model": "",
                     "require_model_lock": True,
                 },

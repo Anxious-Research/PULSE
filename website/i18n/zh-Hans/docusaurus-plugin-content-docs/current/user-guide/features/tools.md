@@ -35,8 +35,8 @@ PULSE 内置了丰富的工具注册表，涵盖网页搜索、浏览器自动�
 
 如需查看由代码派生的权威注册表，请参阅 [内置工具参考](../../reference/tools-reference.md) 和 [工具集参考](../../reference/toolsets-reference.md)。
 
-:::tip Nous Tool Gateway
-付费 [Nous Portal](https://portal.anxious-research.com) 订阅者可通过 **[Tool Gateway](tool-gateway.md)** 使用网页搜索、图像生成、TTS 和浏览器自动化——无需单独配置 API 密钥。运行 `pulse model` 启用，或通过 `pulse tools` 配置各工具。
+:::tip PULSE Tool Gateway
+付费 [Pulse Portal](https://portal.anxious-research.com) 订阅者可通过 **[Tool Gateway](tool-gateway.md)** 使用网页搜索、图像生成、TTS 和浏览器自动化——无需单独配置 API 密钥。运行 `pulse model` 启用，或通过 `pulse tools` 配置各工具。
 :::
 
 ## 使用工具集

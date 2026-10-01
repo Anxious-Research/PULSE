@@ -27,19 +27,19 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { Badge } from "@nous-research/ui/ui/components/badge";
-import { Button } from "@nous-research/ui/ui/components/button";
-import { Spinner } from "@nous-research/ui/ui/components/spinner";
-import { H2 } from "@nous-research/ui/ui/components/typography/h2";
-import { Card, CardContent } from "@nous-research/ui/ui/components/card";
-import { Checkbox } from "@nous-research/ui/ui/components/checkbox";
-import { Input } from "@nous-research/ui/ui/components/input";
-import { Label } from "@nous-research/ui/ui/components/label";
-import { Select, SelectOption } from "@nous-research/ui/ui/components/select";
-import { Toast } from "@nous-research/ui/ui/components/toast";
-import { useToast } from "@nous-research/ui/hooks/use-toast";
-import { useConfirmDelete } from "@nous-research/ui/hooks/use-confirm-delete";
-import { ConfirmDialog } from "@nous-research/ui/ui/components/confirm-dialog";
+import { Badge } from "@pulse-research/ui/ui/components/badge";
+import { Button } from "@pulse-research/ui/ui/components/button";
+import { Spinner } from "@pulse-research/ui/ui/components/spinner";
+import { H2 } from "@pulse-research/ui/ui/components/typography/h2";
+import { Card, CardContent } from "@pulse-research/ui/ui/components/card";
+import { Checkbox } from "@pulse-research/ui/ui/components/checkbox";
+import { Input } from "@pulse-research/ui/ui/components/input";
+import { Label } from "@pulse-research/ui/ui/components/label";
+import { Select, SelectOption } from "@pulse-research/ui/ui/components/select";
+import { Toast } from "@pulse-research/ui/ui/components/toast";
+import { useToast } from "@pulse-research/ui/hooks/use-toast";
+import { useConfirmDelete } from "@pulse-research/ui/hooks/use-confirm-delete";
+import { ConfirmDialog } from "@pulse-research/ui/ui/components/confirm-dialog";
 import { useModalBehavior } from "@/hooks/useModalBehavior";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { PULSEConsoleModal } from "@/components/PULSEConsoleModal";
@@ -1035,7 +1035,7 @@ export default function SystemPage() {
       {/* ── Portal ────────────────────────────────────────────────── */}
       <section className="flex flex-col gap-3">
         <H2 variant="sm" className="flex items-center gap-2 text-muted-foreground">
-          <Globe className="h-4 w-4" /> Nous Portal
+          <Globe className="h-4 w-4" /> Pulse Portal
         </H2>
         <Card>
           <CardContent className="flex flex-col gap-3 py-4">

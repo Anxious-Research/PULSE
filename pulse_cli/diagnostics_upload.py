@@ -1,4 +1,4 @@
-"""Client for uploading ``pulse debug share`` bundles to Nous-internal S3.
+"""Client for uploading ``pulse debug share`` bundles to PULSE-internal S3.
 1. POST {NAS_BASE}/api/diagnostics/upload-url → {uploadUrl, viewUrl, id, ...}; the body carries ``sizeBytes``,
    which NAS signs into the presigned URL's ``ContentLength``, so the PUT must send exactly that many bytes.
 2. PUT <uploadUrl> (gzipped bundle, Content-Type application/gzip). NAS is stateless — no confirm step."""
@@ -51,7 +51,7 @@ def put_bundle(upload_url: str, data: bytes, content_type: str = "application/gz
                      what="diagnostics bundle PUT")
 
 
-def share_to_nous(report_bundle: bytes) -> dict:
+def share_to_pulse(report_bundle: bytes) -> dict:
     """Mint a presigned PUT URL (with the exact ``sizeBytes`` NAS signs), then PUT *report_bundle*."""
     info = request_upload_url(content_type="application/gzip", size_bytes=len(report_bundle))
     put_bundle(info["uploadUrl"], report_bundle, content_type="application/gzip")

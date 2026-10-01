@@ -511,7 +511,7 @@ def setup_tools(config: dict, first_install: bool = False):
 
 
 _SEND_CONSENT_EXPLAINER = (
-    "", "Sending uploads each daily package to the Nous telemetry",
+    "", "Sending uploads each daily package to the PULSE telemetry",
     "service. Packages carry your profile-scoped install ID, a",
     "stable random UUID that identifies this profile across days",
     "(it contains no personal information and is reset by deleting",
@@ -534,7 +534,7 @@ def setup_telemetry(config: dict):
           "machine facts (RAM range, GPU type, version age and channel, updates behind,",
           "local model server yes/no). Never prompts, files, paths, setting values or",
           "error text.",
-          "Collection is local. Sending them to Nous is a separate opt-in.")
+          "Collection is local. Sending them to PULSE is a separate opt-in.")
     # The answer is written to config.yaml here, not by the caller's later save: that save strips
     # values equal to the defaults, so a "no" would vanish and every surface would ask again.
     from pulse_cli.observability.shared_metrics_consent import save_consent
@@ -549,7 +549,7 @@ def setup_telemetry(config: dict):
         return
     print_success("Local shared metrics enabled.")
     _info(*_SEND_CONSENT_EXPLAINER)
-    save_consent(True, prompt_yes_no("Send shared metrics to Nous?", default=shared_metrics.get("send") is True), config)
+    save_consent(True, prompt_yes_no("Send shared metrics to PULSE?", default=shared_metrics.get("send") is True), config)
     if shared_metrics["send"]:
         print_success("Sending shared metrics enabled.")
     else:
@@ -658,7 +658,7 @@ def _run_full_setup(config: dict, pulse_home, *, is_existing: bool, migration_ra
 
 # First-time mode picker: (menu label, setup_quick runner name) — None falls through to Full Setup.
 _FIRST_TIME_MODES = (
-    ("Quick Setup (Nous Portal) — free OAuth login, no API keys, model + tools (recommended)",
+    ("Quick Setup (Pulse Portal) — free OAuth login, no API keys, model + tools (recommended)",
      "_run_first_time_quick_setup"),
     ("Full setup — configure every provider, tool & option yourself (bring your own keys)", None),
     ("Blank Slate — everything off except the bare minimum; opt in to each capability", "_run_blank_slate_setup"),
@@ -691,7 +691,7 @@ def _run_setup_wizard_impl(args):
     if getattr(args, 'non_interactive', False) or not is_interactive_stdin():
         print_noninteractive_setup_guidance("Running in a non-interactive environment (no TTY detected).")
         return
-    if getattr(args, "portal", False):  # one-shot Nous Portal setup; skips the rest
+    if getattr(args, "portal", False):  # one-shot Pulse Portal setup; skips the rest
         _run_portal_one_shot(config)
         return
     section = getattr(args, "section", None)

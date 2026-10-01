@@ -22,7 +22,7 @@ export const zhHant = defineLocale({
   sharedMetrics: {
     consentTitle: '協助改進 PULSE？',
     consentBody:
-      '共享指標只包含有上限的計數，絕不包含提示詞、檔案、路徑或錯誤文字。收集僅在本機進行；傳送給 Nous 需要另行同意。',
+      '共享指標只包含有上限的計數，絕不包含提示詞、檔案、路徑或錯誤文字。收集僅在本機進行；傳送給 PULSE 需要另行同意。',
     whatIsCollected: '收集哪些內容',
     collectedIntro: '僅限有上限的計數：',
     collectedActivity: '活動、工作階段長度、結果和錯誤類別',
@@ -35,22 +35,22 @@ export const zhHant = defineLocale({
     collectedMachine:
       '概略的機器資訊：記憶體範圍、GPU 類型、PULSE 版本新舊與發行通道、落後的更新數、是否使用本機模型伺服器',
     installId:
-      '傳送會把每日資料包上傳到 Nous 遙測服務。資料包帶有此設定檔的安裝 ID：一個不含個人資訊的固定隨機 UUID，刪除共享指標目錄即可重設。',
+      '傳送會把每日資料包上傳到 PULSE 遙測服務。資料包帶有此設定檔的安裝 ID：一個不含個人資訊的固定隨機 UUID，刪除共享指標目錄即可重設。',
     consentWindow:
       '只有整個收集期間都落在已記錄同意時段內的資料包才會被傳送——你同意之前的資料，或傳送關閉期間的資料，都會留在本機。你可以隨時再次關閉傳送。',
     readDocs: '查看完整說明',
-    share: '收集並傳送給 Nous',
+    share: '收集並傳送給 PULSE',
     local: '僅在本機收集',
     off: '不用了',
     changeLater: '你可以隨時在 設定 → 安全性 中變更。',
     saveFailed: '無法儲存你的選擇',
     collectLabel: '收集使用統計',
     collectDesc: '在此裝置上保存有上限的計數。絕不包含提示詞、檔案、路徑或錯誤文字。',
-    sendLabel: '向 Nous 傳送使用統計',
-    sendDesc: '將每日資料包上傳到 Nous 遙測服務。只傳送同意時段內的資料。需要先開啟收集。',
+    sendLabel: '向 PULSE 傳送使用統計',
+    sendDesc: '將每日資料包上傳到 PULSE 遙測服務。只傳送同意時段內的資料。需要先開啟收集。',
     unavailable: '請更新 PULSE 後端以變更此設定。',
     stripBody: '僅限有界計數器，絕不包含提示詞或檔案。',
-    stripChoices: { share: '傳送給 Nous', local: '僅限本機', off: '不用了' },
+    stripChoices: { share: '傳送給 PULSE', local: '僅限本機', off: '不用了' },
     stripDetails: '詳細資訊'
   },
   intro: introZhHant,

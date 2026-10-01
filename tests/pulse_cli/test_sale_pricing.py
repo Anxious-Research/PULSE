@@ -16,7 +16,7 @@ def test_free_model_gets_flat_100_percent_discount():
     assert compute_sale_discount(
         "0", "0", {"prompt": "0.000002", "completion": "0.00001"}
     ) == (100, "0.000002", "0.00001")
-    # "0.0000000000" strings (Nous portal shape) count as free too.
+    # "0.0000000000" strings (PULSE portal shape) count as free too.
     assert compute_sale_discount("0.0000000000", "0.0000000000", None) == (100, "", "")
 
 
@@ -63,7 +63,7 @@ def test_fetch_models_with_pricing_copies_nested_original(monkeypatch):
         lambda req, timeout=8.0: resp,
     )
 
-    # Nous Portal opts in via include_sale_original=True.
+    # Pulse Portal opts in via include_sale_original=True.
     result = fetch_models_with_pricing(
         api_key="sk-test",
         base_url="https://example.test",
@@ -81,7 +81,7 @@ def test_fetch_models_with_pricing_copies_nested_original(monkeypatch):
     assert "original" not in result["free/model"]
 
 
-def test_fetch_models_with_pricing_copies_billing_mode_for_nous_only(monkeypatch):
+def test_fetch_models_with_pricing_copies_billing_mode_for_pulse_only(monkeypatch):
     payload = {"data": [{"id": "a/b", "billing_mode": "subscription", "pricing": {"prompt": "0.000002", "completion": "0.00001"}}]}
     resp = MagicMock()
     resp.read.return_value = json.dumps(payload).encode()
@@ -98,10 +98,10 @@ def test_fetch_models_with_pricing_copies_billing_mode_for_nous_only(monkeypatch
 
 
 
-def test_resolve_nous_pricing_credentials_normalizes_either_suffix(monkeypatch):
+def test_resolve_pulse_pricing_credentials_normalizes_either_suffix(monkeypatch):
     """``/v1`` on the override is optional and must not change the result."""
     monkeypatch.setattr(
-        "pulse_cli.auth.resolve_nous_runtime_credentials", lambda: None
+        "pulse_cli.auth.resolve_pulse_runtime_credentials", lambda: None
     )
     for override in (
         "https://stg-inference-api.anxious-research.com",
@@ -109,8 +109,8 @@ def test_resolve_nous_pricing_credentials_normalizes_either_suffix(monkeypatch):
         "https://stg-inference-api.anxious-research.com/v1",
         "https://stg-inference-api.anxious-research.com/v1/",
     ):
-        monkeypatch.setenv("NOUS_INFERENCE_BASE_URL", override)
-        assert models_pricing._resolve_nous_pricing_credentials()[1] == (
+        monkeypatch.setenv("PULSE_INFERENCE_BASE_URL", override)
+        assert models_pricing._resolve_pulse_pricing_credentials()[1] == (
             "https://stg-inference-api.anxious-research.com"
         )
 

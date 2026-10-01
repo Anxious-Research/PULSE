@@ -9,7 +9,7 @@ import shutil
 from pathlib import Path
 from tools import tool_backend_helpers
 from tools.environments.docker import docker_runtime_name, find_docker
-from pulse_cli import nous_subscription
+from pulse_cli import pulse_subscription
 
 logger = logging.getLogger("pulse_cli.setup")
 
@@ -168,8 +168,8 @@ def _setup_backend_modal(config: dict) -> None:
     from tools.managed_tool_gateway import is_managed_tool_gateway_ready
     from tools.tool_backend_helpers import normalize_modal_mode
     managed_modal_available = bool(
-        tool_backend_helpers.managed_nous_tools_enabled()
-        and nous_subscription.get_nous_subscription_features(config).nous_auth_present
+        tool_backend_helpers.managed_pulse_tools_enabled()
+        and pulse_subscription.get_pulse_subscription_features(config).pulse_auth_present
         and is_managed_tool_gateway_ready("modal"))
     modal_mode = normalize_modal_mode(_setup.cfg_get(config, "terminal", "modal_mode"))
     use_managed_modal = False
@@ -178,10 +178,10 @@ def _setup_backend_modal(config: dict) -> None:
         default_idx = {"managed": 0, "direct": 1}.get(modal_mode, 1 if _setup.get_env_value("MODAL_TOKEN_ID") else 0)
         use_managed_modal = _setup.prompt_choice(
             "Select how Modal execution should be billed:",
-            ["Use my Nous subscription", "Use my own Modal account"], default_idx) == 0
+            ["Use my PULSE subscription", "Use my own Modal account"], default_idx) == 0
     if use_managed_modal:
         config["terminal"]["modal_mode"] = "managed"
-        _setup.print_info("Modal execution will use the managed Nous gateway and bill to your subscription.")
+        _setup.print_info("Modal execution will use the managed PULSE gateway and bill to your subscription.")
         if _setup.get_env_value("MODAL_TOKEN_ID") or _setup.get_env_value("MODAL_TOKEN_SECRET"):
             _setup.print_info(
                 "Direct Modal credentials are still configured, but this backend is pinned to managed mode.")

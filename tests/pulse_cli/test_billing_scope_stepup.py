@@ -5,16 +5,16 @@ from __future__ import annotations
 import pytest
 
 import pulse_cli.auth as auth
-import pulse_cli.auth_nous as auth_nous
+import pulse_cli.auth_pulse as auth_pulse
 from pulse_cli.auth import (
-    NOUS_BILLING_MANAGE_SCOPE,
-    nous_token_has_billing_scope,
-    step_up_nous_billing_scope,
+    PULSE_BILLING_MANAGE_SCOPE,
+    pulse_token_has_billing_scope,
+    step_up_pulse_billing_scope,
 )
 
 
 # ---------------------------------------------------------------------------
-# nous_token_has_billing_scope
+# pulse_token_has_billing_scope
 # ---------------------------------------------------------------------------
 
 
@@ -22,28 +22,28 @@ class TestNousTokenHasBillingScope:
     def test_true_when_scope_string_contains_billing_manage(self, monkeypatch):
         monkeypatch.setattr(
             auth, "get_provider_auth_state",
-            lambda pid: {"scope": f"openid {NOUS_BILLING_MANAGE_SCOPE} inference"},
+            lambda pid: {"scope": f"openid {PULSE_BILLING_MANAGE_SCOPE} inference"},
         )
-        assert nous_token_has_billing_scope() is True
+        assert pulse_token_has_billing_scope() is True
 
     def test_false_when_scope_missing_or_not_a_string(self, monkeypatch):
         monkeypatch.setattr(auth, "get_provider_auth_state", lambda pid: {"scope": "openid inference"})
-        assert nous_token_has_billing_scope() is False
+        assert pulse_token_has_billing_scope() is False
         monkeypatch.setattr(auth, "get_provider_auth_state", lambda pid: {"scope": None})
-        assert nous_token_has_billing_scope() is False
+        assert pulse_token_has_billing_scope() is False
         monkeypatch.setattr(auth, "get_provider_auth_state", lambda pid: None)
-        assert nous_token_has_billing_scope() is False
+        assert pulse_token_has_billing_scope() is False
 
     def test_false_when_auth_state_lookup_raises(self, monkeypatch):
         def _boom(pid):
             raise RuntimeError("auth store unreadable")
 
         monkeypatch.setattr(auth, "get_provider_auth_state", _boom)
-        assert nous_token_has_billing_scope() is False
+        assert pulse_token_has_billing_scope() is False
 
 
 # ---------------------------------------------------------------------------
-# step_up_nous_billing_scope
+# step_up_pulse_billing_scope
 # ---------------------------------------------------------------------------
 
 
@@ -54,10 +54,10 @@ def _stub_persist(monkeypatch):
     monkeypatch.setattr(auth, "_load_auth_store", lambda: {})
     monkeypatch.setattr(auth, "_save_provider_state", lambda *a, **kw: None)
     monkeypatch.setattr(auth, "_save_auth_store", lambda *a, **kw: "auth.json")
-    monkeypatch.setattr(auth, "_write_shared_nous_state", lambda *a, **kw: None)
-    monkeypatch.setattr(auth_nous, "_write_shared_nous_state", lambda *a, **kw: None)
-    monkeypatch.setattr(auth, "_sync_nous_pool_from_auth_store", lambda: None)
-    monkeypatch.setattr(auth_nous, "_sync_nous_pool_from_auth_store", lambda: None)
+    monkeypatch.setattr(auth, "_write_shared_pulse_state", lambda *a, **kw: None)
+    monkeypatch.setattr(auth_pulse, "_write_shared_pulse_state", lambda *a, **kw: None)
+    monkeypatch.setattr(auth, "_sync_pulse_pool_from_auth_store", lambda: None)
+    monkeypatch.setattr(auth_pulse, "_sync_pulse_pool_from_auth_store", lambda: None)
 
 
 class _NullCtx:
@@ -86,10 +86,10 @@ def test_step_up_requests_billing_scope_and_reuses_prior_urls(monkeypatch, _stub
         # Simulate the admin ticking the box → token comes back WITH the scope.
         return {"scope": "inference:invoke billing:manage", "access_token": "t"}
 
-    monkeypatch.setattr(auth, "_nous_device_code_login", _fake_login)
-    monkeypatch.setattr(auth_nous, "_nous_device_code_login", _fake_login)
+    monkeypatch.setattr(auth, "_pulse_device_code_login", _fake_login)
+    monkeypatch.setattr(auth_pulse, "_pulse_device_code_login", _fake_login)
 
-    granted = step_up_nous_billing_scope()
+    granted = step_up_pulse_billing_scope()
     assert granted is True
     # Requests the granted inference scope plus billing access.
     assert captured["scope"] == "inference:invoke billing:manage"
@@ -139,7 +139,7 @@ def test_device_login_fires_on_verification_before_polling(monkeypatch):
     # validation (JWT usability checks) is out of scope and may raise on the
     # synthetic token — swallow it; the ordering assertion is what matters.
     try:
-        auth._nous_device_code_login(open_browser=False, on_verification=_cb)
+        auth._pulse_device_code_login(open_browser=False, on_verification=_cb)
     except Exception:
         pass
 

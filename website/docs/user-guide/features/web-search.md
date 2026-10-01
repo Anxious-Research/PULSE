@@ -44,8 +44,8 @@ A fresh install with **no web credentials at all** gets working `web_search` and
 
 **Choosing free vs paid explicitly:** in `pulse tools`, Exa, Parallel, and Keenable each appear as two rows — **Free (keyless)** and **Paid (API key)**. Picking Free pins that vendor's anonymous endpoint (even if you later add a key); picking Paid pins the keyed path (a missing key then errors instead of silently downgrading to the free tier). The selection is stored as `web.provider_tier.<name>: free|paid`; leave it unset for auto (key present → paid, otherwise the keyless ring).
 
-:::tip Nous Subscribers
-If you have a paid [Nous Portal](https://portal.anxious-research.com) subscription, web search and extract are available through the **[Tool Gateway](tool-gateway.md)** as managed web search — no API key needed. New installs can run `pulse setup --portal` to log in and turn on all gateway tools at once; existing installs can flip just web via `pulse tools`.
+:::tip PULSE Subscribers
+If you have a paid [Pulse Portal](https://portal.anxious-research.com) subscription, web search and extract are available through the **[Tool Gateway](tool-gateway.md)** as managed web search — no API key needed. New installs can run `pulse setup --portal` to log in and turn on all gateway tools at once; existing installs can flip just web via `pulse tools`.
 :::
 
 ---
@@ -427,7 +427,7 @@ When a per-capability key is empty, that capability falls through to `web.backen
 
 **Priority order (per capability):**
 1. `web.search_backend` / `web.extract_backend` (explicit per-capability)
-2. `web.backend` (shared fallback; `nous` = managed Tool Gateway)
+2. `web.backend` (shared fallback; `pulse` = managed Tool Gateway)
 3. Auto-detect from environment variables (no shared selection written)
 
 ### Auto-detection
@@ -441,7 +441,7 @@ If no shared backend has **ever** been selected (no `web.backend` written by you
 | `EXA_API_KEY` | exa |
 | `PARALLEL_API_KEY` | parallel |
 | `FIRECRAWL_API_KEY` or `FIRECRAWL_API_URL` | firecrawl |
-| Nous Tool Gateway ready (Portal subscription) | managed web search via the Tool Gateway |
+| PULSE Tool Gateway ready (Portal subscription) | managed web search via the Tool Gateway |
 | `SEARXNG_URL` | searxng |
 | `BRAVE_SEARCH_API_KEY` | brave-free |
 | `ddgs` package importable | ddgs |
@@ -449,7 +449,7 @@ If no shared backend has **ever** been selected (no `web.backend` written by you
 
 **Keyless free-tier ring:** when *no* credential above is present, requests rotate across the ring vendors' public free tiers (Exa, Parallel, Firecrawl, Keenable) so web tools work on a fresh install with zero setup — and a rate-limited request fails over to the next vendor in the ring automatically. Pin one vendor in `pulse tools` to stop the rotation (the ring is then only used as failover succession on throttles). All free tiers are vendor-rate-limited under burst load; sustained normal usage goes through fine. Set `web.keyless_fallback: false` to turn the tier off — with it off and no credentials, web tools are unavailable until a provider is configured.
 
-**One-shot keyless rescue for keyed backends:** when your chosen/keyed backend — including the Nous Tool Gateway route (`web.backend: nous`) — fails a call (bad key, outage, unreachable gateway, upstream 5xx), that single call automatically retries on the keyless free-tier ring instead of erroring — the result notes which vendor served it and why (`rescued_from` / `backend_error`). The failover is never sticky: the very next `web_search`/`web_extract` call attempts your chosen backend again. Disable with `web.keyless_rescue: false` (also off whenever `keyless_fallback` is off).
+**One-shot keyless rescue for keyed backends:** when your chosen/keyed backend — including the PULSE Tool Gateway route (`web.backend: pulse`) — fails a call (bad key, outage, unreachable gateway, upstream 5xx), that single call automatically retries on the keyless free-tier ring instead of erroring — the result notes which vendor served it and why (`rescued_from` / `backend_error`). The failover is never sticky: the very next `web_search`/`web_extract` call attempts your chosen backend again. Disable with `web.keyless_rescue: false` (also off whenever `keyless_fallback` is off).
 
 xAI Web Search is **not** in the auto-detection chain — having `XAI_API_KEY` set (or being signed in via xAI Grok OAuth) does not automatically route web traffic through xAI, since those credentials are also used for inference / TTS / image gen and the user may want a different backend for web. Opt in explicitly with `web.backend: "xai"`.
 

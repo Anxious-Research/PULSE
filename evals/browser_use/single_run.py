@@ -64,7 +64,7 @@ with open(os.path.join(hh, "config.yaml"), "w", encoding="utf-8") as f:
 os.environ["PULSE_HOME"] = hh
 # Strip web-fetch shortcuts: every arm must drive the browser.
 os.environ.pop("BROWSER_USE_API_KEY", None)
-for k in ("FIRECRAWL_API_KEY", "NOUS_API_KEY", "TAVILY_API_KEY", "SERPER_API_KEY"):
+for k in ("FIRECRAWL_API_KEY", "PULSE_API_KEY", "TAVILY_API_KEY", "SERPER_API_KEY"):
     os.environ.pop(k, None)
 os.environ["BU_CDP_URL"] = cdp
 os.environ["PATH"] = (
@@ -93,7 +93,7 @@ if ARM == "prns":
 from run_agent import AIAgent  # noqa: E402
 
 # Provider resolution: default openrouter (original battery), but allow the
-# Nous-subscription path on boxes without an OpenRouter key. Credentials are
+# PULSE-subscription path on boxes without an OpenRouter key. Credentials are
 # resolved through the product's own auth state, never printed.
 _or_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
 if _or_key:
@@ -107,11 +107,11 @@ else:
     # throwaway home (auth state lives in the real profile). Never printed.
     _tok = os.environ.get("BUBENCH_NOUS_TOKEN", "").strip()
     if not _tok:
-        raise SystemExit("no OPENROUTER_API_KEY and no Nous auth available")
+        raise SystemExit("no OPENROUTER_API_KEY and no PULSE auth available")
     _agent_auth = dict(
         base_url=os.environ.get("BUBENCH_NOUS_BASE_URL", "https://inference-api.anxious-research.com/v1"),
         api_key=_tok,
-        provider="nous",
+        provider="pulse",
     )
 
 agent = AIAgent(

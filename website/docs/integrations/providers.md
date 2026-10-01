@@ -14,7 +14,7 @@ You need at least one way to connect to an LLM. Use `pulse model` to switch prov
 
 | Provider | Setup |
 |----------|-------|
-| **Nous Portal** | `pulse model` (OAuth, subscription-based) |
+| **Pulse Portal** | `pulse model` (OAuth, subscription-based) |
 | **OpenAI Codex** | `pulse model` → **ChatGPT or Codex Subscription** (ChatGPT OAuth, uses Codex models) |
 | **GitHub Copilot** | `pulse model` (OAuth device code flow, `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, or `gh auth token`) |
 | **GitHub Copilot ACP** | `pulse model` (spawns local `copilot --acp --stdio`) |
@@ -71,19 +71,19 @@ In the `model:` config section, you can use either `default:` or `model:` as the
 :::
 
 
-### Nous Portal
+### Pulse Portal
 
-[Nous Portal](https://portal.anxious-research.com) is Nous Research's unified subscription gateway and **the recommended way to run PULSE Agent**. One OAuth login covers 300+ frontier agentic models (Claude, GPT, Gemini, DeepSeek, Qwen, Kimi, GLM, MiniMax, Grok, ...) plus the [Tool Gateway](../user-guide/features/tool-gateway.md) (web search, image generation, TTS, browser automation) — billed against your Nous subscription instead of separate per-provider accounts.
+[Pulse Portal](https://portal.anxious-research.com) is Anxious Research's unified subscription gateway and **the recommended way to run PULSE Agent**. One OAuth login covers 300+ frontier agentic models (Claude, GPT, Gemini, DeepSeek, Qwen, Kimi, GLM, MiniMax, Grok, ...) plus the [Tool Gateway](../user-guide/features/tool-gateway.md) (web search, image generation, TTS, browser automation) — billed against your PULSE subscription instead of separate per-provider accounts.
 
 ```bash
 pulse setup --portal     # fresh install — OAuth + provider + gateway in one command
-pulse model              # existing install — pick "Nous Portal" from the list
+pulse model              # existing install — pick "Pulse Portal" from the list
 pulse portal info        # inspect login + routing at any time
 ```
 
 Don't have a subscription yet? Get one at [portal.anxious-research.com/manage-subscription](https://portal.anxious-research.com/manage-subscription).
 
-**For full details:** see the dedicated [Nous Portal integration page](./nous-portal.md) (what's in the subscription, model catalog, troubleshooting) and the step-by-step [Run PULSE Agent with Nous Portal guide](../guides/run-pulse-with-nous-portal.md).
+**For full details:** see the dedicated [Pulse Portal integration page](./pulse-portal.md) (what's in the subscription, model catalog, troubleshooting) and the step-by-step [Run PULSE Agent with Pulse Portal guide](../guides/run-pulse-with-pulse-portal.md).
 
 **Client identification.** Every Portal request from PULSE Agent carries a `client=pulse-client-v<version>` tag (e.g. `client=pulse-client-v0.13.0`) auto-aligned to your installed release. This is sent on all Portal pathways — main chat loop, auxiliary calls, compression summarizer, web extraction — and lets Portal-side telemetry distinguish PULSE traffic from other clients. No config required; the tag updates automatically when you `pulse update`.
 
@@ -112,11 +112,11 @@ Groups = x25519:secp256r1:secp384r1:x448
 :::
 
 :::warning
-Even when using Nous Portal, Codex, or a custom endpoint, some tools (vision, web summarization, MoA) use a separate "auxiliary" model. By default (`auxiliary.*.provider: "auto"`), PULSE routes these tasks to your **main chat model** — the same model you picked in `pulse model`. You can override each task individually to route it to a cheaper/faster model (e.g. Gemini Flash on OpenRouter) — see [Auxiliary Models](../user-guide/configuration.md#auxiliary-models).
+Even when using Pulse Portal, Codex, or a custom endpoint, some tools (vision, web summarization, MoA) use a separate "auxiliary" model. By default (`auxiliary.*.provider: "auto"`), PULSE routes these tasks to your **main chat model** — the same model you picked in `pulse model`. You can override each task individually to route it to a cheaper/faster model (e.g. Gemini Flash on OpenRouter) — see [Auxiliary Models](../user-guide/configuration.md#auxiliary-models).
 :::
 
-:::tip Nous Tool Gateway
-Paid Nous Portal subscribers also get access to the **[Tool Gateway](../user-guide/features/tool-gateway.md)** — web search, image generation, TTS, and browser automation routed through your subscription. No extra API keys needed. On a fresh install, `pulse setup --portal` logs you in, sets Nous as your provider, and turns the gateway on in one command. Existing users can enable it from `pulse model` or per-tool from `pulse tools`. Inspect routing at any time with `pulse portal info`.
+:::tip PULSE Tool Gateway
+Paid Pulse Portal subscribers also get access to the **[Tool Gateway](../user-guide/features/tool-gateway.md)** — web search, image generation, TTS, and browser automation routed through your subscription. No extra API keys needed. On a fresh install, `pulse setup --portal` logs you in, sets PULSE as your provider, and turns the gateway on in one command. Existing users can enable it from `pulse model` or per-tool from `pulse tools`. Inspect routing at any time with `pulse portal info`.
 :::
 
 ### Two Commands for Model Management
@@ -147,14 +147,14 @@ Several providers let you sign in to PULSE with a **consumer subscription** (Cla
 
 **Anthropic.** The OAuth path routes as Claude Code against your Anthropic account and **only works on a Claude Max plan with purchased extra usage credits** — the base Max allowance is never consumed by PULSE, only the extra/overage credits on top. Claude Pro subscribers cannot use this path; the supported alternative is an `ANTHROPIC_API_KEY`, billed pay-per-token against that key's organization at standard API pricing. See [Anthropic (Native)](#anthropic-native) below.
 
-**OpenAI Codex.** PULSE authenticates via ChatGPT device-code OAuth, stores credentials in `~/.pulse/auth.json`, and can import existing Codex CLI credentials from `~/.codex/auth.json`. Which ChatGPT plan tiers are eligible, and how PULSE usage counts against your plan's Codex limits, are **not currently documented** — the Codex note under [Nous Portal](#nous-portal) covers authentication and token-refresh behavior only.
+**OpenAI Codex.** PULSE authenticates via ChatGPT device-code OAuth, stores credentials in `~/.pulse/auth.json`, and can import existing Codex CLI credentials from `~/.codex/auth.json`. Which ChatGPT plan tiers are eligible, and how PULSE usage counts against your plan's Codex limits, are **not currently documented** — the Codex note under [Pulse Portal](#pulse-portal) covers authentication and token-refresh behavior only.
 
 **xAI (SuperGrok / X Premium+).** Browser OAuth works with either an active SuperGrok subscription or an X Premium+ subscription on the linked X account, and the same bearer token is reused by direct-to-xAI tools (TTS, image gen, video gen, transcription, X Search). If inference returns `HTTP 403` after a successful login, that's a tier/entitlement restriction on xAI's side, not a stale token — the workaround is switching to an `XAI_API_KEY`. See [xAI (Grok)](#xai-grok--responses-api--prompt-caching) below and the [xAI Grok OAuth guide](../guides/xai-grok-oauth.md).
 
 **Google Gemini.** There is currently no way to sign in to PULSE with a consumer Gemini subscription — the `gemini` provider takes an API key, and [Google Vertex AI](#google-vertex-ai) bills to your GCP project. A billing-enabled Google Cloud project is recommended for agent use; free-tier quotas are too small for long-running agent sessions. See the [Google Gemini guide](../guides/google-gemini.md).
 
 :::tip One subscription instead of five
-If you'd rather not track per-provider plan semantics at all, [Nous Portal](#nous-portal) covers 300+ models under a single subscription with one OAuth login.
+If you'd rather not track per-provider plan semantics at all, [Pulse Portal](#pulse-portal) covers 300+ models under a single subscription with one OAuth login.
 :::
 
 ### Anthropic (Native)
@@ -1290,7 +1290,7 @@ PULSE uses a multi-source resolution chain to detect the correct context window 
 4. **Endpoint `/models`** — queries your server's API (local/custom endpoints)
 5. **Anthropic `/v1/models`** — queries Anthropic's API for `max_input_tokens` (API-key users only)
 6. **OpenRouter API** — live model metadata from OpenRouter
-7. **Nous Portal** — suffix-matches Nous model IDs against OpenRouter metadata
+7. **Pulse Portal** — suffix-matches PULSE model IDs against OpenRouter metadata
 8. **[models.dev](https://models.dev)** — community-maintained registry with provider-specific context lengths for 3800+ models across 100+ providers
 9. **Fallback defaults** — broad model family patterns (128K default)
 
@@ -1393,7 +1393,7 @@ Older configs used a top-level `custom_providers:` list instead. It still works 
 
 **Context window on `codex_responses` proxies.** A custom entry with `transport: codex_responses` (a local Codex proxy, for example) resolves the context window of Codex OAuth models (`gpt-6-astra`, `gpt-5.6-sol`/`-terra`/`-luna`, `gpt-5.5`, …) from the Codex OAuth table — 272K for most slugs — not from the 1.05M direct-API catalog, so compression fires before the Codex backend's limit and its 272K billing tier. The decision follows the transport, not the hostname; the same holds for `openai-codex` behind `PULSE_CODEX_BASE_URL` or `model.base_url`. A per-model `models.<id>.context_length`, an entry-level `context_length`, or `model.context_length` still wins; the opt-in `-900k` picker variants keep their verified 900K.
 
-**Reasoning effort on custom endpoints.** The configured `reasoning_effort` (`/reasoning max`, `agent.reasoning_effort`) reaches a custom endpoint unchanged on both the `chat_completions` and the `codex_responses` transport — up to `max`; only the PULSE-internal `ultra` is clamped to `max`. Two exceptions follow the host rather than the entry: a custom entry pointed at `api.openai.com` keeps OpenAI's per-model ladder (`max` is a gpt-5.6-only level there), and an entry pointed at a provider whose profile publishes a per-model vocabulary (Ramp Router) is clamped to that catalog. An endpoint that rejects the level answers with an HTTP 400 instead of PULSE silently downgrading it. When no effort is configured at all, `chat_completions` requests carry `reasoning_effort: medium` — the same default the Nous Portal and OpenRouter routes apply — rather than leaving the endpoint's own default in charge (kimi-k3's is `max`, about 3x the reasoning tokens of `medium`); models marked `supports_reasoning: false` in the catalog or `model_overrides`, and Ollama models without the `thinking` capability, keep the field off.
+**Reasoning effort on custom endpoints.** The configured `reasoning_effort` (`/reasoning max`, `agent.reasoning_effort`) reaches a custom endpoint unchanged on both the `chat_completions` and the `codex_responses` transport — up to `max`; only the PULSE-internal `ultra` is clamped to `max`. Two exceptions follow the host rather than the entry: a custom entry pointed at `api.openai.com` keeps OpenAI's per-model ladder (`max` is a gpt-5.6-only level there), and an entry pointed at a provider whose profile publishes a per-model vocabulary (Ramp Router) is clamped to that catalog. An endpoint that rejects the level answers with an HTTP 400 instead of PULSE silently downgrading it. When no effort is configured at all, `chat_completions` requests carry `reasoning_effort: medium` — the same default the Pulse Portal and OpenRouter routes apply — rather than leaving the endpoint's own default in charge (kimi-k3's is `max`, about 3x the reasoning tokens of `medium`); models marked `supports_reasoning: false` in the catalog or `model_overrides`, and Ollama models without the `thinking` capability, keep the field off.
 
 Some OpenAI-compatible endpoints need provider-specific request body fields. Add an `extra_body` map to the matching custom provider and PULSE will merge it into each chat-completions request for that endpoint:
 
@@ -1578,7 +1578,7 @@ model:
 
 | Use Case | Recommended |
 |----------|-------------|
-| **Just want it to work** | OpenRouter (default) or Nous Portal |
+| **Just want it to work** | OpenRouter (default) or Pulse Portal |
 | **Local models, easy setup** | Ollama |
 | **Production GPU serving** | vLLM or SGLang |
 | **Mac / no GPU** | Ollama or llama.cpp |
@@ -1696,7 +1696,7 @@ fallback_model:
 
 When activated, the fallback swaps the model and provider mid-session without losing your conversation. The chain is tried entry-by-entry; activation is one-shot per session.
 
-Supported providers: `openrouter`, `nous`, `novita`, `openai-codex`, `copilot`, `copilot-acp`, `anthropic`, `gemini`, `qwen-oauth`, `huggingface`, `zai`, `kimi-coding`, `kimi-coding-cn`, `minimax`, `minimax-cn`, `minimax-oauth`, `deepseek`, `nvidia`, `xai`, `xai-oauth`, `ollama-cloud`, `bedrock`, `ai-gateway`, `azure-foundry`, `opencode-zen`, `opencode-go`, `commandcode`, `commandcode-anthropic`, `kilocode`, `xiaomi`, `arcee`, `gmi`, `actual`, `stepfun`, `lmstudio`, `alibaba`, `alibaba-coding-plan`, `tencent-tokenhub`, `tencent-tokenplan`, `nebius-token-factory`, `router`, `custom`.
+Supported providers: `openrouter`, `pulse`, `novita`, `openai-codex`, `copilot`, `copilot-acp`, `anthropic`, `gemini`, `qwen-oauth`, `huggingface`, `zai`, `kimi-coding`, `kimi-coding-cn`, `minimax`, `minimax-cn`, `minimax-oauth`, `deepseek`, `nvidia`, `xai`, `xai-oauth`, `ollama-cloud`, `bedrock`, `ai-gateway`, `azure-foundry`, `opencode-zen`, `opencode-go`, `commandcode`, `commandcode-anthropic`, `kilocode`, `xiaomi`, `arcee`, `gmi`, `actual`, `stepfun`, `lmstudio`, `alibaba`, `alibaba-coding-plan`, `tencent-tokenhub`, `tencent-tokenplan`, `nebius-token-factory`, `router`, `custom`.
 
 :::tip
 Fallback is configured exclusively through `config.yaml` — or interactively via `pulse fallback`. For full details on when it triggers, how the chain advances, and how it interacts with auxiliary tasks and delegation, see [Fallback Providers](../user-guide/features/fallback-providers.md).

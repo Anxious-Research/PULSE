@@ -13,7 +13,7 @@ Coming from **Claude Code** or **OpenAI Codex CLI** instead? Use [`pulse import-
 :::
 
 :::tip
-If your OpenClaw setup was multi-provider, `pulse setup --portal` collapses it to one OAuth — 300+ models plus the Tool Gateway in a single login. See [Nous Portal](../integrations/nous-portal.md).
+If your OpenClaw setup was multi-provider, `pulse setup --portal` collapses it to one OAuth — 300+ models plus the Tool Gateway in a single login. See [Pulse Portal](../integrations/pulse-portal.md).
 :::
 
 ## Quick start

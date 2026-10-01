@@ -319,12 +319,12 @@ def test_auth_add_explicit_custom_provider_keeps_prefixed_pool_key(
     assert "groq" not in payload["credential_pool"]
 
 
-def test_auth_add_nous_oauth_persists_pool_entry(tmp_path, monkeypatch):
+def test_auth_add_pulse_oauth_persists_pool_entry(tmp_path, monkeypatch):
     monkeypatch.setenv("PULSE_HOME", str(tmp_path / "pulse"))
     _write_auth_store(tmp_path, {"version": 1, "providers": {}})
-    token = _jwt_with_email("nous@example.com")
+    token = _jwt_with_email("pulse@example.com")
     monkeypatch.setattr(
-        "pulse_cli.auth._nous_device_code_login",
+        "pulse_cli.auth._pulse_device_code_login",
         lambda **kwargs: {
             "portal_base_url": "https://portal.example.com",
             "inference_base_url": "https://inference.example.com/v1",
@@ -349,7 +349,7 @@ def test_auth_add_nous_oauth_persists_pool_entry(tmp_path, monkeypatch):
     from pulse_cli.auth_commands import auth_add_command
 
     class _Args:
-        provider = "nous"
+        provider = "pulse"
         auth_type = "oauth"
         api_key = None
         label = None
@@ -369,7 +369,7 @@ def test_auth_add_nous_oauth_persists_pool_entry(tmp_path, monkeypatch):
     # Pool has exactly one canonical `device_code` entry — not a duplicate
     # pair of `manual:device_code` + `device_code` (the latter would be
     # materialised by _seed_from_singletons on every load_pool).
-    entries = payload["credential_pool"]["nous"]
+    entries = payload["credential_pool"]["pulse"]
     device_code_entries = [
         item for item in entries if item["source"] == "device_code"
     ]
@@ -380,11 +380,11 @@ def test_auth_add_nous_oauth_persists_pool_entry(tmp_path, monkeypatch):
     assert entry["agent_key"] == token
     assert entry["portal_base_url"] == "https://portal.example.com"
 
-    # `pulse auth add nous` must also populate providers.nous so the
-    # 401-recovery path (resolve_nous_runtime_credentials) can refresh an
+    # `pulse auth add pulse` must also populate providers.pulse so the
+    # 401-recovery path (resolve_pulse_runtime_credentials) can refresh an
     # invoke JWT when the token expires. If this mirror is missing, recovery
-    # raises "PULSE is not logged into Nous Portal" and the agent dies.
-    singleton = payload["providers"]["nous"]
+    # raises "PULSE is not logged into Pulse Portal" and the agent dies.
+    singleton = payload["providers"]["pulse"]
     assert singleton["access_token"] == token
     assert singleton["refresh_token"] == "refresh-token"
     assert singleton["agent_key"] == token
@@ -392,16 +392,16 @@ def test_auth_add_nous_oauth_persists_pool_entry(tmp_path, monkeypatch):
     assert singleton["inference_base_url"] == "https://inference.example.com/v1"
 
 
-def test_auth_add_nous_oauth_honors_custom_label(tmp_path, monkeypatch):
-    """`pulse auth add nous --type oauth --label <name>` must preserve the
+def test_auth_add_pulse_oauth_honors_custom_label(tmp_path, monkeypatch):
+    """`pulse auth add pulse --type oauth --label <name>` must preserve the
     custom label end-to-end — it was silently dropped in the first cut of the
-    persist_nous_credentials helper because `--label` wasn't threaded through.
+    persist_pulse_credentials helper because `--label` wasn't threaded through.
     """
     monkeypatch.setenv("PULSE_HOME", str(tmp_path / "pulse"))
     _write_auth_store(tmp_path, {"version": 1, "providers": {}})
-    token = _jwt_with_email("nous@example.com")
+    token = _jwt_with_email("pulse@example.com")
     monkeypatch.setattr(
-        "pulse_cli.auth._nous_device_code_login",
+        "pulse_cli.auth._pulse_device_code_login",
         lambda **kwargs: {
             "portal_base_url": "https://portal.example.com",
             "inference_base_url": "https://inference.example.com/v1",
@@ -426,10 +426,10 @@ def test_auth_add_nous_oauth_honors_custom_label(tmp_path, monkeypatch):
     from pulse_cli.auth_commands import auth_add_command
 
     class _Args:
-        provider = "nous"
+        provider = "pulse"
         auth_type = "oauth"
         api_key = None
-        label = "my-nous"
+        label = "my-pulse"
         portal_url = None
         inference_url = None
         client_id = None
@@ -444,13 +444,13 @@ def test_auth_add_nous_oauth_honors_custom_label(tmp_path, monkeypatch):
     payload = json.loads((tmp_path / "pulse" / "auth.json").read_text())
 
     # Custom label reaches the pool entry …
-    pool_entry = payload["credential_pool"]["nous"][0]
+    pool_entry = payload["credential_pool"]["pulse"][0]
     assert pool_entry["source"] == "device_code"
-    assert pool_entry["label"] == "my-nous"
+    assert pool_entry["label"] == "my-pulse"
 
-    # … and survives in providers.nous so a subsequent load_pool() re-seeds
+    # … and survives in providers.pulse so a subsequent load_pool() re-seeds
     # it without reverting to the auto-derived fingerprint.
-    assert payload["providers"]["nous"]["label"] == "my-nous"
+    assert payload["providers"]["pulse"]["label"] == "my-pulse"
 
 
 def test_auth_add_codex_oauth_keeps_distinct_pool_accounts(tmp_path, monkeypatch):

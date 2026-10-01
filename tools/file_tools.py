@@ -1261,7 +1261,7 @@ def _is_openai_family_main() -> bool:
 
     Provider-family-coarse on purpose (no per-model training-diet table to
     go stale): direct OpenAI providers always qualify; on aggregators
-    (openrouter/nous/azure...) the MODEL slug decides (gpt-*/o-series/
+    (openrouter/pulse/azure...) the MODEL slug decides (gpt-*/o-series/
     codex). Fail-closed to the universal replace-only schema.
     """
     try:

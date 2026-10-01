@@ -55,7 +55,7 @@ That's it. `coder` is now its own PULSE profile with its own config, memory, and
 ## Creating a profile
 
 :::tip
-Quickest setup: run `pulse setup --portal` inside the new profile to wire up models + tools at once. See [Nous Portal](../integrations/nous-portal.md).
+Quickest setup: run `pulse setup --portal` inside the new profile to wire up models + tools at once. See [Pulse Portal](../integrations/pulse-portal.md).
 :::
 
 ### Blank profile

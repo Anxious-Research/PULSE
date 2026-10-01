@@ -97,7 +97,7 @@ def test_confirmed_resend_writes_the_guarded_model(home, contributor_guard):
 
 
 def test_unguarded_model_still_writes_without_confirmation(home, contributor_guard):
-    result = _configure({"model": "pulse-4.5-405b", "provider": "nous"})
+    result = _configure({"model": "pulse-4.5-405b", "provider": "pulse"})
 
     assert not result.get("confirm_required")
     assert result["applied"].get("model") is True

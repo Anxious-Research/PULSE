@@ -38,17 +38,17 @@ def _fmt_usd(value: Optional[float]) -> str:
     return f"${(value or 0.0):,.2f}"
 
 
-def nous_logged_in() -> bool:
-    """Cheap local auth-state check: a Nous access token is present. Fail-closed."""
+def pulse_logged_in() -> bool:
+    """Cheap local auth-state check: a PULSE access token is present. Fail-closed."""
     try:
         from pulse_cli.auth import get_provider_auth_state
-        tok = (get_provider_auth_state("nous") or {}).get("access_token")
+        tok = (get_provider_auth_state("pulse") or {}).get("access_token")
         return isinstance(tok, str) and bool(tok.strip())
     except Exception:
         return False
 
 
-def fetch_nous_account(timeout: float):
+def fetch_pulse_account(timeout: float):
     """Wall-clock-bounded fresh portal account fetch. Raises on failure/timeout.
 
     Shares the one bounded implementation so a stalled portal releases the
@@ -171,10 +171,10 @@ def build_usage_model(*, timeout: float = 10.0) -> UsageModel:
     fixture = _dev_fixture_usage_model()
     if fixture is not None:
         return fixture
-    if not nous_logged_in():
+    if not pulse_logged_in():
         return UsageModel(available=False)
     try:
-        return usage_model_from_account(fetch_nous_account(timeout))
+        return usage_model_from_account(fetch_pulse_account(timeout))
     except Exception:
         logger.debug("usage ▸ portal fetch failed (fail-open)", exc_info=True)
         return UsageModel(available=False)

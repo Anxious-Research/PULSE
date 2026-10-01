@@ -11,9 +11,9 @@ description: >-
   Per-provider chips with eye toggles, a popover with every quota window, reset times,
   balance and key-cap amounts, near-limit amber tint, a desktop notification per
   threshold crossing, and burn-rate projections (ETA to reset or depletion).
-  Providers: OpenCode, OpenAI Codex, OpenRouter, plus Anthropic, GitHub Copilot, Nous,
+  Providers: OpenCode, OpenAI Codex, OpenRouter, plus Anthropic, GitHub Copilot, PULSE,
   Z.AI, Kimi, MiniMax and DeepSeek when configured. Disclosure: credentials are resolved
-  read-only (PULSE account-usage helpers for Codex/Claude/Copilot/Nous, else the
+  read-only (PULSE account-usage helpers for Codex/Claude/Copilot/PULSE, else the
   provider env key or its CLI auth file) and never serialized; only the provider
   endpoints listed in the README are called; the GitHub Copilot check presents the
   VS Code / Copilot client identity. No subprocesses, no telemetry, no self-updater.

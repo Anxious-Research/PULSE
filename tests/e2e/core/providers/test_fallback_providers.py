@@ -11,7 +11,7 @@ Proven here:
   the FULL conversation (system prompt, turn 1's prompt and answer, turn 2's prompt) and is
   reported as the model that served the turn;
 * a primary whose credentials cannot be resolved walks ``fallback_providers`` at
-  resolution time: a Nous Portal OAuth refresh answered with 5xx (an ``AuthError``) does,
+  resolution time: a Pulse Portal OAuth refresh answered with 5xx (an ``AuthError``) does,
   and one that cannot connect at all (an outage: connection refused) must too (#120608).
 """
 
@@ -108,7 +108,7 @@ def test_persistent_primary_503_is_answered_by_fallback_with_full_conversation(t
     assert len(answers) == 1, db_messages(h, run.session_id)
 
 
-# Nous Portal credential-resolution outage (#120608) ------------------------------------
+# Pulse Portal credential-resolution outage (#120608) ------------------------------------
 
 
 def _jwt(claims: dict) -> str:
@@ -117,12 +117,12 @@ def _jwt(claims: dict) -> str:
     return f"{seg({'alg': 'none', 'typ': 'JWT'})}.{seg(claims)}.sig"
 
 
-def _expired_nous_auth() -> dict:
-    """An auth.json whose Nous invoke JWT expired an hour ago but whose refresh token is fine:
+def _expired_pulse_auth() -> dict:
+    """An auth.json whose PULSE invoke JWT expired an hour ago but whose refresh token is fine:
     the next turn must redeem it against the Portal before any inference call."""
     past = int(time.time()) - 3600
     iso = time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime(past))
-    return {"version": 1, "active_provider": "nous", "providers": {"nous": {
+    return {"version": 1, "active_provider": "pulse", "providers": {"pulse": {
         "portal_base_url": "https://portal.anxious-research.com",
         "inference_base_url": "https://inference-api.anxious-research.com/v1",
         "client_id": "pulse-cli", "token_type": "Bearer", "scope": "inference:invoke",
@@ -187,9 +187,9 @@ def test_primary_credential_resolution_failure_falls_back(tmp_path, portal_kind:
             "HTTPS_PROXY": dead, "HTTP_PROXY": dead, "NO_PROXY": "127.0.0.1,localhost",
             "PULSE_NOUS_TIMEOUT_SECONDS": "5",
         }
-        cfg = {"model": {"provider": "nous", "default": "PULSE-4-70B", "context_length": 128000},
+        cfg = {"model": {"provider": "pulse", "default": "PULSE-4-70B", "context_length": 128000},
                "fallback_providers": _fallback_entry(fallback)}
-        h = Home(tmp_path).write(cfg, {"OPENAI_API_KEY": "sk-fake"}, auth=_expired_nous_auth())
+        h = Home(tmp_path).write(cfg, {"OPENAI_API_KEY": "sk-fake"}, auth=_expired_pulse_auth())
         run = bounded_turn(h, PROMPT, TURN_BUDGET, env=env)
         fallback_mains = fallback.main_requests()
 

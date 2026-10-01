@@ -1,4 +1,4 @@
-"""Generic managed-tool gateway helpers for Nous-hosted vendor passthroughs."""
+"""Generic managed-tool gateway helpers for PULSE-hosted vendor passthroughs."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import Callable, Optional
 
 from pulse_constants import get_pulse_home
-from tools.tool_backend_helpers import managed_nous_tools_enabled
+from tools.tool_backend_helpers import managed_pulse_tools_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ _NOUS_ACCESS_TOKEN_REFRESH_SKEW_SECONDS = 120
 class ManagedToolGatewayConfig:
     vendor: str
     gateway_origin: str
-    nous_user_token: str
+    pulse_user_token: str
     managed_mode: bool
 
 
@@ -37,9 +37,9 @@ def auth_json_path():
     return get_pulse_home() / "auth.json"
 
 
-def _read_nous_provider_state() -> Optional[dict]:
-    """The profile's Nous state, or None. A free-tier identity counts only while the free tier is on:
-    with ``nous.guest: false`` it is invisible here, so no cached or refreshed token of it is ever
+def _read_pulse_provider_state() -> Optional[dict]:
+    """The profile's PULSE state, or None. A free-tier identity counts only while the free tier is on:
+    with ``pulse.guest: false`` it is invisible here, so no cached or refreshed token of it is ever
     attached to a request.
 
     Resolves through the same profile-then-global-root fallback every other credential reader
@@ -49,14 +49,14 @@ def _read_nous_provider_state() -> Optional[dict]:
     try:
         from pulse_cli.auth import get_provider_auth_state
 
-        nous_provider = get_provider_auth_state("nous")
-        if not isinstance(nous_provider, dict):
+        pulse_provider = get_provider_auth_state("pulse")
+        if not isinstance(pulse_provider, dict):
             return None
         from pulse_cli.anon_auth import guest_enabled, is_guest_state
 
-        if is_guest_state(nous_provider) and not guest_enabled():
+        if is_guest_state(pulse_provider) and not guest_enabled():
             return None
-        return nous_provider
+        return pulse_provider
     except Exception:
         return None
 
@@ -91,32 +91,32 @@ def _read_user_token_override() -> Optional[str]:
     return _clean(explicit)
 
 
-def peek_nous_access_token() -> Optional[str]:
+def peek_pulse_access_token() -> Optional[str]:
     """Cheap token probe: env override or cached auth-store token, no expiry check and no network —
-    availability scans must stay off the synchronous OAuth refresh path (:func:`read_nous_access_token`)."""
-    return _read_user_token_override() or _clean((_read_nous_provider_state() or {}).get("access_token"))
+    availability scans must stay off the synchronous OAuth refresh path (:func:`read_pulse_access_token`)."""
+    return _read_user_token_override() or _clean((_read_pulse_provider_state() or {}).get("access_token"))
 
 
-def read_nous_access_token() -> Optional[str]:
-    """Read a Nous Subscriber OAuth access token from auth store or env override.
+def read_pulse_access_token() -> Optional[str]:
+    """Read a PULSE Subscriber OAuth access token from auth store or env override.
 
-    A read: with no Nous identity there is no bearer and the answer is None. The free-tier identity
+    A read: with no PULSE identity there is no bearer and the answer is None. The free-tier identity
     is created by the boot bootstrap (``pulse_cli.free_tier_bootstrap``), never on a token-read
     path (NS-845 Q1.2). A retired free-tier credential IS replaced here, once: that is the explicit
     dead-credential rule, shared with inference.
     """
     if explicit := _read_user_token_override():
         return explicit
-    nous_provider = _read_nous_provider_state() or {}
-    if not nous_provider:
+    pulse_provider = _read_pulse_provider_state() or {}
+    if not pulse_provider:
         return None
-    cached_token = peek_nous_access_token()
-    if cached_token and not _access_token_is_expiring(nous_provider.get("expires_at"), _NOUS_ACCESS_TOKEN_REFRESH_SKEW_SECONDS):
+    cached_token = peek_pulse_access_token()
+    if cached_token and not _access_token_is_expiring(pulse_provider.get("expires_at"), _NOUS_ACCESS_TOKEN_REFRESH_SKEW_SECONDS):
         return cached_token
     try:
-        from pulse_cli.auth import resolve_nous_access_token
+        from pulse_cli.auth import resolve_pulse_access_token
 
-        if refreshed_token := _clean(resolve_nous_access_token(refresh_skew_seconds=_NOUS_ACCESS_TOKEN_REFRESH_SKEW_SECONDS)):
+        if refreshed_token := _clean(resolve_pulse_access_token(refresh_skew_seconds=_NOUS_ACCESS_TOKEN_REFRESH_SKEW_SECONDS)):
             return refreshed_token
     except Exception as exc:
         # Same dead-credential rule as inference (one place decides it: anon_auth): a retired free-tier
@@ -124,14 +124,14 @@ def read_nous_access_token() -> Optional[str]:
         from pulse_cli.anon_auth import AnonCredentialDead
 
         if isinstance(exc, AnonCredentialDead):
-            return _replace_dead_guest_token(nous_provider, str(exc.code or "anon_credential_dead"))
-        logger.debug("Nous access token refresh failed: %s", exc)
+            return _replace_dead_guest_token(pulse_provider, str(exc.code or "anon_credential_dead"))
+        logger.debug("PULSE access token refresh failed: %s", exc)
     return cached_token
 
 
 def _replace_dead_guest_token(dead_state: dict, code: str = "anon_credential_dead") -> Optional[str]:
     from pulse_cli.anon_auth import ANON_ACCOUNT_LOCKED, clear_dead_guest, ensure_portal_identity
-    from pulse_cli.auth import resolve_nous_access_token
+    from pulse_cli.auth import resolve_pulse_access_token
 
     clear_dead_guest(code, dead_token=dead_state.get("anon_token"))
     # Same rule as inference: a locked account is retired but never silently replaced.
@@ -140,9 +140,9 @@ def _replace_dead_guest_token(dead_state: dict, code: str = "anon_credential_dea
     try:
         if ensure_portal_identity(explicit=True) is None:
             return None
-        return _clean(resolve_nous_access_token(refresh_skew_seconds=_NOUS_ACCESS_TOKEN_REFRESH_SKEW_SECONDS))
+        return _clean(resolve_pulse_access_token(refresh_skew_seconds=_NOUS_ACCESS_TOKEN_REFRESH_SKEW_SECONDS))
     except Exception as exc:
-        logger.debug("Nous free tier replacement after a retired credential failed: %s", exc)
+        logger.debug("PULSE free tier replacement after a retired credential failed: %s", exc)
         return None
 
 
@@ -166,19 +166,19 @@ def resolve_managed_tool_gateway(
     vendor: str, gateway_builder: Optional[Callable[[str], str]] = None,
     token_reader: Optional[Callable[[], Optional[str]]] = None) -> Optional[ManagedToolGatewayConfig]:
     """Resolve shared managed-tool gateway config for a vendor."""
-    if not managed_nous_tools_enabled():
+    if not managed_pulse_tools_enabled():
         return None
     gateway_origin = (gateway_builder or build_vendor_gateway_url)(vendor)
-    nous_user_token = (token_reader or read_nous_access_token)()
-    if not gateway_origin or not nous_user_token:
+    pulse_user_token = (token_reader or read_pulse_access_token)()
+    if not gateway_origin or not pulse_user_token:
         return None
-    return ManagedToolGatewayConfig(vendor=vendor, gateway_origin=gateway_origin, nous_user_token=nous_user_token, managed_mode=True)
+    return ManagedToolGatewayConfig(vendor=vendor, gateway_origin=gateway_origin, pulse_user_token=pulse_user_token, managed_mode=True)
 
 
 def is_managed_tool_gateway_ready(
     vendor: str, gateway_builder: Optional[Callable[[str], str]] = None,
     token_reader: Optional[Callable[[], Optional[str]]] = None) -> bool:
-    """True when a gateway URL and a likely-usable Nous token are present. Defaults to
-    :func:`peek_nous_access_token` (no OAuth refresh); callers about to make a real request use
+    """True when a gateway URL and a likely-usable PULSE token are present. Defaults to
+    :func:`peek_pulse_access_token` (no OAuth refresh); callers about to make a real request use
     :func:`resolve_managed_tool_gateway` instead."""
-    return resolve_managed_tool_gateway(vendor, gateway_builder=gateway_builder, token_reader=token_reader or peek_nous_access_token) is not None
+    return resolve_managed_tool_gateway(vendor, gateway_builder=gateway_builder, token_reader=token_reader or peek_pulse_access_token) is not None

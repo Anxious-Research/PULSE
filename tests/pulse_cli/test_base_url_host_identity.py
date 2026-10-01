@@ -4,7 +4,7 @@ not raw substrings.
 Port of earendil-works/pi#7933's bug class (DeepSeek base-URL detection used a
 substring check, missing case variants and matching lookalike URLs). PULSE
 had the same class at several sites: keyless-endpoint detection, /model
-catalog routing, local-endpoint detection, and Nous Portal cache-layout
+catalog routing, local-endpoint detection, and Pulse Portal cache-layout
 detection all used ``"host" in base_url``. A proxy URL that merely *contains*
 a provider host in its path (``https://proxy.internal/openrouter.ai/v1``) or
 a lookalike domain (``https://openrouter.ai.evil.com``) must not be treated
@@ -82,7 +82,7 @@ def test_local_endpoint_hostname_detection():
     )
 
 
-def test_nous_portal_host_detection():
+def test_pulse_portal_host_detection():
     from utils import base_url_host_matches
 
     assert base_url_host_matches("https://inference-api.anxious-research.com/v1", "anxious-research.com")

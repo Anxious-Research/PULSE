@@ -36,8 +36,8 @@ High-level categories:
 
 For the authoritative code-derived registry, see [Built-in Tools Reference](../../reference/tools-reference.md) and [Toolsets Reference](../../reference/toolsets-reference.md).
 
-:::tip Nous Tool Gateway
-Paid [Nous Portal](https://portal.anxious-research.com) subscribers can use web search, image generation, TTS, and browser automation through the **[Tool Gateway](tool-gateway.md)** — no separate API keys needed. Run `pulse model` to enable it, or configure individual tools with `pulse tools`.
+:::tip PULSE Tool Gateway
+Paid [Pulse Portal](https://portal.anxious-research.com) subscribers can use web search, image generation, TTS, and browser automation through the **[Tool Gateway](tool-gateway.md)** — no separate API keys needed. Run `pulse model` to enable it, or configure individual tools with `pulse tools`.
 :::
 
 ## Using Toolsets

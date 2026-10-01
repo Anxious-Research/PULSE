@@ -80,10 +80,10 @@ def test_managed_nested_dict_default_flattens_on_load(homes):
 
     home, managed = homes
     _write(home / "config.yaml", "model:\n  default: user/model\n")
-    _write(managed / "config.yaml", "model:\n  default:\n    provider: nous\n    model: managed/nested\n")
+    _write(managed / "config.yaml", "model:\n  default:\n    provider: pulse\n    model: managed/nested\n")
     cfg = load_config()
     assert cfg_get(cfg, "model", "default") == "managed/nested"
-    assert cfg_get(cfg, "model", "provider") == "nous"
+    assert cfg_get(cfg, "model", "provider") == "pulse"
 
 
 def test_managed_bare_string_model_flattens_to_default_on_load(homes):

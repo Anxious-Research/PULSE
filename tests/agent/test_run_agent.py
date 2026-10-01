@@ -4142,9 +4142,9 @@ class TestRunConversation:
         assert all(len(n) <= 64 and n.replace("_", "").replace("-", "").isalnum() for n in wire_names)
         assert [tc["function"]["name"] for tc in history[1]["tool_calls"]] == ["multi_tool_use.parallel", long_name, ""]
 
-    def test_nous_401_refreshes_after_remint_and_retries(self, agent):
+    def test_pulse_401_refreshes_after_remint_and_retries(self, agent):
         self._setup_agent(agent)
-        agent.provider = "nous"
+        agent.provider = "pulse"
         agent.api_mode = "chat_completions"
 
         calls = {"api": 0, "refresh": 0}
@@ -4173,7 +4173,7 @@ class TestRunConversation:
             patch.object(agent, "_cleanup_task_resources"),
             patch.object(agent, "_interruptible_api_call", side_effect=_fake_api_call),
             patch.object(
-                agent, "_try_refresh_nous_client_credentials", side_effect=_fake_refresh
+                agent, "_try_refresh_pulse_client_credentials", side_effect=_fake_refresh
             ),
         ):
             result = agent.run_conversation("hello")
@@ -5264,7 +5264,7 @@ class TestRetryExhaustion:
         content after retries".
 
         Regression: running a Claude refusal through an OpenAI-compatible
-        portal (Nous Portal fronting Anthropic) returns ``message.refusal``
+        portal (Pulse Portal fronting Anthropic) returns ``message.refusal``
         with empty content. The transport now promotes that to a
         ``content_filter`` finish reason and the loop surfaces it as a terminal
         ``content_policy_blocked`` result instead of retrying a deterministic
@@ -5365,12 +5365,12 @@ class TestConversationHistoryNotMutated:
 
 
 class TestNousCredentialRefresh:
-    """Verify Nous credential refresh rebuilds the runtime client."""
+    """Verify PULSE credential refresh rebuilds the runtime client."""
 
-    def test_try_refresh_nous_client_credentials_rebuilds_client(
+    def test_try_refresh_pulse_client_credentials_rebuilds_client(
         self, agent, monkeypatch
     ):
-        agent.provider = "nous"
+        agent.provider = "pulse"
         agent.api_mode = "chat_completions"
 
         closed = {"value": False}
@@ -5388,7 +5388,7 @@ class TestNousCredentialRefresh:
         def _fake_resolve(**kwargs):
             captured.update(kwargs)
             return {
-                "api_key": "new-nous-key",
+                "api_key": "new-pulse-key",
                 "base_url": "https://inference-api.anxious-research.com/v1",
             }
 
@@ -5397,7 +5397,7 @@ class TestNousCredentialRefresh:
             return _RebuiltClient()
 
         monkeypatch.setattr(
-            "pulse_cli.auth.resolve_nous_runtime_credentials", _fake_resolve
+            "pulse_cli.auth.resolve_pulse_runtime_credentials", _fake_resolve
         )
 
         existing = _ExistingClient()
@@ -5413,7 +5413,7 @@ class TestNousCredentialRefresh:
         monkeypatch.setattr(agent, "_retire_shared_openai_client", _spy_retire)
 
         with patch("agent.process_bootstrap.OpenAI", side_effect=_fake_openai):
-            ok = agent._try_refresh_nous_client_credentials(force=True)
+            ok = agent._try_refresh_pulse_client_credentials(force=True)
 
         assert ok is True
         # #70773: the replaced shared client is RETIRED (sockets shutdown,
@@ -5423,14 +5423,14 @@ class TestNousCredentialRefresh:
         assert retired["value"] is True
         assert closed["value"] is False
         assert captured["force_refresh"] is True
-        assert rebuilt["kwargs"]["api_key"] == "new-nous-key"
+        assert rebuilt["kwargs"]["api_key"] == "new-pulse-key"
         assert (
             rebuilt["kwargs"]["base_url"] == "https://inference-api.anxious-research.com/v1"
         )
         assert "default_headers" not in rebuilt["kwargs"]
         assert isinstance(agent.client, _RebuiltClient)
 
-    def test_try_refresh_nous_client_credentials_rebuilds_anthropic_client(
+    def test_try_refresh_pulse_client_credentials_rebuilds_anthropic_client(
         self, agent, monkeypatch
     ):
         """Portal anthropic/* sessions hold an Anthropic client, not OpenAI.
@@ -5440,12 +5440,12 @@ class TestNousCredentialRefresh:
         client — swapping only ``agent.client`` would leave the turn stuck
         on the expired Bearer token.
         """
-        agent.provider = "nous"
+        agent.provider = "pulse"
         agent.api_mode = "anthropic_messages"
         agent.model = "anthropic/claude-opus-4.8"
-        agent.api_key = "stale-nous-key"
+        agent.api_key = "stale-pulse-key"
         agent.base_url = "https://inference-api.anxious-research.com/v1"
-        agent._anthropic_api_key = "stale-nous-key"
+        agent._anthropic_api_key = "stale-pulse-key"
         agent._anthropic_base_url = "https://inference-api.anxious-research.com/v1"
         agent._client_kwargs = {}
         agent.client = None
@@ -5468,7 +5468,7 @@ class TestNousCredentialRefresh:
             agent._anthropic_client = _RebuiltAnthropic()
 
         monkeypatch.setattr(
-            "pulse_cli.auth.resolve_nous_runtime_credentials", _fake_resolve
+            "pulse_cli.auth.resolve_pulse_runtime_credentials", _fake_resolve
         )
         monkeypatch.setattr(agent, "_rebuild_anthropic_client", _fake_rebuild)
         monkeypatch.setattr(
@@ -5477,7 +5477,7 @@ class TestNousCredentialRefresh:
             MagicMock(side_effect=AssertionError("OpenAI client must not be rebuilt")),
         )
 
-        ok = agent._try_refresh_nous_client_credentials(force=True)
+        ok = agent._try_refresh_pulse_client_credentials(force=True)
 
         assert ok is True
         assert captured["force_refresh"] is True
@@ -5621,9 +5621,9 @@ class TestGpt5ApiModeRouting:
     """Verify provider-specific GPT-5 API-mode routing."""
 
 
-    def test_nous_gpt5_stays_on_chat_completions(self, agent):
-        """Nous serves gpt-5.x on /chat/completions — must not upgrade to codex_responses."""
-        agent.provider = "nous"
+    def test_pulse_gpt5_stays_on_chat_completions(self, agent):
+        """PULSE serves gpt-5.x on /chat/completions — must not upgrade to codex_responses."""
+        agent.provider = "pulse"
         agent.base_url = "https://inference-api.anxious-research.com/v1"
         agent.api_mode = "chat_completions"
         agent.model = "openai/gpt-5.5"

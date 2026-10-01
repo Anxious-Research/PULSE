@@ -22,7 +22,7 @@ def _maybe_keep_current_tts(question, choices):
 
 def _clear_provider_env(monkeypatch):
     for key in (
-        "NOUS_API_KEY",
+        "PULSE_API_KEY",
         "OPENROUTER_API_KEY",
         "OPENAI_BASE_URL",
         "OPENAI_API_KEY",
@@ -133,7 +133,7 @@ def test_select_provider_and_model_warns_if_named_custom_provider_disappears(
 
 
 def test_modal_setup_persists_direct_mode_when_user_chooses_their_own_account(tmp_path, monkeypatch):
-    monkeypatch.setattr("tools.tool_backend_helpers.managed_nous_tools_enabled", lambda: True)
+    monkeypatch.setattr("tools.tool_backend_helpers.managed_pulse_tools_enabled", lambda: True)
     monkeypatch.setenv("PULSE_HOME", str(tmp_path))
     monkeypatch.delenv("MODAL_TOKEN_ID", raising=False)
     monkeypatch.delenv("MODAL_TOKEN_SECRET", raising=False)
@@ -151,8 +151,8 @@ def test_modal_setup_persists_direct_mode_when_user_chooses_their_own_account(tm
     monkeypatch.setattr("pulse_cli.setup.prompt_choice", fake_prompt_choice)
     monkeypatch.setattr("pulse_cli.setup.prompt", lambda *args, **kwargs: next(prompt_values))
     monkeypatch.setattr(
-        "pulse_cli.nous_subscription.get_nous_subscription_features",
-        lambda config: type("Features", (), {"nous_auth_present": True})(),
+        "pulse_cli.pulse_subscription.get_pulse_subscription_features",
+        lambda config: type("Features", (), {"pulse_auth_present": True})(),
     )
     monkeypatch.setitem(
         sys.modules,

@@ -195,8 +195,8 @@ class CLIBillingMixin:
             return False
         print(f"  {t('cli.billing.opening_browser_remote_spending')}")
         try:
-            from pulse_cli.auth import step_up_nous_billing_scope
-            granted = step_up_nous_billing_scope(open_browser=True)
+            from pulse_cli.auth import step_up_pulse_billing_scope
+            granted = step_up_pulse_billing_scope(open_browser=True)
         except Exception as exc:
             print(f"  {t('cli.billing.couldnt_allow_remote_spending', error=exc)}")
             return False
@@ -231,11 +231,11 @@ class CLIBillingMixin:
         if not self._open_url_in_browser(url):
             print(f"  {t('cli.billing.open_this_url', url=url)}")
 
-    # ── /usage — Nous balance block ──
+    # ── /usage — PULSE balance block ──
 
-    def _print_nous_credits_block(self) -> bool:
-        """Nous dollar balance block (two bars); True if anything printed. Shared dollar model first, then
-        legacy ``nous_credits_lines``. Agent-independent (TUI slash-worker has no live agent). Fail-open."""
+    def _print_pulse_credits_block(self) -> bool:
+        """PULSE dollar balance block (two bars); True if anything printed. Shared dollar model first, then
+        legacy ``pulse_credits_lines``. Agent-independent (TUI slash-worker has no live agent). Fail-open."""
         from cli import _cprint, _b, _d
         usage = self._try_usage_model()
         if usage is not None and usage.available:
@@ -262,8 +262,8 @@ class CLIBillingMixin:
                 _cprint(ln)
             if head or tail:
                 return True
-        from agent.account_usage import nous_credits_lines
-        lines = nous_credits_lines()
+        from agent.account_usage import pulse_credits_lines
+        lines = pulse_credits_lines()
         if not lines:
             return False
         print()
@@ -272,7 +272,7 @@ class CLIBillingMixin:
         return True
 
     def _print_usage_cta(self) -> None:
-        """The `/usage` call-to-action; mirrors the TUI's ``USAGE_CTA``. Nous-account only."""
+        """The `/usage` call-to-action; mirrors the TUI's ``USAGE_CTA``. PULSE-account only."""
         self._dim(t("cli.billing.usage_cta"))
 
     # ── /subscription — view plan + change it (CLI surface) ──
@@ -473,7 +473,7 @@ class CLIBillingMixin:
         """Preview → effect → confirm+apply. ``allow_stepup=False`` (post-grant replay) never re-prompts a step-up."""
         from cli import _cprint, _b, _d
         from agent.subscription_view import is_upgrade, subscription_change_preview_from_payload, subscription_manage_url
-        from pulse_cli.nous_billing import BillingError, BillingScopeRequired, post_subscription_preview
+        from pulse_cli.pulse_billing import BillingError, BillingScopeRequired, post_subscription_preview
         self._dim(t("cli.subscription.checking_change"))
         try:
             payload = post_subscription_preview(subscription_type_id=tier_id)
@@ -563,7 +563,7 @@ class CLIBillingMixin:
     def _subscription_apply(self, state, action, idempotency_key=None, *, allow_stepup=True):
         """Run ("upgrade"|"schedule", tier_id) / ("cancel"|"resume", None); scope denial → step-up + ONE replay, same key."""
         from cli import _cprint
-        from pulse_cli.nous_billing import (
+        from pulse_cli.pulse_billing import (
             BillingError, BillingTransient, BillingRemoteSpendingRevoked, BillingScopeRequired, BillingSessionRevoked,
             delete_subscription_pending_change, post_subscription_upgrade, put_subscription_pending_change)
         kind, arg = action
@@ -623,7 +623,7 @@ class CLIBillingMixin:
         self._ok(t("cli.billing.remote_spending_allowed"))
         # Bust the 30s token cache (it still holds the pre-grant token; _request only busts on 401).
         try:
-            from pulse_cli import nous_billing as _nb
+            from pulse_cli import pulse_billing as _nb
             _nb.invalidate_cached_token()
         except Exception:
             pass
@@ -859,7 +859,7 @@ class CLIBillingMixin:
     def _billing_submit_and_poll(self, state, amount, key, *, missing_msg, status_msg, on_scope=None):
         """POST the charge, then poll. ``on_scope`` handles a scope denial (first submit); else it renders."""
         from cli import _cprint, _d
-        from pulse_cli.nous_billing import BillingError, BillingScopeRequired, post_charge
+        from pulse_cli.pulse_billing import BillingError, BillingScopeRequired, post_charge
         try:
             result = post_charge(amount_usd=amount, idempotency_key=key)
         except BillingError as exc:
@@ -879,7 +879,7 @@ class CLIBillingMixin:
         """Poll loop: 2s interval, 5-min cap, cancellable. settled = ledger truth."""
         import time as _time
         from agent.billing_view import format_money, parse_money
-        from pulse_cli.nous_billing import BillingError, BillingTransient, get_charge_status
+        from pulse_cli.pulse_billing import BillingError, BillingTransient, get_charge_status
         deadline = _time.time() + 300
         while _time.time() < deadline:
             try:
@@ -912,7 +912,7 @@ class CLIBillingMixin:
 
     def _billing_render_charge_error(self, state, exc):
         """Submit-time BillingError. Order matters: revoked/session before code lookups; Transient before scope."""
-        from pulse_cli.nous_billing import BillingTransient, BillingRemoteSpendingRevoked, BillingSessionRevoked
+        from pulse_cli.pulse_billing import BillingTransient, BillingRemoteSpendingRevoked, BillingSessionRevoked
         code = exc.error
         portal_url = exc.portal_url or state.portal_url
         if isinstance(exc, BillingRemoteSpendingRevoked) or code == "remote_spending_revoked":
@@ -1052,7 +1052,7 @@ class CLIBillingMixin:
 
     def _billing_patch_auto_top_up(self, state, **kwargs) -> bool:
         """PATCH auto-top-up; scope denials → step-up, other errors → renderer. True on success."""
-        from pulse_cli.nous_billing import BillingError, BillingScopeRequired, patch_auto_top_up
+        from pulse_cli.pulse_billing import BillingError, BillingScopeRequired, patch_auto_top_up
         try:
             patch_auto_top_up(**kwargs)
         except BillingScopeRequired:

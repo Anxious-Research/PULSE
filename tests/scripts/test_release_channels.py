@@ -127,9 +127,9 @@ def test_stable_branded_channel_reuses_the_published_stable_identity(monkeypatch
     from pulse_cli.release_channels import ChannelError, canonical_json
     from scripts.releases import channel_releases
     product = {"token": "f204dc6857361e33", "displayName": "PULSE Agent",
-               "appId": "com.nousresearch.pulse-bundled", "appNamePascal": "PULSEBundled",
+               "appId": "com.anxious-research.pulse-bundled", "appNamePascal": "PULSEBundled",
                "artifactNamePascal": "PULSEBundled", "cliName": "pulse",
-               "windowsExecutableName": "PULSE Agent", "msixAppIdWithOrg": "NousResearch.PULSEBundled"}
+               "windowsExecutableName": "PULSE Agent", "msixAppIdWithOrg": "AnxiousResearch.PULSEBundled"}
     monkeypatch.setattr(channel_releases, "product_identity", lambda tag: dict(product))
     with object_server() as (url, objects, headers, requests, faults):
         pub = publisher(url)

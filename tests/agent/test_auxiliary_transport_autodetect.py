@@ -44,7 +44,7 @@ def _clean_env(monkeypatch):
     ("https://api.anthropic.com/v1", True, "native Anthropic /v1"),
     ("https://openrouter.ai/api/v1", False, "OpenRouter"),
     ("https://api.openai.com/v1", False, "OpenAI"),
-    ("https://inference-api.anxious-research.com/v1", False, "Nous"),
+    ("https://inference-api.anxious-research.com/v1", False, "PULSE"),
     ("", False, "empty"),
     (None, False, "None"),
 ])

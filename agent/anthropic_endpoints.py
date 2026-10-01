@@ -1,8 +1,7 @@
 """Endpoint-family detection for Anthropic-compatible base URLs.
 
 A dozen services speak the Anthropic Messages API but differ in auth style, accepted beta
-headers, and request quirks (MiniMax, Kimi/Moonshot, DeepSeek, OpenCode, Azure AI Foundry, Nous
-Portal, Bedrock). Every such difference is decided from the configured base URL, so the
+headers, and request quirks (MiniMax, Kimi/Moonshot, DeepSeek, OpenCode, Azure AI Foundry, Pulse Portal, Bedrock). Every such difference is decided from the configured base URL, so the
 predicates live together here as pure functions (no I/O, SDK or credentials) that both
 ``agent/anthropic_adapter.py`` and ``agent/anthropic_message_convert.py`` can import without a
 cycle.
@@ -104,16 +103,16 @@ def _is_deepseek_anthropic_endpoint(base_url: str | None) -> bool:
     return base_url_host_matches(base_url or "", "api.deepseek.com") and "/anthropic" in _normalized_lower(base_url)
 
 
-def _is_nous_portal_endpoint(base_url: str | None) -> bool:
-    """Nous Portal's Anthropic Messages route (Bearer JWT, verbatim catalog ids, native
+def _is_pulse_portal_endpoint(base_url: str | None) -> bool:
+    """Pulse Portal's Anthropic Messages route (Bearer JWT, verbatim catalog ids, native
     thinking-signature replay). Trusted hosts only: prod ``inference-api.anxious-research.com`` or the
-    operator-set ``NOUS_INFERENCE_BASE_URL`` host (exact hostname equality, so neither lookalike
+    operator-set ``PULSE_INFERENCE_BASE_URL`` host (exact hostname equality, so neither lookalike
     domains nor sibling hosts of the override match)."""
     if base_url_host_matches(base_url or "", "inference-api.anxious-research.com"):
         return True
     try:
-        from pulse_cli.auth import _nous_inference_env_override
-        override = _nous_inference_env_override()
+        from pulse_cli.auth import _pulse_inference_env_override
+        override = _pulse_inference_env_override()
     except Exception:
         return False
     override_host = base_url_hostname(override) if override else ""
@@ -122,11 +121,11 @@ def _is_nous_portal_endpoint(base_url: str | None) -> bool:
 
 def _requires_bearer_auth(base_url: str | None) -> bool:
     """Providers needing ``Authorization: Bearer`` instead of ``x-api-key``: MiniMax, Azure AI
-    Foundry, Palantir Foundry's LLM proxy, CommandCode, Nous Portal. Palantir/CommandCode use
+    Foundry, Palantir Foundry's LLM proxy, CommandCode, Pulse Portal. Palantir/CommandCode use
     hostname matching (not substring) so ``evil.com/palantirfoundry`` paths don't trigger it."""
     normalized = _normalized_lower(base_url)
     return (
-        _is_nous_portal_endpoint(base_url)
+        _is_pulse_portal_endpoint(base_url)
         or normalized.startswith(_MINIMAX_ANTHROPIC_PREFIXES)
         or "azure.com" in normalized
         or base_url_host_matches(normalized, "palantirfoundry.com")

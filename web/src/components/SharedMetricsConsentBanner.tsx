@@ -80,13 +80,13 @@ export function SharedMetricsConsentBanner() {
         {failed
           ? (t.app.sharedMetricsSaveFailed ?? "Couldn't save your choice")
           : (t.app.sharedMetricsBody ??
-            "Shared metrics are bounded counters, never prompts, files, paths or error text. Collection stays on this machine; sending to Nous is a separate choice.")}{" "}
+            "Shared metrics are bounded counters, never prompts, files, paths or error text. Collection stays on this machine; sending to PULSE is a separate choice.")}{" "}
         <a href={DOCS_URL} target="_blank" rel="noreferrer" className="underline">
           {t.app.sharedMetricsDetails ?? "Details"}
         </a>
       </span>
       <button type="button" disabled={saving} className={choice} onClick={() => answer(true, true)}>
-        {t.app.sharedMetricsShare ?? "Send to Nous"}
+        {t.app.sharedMetricsShare ?? "Send to PULSE"}
       </button>
       <button type="button" disabled={saving} className={choice} onClick={() => answer(true, false)}>
         {t.app.sharedMetricsLocal ?? "Local only"}

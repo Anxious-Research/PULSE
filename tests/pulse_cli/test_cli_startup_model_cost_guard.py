@@ -260,7 +260,7 @@ def test_cmd_chat_rejects_noninteractive_provider_only_override_when_default_is_
     )
 
     with pytest.raises(SystemExit) as excinfo:
-        main_mod.cmd_chat(_chat_args(model=None, provider="nous"))
+        main_mod.cmd_chat(_chat_args(model=None, provider="pulse"))
 
     assert excinfo.value.code == 1
     assert not fake_cli

@@ -1,7 +1,7 @@
 name: Icon Assets Freshness
 
 # The committed icon outputs must match what scripts/generate_icons.py
-# renders from assets/nous-girl-*.svg + assets/backgrounds/*.svg. Regular
+# renders from assets/pulse-girl-*.svg + assets/backgrounds/*.svg. Regular
 # builds and user installs consume the committed files and never render, so
 # this lane is what keeps them honest: regenerate, structural --check, then
 # fail on any byte difference. Fix a red run with

@@ -29,7 +29,7 @@ import pytest
 
 # Snapshot BEFORE tests/conftest.py::_hermetic_environment strips credentials.
 LIVE_KEY_VARS = (
-    "OPENROUTER_API_KEY", "ANTHROPIC_API_KEY", "NOUS_API_KEY",
+    "OPENROUTER_API_KEY", "ANTHROPIC_API_KEY", "PULSE_API_KEY",
     "OPENAI_API_KEY", "GEMINI_API_KEY", "XAI_API_KEY",
 )
 _LIVE_KEYS: dict[str, str] = {
@@ -100,7 +100,7 @@ LIVE_CASES: tuple[LiveCase, ...] = (
     LiveCase("openrouter-qwen", "openrouter", "OPENROUTER_API_KEY",
              ("qwen/qwen3.7-flash", "qwen/qwen3.5-flash-02-23", "qwen/qwen3-235b-a22b-2507"),
              ("openrouter.ai",), 0.10, 0.40),
-    LiveCase("nous-portal", "nous", "NOUS_API_KEY",
+    LiveCase("pulse-portal", "pulse", "PULSE_API_KEY",
              ("deepseek/deepseek-v4-flash", "qwen/qwen3.7-flash", "google/gemini-2.5-flash-lite",
               "openai/gpt-4.1-nano"),
              ("inference-api.anxious-research.com", "portal.anxious-research.com"), 0.30, 1.20),

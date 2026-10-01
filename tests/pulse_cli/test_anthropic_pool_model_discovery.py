@@ -21,7 +21,7 @@ class _Response:
 
 def test_anthropic_picker_discovers_models_with_pool_api_key(monkeypatch):
     """A direct API key stored only in auth.json must reach /v1/models."""
-    monkeypatch.setattr(models, "_get_model_config_dict", lambda: {"provider": "nous"})
+    monkeypatch.setattr(models, "_get_model_config_dict", lambda: {"provider": "pulse"})
     monkeypatch.setattr(
         "agent.anthropic_credentials.resolve_anthropic_token",
         lambda: None,

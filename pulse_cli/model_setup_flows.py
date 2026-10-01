@@ -165,7 +165,7 @@ def _model_flow_moa(config, current_model=""):
     )
 
 
-def _nous_login_args(args) -> argparse.Namespace:
+def _pulse_login_args(args) -> argparse.Namespace:
     return argparse.Namespace(
         portal_url=getattr(args, "portal_url", None), inference_url=getattr(args, "inference_url", None),
         client_id=getattr(args, "client_id", None), scope=getattr(args, "scope", None),
@@ -173,12 +173,12 @@ def _nous_login_args(args) -> argparse.Namespace:
         ca_bundle=getattr(args, "ca_bundle", None), insecure=bool(getattr(args, "insecure", False)))
 
 
-def _nous_model_catalog(free_tier: bool, portal_url: str, model_ids: list, pricing: dict):
-    """Free/paid-tier catalog for the Nous picker: ``(model_ids, pricing, unavailable_models,
+def _pulse_model_catalog(free_tier: bool, portal_url: str, model_ids: list, pricing: dict):
+    """Free/paid-tier catalog for the PULSE picker: ``(model_ids, pricing, unavailable_models,
     unavailable_message, policy_narrowed)`` or None (message already printed) when nothing is selectable."""
-    from pulse_cli.models_pricing import nous_policy_allowed_ids, restrict_to_nous_policy
+    from pulse_cli.models_pricing import pulse_policy_allowed_ids, restrict_to_pulse_policy
     from pulse_cli.models import (
-        partition_nous_models_by_tier,
+        partition_pulse_models_by_tier,
         union_with_portal_free_recommendations,
         union_with_portal_paid_recommendations,
     )
@@ -189,25 +189,25 @@ def _nous_model_catalog(free_tier: bool, portal_url: str, model_ids: list, prici
     # rescued id still has to pass the free/paid predicate.
     unavailable_models: list[str] = []
     unavailable_message = ""
-    _policy_allowed = nous_policy_allowed_ids()
+    _policy_allowed = pulse_policy_allowed_ids()
     if free_tier:
         try:
-            from pulse_cli.nous_account import format_nous_portal_entitlement_message, get_nous_portal_account_info
-            _account_info = get_nous_portal_account_info(force_fresh=True)
-            unavailable_message = format_nous_portal_entitlement_message(_account_info, capability="paid Nous models") or ""
+            from pulse_cli.pulse_account import format_pulse_portal_entitlement_message, get_pulse_portal_account_info
+            _account_info = get_pulse_portal_account_info(force_fresh=True)
+            unavailable_message = format_pulse_portal_entitlement_message(_account_info, capability="paid PULSE models") or ""
         except Exception:
             unavailable_message = ""
         model_ids, pricing = union_with_portal_free_recommendations(model_ids, pricing, portal_url)
     else:
         model_ids, pricing = union_with_portal_paid_recommendations(model_ids, pricing, portal_url)
     _before_policy = model_ids
-    model_ids = restrict_to_nous_policy(model_ids, _policy_allowed, rescue_empty=True)
+    model_ids = restrict_to_pulse_policy(model_ids, _policy_allowed, rescue_empty=True)
     _policy_narrowed = model_ids != _before_policy
     if free_tier:
-        model_ids, unavailable_models = partition_nous_models_by_tier(model_ids, pricing, free_tier=True)
+        model_ids, unavailable_models = partition_pulse_models_by_tier(model_ids, pricing, free_tier=True)
 
     if not model_ids and not unavailable_models:
-        print("No models available for Nous Portal after filtering.")
+        print("No models available for Pulse Portal after filtering.")
         _note_setup_failure("no_models")
         return None
     if free_tier and not model_ids:
@@ -220,21 +220,21 @@ def _nous_model_catalog(free_tier: bool, portal_url: str, model_ids: list, prici
     return model_ids, pricing, unavailable_models, unavailable_message, _policy_narrowed
 
 
-def _nous_verified_credentials(creds_or_none=None):
-    """Resolve Nous runtime credentials; on failure print the diagnosis (re-login when the
+def _pulse_verified_credentials(creds_or_none=None):
+    """Resolve PULSE runtime credentials; on failure print the diagnosis (re-login when the
     session expired) and return None."""
     from pulse_cli.auth import (
-        AuthError, PROVIDER_REGISTRY, _login_nous, format_auth_error, resolve_nous_runtime_credentials)
+        AuthError, PROVIDER_REGISTRY, _login_pulse, format_auth_error, resolve_pulse_runtime_credentials)
 
     try:
-        return resolve_nous_runtime_credentials()
+        return resolve_pulse_runtime_credentials()
     except Exception as exc:
         relogin = isinstance(exc, AuthError) and exc.relogin_required
         msg = format_auth_error(exc) if isinstance(exc, AuthError) else str(exc)
         if relogin:
-            _say(f"Session expired: {msg}", "Re-authenticating with Nous Portal...\n")
+            _say(f"Session expired: {msg}", "Re-authenticating with Pulse Portal...\n")
             try:
-                _login_nous(_nous_login_args(None), PROVIDER_REGISTRY["nous"])
+                _login_pulse(_pulse_login_args(None), PROVIDER_REGISTRY["pulse"])
             except Exception as login_exc:
                 print(f"Re-login failed: {login_exc}")
             _note_setup_failure("auth")
@@ -244,15 +244,15 @@ def _nous_verified_credentials(creds_or_none=None):
         return None
 
 
-def _nous_persist_selection(selected: str, creds: dict) -> dict:
-    """Nous persist step: model choice + provider state, then rewrite ``model`` on a fresh
+def _pulse_persist_selection(selected: str, creds: dict) -> dict:
+    """PULSE persist step: model choice + provider state, then rewrite ``model`` on a fresh
     config (the caller's may carry stale custom-provider fields) and clear a conflicting
     OPENAI_BASE_URL / OPENAI_API_KEY. Returns the saved config."""
     from pulse_cli.auth import _save_model_choice, _update_config_for_provider
     from pulse_cli.config import get_env_value, load_config, save_config, save_env_value
     _save_model_choice(selected)
     inference_url = creds.get("base_url", "")
-    _update_config_for_provider("nous", inference_url)
+    _update_config_for_provider("pulse", inference_url)
     config = load_config()
     current_model_cfg = config.get("model")
     if isinstance(current_model_cfg, dict):
@@ -261,7 +261,7 @@ def _nous_persist_selection(selected: str, creds: dict) -> dict:
         model_cfg = {"default": current_model_cfg.strip()}
     else:
         model_cfg = {}
-    model_cfg["provider"] = "nous"
+    model_cfg["provider"] = "pulse"
     model_cfg["default"] = selected
     if inference_url and inference_url.strip():
         model_cfg["base_url"] = inference_url.rstrip("/")
@@ -276,90 +276,90 @@ def _nous_persist_selection(selected: str, creds: dict) -> dict:
     return config
 
 
-def _model_flow_nous(config, current_model="", args=None):
-    """Nous Portal provider: ensure logged in, then pick model."""
-    from pulse_cli.auth import get_provider_auth_state, _prompt_model_selection, _login_nous, PROVIDER_REGISTRY
+def _model_flow_pulse(config, current_model="", args=None):
+    """Pulse Portal provider: ensure logged in, then pick model."""
+    from pulse_cli.auth import get_provider_auth_state, _prompt_model_selection, _login_pulse, PROVIDER_REGISTRY
     from pulse_cli.config import load_config
-    from pulse_cli.nous_subscription import prompt_enable_tool_gateway
-    state = get_provider_auth_state("nous")
+    from pulse_cli.pulse_subscription import prompt_enable_tool_gateway
+    state = get_provider_auth_state("pulse")
     if not state or not state.get("access_token"):
-        _say("Not logged into Nous Portal. Starting login...", "")
+        _say("Not logged into Pulse Portal. Starting login...", "")
 
         def _login_then_offer_gateway(login_args, pconfig):
-            _login_nous(login_args, pconfig)
+            _login_pulse(login_args, pconfig)
             # Offer Tool Gateway enablement for paid subscribers
             with contextlib.suppress(Exception):
                 prompt_enable_tool_gateway(load_config() or {})
 
-        # login_nous already handles model selection + config update
-        _run_login(_login_then_offer_gateway, _nous_login_args(args), PROVIDER_REGISTRY["nous"])
+        # login_pulse already handles model selection + config update
+        _run_login(_login_then_offer_gateway, _pulse_login_args(args), PROVIDER_REGISTRY["pulse"])
         return
 
     # Already logged in — the curated list (agentic models users know from OpenRouter)
     # instead of the hundreds returned by the live /models endpoint.
-    from pulse_cli.models import check_nous_free_tier, get_curated_nous_model_ids
+    from pulse_cli.models import check_pulse_free_tier, get_curated_pulse_model_ids
     from pulse_cli.models_pricing import get_pricing_for_provider
-    from pulse_cli.model_switch_providers import _free_tier_nous_row
-    tier_row = _free_tier_nous_row({"name": "Nous Portal", "models": []})
+    from pulse_cli.model_switch_providers import _free_tier_pulse_row
+    tier_row = _free_tier_pulse_row({"name": "Pulse Portal", "models": []})
     if tier_row is None:
-        print("The Nous free tier is off for this install; sign in with `pulse auth upgrade` to use Nous models.")
+        print("The PULSE free tier is off for this install; sign in with `pulse auth upgrade` to use PULSE models.")
         return
     if tier_row["models"]:
         # Free-tier identity: the welcome host serves the single pinned model; no Portal catalog,
         # pricing, or account lookups apply.
-        creds = _nous_verified_credentials()
+        creds = _pulse_verified_credentials()
         if creds is None:
             return
         selected = tier_row["models"][0]
-        _nous_persist_selection(selected, creds)
+        _pulse_persist_selection(selected, creds)
         print(f"Default model set to: {selected} (via {tier_row['name']})")
         return
-    model_ids = get_curated_nous_model_ids()
+    model_ids = get_curated_pulse_model_ids()
     if not model_ids:
-        print("No curated models available for Nous Portal.")
+        print("No curated models available for Pulse Portal.")
         return
 
     # Verify credentials are still valid (catches expired sessions early)
-    creds = _nous_verified_credentials()
+    creds = _pulse_verified_credentials()
     if creds is None:
         return
 
-    pricing = get_pricing_for_provider("nous")
+    pricing = get_pricing_for_provider("pulse")
     # Force fresh account data so recent credit purchases are reflected immediately.
-    free_tier = check_nous_free_tier(force_fresh=True)
+    free_tier = check_pulse_free_tier(force_fresh=True)
     if not free_tier:
-        from pulse_cli.auth import resolve_nous_runtime_credentials
+        from pulse_cli.auth import resolve_pulse_runtime_credentials
         try:
-            creds = resolve_nous_runtime_credentials(force_refresh=True) or creds
+            creds = resolve_pulse_runtime_credentials(force_refresh=True) or creds
         except Exception:
             # Runtime inference has its own paid-entitlement recovery; don't block.
             pass
 
     # Portal URL is needed for upgrade links and the recommendations endpoints.
-    _nous_portal_url = ""
+    _pulse_portal_url = ""
     with contextlib.suppress(Exception):
-        _nous_portal_url = (get_provider_auth_state("nous") or {}).get("portal_base_url", "")
+        _pulse_portal_url = (get_provider_auth_state("pulse") or {}).get("portal_base_url", "")
 
-    catalog = _nous_model_catalog(free_tier, _nous_portal_url, model_ids, pricing)
+    catalog = _pulse_model_catalog(free_tier, _pulse_portal_url, model_ids, pricing)
     if catalog is None:
         return
     model_ids, pricing, unavailable_models, unavailable_message, _policy_narrowed = catalog
 
-    from pulse_cli.nous_account import nous_policy_notice
-    _policy_notice = nous_policy_notice(removed=_policy_narrowed)
+    from pulse_cli.pulse_account import pulse_policy_notice
+    _policy_notice = pulse_policy_notice(removed=_policy_narrowed)
     if _policy_notice:
         print(_policy_notice)
     print(f'Showing {len(model_ids)} curated models — use "Enter custom model name" for others.')
 
     selected = _prompt_model_selection(
         model_ids, current_model=current_model, pricing=pricing, unavailable_models=unavailable_models,
-        portal_url=_nous_portal_url, unavailable_message=unavailable_message, confirm_provider="nous",
+        portal_url=_pulse_portal_url, unavailable_message=unavailable_message, confirm_provider="pulse",
         confirm_base_url=creds.get("base_url", ""), confirm_api_key=creds.get("api_key", ""))
     if not selected:
         print("No change.")
         return
-    config = _nous_persist_selection(selected, creds)
-    print(f"Default model set to: {selected} (via Nous Portal)")
+    config = _pulse_persist_selection(selected, creds)
+    print(f"Default model set to: {selected} (via Pulse Portal)")
     # Offer Tool Gateway enablement for paid subscribers
     prompt_enable_tool_gateway(config)
 
@@ -807,7 +807,7 @@ _GEMINI_FREE_TIER_NOTICE = (
     "   an agent session.", "",
     "   To use Gemini with PULSE, enable billing on your Google Cloud project and regenerate",
     "   the key in a billing-enabled project: https://aistudio.google.com/apikey", "",
-    "   Alternatives with workable free usage: DeepSeek, OpenRouter (free models), Groq, Nous.", "",
+    "   Alternatives with workable free usage: DeepSeek, OpenRouter (free models), Groq, PULSE.", "",
     "Not saving Gemini as the default provider.")
 
 

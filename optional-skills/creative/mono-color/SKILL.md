@@ -2,7 +2,7 @@
 name: mono-color
 description: "Generate one- or two-ink editorial print poster images."
 version: 1.0.0
-author: Yan Liu (adapted by Nous Research)
+author: Yan Liu (adapted by Anxious Research)
 license: MIT
 dependencies: []
 platforms: [linux, macos, windows]

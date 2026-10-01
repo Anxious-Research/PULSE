@@ -1,7 +1,7 @@
 """Tests for the Remote-Spending gate denial contract (NAS PR #481).
 
 Behavior contracts: the HTTP→exception mapping in
-``pulse_cli.nous_billing._raise_for_error`` and the
+``pulse_cli.pulse_billing._raise_for_error`` and the
 ``tui_gateway.server._serialize_billing_error`` envelope the TUI branches on.
 These assert the wire contract (CF-4) — error code, actor, recovery, retry —
 not specific copy.
@@ -9,7 +9,7 @@ not specific copy.
 
 import pytest
 
-from pulse_cli.nous_billing import (
+from pulse_cli.pulse_billing import (
     BillingError,
     BillingRateLimited,
     BillingRemoteSpendingRevoked,
@@ -26,7 +26,7 @@ def _raise(status, payload, headers=None):
     return ei.value
 
 
-# ── exception mapping (pulse_cli.nous_billing) ──────────────────────
+# ── exception mapping (pulse_cli.pulse_billing) ──────────────────────
 
 
 def test_403_remote_spending_revoked_maps_to_typed_exc_with_actor():

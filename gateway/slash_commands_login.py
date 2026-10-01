@@ -89,7 +89,7 @@ class GatewayLoginCommandsMixin:
             if live is not None:
                 live.cancelled = True
 
-        state = await self._run_login_blocking(anon_auth.current_nous_state)
+        state = await self._run_login_blocking(anon_auth.current_pulse_state)
         if state and not anon_auth.is_guest_state(state):
             return anon_auth.UPGRADE_ALREADY_SIGNED_IN
 
@@ -183,7 +183,7 @@ class GatewayLoginCommandsMixin:
         keys = [
             key for key, entry in entries
             if (agent := _first_agent(entry)) is not None
-            and str(getattr(agent, "provider", "")) == "nous"
+            and str(getattr(agent, "provider", "")) == "pulse"
             and str(getattr(agent, "model", "")) == anon_auth.GUEST_MODEL
         ]
         failed = 0

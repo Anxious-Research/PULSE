@@ -491,7 +491,7 @@ class GatewayStatusCommandsMixin:
         return "\n".join(lines)
 
     async def _handle_topup_command(self, event: MessageEvent) -> str:
-        """Handle /topup -- show the Nous balance and hand off to the portal. Does NOT charge, confirm,
+        """Handle /topup -- show the PULSE balance and hand off to the portal. Does NOT charge, confirm,
         or track payment (that happens in the browser; the next /topup shows the new balance)."""
         from agent.account_usage import build_credits_view
         view = await _quiet(lambda: asyncio.to_thread(build_credits_view, markdown=True))
@@ -606,11 +606,11 @@ class GatewayStatusCommandsMixin:
             render_account_usage_lines(account_snapshot, markdown=True) if account_snapshot else []
         )
 
-        # Nous credits + monthly-grant gauge (shared with CLI/TUI). Gates on "a Nous account is
-        # logged in" — NOT the inference provider — so a Nous user inferring elsewhere still sees
+        # PULSE credits + monthly-grant gauge (shared with CLI/TUI). Gates on "a PULSE account is
+        # logged in" — NOT the inference provider — so a PULSE user inferring elsewhere still sees
         # a balance. Fail-open: never break /usage.
-        from agent.account_usage import nous_credits_lines
-        credits_lines = await _quiet(lambda: asyncio.to_thread(nous_credits_lines, markdown=True), [])
+        from agent.account_usage import pulse_credits_lines
+        credits_lines = await _quiet(lambda: asyncio.to_thread(pulse_credits_lines, markdown=True), [])
 
         def _with_account_blocks(lines: list[str]) -> str:
             # Each block is preceded by a blank divider only when something precedes it.

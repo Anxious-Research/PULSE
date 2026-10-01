@@ -623,7 +623,7 @@ def _recording_client_factory(transport):
     return lambda: ConnectorClient(
         transport=transport,
         endpoint_resolver=lambda: "https://tool-gateway.test",
-        header_provider=lambda url: {"Authorization": "Bearer nous-token"},
+        header_provider=lambda url: {"Authorization": "Bearer pulse-token"},
     )
 
 

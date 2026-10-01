@@ -13,7 +13,7 @@ from agent.account_usage import (
     fetch_account_usage,
     render_account_usage_lines,
 )
-from agent.billing_usage import fetch_nous_account as _billing_fetch_nous_account
+from agent.billing_usage import fetch_pulse_account as _billing_fetch_pulse_account
 from providers.base import ProviderProfile
 
 
@@ -296,7 +296,7 @@ def test_plugin_usage_hook_failure_never_reaches_threading_excepthook(monkeypatc
     assert escaped == []
 
 
-@pytest.mark.parametrize("fetch", [_fetch_portal_account, _billing_fetch_nous_account])
+@pytest.mark.parametrize("fetch", [_fetch_portal_account, _billing_fetch_pulse_account])
 def test_fetch_portal_account_is_wall_clock_bounded(monkeypatch, fetch):
     """A portal that accepts the connection but never answers must release the
     caller at ``timeout``, not when the wedged worker finishes on its own
@@ -309,7 +309,7 @@ def test_fetch_portal_account_is_wall_clock_bounded(monkeypatch, fetch):
         return object()
 
     monkeypatch.setattr(
-        "pulse_cli.nous_account.get_nous_portal_account_info", hanging_portal_fetch
+        "pulse_cli.pulse_account.get_pulse_portal_account_info", hanging_portal_fetch
     )
     started = time.monotonic()
     try:
@@ -331,7 +331,7 @@ def test_fetch_portal_account_returns_value_and_keeps_caller_context(monkeypatch
         return sentinel
 
     monkeypatch.setattr(
-        "pulse_cli.nous_account.get_nous_portal_account_info", probing_portal_fetch
+        "pulse_cli.pulse_account.get_pulse_portal_account_info", probing_portal_fetch
     )
     token = marker.set("profile-scope")
     try:

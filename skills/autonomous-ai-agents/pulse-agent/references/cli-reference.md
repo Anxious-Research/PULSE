@@ -108,7 +108,7 @@ pulse profile migrate-identity A B   Retry a completed rename's session/routing 
 
 ```
 pulse auth                 Interactive credential manager
-pulse auth add [PROVIDER]  Add OAuth or API-key credential (nous, openai-codex, qwen-oauth, …)
+pulse auth add [PROVIDER]  Add OAuth or API-key credential (pulse, openai-codex, qwen-oauth, …)
 pulse auth list|remove P IDX|reset PROVIDER|status
 ```
 Multiple credentials per provider form a pool that rotates automatically and skips exhausted keys.
@@ -119,7 +119,7 @@ Multiple credentials per provider form a pool that rotates automatically and ski
 pulse desktop / gui        Native desktop app
 pulse dashboard            Web admin panel + embedded chat (--stop / --status)
 pulse proxy                OpenAI-compatible local proxy backed by an OAuth provider
-pulse portal               Quick setup / sign in via Nous Portal
+pulse portal               Quick setup / sign in via Pulse Portal
 pulse kanban <verb>        Multi-agent work-queue board
 pulse project              Named multi-folder workspaces
 pulse skin list|use|set    Switch/tweak skins (see references/themes.md)

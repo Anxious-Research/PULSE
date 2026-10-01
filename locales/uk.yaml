@@ -435,7 +435,7 @@ gateway:
     last_activity: "**Остання активність:** {timestamp}"
     model: "**Модель:** `{model}`"
     model_provider: "**Модель:** `{model}` ({provider})"
-    free_tier: "Nous · безкоштовний тариф · nous/welcome · /login для входу"
+    free_tier: "PULSE · безкоштовний тариф · pulse/welcome · /login для входу"
     context: "**Контекст:** {used} / {total} ({pct}%)"
     context_used: "**Контекст:** ~{used} токенів"
     tokens: "**Усього токенів виставлено за весь час:** {tokens} _(це не поточний розмір контексту; використайте `/context`)_"
@@ -548,7 +548,7 @@ gateway:
     unknown_subcommand: "Невідома підкоманда /usage: `{args}`. Спробуйте `/usage` або `/usage reset [--force]`."
     reset_wrong_provider: "Накопичені скидання лімітів доступні лише з провайдером openai-codex. Спочатку перемкніться через `/model`."
   credits:
-    not_logged_in: "Ви не ввійшли в Nous Portal. Увійдіть, щоб переглянути баланс кредитів і поповнити його."
+    not_logged_in: "Ви не ввійшли в Pulse Portal. Увійдіть, щоб переглянути баланс кредитів і поповнити його."
   verbose:
     not_enabled: "Команду `/verbose` не ввімкнено для платформ обміну повідомленнями.\n\nУвімкніть у `config.yaml`:\n```yaml\ndisplay:\n  tool_progress_command: true\n```"
     mode_off: "⚙️ Прогрес інструментів: **OFF** — активність інструментів не показується."
@@ -841,7 +841,7 @@ gateway:
   startup:
     handoff_thread_title: "PULSE — {title}"
     restarted: "♻ Шлюз успішно перезапущено. Ваш сеанс продовжується."
-    free_tier_line: "Інференс: безкоштовний тариф Nous (nous/welcome). Увійдіть, щоб отримати більше: /login"
+    free_tier_line: "Інференс: безкоштовний тариф PULSE (pulse/welcome). Увійдіть, щоб отримати більше: /login"
     online: "♻️ Шлюз онлайн — PULSE повернувся й готовий до роботи."
     db_corrupt: "⚠️ Виявлено пошкодження бази даних сеансів. Повідомлення можуть не зберігатися. Варіанти відновлення:\n1. Виконайте `pulse {profile_arg}doctor --fix`\n2. Зупиніть шлюз, потім відновіть командами:\n   pulse {profile_arg}sessions recover --source {db_path} --inspect-only\n   (якщо повідомляє, що відновлення можливе) pulse {profile_arg}sessions recover --source {db_path} --output recovered-state.db\n   — відновлення спочатку робить знімок пошкодженого файлу; НЕ запускайте `sqlite3 ... \".recover\"` на робочому state.db — вразливий CLI sqlite3 може пошкодити його ще більше\n3. Відновіть із резервної копії в {backups_dir}/\nВиконайте `pulse {profile_arg}doctor` для очищеної діагностики."
     db_fts_corrupt: "⚠️ База даних сеансів повідомила про пошкодження, обмежене пошуковим індексом (FTS5); таблиці повідомлень не пошкоджено. Повідомлення можуть не зберігатися, доки його не полагоджено: виконайте `pulse {profile_arg}doctor --fix`, потім перезапустіть шлюз. Не запускайте інструменти відновлення й не відновлюйте резервну копію, якщо `pulse {profile_arg}doctor` не підтвердить пошкодження."
@@ -937,7 +937,7 @@ gateway:
   codex_runtime:
     config_load_failed: "❌ Не вдалося завантажити конфігурацію: {error}"
   topup:
-    header: "💳 **Баланс Nous**"
+    header: "💳 **Баланс PULSE**"
     portal_link: "Керуйте оплатою на порталі: {url}"
     hint: "Поповніть баланс і керуйте оплатою у браузері — після цього баланс тут оновиться."
   login:
@@ -1660,11 +1660,11 @@ slash:
   usage:
     description: "Показати використання токенів і обмеження швидкості; `reset` активує накопичене скидання ліміту Codex"
   subscription:
-    description: "Переглянути ваш тариф Nous і змінити його в браузері"
+    description: "Переглянути ваш тариф PULSE і змінити його в браузері"
   login:
-    description: "Увійти з обліковим записом Nous (ваші конектори зберігаються)"
+    description: "Увійти з обліковим записом PULSE (ваші конектори зберігаються)"
   topup:
-    description: "Показати ваш баланс Nous і керувати оплатою на порталі"
+    description: "Показати ваш баланс PULSE і керувати оплатою на порталі"
   platforms:
     description: "Показати стан шлюзу та платформ обміну повідомленнями"
   platform:
@@ -1685,7 +1685,7 @@ cli:
   billing:
     load_failed: "{label}: {error}"
     load_failed_label: "Не вдалося завантажити дані оплати"
-    not_logged_in: "Ви не ввійшли в Nous Portal."
+    not_logged_in: "Ви не ввійшли в Pulse Portal."
     run_portal_then: "Виконайте `pulse portal`, щоб увійти, а потім {cmd}."
     org_line: "Організація: {org}"
     org_line_role: "Організація: {org} · {role}"
@@ -1775,7 +1775,7 @@ cli:
     confirm_purchase: "Підтвердьте покупку"
     total_line: "Разом: {amount}"
     portal_card_will_be_charged: "Кошти буде списано з картки, збереженої на порталі."
-    consent_charge: "Підтверджуючи, ви дозволяєте Nous Research списати кошти з вашої картки."
+    consent_charge: "Підтверджуючи, ви дозволяєте Anxious Research списати кошти з вашої картки."
     choice_pay_now: "Сплатити {amount} зараз"
     desc_submit_charge: "надіслати платіж"
     desc_manage_card_billing: "керувати карткою / оплатою в браузері"
@@ -1836,7 +1836,7 @@ cli:
     threshold_label: "Коли баланс падає нижче"
     reload_to_label: "Поповнити баланс до"
     reload_must_exceed_threshold: "🔴 Сума поповнення має бути більшою за поріг."
-    auto_reload_consent: "Підтверджуючи, ви дозволяєте Nous Research списувати кошти з {card} щоразу, коли ваш баланс досягає {threshold}. Вимкнути можна будь-коли тут або на порталі."
+    auto_reload_consent: "Підтверджуючи, ви дозволяєте Anxious Research списувати кошти з {card} щоразу, коли ваш баланс досягає {threshold}. Вимкнути можна будь-коли тут або на порталі."
     turn_on_auto_reload_question: "Увімкнути автопоповнення?"
     auto_reload_enabled: "✅ Автопоповнення увімкнено: нижче {threshold} → поповнити до {reload_to}."
     auto_reload_disabled: "✅ Автопоповнення вимкнено."
@@ -2416,7 +2416,7 @@ cli:
     empty_base_url: "⚠️  Резолвер провайдера повернув порожній базовий URL. Перевірте конфігурацію провайдера або виконайте: pulse setup"
     switching_to_fallback: "⚠️  {reason} — перемикаємося на резервний варіант: {provider} / {model}"
     first_run_no_provider: "☤ Провайдера інференсу ще не налаштовано — давайте це виправимо."
-    first_run_pick_provider: "Ви виберете провайдера (Nous Portal OAuth — найшвидший варіант; ключ API не потрібен) і модель."
+    first_run_pick_provider: "Ви виберете провайдера (Pulse Portal OAuth — найшвидший варіант; ключ API не потрібен) і модель."
     first_run_prompt: "Налаштувати провайдера зараз? [Y/n]:"
     first_run_skipped: "Пропущено. Виконайте 'pulse model' або 'pulse setup' будь-коли."
     first_run_cancelled: "Налаштування скасовано. Виконайте 'pulse model' будь-коли."
@@ -2444,7 +2444,7 @@ cli:
     delivering_leftover_steer: "⏩ Передаємо залишок /steer як наступний хід: '{preview}'"
     reasoning_label: "Міркування"
     reasoning_more_lines: "... (ще {count} рядків — /reasoning full, щоб показати)"
-    billing_cta_nous: "Виконайте [bold]/topup[/], щоб додати кредити, або [bold]/subscription[/], щоб змінити план."
+    billing_cta_pulse: "Виконайте [bold]/topup[/], щоб додати кредити, або [bold]/subscription[/], щоб змінити план."
     billing_cta_provider: "Додайте кредити через {provider}"
     your_provider: "вашого провайдера"
     billing_cta_switch: "Або змініть провайдера через [bold]/model <model> --provider <provider>[/]."
@@ -3088,7 +3088,7 @@ cli:
     fix_lm_studio: "Виправлення для LM Studio: задайте довжину контексту в налаштуваннях моделі → перезавантажте модель"
     fix_local_server: "Виправлення: запустіть сервер із контекстом щонайменше {tokens_k}K (llama.cpp: -c {tokens}) або задайте model.ollama_num_ctx у config.yaml відповідно до вікна, яке він справді обслуговує"
     fix_config: "Виправлення: задайте model.context_length у config.yaml або збільште налаштування контексту на сервері"
-    pulse_models_not_agentic: "⚠  Моделі Nous Research PULSE 3 і 4 НЕ є агентними й не призначені для використання з PULSE Agent."
+    pulse_models_not_agentic: "⚠  Моделі Anxious Research PULSE 3 і 4 НЕ є агентними й не призначені для використання з PULSE Agent."
     pulse_models_lack_tools: "Вони не мають можливостей виклику інструментів, потрібних для агентних робочих процесів. Розгляньте агентну модель (Claude, GPT, Gemini, DeepSeek тощо)."
     pulse_models_switch_hint: "Перемкнутися: /model sonnet  або  /model gpt5"
     project_skills_loaded: "◆ Завантажено навичок проєкту з цього репозиторію: {count}"
@@ -3654,8 +3654,8 @@ tips:
   t181: "Camofox — браузер із захистом від виявлення: форк Firefox із підміною відбитків на C++."
   t182: "browser_navigate автоматично повертає знімок сторінки — викликати browser_snapshot після нього не потрібно."
   t183: "browser_vision з annotate=true накладає нумеровані мітки на інтерактивні елементи."
-  t184: "pulse mcp відкриває інтерактивний вибір схвалених Nous MCP-серверів, які можна встановити одним натисканням."
-  t185: "pulse mcp catalog показує список схвалених Nous MCP-серверів, що постачаються з репозиторієм."
+  t184: "pulse mcp відкриває інтерактивний вибір схвалених PULSE MCP-серверів, які можна встановити одним натисканням."
+  t185: "pulse mcp catalog показує список схвалених PULSE MCP-серверів, що постачаються з репозиторієм."
   t186: "pulse mcp install <name> встановлює запис із каталогу, запитує облікові дані та дозволяє вибрати, які з його інструментів увімкнути."
   t187: "MCP-сервери налаштовуються в config.yaml — підтримуються транспорти stdio та HTTP."
   t188: "Фільтрація інструментів для кожного сервера: tools.include дозволяє, а tools.exclude забороняє конкретні інструменти."
@@ -3682,7 +3682,7 @@ tips:
   t209: "Власні провайдери: зберігайте іменовані ендпоінти в config.yaml у розділі custom_providers."
   t210: "PULSE_EPHEMERAL_SYSTEM_PROMPT вставляє системний промпт, який ніколи не зберігається в історії."
   t211: "credential_pool_strategies підтримує ротацію fill_first, round_robin, least_used і random."
-  t212: "pulse auth add nous або pulse auth add openai-codex налаштовує провайдерів на основі OAuth."
+  t212: "pulse auth add pulse або pulse auth add openai-codex налаштовує провайдерів на основі OAuth."
   t213: "API-сервер підтримує як Chat Completions, так і Responses API зі станом на боці сервера."
   t214: "tool_preview_length: 0 у конфігурації показує повні шляхи до файлів у стрічці активності індикатора."
   t215: "pulse status --deep виконує глибші діагностичні перевірки всіх компонентів."
@@ -3752,7 +3752,7 @@ tips:
   t279: "PULSE_DEV=1 вимикає виявлення контейнерного режиму для локальної розробки."
   t280: "Кожен MCP-сервер отримує власний набір інструментів (mcp-servername), який можна вмикати й вимикати окремо через pulse tools."
   t281: "Заповнювачі MCP ${ENV_VAR} у конфігурації розгортаються під час запуску сервера — зокрема змінні з ~/.pulse/.env."
-  t282: "Навички з довірених репозиторіїв (NousResearch) отримують рівень безпеки 'trusted'; навички спільноти проходять додаткове сканування."
+  t282: "Навички з довірених репозиторіїв (AnxiousResearch) отримують рівень безпеки 'trusted'; навички спільноти проходять додаткове сканування."
   t283: "Карантин навичок у ~/.pulse/skills/.hub/quarantine/ зберігає навички, що очікують перевірки безпеки."
   t284: "/steer <prompt> вставляє нотатку після наступного виклику інструмента — скеруйте напрямок посеред завдання, не перериваючи його."
   t285: "/goal <text> задає постійну ціль у стилі Ralph-циклу — PULSE автоматично продовжує хід за ходом, доки суддя не визнає її виконаною."
@@ -3778,7 +3778,7 @@ tips:
   t305: "pulse curator rollback відновлює навички зі знімка, зробленого перед запуском — резервні копії лежать у skills/.curator_backups/."
   t306: "pulse auth reset <provider> [target] скидає паузи та позначки вичерпання для всього пулу облікових даних або для одного запису за індексом, id чи міткою."
   t307: "credential_pool_strategies.<provider>: round_robin рівномірно чергує ключі замість типового fill_first."
-  t308: "use_gateway: true для окремого інструмента спрямовує web, image, tts або browser через вашу підписку Nous — без додаткових ключів."
+  t308: "use_gateway: true для окремого інструмента спрямовує web, image, tts або browser через вашу підписку PULSE — без додаткових ключів."
   t309: "provider_routing.data_collection: deny виключає провайдерів OpenRouter, які зберігають дані."
   t310: "provider_routing.require_parameters: true маршрутизує лише до провайдерів, що підтримують кожен параметр вашого запиту."
   t311: "PULSE_TUI_RESUME=1 автоматично повертає вас до останнього сеансу TUI під час запуску — зручно після обриву SSH."

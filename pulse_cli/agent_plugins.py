@@ -14,7 +14,7 @@ from urllib.parse import urlsplit
 from agent.skill_utils import yaml_load
 from pulse_platform.declaration import Declaration, parse_declaration
 
-_PULSE_EXTENSION = "com.nousresearch.pulse"
+_PULSE_EXTENSION = "com.anxious-research.pulse"
 _LIVENESS: Dict[str, dict] = {}
 
 

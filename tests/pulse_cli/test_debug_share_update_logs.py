@@ -128,7 +128,7 @@ class TestCollectDebugReport:
 
 
 class TestCollectShareBundle:
-    """The upload bundle (paste.rs + --nous) carries the full update logs."""
+    """The upload bundle (paste.rs + --pulse) carries the full update logs."""
 
     def test_bundle_includes_update_logs_when_present(self, home_with_update_logs):
         from pulse_cli.debug import collect_share_bundle

@@ -141,7 +141,7 @@ def _run_chrome_fallback_command(task_id: str, command: str, args: List[str], ti
     if not _install._chromium_installed():
         if _install._running_in_docker():
             hint = ("Chrome fallback requires Chromium, but it is missing. You're running in Docker — "
-                    "pull the latest image: docker pull ghcr.io/nousresearch/pulse-agent:latest")
+                    "pull the latest image: docker pull ghcr.io/anxious-research/pulse-agent:latest")
         else:
             hint = ("Chrome fallback requires Chromium, but it is missing. Install it with: "
                     "pulse pm install chromium")

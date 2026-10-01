@@ -21,7 +21,7 @@ def _write_profile(root: Path, name: str, version: int) -> Path:
     home = root / name
     home.mkdir(parents=True)
     (home / "config.yaml").write_text(
-        yaml.safe_dump({"_config_version": version, "model": {"provider": "nous"}}),
+        yaml.safe_dump({"_config_version": version, "model": {"provider": "pulse"}}),
         encoding="utf-8",
     )
     return home
@@ -67,7 +67,7 @@ def test_sibling_behind_is_migrated_on_disk(monkeypatch, tmp_path):
     on_disk = yaml.safe_load((sibling / "config.yaml").read_text())
     assert on_disk["_config_version"] == _latest_version()
     # and user settings survived
-    assert on_disk["model"]["provider"] == "nous"
+    assert on_disk["model"]["provider"] == "pulse"
 
 
 def test_active_profile_is_skipped(monkeypatch, tmp_path):
@@ -146,7 +146,7 @@ def test_named_active_migrates_default_outside_profiles(monkeypatch, tmp_path):
     assert entry[1] == 12 and entry[2] == _latest_version()
     on_disk = yaml.safe_load((default_home / "config.yaml").read_text())
     assert on_disk["_config_version"] == _latest_version()
-    assert on_disk["model"]["provider"] == "nous"
+    assert on_disk["model"]["provider"] == "pulse"
     # named active is the invoking home: its own migrate path handles it
     assert "work" not in names
 

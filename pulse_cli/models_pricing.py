@@ -1,7 +1,7 @@
 """Live model pricing.
 
 OpenRouter-compatible ``/v1/models`` pricing fetch with a per-endpoint/per-credential cache,
-Nous Portal sale chrome and org-policy filtering, and the Vercel AI Gateway / Novita / Fireworks /
+Pulse Portal sale chrome and org-policy filtering, and the Vercel AI Gateway / Novita / Fireworks /
 DeepInfra pricing adapters. Split out of ``pulse_cli.models``; helpers still defined there are
 looked up on ``pulse_cli.models`` at call time so ``patch("pulse_cli.models.<name>")`` mocks keep
 intercepting.
@@ -151,7 +151,7 @@ def _sale_pct(current: Any, original: Any) -> int | None:
 
 
 def compute_sale_discount(prompt: str, completion: str, original: Any) -> tuple[int, str, str] | None:
-    """Sale chrome from gateway ``pricing.original`` (Nous Portal only; callers gate on the provider
+    """Sale chrome from gateway ``pricing.original`` (Pulse Portal only; callers gate on the provider
     and opted in via ``include_sale_original=True``): ``(discount_percent, was_prompt_raw,
     was_completion_raw)`` when ``original`` is a dict and the current prompt (fallback: completion)
     rate is strictly below the original. Free / $0 models get a flat 100% off, with "was" prices
@@ -222,7 +222,7 @@ def fetch_models_with_pricing(
 ) -> dict[str, dict[str, Any]]:
     """Fetch ``/v1/models`` (any OpenRouter-compatible endpoint) → ``{model_id: {prompt, completion,
     ...}}``, cached per *base_url* and per credential so one caller's catalog never answers
-    another's read. *include_sale_original* (Nous Portal only) copies the gateway's pre-discount
+    another's read. *include_sale_original* (Pulse Portal only) copies the gateway's pre-discount
     ``pricing.original`` rates through as a nested ``original`` dict for sale chrome."""
     from pulse_cli.models import _PULSE_USER_AGENT
     url_root = (base_url or "").rstrip("/")
@@ -249,14 +249,14 @@ def fetch_models_with_pricing(
         mid, pricing = item.get("id"), item.get("pricing")
         if mid and isinstance(pricing, dict):
             entry = _pricing_entry(pricing)
-            # Sale chrome is Nous Portal-only; never copy pricing.original for other catalogs.
+            # Sale chrome is Pulse Portal-only; never copy pricing.original for other catalogs.
             original = pricing.get("original") if include_sale_original else None
             if isinstance(original, dict):
                 orig_entry = {key: str(original[key]) for key in ("prompt", "completion", "input_cache_read", "input_cache_write")
                               if original.get(key) not in (None, "")}
                 if orig_entry.get("prompt") or orig_entry.get("completion"):
                     entry["original"] = orig_entry
-            # Nous Portal-only: the gateway bills this row to a subscription the account holds, not to credits.
+            # Pulse Portal-only: the gateway bills this row to a subscription the account holds, not to credits.
             if include_sale_original and item.get("billing_mode") == "subscription":
                 entry["billing_mode"] = "subscription"
             result[mid] = entry
@@ -295,22 +295,22 @@ def _resolve_openrouter_api_key() -> str:
 _DEFAULT_NOUS_INFERENCE_BASE = "https://inference-api.anxious-research.com"
 
 
-def _resolve_nous_pricing_credentials() -> tuple[str, str]:
-    """``(api_key, base_url)`` for Nous Portal pricing; base_url is the bare origin (no ``/v1``).
-    Precedence mirrors runtime credential resolution: ``NOUS_INFERENCE_BASE_URL`` (staging /
+def _resolve_pulse_pricing_credentials() -> tuple[str, str]:
+    """``(api_key, base_url)`` for Pulse Portal pricing; base_url is the bare origin (no ``/v1``).
+    Precedence mirrors runtime credential resolution: ``PULSE_INFERENCE_BASE_URL`` (staging /
     preview) → resolved credential ``base_url`` → production default. Without the override a
     staging profile's sale ``pricing.original`` would never reach the pickers."""
     try:
-        from pulse_cli.auth import _nous_inference_env_override
+        from pulse_cli.auth import _pulse_inference_env_override
 
-        env_base = _nous_inference_env_override()
+        env_base = _pulse_inference_env_override()
     except Exception:
         env_base = None
     api_key = creds_base = ""
     try:
-        from pulse_cli.auth import resolve_nous_runtime_credentials
+        from pulse_cli.auth import resolve_pulse_runtime_credentials
 
-        creds = resolve_nous_runtime_credentials()
+        creds = resolve_pulse_runtime_credentials()
         if creds:
             api_key = creds.get("api_key", "") or ""
             creds_base = (creds.get("base_url", "") or "").strip()
@@ -322,40 +322,40 @@ def _resolve_nous_pricing_credentials() -> tuple[str, str]:
     return (api_key, base_url)
 
 
-# How long a Nous catalog stays trusted. Its contents depend on the org's policy, which an admin
+# How long a PULSE catalog stays trusted. Its contents depend on the org's policy, which an admin
 # can change at any time and the client cannot observe, so a long-lived process must re-ask.
 # Other providers' catalogs carry no such state and keep the default no-expiry caching.
 _NOUS_CATALOG_TTL_SECONDS = 300.0
 
 
-def _fetch_nous_pricing(api_key: str, base_url: str, *, force_refresh: bool) -> dict[str, dict[str, Any]]:
+def _fetch_pulse_pricing(api_key: str, base_url: str, *, force_refresh: bool) -> dict[str, dict[str, Any]]:
     """Shared by pricing and policy lookups so both read one cache entry."""
     return fetch_models_with_pricing(
         api_key=api_key,
         base_url=base_url,
         force_refresh=force_refresh,
-        include_sale_original=True,  # Sale chrome (pricing.original) is Nous Portal-only.
+        include_sale_original=True,  # Sale chrome (pricing.original) is Pulse Portal-only.
         cache_ttl_seconds=_NOUS_CATALOG_TTL_SECONDS,
     )
 
 
-def nous_policy_allowed_ids(*, force_refresh: bool = False) -> Optional[set[str]]:
-    """The Nous model ids the caller's org may reach (keys of an authenticated ``GET /v1/models``,
+def pulse_policy_allowed_ids(*, force_refresh: bool = False) -> Optional[set[str]]:
+    """The PULSE model ids the caller's org may reach (keys of an authenticated ``GET /v1/models``,
     which omits policy-blocked rows), or ``None`` to not filter: no policy (or a token too old to
     say), an anonymous read (unfiltered catalog), or an empty read (a fetch failure, not an org
     that may reach nothing)."""
     try:
-        from pulse_cli.nous_account import nous_policy_present
+        from pulse_cli.pulse_account import pulse_policy_present
 
-        if nous_policy_present() is not True:
+        if pulse_policy_present() is not True:
             return None
     except Exception:
         return None
 
-    api_key, base_url = _resolve_nous_pricing_credentials()
+    api_key, base_url = _resolve_pulse_pricing_credentials()
     if not api_key or not base_url:
         return None
-    return set(_fetch_nous_pricing(api_key, base_url, force_refresh=force_refresh)) or None
+    return set(_fetch_pulse_pricing(api_key, base_url, force_refresh=force_refresh)) or None
 
 
 # Past this size an allowed set reads as a whole catalog rather than an allowlist, and is not
@@ -363,7 +363,7 @@ def nous_policy_allowed_ids(*, force_refresh: bool = False) -> Optional[set[str]
 _NOUS_POLICY_APPEND_MAX = 64
 
 
-def restrict_to_nous_policy(
+def restrict_to_pulse_policy(
     model_ids: list[str],
     allowed: Optional[set[str]],
     *,
@@ -412,12 +412,12 @@ def _fetch_fireworks_pricing_for_provider(*, force_refresh: bool = False) -> dic
     return _fireworks_pricing_from_models_dev(force_refresh=force_refresh)
 
 
-def _fetch_nous_pricing_for_provider(*, force_refresh: bool = False) -> dict[str, dict[str, Any]]:
-    api_key, base_url = _resolve_nous_pricing_credentials()
+def _fetch_pulse_pricing_for_provider(*, force_refresh: bool = False) -> dict[str, dict[str, Any]]:
+    api_key, base_url = _resolve_pulse_pricing_credentials()
     if not base_url:
         return {}
-    _remember_provider_cache_key("nous", base_url.rstrip("/"))
-    return _fetch_nous_pricing(api_key, base_url, force_refresh=force_refresh)
+    _remember_provider_cache_key("pulse", base_url.rstrip("/"))
+    return _fetch_pulse_pricing(api_key, base_url, force_refresh=force_refresh)
 
 
 _OPENROUTER_PRICING_BASE = "https://openrouter.ai/api"
@@ -433,21 +433,21 @@ def _novita_pricing_scope() -> str:
     return (os.getenv("NOVITA_BASE_URL", "").strip() or "https://api.novita.ai/openai/v1").rstrip("/")
 
 
-def get_cached_nous_inference_base_url() -> str:
-    """The profile's persisted Nous endpoint (bare origin, no ``/v1``) without refreshing auth."""
+def get_cached_pulse_inference_base_url() -> str:
+    """The profile's persisted PULSE endpoint (bare origin, no ``/v1``) without refreshing auth."""
     try:
         from pulse_cli.auth import (
-            _load_auth_store, _load_provider_state, _optional_base_url, _validate_nous_inference_url_from_network,
+            _load_auth_store, _load_provider_state, _optional_base_url, _validate_pulse_inference_url_from_network,
         )
 
-        state = _load_provider_state(_load_auth_store(), "nous") or {}
-        url = _validate_nous_inference_url_from_network(_optional_base_url(state.get("inference_base_url"))) or ""
+        state = _load_provider_state(_load_auth_store(), "pulse") or {}
+        url = _validate_pulse_inference_url_from_network(_optional_base_url(state.get("inference_base_url"))) or ""
         return url.rstrip("/").removesuffix("/v1")
     except Exception:
         return ""
 
 
-# Static endpoint identity per provider; dynamic ones (deepinfra, nous) are resolved in pricing_cache_scope.
+# Static endpoint identity per provider; dynamic ones (deepinfra, pulse) are resolved in pricing_cache_scope.
 _STATIC_PRICING_SCOPES = {
     "openrouter": lambda: _OPENROUTER_PRICING_BASE,
     "ai-gateway": _ai_gateway_pricing_scope,
@@ -467,18 +467,18 @@ def pricing_cache_scope(provider: str, *, current_provider: str = "", current_ba
         return static()
     if normalized == "deepinfra":
         return _deepinfra_catalog_url()[0]
-    if normalized == "nous":
+    if normalized == "pulse":
         try:
-            from pulse_cli.auth import _nous_inference_env_override
+            from pulse_cli.auth import _pulse_inference_env_override
 
-            env_base = _nous_inference_env_override()
+            env_base = _pulse_inference_env_override()
         except Exception:
             env_base = None
         if env_base:
             return env_base.rstrip("/").removesuffix("/v1")
-        if normalize_provider(current_provider) == "nous" and current_base_url:
+        if normalize_provider(current_provider) == "pulse" and current_base_url:
             return current_base_url.rstrip("/").removesuffix("/v1")
-        persisted_base = get_cached_nous_inference_base_url()
+        persisted_base = get_cached_pulse_inference_base_url()
         if persisted_base:
             return persisted_base
         return _pricing_provider_cache_keys.get((_pricing_profile_key(), normalized), _DEFAULT_NOUS_INFERENCE_BASE)
@@ -500,7 +500,7 @@ def _cached_only_pricing(normalized: str) -> dict[str, dict[str, str]]:
 def get_pricing_for_provider(
     provider: str, *, force_refresh: bool = False, cached_only: bool = False
 ) -> dict[str, dict[str, str]]:
-    """Return live pricing for providers that support it (openrouter, nous, ai-gateway, novita,
+    """Return live pricing for providers that support it (openrouter, pulse, ai-gateway, novita,
     deepinfra, fireworks); ``{}`` for everything else. ``cached_only`` never starts provider I/O:
     normal picker opens use it so cold endpoints cannot hold the response path, while a background
     prewarm fills the same caches for later opens."""
@@ -603,5 +603,5 @@ _PRICING_FETCHERS = {
     "novita": _fetch_novita_pricing_for_provider,
     "deepinfra": _fetch_deepinfra_pricing,
     "fireworks": _fetch_fireworks_pricing_for_provider,
-    "nous": _fetch_nous_pricing_for_provider,
+    "pulse": _fetch_pulse_pricing_for_provider,
 }

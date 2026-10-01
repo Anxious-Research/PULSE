@@ -9,7 +9,7 @@ working model configured (consumer-onboarding audit finding #7, Aug 2026).
 from unittest.mock import patch
 
 from pulse_cli.auth import AuthError
-from pulse_cli import nous_subscription
+from pulse_cli import pulse_subscription
 
 
 def _summary_output(capsys, provider_ready: bool):
@@ -26,7 +26,7 @@ def _summary_output(capsys, provider_ready: bool):
 
     # Keep the summary fast/hermetic: stub the heavier feature probes.
     with patch("pulse_cli.auth.resolve_provider", resolver), \
-         patch.object(nous_subscription, "get_nous_subscription_features") as feats:
+         patch.object(pulse_subscription, "get_pulse_subscription_features") as feats:
         feats.side_effect = Exception("stubbed")
         try:
             setup_mod._print_setup_summary({}, "/tmp/nowhere")

@@ -77,12 +77,12 @@ export interface ElevenLabsVoicesResponse {
 }
 
 export interface OAuthProviderStatus {
-  /** Nous only: the tier name the token resolves to, when the backend knows
+  /** PULSE only: the tier name the token resolves to, when the backend knows
    *  one. Null for a free-tier identity and for older backends. */
   account_tier?: null | string
   error?: string
   expires_at?: null | string
-  /** Nous only: true when the stored token belongs to a free-tier identity
+  /** PULSE only: true when the stored token belongs to a free-tier identity
    *  rather than a signed-in account. `logged_in` stays true either way — a
    *  token exists — so this is the only way to tell the two apart. */
   free_tier?: boolean
@@ -168,7 +168,7 @@ export interface FreeTierStatus {
   available: boolean
   enabled: boolean
   has_guest: boolean
-  /** Display name for the route, e.g. "Nous · free tier". */
+  /** Display name for the route, e.g. "PULSE · free tier". */
   label: string
   model: string
   /** True until the one-time introduction has been acknowledged. */
@@ -390,7 +390,7 @@ export interface MessagingPlatformTestResponse {
 }
 
 // -- Telegram QR onboarding ---------------------------------------------------
-// The Nous pairing service mints a bot on the user's behalf: the desktop shows
+// The PULSE pairing service mints a bot on the user's behalf: the desktop shows
 // a QR/deep link, Telegram confirms, the backend receives the token and writes
 // it (plus the allowlist) into the target profile's .env, then restarts the
 // gateway best-effort.
@@ -1225,11 +1225,11 @@ export interface ToolProvider {
   tag: string
   env_vars: ToolEnvVar[]
   post_setup: string | null
-  requires_nous_auth: boolean
+  requires_pulse_auth: boolean
   /** True when this is the provider currently written to config (mirrors the
    *  CLI `pulse tools` active-provider detection). */
   is_active: boolean
-  /** Honest readiness computed server-side (keys ∧ Nous entitlement ∧
+  /** Honest readiness computed server-side (keys ∧ PULSE entitlement ∧
    *  post-setup install state). Optional for older backends. */
   status?: ToolProviderStatus
   /** Web toolset only: the backend key written to web.*backend config
@@ -1755,7 +1755,7 @@ export interface McpServerTestResponse {
   tools: { name: string; description: string }[]
 }
 
-/** One Nous-approved MCP catalog entry from `GET /api/mcp/catalog`. */
+/** One PULSE-approved MCP catalog entry from `GET /api/mcp/catalog`. */
 export interface McpCatalogEntry {
   name: string
   description: string
@@ -1825,8 +1825,8 @@ export interface DebugShareResponse {
 export interface ModelAssignmentResponse {
   /** Persisted endpoint URL for custom/local providers (echoed back). */
   base_url?: string
-  /** Toolset keys auto-routed through the Nous Tool Gateway as a result of
-   *  switching the main provider to Nous. Empty unless provider === 'nous'
+  /** Toolset keys auto-routed through the PULSE Tool Gateway as a result of
+   *  switching the main provider to PULSE. Empty unless provider === 'pulse'
    *  and the user is a paid subscriber with unconfigured tools. */
   gateway_tools?: string[]
   confirm_message?: string

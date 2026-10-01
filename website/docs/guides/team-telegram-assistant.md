@@ -375,7 +375,7 @@ On a shared team bot, use Docker as the terminal backend so agent commands run i
 ```bash
 # In ~/.pulse/.env
 TERMINAL_ENV=docker
-TERMINAL_DOCKER_IMAGE=nousresearch/pulse-sandbox:desktop
+TERMINAL_DOCKER_IMAGE=anxious-research/pulse-sandbox:desktop
 ```
 
 Or in `~/.pulse/config.yaml`:

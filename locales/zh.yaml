@@ -435,7 +435,7 @@ gateway:
     last_activity: "**最近活动：** {timestamp}"
     model: "**模型：** `{model}`"
     model_provider: "**模型：** `{model}`（{provider}）"
-    free_tier: "Nous · 免费套餐 · nous/welcome · /login 登录"
+    free_tier: "PULSE · 免费套餐 · pulse/welcome · /login 登录"
     context: "**上下文：** {used} / {total}（{pct}%）"
     context_used: "**上下文：** 约 {used} tokens"
     tokens: "**累计计费 tokens：** {tokens} _（并非当前上下文大小；请使用 `/context` 查看）_"
@@ -548,7 +548,7 @@ gateway:
     unknown_subcommand: "未知的 /usage 子命令：`{args}`。请尝试 `/usage` 或 `/usage reset [--force]`。"
     reset_wrong_provider: "存储的用量重置仅在 openai-codex 提供商上可用。请先使用 `/model` 切换。"
   credits:
-    not_logged_in: "未登录 Nous Portal。登录后即可查看额度余额并充值。"
+    not_logged_in: "未登录 Pulse Portal。登录后即可查看额度余额并充值。"
   verbose:
     not_enabled: "`/verbose` 命令未在消息平台启用。\n\n请在 `config.yaml` 中启用：\n```yaml\ndisplay:\n  tool_progress_command: true\n```"
     mode_off: "⚙️ 工具进度：**OFF** — 不显示任何工具活动。"
@@ -841,7 +841,7 @@ gateway:
   startup:
     handoff_thread_title: "PULSE——{title}"
     restarted: "♻ 网关已成功重启。你的会话继续有效。"
-    free_tier_line: "推理：Nous 免费套餐（nous/welcome）。登录以获得更多：/login"
+    free_tier_line: "推理：PULSE 免费套餐（pulse/welcome）。登录以获得更多：/login"
     online: "♻️ 网关已上线——PULSE 已恢复就绪。"
     db_corrupt: "⚠️ 检测到会话数据库损坏。消息可能无法持久化。恢复方案：\n1. 运行 `pulse {profile_arg}doctor --fix`\n2. 停止网关，然后执行恢复：\n   pulse {profile_arg}sessions recover --source {db_path} --inspect-only\n   （若报告可恢复）pulse {profile_arg}sessions recover --source {db_path} --output recovered-state.db\n   ——恢复会先对损坏文件做快照；切勿对正在使用的 state.db 运行 `sqlite3 ... \\\".recover\\\"`，有漏洞的 sqlite3 CLI 可能使其进一步损坏\n3. 从 {backups_dir}/ 中的备份恢复\n运行 `pulse {profile_arg}doctor` 获取脱敏诊断信息。"
     db_fts_corrupt: "⚠️ 会话数据库报告了仅限于搜索索引（FTS5）的损坏错误；消息表未受损。修复前消息可能无法持久化：请运行 `pulse {profile_arg}doctor --fix`，然后重启网关。除非 `pulse {profile_arg}doctor` 确认存在损坏，否则不要运行恢复工具或还原备份。"
@@ -937,7 +937,7 @@ gateway:
   codex_runtime:
     config_load_failed: "❌ 无法加载配置：{error}"
   topup:
-    header: "💳 **Nous 余额**"
+    header: "💳 **PULSE 余额**"
     portal_link: "在门户管理账单：{url}"
     hint: "在浏览器中充值并管理账单——之后余额会在此处更新。"
   login:
@@ -1660,11 +1660,11 @@ slash:
   usage:
     description: "显示 token 用量与速率限制；`reset` 兑换已存下的 Codex 限额重置"
   subscription:
-    description: "查看你的 Nous 套餐并在浏览器中更改"
+    description: "查看你的 PULSE 套餐并在浏览器中更改"
   login:
-    description: "使用 Nous 账号登录（保留你的连接器）"
+    description: "使用 PULSE 账号登录（保留你的连接器）"
   topup:
-    description: "显示你的 Nous 余额并在门户中管理账单"
+    description: "显示你的 PULSE 余额并在门户中管理账单"
   platforms:
     description: "显示网关/消息平台状态"
   platform:
@@ -1685,7 +1685,7 @@ cli:
   billing:
     load_failed: "{label}：{error}"
     load_failed_label: "无法加载账单信息"
-    not_logged_in: "尚未登录 Nous Portal。"
+    not_logged_in: "尚未登录 Pulse Portal。"
     run_portal_then: "运行 `pulse portal` 登录，然后 {cmd}。"
     org_line: "组织：{org}"
     org_line_role: "组织：{org} · {role}"
@@ -1775,7 +1775,7 @@ cli:
     confirm_purchase: "确认购买"
     total_line: "合计：{amount}"
     portal_card_will_be_charged: "将从你在门户上保存的银行卡扣款。"
-    consent_charge: "确认即表示你允许 Nous Research 从你的银行卡扣款。"
+    consent_charge: "确认即表示你允许 Anxious Research 从你的银行卡扣款。"
     choice_pay_now: "立即支付 {amount}"
     desc_submit_charge: "提交扣款"
     desc_manage_card_billing: "在浏览器中管理银行卡/账单"
@@ -1836,7 +1836,7 @@ cli:
     threshold_label: "当余额低于"
     reload_to_label: "将余额充至"
     reload_must_exceed_threshold: "🔴 充值目标金额必须大于阈值。"
-    auto_reload_consent: "确认即表示你授权 Nous Research 在余额降至 {threshold} 时从 {card} 扣款。可随时在此或门户上关闭。"
+    auto_reload_consent: "确认即表示你授权 Anxious Research 在余额降至 {threshold} 时从 {card} 扣款。可随时在此或门户上关闭。"
     turn_on_auto_reload_question: "开启自动充值？"
     auto_reload_enabled: "✅ 自动充值已开启：低于 {threshold} → 充至 {reload_to}。"
     auto_reload_disabled: "✅ 自动充值已关闭。"
@@ -2416,7 +2416,7 @@ cli:
     empty_base_url: "⚠️  提供方解析器返回了空的 base URL。请检查提供方配置，或运行：pulse setup"
     switching_to_fallback: "⚠️  {reason}——正在切换到备用：{provider} / {model}"
     first_run_no_provider: "☤ 尚未配置推理提供方——我们来解决这个问题。"
-    first_run_pick_provider: "你将选择一个提供方（Nous Portal OAuth 最快，无需 API 密钥）和一个模型。"
+    first_run_pick_provider: "你将选择一个提供方（Pulse Portal OAuth 最快，无需 API 密钥）和一个模型。"
     first_run_prompt: "现在设置提供方吗？[Y/n]："
     first_run_skipped: "已跳过。可随时运行 'pulse model' 或 'pulse setup'。"
     first_run_cancelled: "设置已取消。可随时运行 'pulse model'。"
@@ -2444,7 +2444,7 @@ cli:
     delivering_leftover_steer: "⏩ 将剩余的 /steer 作为下一回合送达：'{preview}'"
     reasoning_label: "推理"
     reasoning_more_lines: "...（还有 {count} 行——输入 /reasoning full 查看全部）"
-    billing_cta_nous: "运行 [bold]/topup[/] 充值额度，或 [bold]/subscription[/] 更换套餐。"
+    billing_cta_pulse: "运行 [bold]/topup[/] 充值额度，或 [bold]/subscription[/] 更换套餐。"
     billing_cta_provider: "通过 {provider} 添加额度"
     your_provider: "你的提供方"
     billing_cta_switch: "或使用 [bold]/model <model> --provider <provider>[/] 切换提供方。"
@@ -3088,7 +3088,7 @@ cli:
     fix_lm_studio: "LM Studio 修复方法：在模型设置中设置上下文长度 → 重新加载模型"
     fix_local_server: "修复方法：启动服务器时至少使用 {tokens_k}K 上下文（llama.cpp：-c {tokens}），或在 config.yaml 中将 model.ollama_num_ctx 设为服务器实际提供的窗口大小"
     fix_config: "修复方法：在 config.yaml 中设置 model.context_length，或调大服务器的上下文设置"
-    pulse_models_not_agentic: "⚠  Nous Research 的 PULSE 3 和 4 模型不是代理型模型，并非为 PULSE Agent 设计。"
+    pulse_models_not_agentic: "⚠  Anxious Research 的 PULSE 3 和 4 模型不是代理型模型，并非为 PULSE Agent 设计。"
     pulse_models_lack_tools: "它们缺少代理工作流所需的工具调用能力。建议使用代理型模型（Claude、GPT、Gemini、DeepSeek 等）。"
     pulse_models_switch_hint: "切换方式：/model sonnet  或  /model gpt5"
     project_skills_loaded: "◆ 已从此仓库加载 {count} 个项目技能"
@@ -3654,8 +3654,8 @@ tips:
   t181: "Camofox 是一款反检测浏览器——基于 Firefox 分支，采用 C++ 指纹伪装。"
   t182: "browser_navigate 会自动返回页面快照——无需再调用 browser_snapshot。"
   t183: "browser_vision 配合 annotate=true 会在可交互元素上叠加编号标签。"
-  t184: "pulse mcp 打开一个交互式选择器，列出 Nous 认证的 MCP，一键即可安装。"
-  t185: "pulse mcp catalog 列出随仓库分发的 Nous 认证 MCP 服务器。"
+  t184: "pulse mcp 打开一个交互式选择器，列出 PULSE 认证的 MCP，一键即可安装。"
+  t185: "pulse mcp catalog 列出随仓库分发的 PULSE 认证 MCP 服务器。"
   t186: "pulse mcp install <name> 安装目录中的条目，提示输入凭据，并让你选择要启用哪些工具。"
   t187: "MCP 服务器在 config.yaml 中配置——同时支持 stdio 和 HTTP 传输。"
   t188: "按服务器过滤工具：tools.include 设置白名单，tools.exclude 设置黑名单。"
@@ -3682,7 +3682,7 @@ tips:
   t209: "自定义提供方：在 config.yaml 的 custom_providers 下保存命名端点。"
   t210: "PULSE_EPHEMERAL_SYSTEM_PROMPT 注入一段永不写入历史记录的系统提示词。"
   t211: "credential_pool_strategies 支持 fill_first、round_robin、least_used 和 random 轮换策略。"
-  t212: "pulse auth add nous 或 pulse auth add openai-codex 可配置基于 OAuth 的提供方。"
+  t212: "pulse auth add pulse 或 pulse auth add openai-codex 可配置基于 OAuth 的提供方。"
   t213: "API 服务器同时支持 Chat Completions 和带服务端状态的 Responses API。"
   t214: "在配置中设置 tool_preview_length: 0，加载动画的活动信息流会显示完整文件路径。"
   t215: "pulse status --deep 会对所有组件运行更深入的诊断检查。"
@@ -3752,7 +3752,7 @@ tips:
   t279: "PULSE_DEV=1 会跳过容器模式检测，方便本地开发。"
   t280: "每个 MCP 服务器都有自己的工具集（mcp-servername），可通过 pulse tools 单独开关。"
   t281: "配置中的 MCP ${ENV_VAR} 占位符会在服务器启动时解析——包括来自 ~/.pulse/.env 的变量。"
-  t282: "来自可信仓库（NousResearch）的技能获得 'trusted' 安全级别；社区技能会经过额外扫描。"
+  t282: "来自可信仓库（AnxiousResearch）的技能获得 'trusted' 安全级别；社区技能会经过额外扫描。"
   t283: "技能隔离区位于 ~/.pulse/skills/.hub/quarantine/，存放等待安全审查的技能。"
   t284: "/steer <prompt> 会在下一次工具调用后注入一条备注——在任务中途调整方向而不打断执行。"
   t285: "/goal <text> 设定一个持续的 Ralph 循环目标——PULSE 会一回合接一回合自动继续，直到评审判定完成。"
@@ -3778,7 +3778,7 @@ tips:
   t305: "pulse curator rollback 从运行前快照恢复技能——备份位于 skills/.curator_backups/。"
   t306: "pulse auth reset <provider> [target] 清除整个凭据池的冷却和耗尽标记，也可按索引、id 或标签只清除某一条凭据。"
   t307: "credential_pool_strategies.<provider>: round_robin 会均匀轮换密钥，而不是默认的 fill_first。"
-  t308: "按工具设置 use_gateway: true，可让 web、image、tts 或 browser 走你的 Nous 订阅——无需额外密钥。"
+  t308: "按工具设置 use_gateway: true，可让 web、image、tts 或 browser 走你的 PULSE 订阅——无需额外密钥。"
   t309: "provider_routing.data_collection: deny 会在 OpenRouter 上排除存储数据的提供方。"
   t310: "provider_routing.require_parameters: true 只路由到支持你请求中每个参数的提供方。"
   t311: "PULSE_TUI_RESUME=1 启动时自动重新连接最近的 TUI 会话——SSH 掉线后很方便。"

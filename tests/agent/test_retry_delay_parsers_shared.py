@@ -19,10 +19,10 @@ def _http_date(seconds_ahead: int) -> str:
 
 class TestRetryAfterHeaderOneParser:
     def test_http_date_header_parsed_identically_at_formerly_divergent_sites(self):
-        """anon_auth, the error-context extractor and nous_rate_guard used to float() the header
+        """anon_auth, the error-context extractor and pulse_rate_guard used to float() the header
         and silently drop the RFC 7231 date form; all three must now agree with the canonical."""
         from agent.agent_runtime_helpers import extract_api_error_context
-        from agent.nous_rate_guard import _parse_reset_seconds
+        from agent.pulse_rate_guard import _parse_reset_seconds
         from pulse_cli.anon_auth import _retry_after_seconds as anon_retry_after
         import time
 

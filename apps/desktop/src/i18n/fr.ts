@@ -7,7 +7,7 @@ export const frOverrides = {
   sharedMetrics: {
     consentTitle: 'Aider à améliorer PULSE ?',
     consentBody:
-      'Les métriques partagées ne contiennent que des compteurs bornés. Jamais de prompts, fichiers, chemins ni textes d’erreur. La collecte reste locale. Les envoyer à Nous est un consentement distinct.',
+      'Les métriques partagées ne contiennent que des compteurs bornés. Jamais de prompts, fichiers, chemins ni textes d’erreur. La collecte reste locale. Les envoyer à PULSE est un consentement distinct.',
     whatIsCollected: 'Ce qui est collecté',
     collectedIntro: 'Uniquement des compteurs bornés :',
     collectedActivity: 'Activité, durée des sessions, résultats et classes d’erreur',
@@ -21,11 +21,11 @@ export const frOverrides = {
     collectedMachine:
       "Données générales de la machine : plage de RAM, type de GPU, âge et canal de la version de PULSE, mises à jour en retard, utilisation d'un serveur de modèles local",
     installId:
-      'L’envoi transmet chaque paquet quotidien au service de télémétrie de Nous. Les paquets portent l’identifiant d’installation de ce profil : un UUID aléatoire stable sans information personnelle, réinitialisé en supprimant le dossier des métriques partagées.',
+      'L’envoi transmet chaque paquet quotidien au service de télémétrie de PULSE. Les paquets portent l’identifiant d’installation de ce profil : un UUID aléatoire stable sans information personnelle, réinitialisé en supprimant le dossier des métriques partagées.',
     consentWindow:
       'Seuls les paquets dont toute la période de collecte tombe dans une fenêtre de consentement enregistrée sont envoyés — les données d’avant votre accord, ou de toute période où l’envoi était désactivé, restent sur cette machine. L’envoi peut être désactivé à tout moment.',
     readDocs: 'Lire tous les détails',
-    share: 'Collecter et envoyer à Nous',
+    share: 'Collecter et envoyer à PULSE',
     local: 'Collecter en local uniquement',
     off: 'Non merci',
     changeLater: 'Vous pouvez changer cela à tout moment dans Réglages → Sécurité.',
@@ -33,12 +33,12 @@ export const frOverrides = {
     collectLabel: 'Collecter les statistiques d’utilisation',
     collectDesc:
       'Compteurs bornés conservés sur cet appareil. Jamais de prompts, fichiers, chemins ni textes d’erreur.',
-    sendLabel: 'Envoyer les statistiques d’utilisation à Nous',
+    sendLabel: 'Envoyer les statistiques d’utilisation à PULSE',
     sendDesc:
-      'Envoyer chaque paquet quotidien au service de télémétrie de Nous. Seules les données d’une fenêtre de consentement sont envoyées. Nécessite la collecte activée.',
+      'Envoyer chaque paquet quotidien au service de télémétrie de PULSE. Seules les données d’une fenêtre de consentement sont envoyées. Nécessite la collecte activée.',
     unavailable: 'Mettez à jour le backend PULSE pour modifier ce réglage.',
     stripBody: 'Uniquement des compteurs bornés, jamais de prompts ni de fichiers.',
-    stripChoices: { share: 'Envoyer à Nous', local: 'Local uniquement', off: 'Non merci' },
+    stripChoices: { share: 'Envoyer à PULSE', local: 'Local uniquement', off: 'Non merci' },
     stripDetails: 'Détails'
   },
   intro: introFr,
@@ -159,14 +159,14 @@ export const frOverrides = {
       showAllMatches: 'Afficher tous les résultats',
       segmentNoMatch: (segment: string) => `Aucun résultat dans ${segment} : tous les résultats sont affichés.`,
       freeTierNote: 'Les connexions restent sur cet ordinateur jusqu’à ce que vous vous connectiez.',
-      signInLine: 'Connectez-vous à Nous pour utiliser les applications gérées.',
+      signInLine: 'Connectez-vous à PULSE pour utiliser les applications gérées.',
       signIn: 'Se connecter',
       managedUnavailable: 'Les applications gérées ne sont pas encore disponibles pour ce compte.',
       writeFailed: 'Cette modification n’a pas été enregistrée.',
       refreshFailed: 'La liste des outils n’a pas été actualisée.',
       disconnectNoAccount: 'PULSE n’a aucun compte à déconnecter ici. Actualisez la page et réessayez.',
       disconnectRefused:
-        'Nous ne peut pas supprimer cette connexion pour le moment. Désactivez plutôt l’application avec l’interrupteur, ou réessayez plus tard.'
+        'PULSE ne peut pas supprimer cette connexion pour le moment. Désactivez plutôt l’application avec l’interrupteur, ou réessayez plus tard.'
     },
     add: {
       action: 'Ajouter le vôtre',
@@ -217,7 +217,7 @@ export const frOverrides = {
       turnOffLocal: 'Désactiver le serveur local',
       providedByPlugin: (plugin: string) => `Fourni par le plugin ${plugin}`,
       openPlugins: "Ouvrir l'onglet Plugins",
-      nousLine: 'Les applications Nous suivent votre compte, pas le profil.',
+      pulseLine: 'Les applications PULSE suivent votre compte, pas le profil.',
       rulesReadOnly: 'Les règles ne peuvent pas être modifiées pour le moment.',
       rulesAppOff: (name: string) => `Activez ${name} pour modifier ses outils.`,
       rulesSignIn: 'Connectez-vous pour modifier ce que PULSE peut faire ici.',
@@ -271,7 +271,7 @@ export const frOverrides = {
       remove: 'Supprimer',
       offTitle: (name: string) => `${name} est désactivé.`,
       offBody: "Activez-le avec l'interrupteur ci-dessus pour lire les outils qu'il apporte.",
-      signedOutTitle: 'Connectez-vous à Nous pour lire la liste des outils.',
+      signedOutTitle: 'Connectez-vous à PULSE pour lire la liste des outils.',
       signedOutBody: 'Vos serveurs sur cet ordinateur ne sont pas affectés.',
       conflictTitle: "Quelqu'un a modifié cette règle pendant que vous l'éditiez.",
       conflictBody: (theyOff: number, theyOn: number) => {
@@ -497,11 +497,11 @@ export const frOverrides = {
       signOutAndSignIn: 'Se déconnecter et se reconnecter',
       remoteFailureHint:
         "Vérifiez l'URL du gateway et la connexion dans les paramètres du gateway, ou passez au gateway local.",
-      cloudDownTitle: "L'agent Nous Cloud est indisponible",
+      cloudDownTitle: "L'agent Pulse Cloud est indisponible",
       cloudDownDescription:
-        "L'agent cloud géré par Nous auquel ce gateway se connecte renvoie une erreur serveur. Il ne peut pas être redémarré depuis ici — vérifiez son état, passez au gateway local ou contactez l'assistance.",
+        "L'agent cloud géré par PULSE auquel ce gateway se connecte renvoie une erreur serveur. Il ne peut pas être redémarré depuis ici — vérifiez son état, passez au gateway local ou contactez l'assistance.",
       cloudDownHint:
-        "Les boutons ci-dessous ouvrent le portail Nous, pour consulter et contrôler l'instance, ainsi que notre Discord pour obtenir de l'aide.",
+        "Les boutons ci-dessous ouvrent le portail PULSE, pour consulter et contrôler l'instance, ainsi que notre Discord pour obtenir de l'aide.",
       cloudDownCheckPortal: "Vérifier l'état sur le portail",
       cloudDownDiscord: "Obtenir de l'aide sur Discord",
       hideRecentLogs: 'Masquer les journaux récents',
@@ -622,7 +622,7 @@ export const frOverrides = {
       `Rendu logiciel actif — affichage distant détecté (${reason}). L'accélération GPU est désactivée pour éviter les scintillements.`
   },
   billingBlock: {
-    titleNous: 'Plus de crédits Nous',
+    titleNous: 'Plus de crédits PULSE',
     titleProvider: provider => `Plus de crédits — ${provider}`,
     fallbackMessage: 'Votre compte est à court de crédits. Ajoutez-en pour continuer.',
     openBilling: 'Ouvrir la facturation',
@@ -630,9 +630,9 @@ export const frOverrides = {
     dismiss: 'Fermer'
   },
   sendDiagnostics: {
-    title: 'Envoyer les diagnostics à Nous',
+    title: 'Envoyer les diagnostics à PULSE',
     privacyNotice:
-      "Cela téléverse un paquet de débogage vers un stockage interne de Nous, et non vers un service de partage public. Il contient des informations système (système d'exploitation, versions, fournisseur et clés API configurées — jamais les clés elles-mêmes) ainsi que les journaux complets de l'agent, du gateway et du Desktop (jusqu'à 512 Ko chacun), susceptibles de contenir des conversations, des résultats d'outils et des chemins de fichiers. Les secrets sont expurgés avant l'envoi. Seuls le personnel de Nous et les modérateurs Discord autorisés peuvent consulter le paquet, qui est automatiquement supprimé après 14 jours.",
+      "Cela téléverse un paquet de débogage vers un stockage interne de PULSE, et non vers un service de partage public. Il contient des informations système (système d'exploitation, versions, fournisseur et clés API configurées — jamais les clés elles-mêmes) ainsi que les journaux complets de l'agent, du gateway et du Desktop (jusqu'à 512 Ko chacun), susceptibles de contenir des conversations, des résultats d'outils et des chemins de fichiers. Les secrets sont expurgés avant l'envoi. Seuls le personnel de PULSE et les modérateurs Discord autorisés peuvent consulter le paquet, qui est automatiquement supprimé après 14 jours.",
     upload: 'Envoyer',
     uploading: 'Envoi en cours…',
     cancel: 'Annuler',
@@ -644,11 +644,11 @@ export const frOverrides = {
       "Votre paquet a été téléversé de manière privée. Partagez le lien ci-dessous dans votre fil d'assistance afin que l'équipe puisse consulter vos journaux.",
     failedTitle: "Échec de l'envoi",
     failedHint:
-      'Vous pouvez également exécuter `pulse debug share --nous` dans un terminal, ou `pulse debug share --local` pour afficher le rapport sans le téléverser.',
+      'Vous pouvez également exécuter `pulse debug share --pulse` dans un terminal, ou `pulse debug share --local` pour afficher le rapport sans le téléverser.',
     handoffLead: 'Poursuivez la discussion sur :',
     links: {
       github: 'Issues GitHub',
-      portal: 'Assistance du portail Nous',
+      portal: 'Assistance du portail PULSE',
       discord: 'Discord'
     }
   },
@@ -1898,7 +1898,7 @@ export const frOverrides = {
       cloudLoadingAgents: 'Chargement de vos agents…',
       cloudNoAgents: {
         before: 'Aucun agent trouvé sur ce compte… Créez-en un dans le ',
-        linkText: 'portail Nous',
+        linkText: 'portail PULSE',
         after: ', puis actualisez.'
       },
       cloudRefresh: 'Actualiser',
@@ -2311,13 +2311,13 @@ export const frOverrides = {
       usageLabel: (label: string) => `Utilisation ${label}`,
       freeTier: {
         signIn: 'Se connecter',
-        title: 'Vous utilisez l’offre gratuite Nous',
-        message: 'Connectez-vous avec un compte Nous pour débloquer davantage de modèles et d’outils.',
+        title: 'Vous utilisez l’offre gratuite PULSE',
+        message: 'Connectez-vous avec un compte PULSE pour débloquer davantage de modèles et d’outils.',
         caption:
-          'Fonctionne avec nous/welcome, connecteurs inclus. La connexion conserve vos connecteurs et ajoute les outils qui nécessitent un compte ainsi que tous les autres modèles.',
-        name: 'Nous · offre gratuite',
+          'Fonctionne avec pulse/welcome, connecteurs inclus. La connexion conserve vos connecteurs et ajoute les outils qui nécessitent un compte ainsi que tous les autres modèles.',
+        name: 'PULSE · offre gratuite',
         footnote:
-          'L’offre gratuite n’a ni solde ni rien à payer. Le paiement et l’utilisation apparaissent une fois connecté avec un compte Nous.',
+          'L’offre gratuite n’a ni solde ni rien à payer. Le paiement et l’utilisation apparaissent une fois connecté avec un compte PULSE.',
         plan: 'Offre gratuite',
         model: 'Modèle',
         connectors: 'Connecteurs',
@@ -2424,9 +2424,9 @@ export const frOverrides = {
       state: {
         notice: {
           loggedOut: {
-            title: 'Connectez votre compte Nous',
+            title: 'Connectez votre compte PULSE',
             message:
-              'Connectez-vous avec votre compte Nous pour voir ici votre solde, votre offre et votre utilisation.',
+              'Connectez-vous avec votre compte PULSE pour voir ici votre solde, votre offre et votre utilisation.',
             action: 'Se connecter'
           },
           openPortal: 'Ouvrir le portail ↗',
@@ -2677,16 +2677,16 @@ export const frOverrides = {
       activeBackend: 'Actif',
       activeBackendHint: "Il s'agit de votre backend actif",
       useBackend: 'Utiliser ce backend',
-      nousIncluded: 'Inclus avec un abonnement Nous — connectez-vous au portail Nous pour activer.',
-      nousAuthNeededTitle: 'Se connecter au portail Nous',
-      nousAuthNeededMessage: provider =>
-        `${provider} est enregistré mais ne s'activera pas tant que vous ne vous serez pas connecté au portail Nous.`,
-      nousAuthSignIn: 'Se connecter',
-      nousAuthDoneTitle: 'Portail Nous connecté',
-      nousAuthDoneMessage: "Vos backends d'abonnement sont maintenant actifs.",
-      nousAuthFailed: "La connexion au portail Nous n'a pas été terminée",
-      nousAuthFailedMessage: 'Réessayez.',
-      nousAuthTryAgain: 'Réessayer',
+      pulseIncluded: 'Inclus avec un abonnement PULSE — connectez-vous au portail PULSE pour activer.',
+      pulseAuthNeededTitle: 'Se connecter au portail PULSE',
+      pulseAuthNeededMessage: provider =>
+        `${provider} est enregistré mais ne s'activera pas tant que vous ne vous serez pas connecté au portail PULSE.`,
+      pulseAuthSignIn: 'Se connecter',
+      pulseAuthDoneTitle: 'Portail PULSE connecté',
+      pulseAuthDoneMessage: "Vos backends d'abonnement sont maintenant actifs.",
+      pulseAuthFailed: "La connexion au portail PULSE n'a pas été terminée",
+      pulseAuthFailedMessage: 'Réessayez.',
+      pulseAuthTryAgain: 'Réessayer',
       noApiKeyRequired: 'Aucune clé API requise.',
       postSetupHint: step =>
         `Ce backend nécessite une installation unique (${step}). S'exécute sur cette machine — peut prendre quelques minutes.`,
@@ -4179,7 +4179,7 @@ export const frOverrides = {
     placeholderReconnecting: 'Reconnexion à PULSE…',
     placeholderFollowUp: 'Envoyer un suivi',
     newSessionPlaceholders: [
-      'Sur quoi travaillons-nous ?',
+      'Sur quoi travaillons-pulse ?',
       'Donnez une tâche à PULSE',
       "Qu'avez-vous en tête ?",
       'Décrivez ce dont vous avez besoin',
@@ -4309,8 +4309,8 @@ export const frOverrides = {
       '/palette': 'Ouvrir la palette de commandes floue (aussi Ctrl+P)',
       '/usage':
         'Afficher l’utilisation des jetons et les limites de débit ; `reset` utilise une réinitialisation de limite Codex en réserve',
-      '/subscription': 'Voir votre forfait Nous et le modifier dans le navigateur',
-      '/topup': 'Afficher votre solde Nous et gérer la facturation sur le portail',
+      '/subscription': 'Voir votre forfait PULSE et le modifier dans le navigateur',
+      '/topup': 'Afficher votre solde PULSE et gérer la facturation sur le portail',
       '/platform': 'Suspendre, reprendre ou lister une plateforme de gateway en échec',
       '/version': 'Afficher la version de PULSE Agent',
       '/debug': 'Téléverser un rapport de débogage (infos système + journaux) et obtenir des liens partageables',
@@ -4767,7 +4767,7 @@ export const frOverrides = {
       'Passez au profil de configuration et ouvrez Bienvenue dans PULSE lorsque vous avez besoin d’aide. La conversation y reste disponible.'
   },
   guidedGreeting: {
-    line: "Salut, entrez ! Je suis PULSE. Donnez-moi deux minutes pour préparer les lieux à votre façon, puis nous nous attaquerons à quelque chose que vous voulez vraiment accomplir.\n\nMais d'abord, comment dois-je vous appeler ?",
+    line: "Salut, entrez ! Je suis PULSE. Donnez-moi deux minutes pour préparer les lieux à votre façon, puis pulse pulse attaquerons à quelque chose que vous voulez vraiment accomplir.\n\nMais d'abord, comment dois-je vous appeler ?",
     nameSuggestion: name => `(Je peux aussi simplement vous appeler ${name}, si vous préférez.)`
   },
   install: {
@@ -4921,19 +4921,19 @@ export const frOverrides = {
     errorDetails: 'Détails',
     pickDifferentProvider: 'Choisissez un autre fournisseur',
     signInWith: provider => `Se connecter avec ${provider}`,
-    openedBrowser: provider => `Nous avons ouvert ${provider} dans votre navigateur.`,
+    openedBrowser: provider => `PULSE avons ouvert ${provider} dans votre navigateur.`,
     authorizeThere: 'Autorisez PULSE là-bas.',
     copyAuthCode: "Copiez le code d'autorisation et collez-le ci-dessous.",
     pasteAuthCode: "Coller le code d'autorisation",
     reopenAuthPage: "Rouvrir la page d'autorisation",
     autoBrowser: provider =>
-      `Nous avons ouvert ${provider} dans votre navigateur. Autorisez PULSE là-bas et vous serez connecté automatiquement — rien à copier ou coller.`,
+      `PULSE avons ouvert ${provider} dans votre navigateur. Autorisez PULSE là-bas et vous serez connecté automatiquement — rien à copier ou coller.`,
     reopenSignInPage: 'Rouvrir la page de connexion',
     waitingAuthorize: 'En attente de votre autorisation...',
     externalPending: provider =>
       `${provider} se connecte via sa propre CLI. Exécutez cette commande dans un terminal, puis revenez et choisissez « Je me suis connecté » :`,
     signedIn: 'Je me suis connecté',
-    deviceCodeOpened: provider => `Nous avons ouvert ${provider} dans votre navigateur. Entrez ce code là-bas :`,
+    deviceCodeOpened: provider => `PULSE avons ouvert ${provider} dans votre navigateur. Entrez ce code là-bas :`,
     reopenVerification: 'Rouvrir la page de vérification',
     copy: 'Copier',
     defaultModel: 'Modèle par défaut',
@@ -4946,21 +4946,21 @@ export const frOverrides = {
     docs: provider => `Documentation ${provider}`
   },
   freeTier: {
-    providerRowTitle: 'Nous · offre gratuite',
-    providerRowPitch: 'Connectez-vous avec un compte Nous pour débloquer davantage de modèles et outils.',
+    providerRowTitle: 'PULSE · offre gratuite',
+    providerRowPitch: 'Connectez-vous avec un compte PULSE pour débloquer davantage de modèles et outils.',
     readyTitle: 'PULSE est prêt.',
     readyCaption: 'Gratuit · connecteurs inclus',
     begin: 'Commencer',
-    signInInstead: 'Se connecter plutôt avec un compte Nous',
+    signInInstead: 'Se connecter plutôt avec un compte PULSE',
     otherProviders: 'Autres fournisseurs',
-    stripTitle: "L'inférence Nous gratuite et les connecteurs sont maintenant disponibles.",
-    stripBody: 'Ouvrez le sélecteur de modèle pour les essayer ou connectez-vous avec un compte Nous.',
+    stripTitle: "L'inférence PULSE gratuite et les connecteurs sont maintenant disponibles.",
+    stripBody: 'Ouvrez le sélecteur de modèle pour les essayer ou connectez-vous avec un compte PULSE.',
     openModelPicker: 'Ouvrir le sélecteur de modèle',
     dismiss: 'Fermer',
-    providerName: 'Nous',
-    statusLabel: model => `Nous · ${model}`,
+    providerName: 'PULSE',
+    statusLabel: model => `PULSE · ${model}`,
     signIn: 'Se connecter',
-    signInHeading: 'Connectez-vous avec un compte Nous pour débloquer davantage de modèles et outils.',
+    signInHeading: 'Connectez-vous avec un compte PULSE pour débloquer davantage de modèles et outils.',
     settingUp: "Configuration de l'inférence gratuite…",
     codeBody: 'Saisissez ce code dans votre navigateur pour terminer la connexion.',
     copyLink: 'Copier le lien',
@@ -4987,29 +4987,29 @@ export const frOverrides = {
     errorBody: "La connexion n'a pas abouti ; relancez-la.",
     busyHeading: 'Presque terminé',
     busyBody: wait =>
-      `PULSE n'a pas pu terminer votre connexion car le service Nous est occupé. Réessayez dans ${wait}. Votre session reste disponible entre-temps.`,
+      `PULSE n'a pas pu terminer votre connexion car le service PULSE est occupé. Réessayez dans ${wait}. Votre session reste disponible entre-temps.`,
     unreachableBody:
-      "PULSE n'a pas pu joindre le service Nous pour terminer votre connexion. Vérifiez votre connexion Internet et réessayez. Votre session reste disponible.",
+      "PULSE n'a pas pu joindre le service PULSE pour terminer votre connexion. Vérifiez votre connexion Internet et réessayez. Votre session reste disponible.",
     alreadySignedInHeading: 'Déjà connecté.',
-    alreadySignedInBody: 'Cette installation PULSE est déjà connectée à un compte Nous.',
+    alreadySignedInBody: 'Cette installation PULSE est déjà connectée à un compte PULSE.',
     setupFailed: {
       gateClosed:
-        'Cette version de PULSE ne peut pas démarrer sans compte Nous. Connectez-vous ou créez-en un gratuitement en une minute.',
+        'Cette version de PULSE ne peut pas démarrer sans compte PULSE. Connectez-vous ou créez-en un gratuitement en une minute.',
       paused:
         "L'utilisation de PULSE sans connexion est momentanément suspendue. PULSE continuera à vérifier. La connexion est gratuite et vous permet de continuer immédiatement.",
       rateLimited: wait =>
         `Beaucoup de personnes démarrent en ce moment ; PULSE réessaiera dans ${wait}. La connexion est gratuite et évite l'attente.`,
       unreachable:
-        "PULSE n'a pas pu joindre le service Nous. Vérifiez votre connexion Internet, puis appuyez sur Réessayer. Vous pouvez aussi connecter un autre fournisseur.",
+        "PULSE n'a pas pu joindre le service PULSE. Vérifiez votre connexion Internet, puis appuyez sur Réessayer. Vous pouvez aussi connecter un autre fournisseur.",
       serverError:
-        'Le service Nous a rencontré un problème. Réessayez dans un instant ou connectez un autre fournisseur.',
+        'Le service PULSE a rencontré un problème. Réessayez dans un instant ou connectez un autre fournisseur.',
       powRequired:
-        "Le serveur Nous a demandé une preuve de travail qui n'est pas encore gérée par votre Agent. Connectez-vous ou créez un compte Nous gratuit pour continuer.",
+        "Le serveur PULSE a demandé une preuve de travail qui n'est pas encore gérée par votre Agent. Connectez-vous ou créez un compte PULSE gratuit pour continuer.",
       locked:
-        'Cette session ne peut pas continuer sans connexion. Connectez-vous ou créez un compte Nous gratuit pour poursuivre.',
+        'Cette session ne peut pas continuer sans connexion. Connectez-vous ou créez un compte PULSE gratuit pour poursuivre.',
       generic:
         "PULSE n'a pas pu configurer l'accès gratuit sans connexion. Connectez-vous gratuitement ou choisissez un autre fournisseur.",
-      signInBelow: 'La connexion est gratuite. Choisissez Nous ci-dessous.',
+      signInBelow: 'La connexion est gratuite. Choisissez PULSE ci-dessous.',
       tryAgain: 'Réessayer',
       retrying: 'Nouvelle tentative…'
     }
@@ -5027,7 +5027,7 @@ export const frOverrides = {
     localDownloadsHeading: 'Local',
     noAuthenticatedProviders: 'Aucun fournisseur authentifié.',
     pro: 'Pro',
-    proNeedsSubscription: 'Les modèles Pro nécessitent un abonnement payant Nous.',
+    proNeedsSubscription: 'Les modèles Pro nécessitent un abonnement payant PULSE.',
     free: 'Gratuit',
     freeTier: 'Gratuit',
     priceTitle: 'Prix entrant / sortant par million de jetons',
@@ -5622,11 +5622,11 @@ export const frOverrides = {
         },
         free_tier_disabled: {
           title: "L'utilisation de PULSE sans connexion est désactivée pour le moment",
-          body: 'Connectez-vous avec un compte Nous gratuit pour continuer.'
+          body: 'Connectez-vous avec un compte PULSE gratuit pour continuer.'
         },
         free_tier_rate_limited: {
           title: 'Vous avez épuisé le quota sans connexion',
-          body: 'Il sera bientôt renouvelé. Connectez-vous avec un compte Nous gratuit pour obtenir un quota plus élevé.'
+          body: 'Il sera bientôt renouvelé. Connectez-vous avec un compte PULSE gratuit pour obtenir un quota plus élevé.'
         },
         free_tier_at_capacity: {
           title: 'Le service sans connexion est très sollicité',
@@ -5634,11 +5634,11 @@ export const frOverrides = {
         },
         free_tier_model_not_free: {
           title: "Ce modèle n'est pas disponible sans connexion",
-          body: 'PULSE utilise le modèle gratuit pour le moment. Connectez-vous avec un compte Nous gratuit pour accéder à plus de modèles.'
+          body: 'PULSE utilise le modèle gratuit pour le moment. Connectez-vous avec un compte PULSE gratuit pour accéder à plus de modèles.'
         },
         free_tier_route: {
           title: "PULSE n'a pas pu joindre le modèle gratuit par cette route",
-          body: 'Connectez-vous avec un compte Nous gratuit ou vérifiez le paramètre NOUS_INFERENCE_BASE_URL.'
+          body: 'Connectez-vous avec un compte PULSE gratuit ou vérifiez le paramètre PULSE_INFERENCE_BASE_URL.'
         },
         free_tier_outage: {
           title: 'Le modèle gratuit rencontre des difficultés',
@@ -5646,7 +5646,7 @@ export const frOverrides = {
         },
         free_tier_refused: {
           title: "PULSE n'a pas pu envoyer ce message sans connexion",
-          body: 'La connexion avec un compte Nous est gratuite.'
+          body: 'La connexion avec un compte PULSE est gratuite.'
         }
       },
       errorAuthKinds: {
@@ -5676,7 +5676,7 @@ export const frOverrides = {
       errorOpenPULSEFolderFailed: "Impossible d'ouvrir le dossier PULSE",
       errorUpdateApiKey: 'Mettre à jour la clé API',
       errorSignInAgain: provider => `Se reconnecter à ${provider}`,
-      errorSignInFreeTier: 'Se connecter avec un compte Nous',
+      errorSignInFreeTier: 'Se connecter avec un compte PULSE',
       errorOauthExpired: provider =>
         `Votre connexion à ${provider} a expiré ou a été révoquée. Reconnectez-vous pour continuer la conversation.`,
       errorOpenLogs: 'Ouvrir les journaux',

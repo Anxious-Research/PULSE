@@ -55,7 +55,7 @@ reverse proxy's access log may record an already-spent ticket.
   manager directly, with no sudo and no password card. When it is not root and
   the host has no `sudo` at all, the pane and the CLI print the exact install
   command for you to run on the host instead of showing a card. The official
-  Docker image (`nousresearch/pulse-agent`, which also powers PULSE Cloud) is
+  Docker image (`anxious-research/pulse-agent`, which also powers PULSE Cloud) is
   that second case: the gateway runs as an unprivileged user and the image has no
   `sudo`, so the pane shows the `apt-get` line and an operator runs it once as
   root in the container (`docker exec -u 0 <container> apt-get install -y …`).
@@ -255,7 +255,7 @@ it, so the restarted gateway re-attaches to a still-running sandbox, and
 
 ### The sandbox image
 
-The sandbox needs the desktop stack. `nousresearch/pulse-sandbox:desktop` is
+The sandbox needs the desktop stack. `anxious-research/pulse-sandbox:desktop` is
 the default image for every container backend (Docker, Modal, Daytona,
 Singularity): the `nikolaik/python-nodejs` base (Python 3.13 / Node 26) plus
 TigerVNC, the Xfce components, a headed Chromium, `agent-browser`, `cua-driver`
@@ -267,14 +267,14 @@ the screen then tells you it needs this image or `bot_desktop.placement: gateway
 ```yaml
 terminal:
   backend: docker
-  docker_image: nousresearch/pulse-sandbox:desktop
+  docker_image: anxious-research/pulse-sandbox:desktop
 ```
 
 With a plain image the Screen pane reports the missing binaries and names
 this tag.
 
 Under Singularity/Apptainer the same image is converted to a SIF
-(`docker://nousresearch/pulse-sandbox:desktop`); Dockerfile `ENV` survives the
+(`docker://anxious-research/pulse-sandbox:desktop`); Dockerfile `ENV` survives the
 conversion, the image's `USER` does not: everything runs as you, so the browser
 profile lands in your `$HOME` inside the container, which is the persistent
 overlay by default. The instance runs `--containall`, so its temp dir (where the
@@ -297,7 +297,7 @@ another image (the old default, `nikolaik/python-nodejs:python3.11-nodejs20`),
 the terminal keeps using that container and you decide the switch. The
 interactive CLI asks once at startup; the Screen pane shows the same choice
 with **Switch image** / **Keep current image**; `pulse config set
-terminal.docker_image nousresearch/pulse-sandbox:desktop` is the same answer
+terminal.docker_image anxious-research/pulse-sandbox:desktop` is the same answer
 from any shell. Either answer writes `terminal.docker_image`, and a written
 image is a decision: the container is recreated on the next terminal call only
 when you chose the new image, and only once the new image has been pulled (a

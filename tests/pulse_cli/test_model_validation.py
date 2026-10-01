@@ -51,11 +51,11 @@ class TestCuratedModelsForProvider:
 
     def test_live_catalog_projected_to_tuples_else_static_fallback(self):
         with patch("pulse_cli.models.provider_model_ids", return_value=["m-live"]):
-            assert curated_models_for_provider("nous") == [("m-live", "")]
+            assert curated_models_for_provider("pulse") == [("m-live", "")]
         with patch("pulse_cli.models.provider_model_ids", return_value=[]), patch.dict(
-            "pulse_cli.models._PROVIDER_MODELS", {"nous": ["m-static"]}
+            "pulse_cli.models._PROVIDER_MODELS", {"pulse": ["m-static"]}
         ):
-            assert curated_models_for_provider("nous") == [("m-static", "")]
+            assert curated_models_for_provider("pulse") == [("m-static", "")]
 
 
 # -- normalize_provider ------------------------------------------------------
@@ -644,10 +644,10 @@ class TestValidateOpenRouterVariantSuffixes:
 
 
 class TestValidateRequestedModelNousPortalRecommendations:
-    """Regression tests for issue #71312: the Nous Telegram picker (and any
+    """Regression tests for issue #71312: the PULSE Telegram picker (and any
     other messaging-platform /model validation, since they all share
-    validate_requested_model()) rejected models that are live Nous Portal
-    recommendations (/api/nous/recommended-models) but not yet in the
+    validate_requested_model()) rejected models that are live Pulse Portal
+    recommendations (/api/pulse/recommended-models) but not yet in the
     hardcoded curated catalog -- even though `pulse chat` already accepts
     these via union_with_portal_free/paid_recommendations() at model-list
     build time. The per-message validation path now checks the same Portal
@@ -663,7 +663,7 @@ class TestValidateRequestedModelNousPortalRecommendations:
         ],
     }
 
-    def _validate_nous(self, model, api_models=None, portal_payload=None, portal_raises=False):
+    def _validate_pulse(self, model, api_models=None, portal_payload=None, portal_raises=False):
         api_models = api_models if api_models is not None else ["inclusionai/ling-2.6-flash"]
         probe_payload = {
             "models": api_models,
@@ -680,36 +680,36 @@ class TestValidateRequestedModelNousPortalRecommendations:
 
         with patch("pulse_cli.models.fetch_api_models", return_value=api_models), \
              patch("pulse_cli.models.probe_api_models", return_value=probe_payload), \
-             patch("pulse_cli.models.fetch_nous_recommended_models", side_effect=_fetch_portal), \
-             patch("pulse_cli.models._resolve_nous_portal_url", return_value="https://portal.anxious-research.com"), \
+             patch("pulse_cli.models.fetch_pulse_recommended_models", side_effect=_fetch_portal), \
+             patch("pulse_cli.models._resolve_pulse_portal_url", return_value="https://portal.anxious-research.com"), \
              patch("pulse_cli.models._model_in_provider_catalog", return_value=False):
-            return validate_requested_model(model, "nous")
+            return validate_requested_model(model, "pulse")
 
     def test_free_portal_recommendation_accepted(self):
         """The exact scenario from #71312: a free-tier Portal recommendation
         missing from the curated catalog and the live /v1/models listing
         must be accepted, not rejected."""
-        result = self._validate_nous("inclusionai/ling-3.0-flash:free")
+        result = self._validate_pulse("inclusionai/ling-3.0-flash:free")
         assert result["accepted"] is True
         assert result["persist"] is True
         assert "Portal recommendation" in (result["message"] or "")
 
     def test_paid_portal_recommendation_accepted(self):
-        result = self._validate_nous("inclusionai/ling-3.0-pro")
+        result = self._validate_pulse("inclusionai/ling-3.0-pro")
         assert result["accepted"] is True
 
     def test_model_absent_from_portal_and_catalog_still_rejected(self):
         """A model that's genuinely nowhere (not live, not curated, not a
         Portal recommendation) must still be rejected -- this fallback
         tier must not make validation permissive for everything."""
-        result = self._validate_nous("totally-made-up-model-xyz")
+        result = self._validate_pulse("totally-made-up-model-xyz")
         assert result["accepted"] is False
         assert result["recognized"] is False
 
     def test_portal_fetch_failure_falls_through_to_rejection_not_crash(self):
         """A network/parse failure fetching the Portal feed must not crash
         validation -- it degrades to the existing rejection path."""
-        result = self._validate_nous(
+        result = self._validate_pulse(
             "inclusionai/ling-3.0-flash:free", portal_raises=True
         )
         assert result["accepted"] is False  # fails closed, doesn't crash
@@ -728,16 +728,15 @@ class TestValidateRequestedModelNousPortalRecommendations:
             ],
             "paidRecommendedModels": [],
         }
-        assert self._validate_nous("5", portal_payload=payload)["accepted"] is False
-        result = self._validate_nous(
+        assert self._validate_pulse("5", portal_payload=payload)["accepted"] is False
+        result = self._validate_pulse(
             "inclusionai/ling-3.0-flash:free", portal_payload=payload
         )
         assert result["accepted"] is True
 
-    def test_non_nous_provider_does_not_consult_portal_feed(self):
-        """This fallback tier is Nous-specific; a non-Nous provider must
-        not have its rejection changed by (or trigger a call to) the Nous
-        Portal feed."""
+    def test_non_pulse_provider_does_not_consult_portal_feed(self):
+        """This fallback tier is PULSE-specific; a non-PULSE provider must
+        not have its rejection changed by (or trigger a call to) the Pulse Portal feed."""
         probe_payload = {
             "models": ["some/other-model"],
             "probed_url": "https://api.example.com/v1/models",
@@ -747,7 +746,7 @@ class TestValidateRequestedModelNousPortalRecommendations:
         }
         with patch("pulse_cli.models.fetch_api_models", return_value=["some/other-model"]), \
              patch("pulse_cli.models.probe_api_models", return_value=probe_payload), \
-             patch("pulse_cli.models.fetch_nous_recommended_models") as mock_portal, \
+             patch("pulse_cli.models.fetch_pulse_recommended_models") as mock_portal, \
              patch("pulse_cli.models._model_in_provider_catalog", return_value=False):
             result = validate_requested_model("inclusionai/ling-3.0-flash:free", "openrouter")
         mock_portal.assert_not_called()

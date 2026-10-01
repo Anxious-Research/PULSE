@@ -7,7 +7,7 @@
 //               with an explicit Upload button; nothing is sent before it.
 //   uploading — spinner while the backend collects, redacts and uploads.
 //   done      — the private view link (copyable) + where to pick up the
-//               discussion: GitHub Issues · Nous Portal Support · Discord.
+//               discussion: GitHub Issues · Pulse Portal Support · Discord.
 import { useStore } from '@nanostores/react'
 
 import { Button } from '@/components/ui/button'
@@ -28,7 +28,7 @@ import { $sendDiagnostics, confirmSendDiagnostics, dismissSendDiagnostics } from
 const SUPPORT_LINKS = [
   { key: 'github', url: 'https://github.com/Anxious-Research/PULSE/issues' },
   { key: 'portal', url: 'https://portal.anxious-research.com/help' },
-  { key: 'discord', url: 'https://discord.gg/NousResearch' }
+  { key: 'discord', url: 'https://discord.gg/AnxiousResearch' }
 ] as const
 
 export function SendDiagnosticsHost() {

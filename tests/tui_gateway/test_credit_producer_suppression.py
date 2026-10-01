@@ -23,7 +23,7 @@ def test_actual_credit_capture_depletion_and_recovery(tmp_path, monkeypatch, set
     cfg = {} if setting is None else {"display": {"suppress_warning_notifications": setting}}
     (tmp_path / "config.yaml").write_text(json.dumps(cfg))
     agent = object.__new__(AIAgent)
-    agent.provider = "nous"
+    agent.provider = "pulse"
     agent.model = "paid-model"
     agent.base_url = ""
     agent._credits_state = agent._credits_session_start_micros = None
@@ -42,12 +42,12 @@ def test_actual_credit_capture_depletion_and_recovery(tmp_path, monkeypatch, set
     agent.notice_clear_callback = clears.append
     for headers in (HEALTHY_HEADERS, DEPLETED_HEADERS, DEPLETED_HEADERS, HEALTHY_HEADERS):
         current = dict(headers)
-        current['x-nous-credits-as-of-ms'] = str(int(time.time() * 1000))
+        current['x-pulse-credits-as-of-ms'] = str(int(time.time() * 1000))
         agent._capture_credits(SimpleNamespace(headers=current))
     assert sum(n.key == "credits.depleted" for n in observed) == 1
     assert "credits.depleted" in clears
     assert agent.get_credits_state().paid_access is True
-    assert agent.get_credits_state().remaining_micros == int(HEALTHY_HEADERS['x-nous-credits-remaining-micros'])
+    assert agent.get_credits_state().remaining_micros == int(HEALTHY_HEADERS['x-pulse-credits-remaining-micros'])
     projected = getattr(cli, "_pending_credit_notices", []) if surface == "cli" else [
         f for f in frames if f.get("params", {}).get("type") == "notification.show"]
     levels = [row[0] for row in projected] if surface == "cli" else [

@@ -24,7 +24,7 @@ from tools import browser_tool_lightpanda_fallback as _lp
 from tools import browser_tool_real_profile as _real_profile
 from tools import browser_tool_snapshot as _snapshot
 
-_DOCKER_PULL = "docker pull ghcr.io/nousresearch/pulse-agent:latest"
+_DOCKER_PULL = "docker pull ghcr.io/anxious-research/pulse-agent:latest"
 _CHROMIUM_INSTALL = "pulse pm install chromium (system libraries: npx playwright install-deps chromium)"
 _CHROMIUM_MISSING_DOCKER_HINT = ("Chromium browser is missing. You're running in Docker — pull the latest image "
                                  f"to get the bundled Chromium: {_DOCKER_PULL}")
@@ -625,7 +625,7 @@ def _interpret_browser_command_output(command: str, stdout: str, stderr: str, re
     return parsed
 
 
-_SANDBOX_AGENT_BROWSER = "agent-browser"  # the CLI baked into nousresearch/pulse-sandbox:desktop
+_SANDBOX_AGENT_BROWSER = "agent-browser"  # the CLI baked into anxious-research/pulse-sandbox:desktop
 _SANDBOX_ENV_KEYS = ("AGENT_BROWSER_SOCKET_DIR", "AGENT_BROWSER_IDLE_TIMEOUT_MS", "AGENT_BROWSER_ARGS",
                      "AGENT_BROWSER_PROFILE", "AGENT_BROWSER_EXECUTABLE_PATH", "AGENT_BROWSER_HEADED",
                      "DISPLAY", "XAUTHORITY", "DBUS_SESSION_BUS_ADDRESS", "ANONYMIZED_TELEMETRY", "TMPDIR")

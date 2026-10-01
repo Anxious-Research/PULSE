@@ -578,7 +578,7 @@ def _run_references_parallel(
     total = len(reference_models)
     results: list[tuple[str, str, Any] | None] = [None] * total
     futures: dict[Any, int] = {}
-    # Propagate the turn's contextvars (approval callbacks, Nous conversation tag).
+    # Propagate the turn's contextvars (approval callbacks, PULSE conversation tag).
     from tools.thread_context import propagate_context_to_thread
     completed = 0
     executor = ThreadPoolExecutor(max_workers=min(_MAX_REFERENCE_WORKERS, total))

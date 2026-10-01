@@ -167,7 +167,7 @@ class BillingStateResult(Result):
 
 
 method("billing.state", params=ProfileParams, result=BillingStateResult,
-       doc="Read-only billing view (no scope); the Nous free tier is answered locally without a portal call.")
+       doc="Read-only billing view (no scope); the PULSE free tier is answered locally without a portal call.")
 
 
 # ── subscription.state / preview / change / resume / upgrade ──────────────────────────────────

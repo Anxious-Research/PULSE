@@ -16,7 +16,7 @@ def _bind_homes(monkeypatch, tmp_path: Path) -> tuple[Path, Path]:
     launch, worker = tmp_path / "launch", tmp_path / "profiles" / "code"
     for home in (launch, worker):
         home.mkdir(parents=True)
-        (home / "config.yaml").write_text(yaml.safe_dump({"model": {"provider": "nous"}}), encoding="utf-8")
+        (home / "config.yaml").write_text(yaml.safe_dump({"model": {"provider": "pulse"}}), encoding="utf-8")
     monkeypatch.setattr(server, "_pulse_home", launch)
     monkeypatch.setenv("PULSE_HOME", str(launch))
     monkeypatch.setattr(server, "_profile_home", lambda name: worker if (name or "").strip() == "code" else None)
@@ -79,4 +79,4 @@ def test_only_the_first_run_answer_records_desktop_setup_completed(tmp_path, mon
     _call("shared_metrics.set", {"profile": "code", "enabled": True, "send": False, "first_run": True})
     _call("shared_metrics.set", {"profile": "code", "enabled": True, "send": True})
 
-    assert calls == [{"surface": "desktop", "provider": "nous"}]
+    assert calls == [{"surface": "desktop", "provider": "pulse"}]

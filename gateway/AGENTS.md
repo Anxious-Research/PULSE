@@ -97,7 +97,7 @@ briefs are labelled user turns appended at a turn boundary, preserving role alte
 conversation — ntfy, raft and a2a all report `chat_type="dm"` for a broadcast topic, a channel and
 an agent peer, so posting a consent link there would publish it.
 
-**It binds the whole install.** The sign-in writes the singleton `providers.nous`, so whoever
+**It binds the whole install.** The sign-in writes the singleton `providers.pulse`, so whoever
 approves the code owns this gateway's inference and connectors for every chat it serves. Slash
 gating is opt-in (`gateway/slash_access.py`): with no `allow_admin_from` set, every user allowed to
 DM the bot can run it. Operators of shared gateways must set it.
@@ -113,7 +113,7 @@ worker thread, so shutdown and supersede both work through `attempt.cancelled`, 
 task is dying and its adapters may already be gone — but if the server had already completed the
 transfer it still persists, because that transfer is irreversible.
 
-On completion the handler **evicts** every cached agent still on `nous/welcome` and clears any
+On completion the handler **evicts** every cached agent still on `pulse/welcome` and clears any
 session model override pinned to it. It does not switch agents in place and does not write a model
 override: `settle_after_upgrade` already moved `model.default`/`model.base_url` in the config, every
 turn re-resolves the config and the credentials, and `_agent_config_signature` already forces a

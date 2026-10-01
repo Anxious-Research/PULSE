@@ -2,7 +2,7 @@
 
 The title lane disables reasoning (``reasoning_config={"enabled": False}``), which the custom profile
 encodes as top-level ``reasoning_effort: "none"``. Endpoints that understand the field but refuse the
-disable (Nous Portal on gpt-6-astra: 400 "Reasoning is mandatory for this endpoint and cannot be
+disable (Pulse Portal on gpt-6-astra: 400 "Reasoning is mandatory for this endpoint and cannot be
 disabled") used to fail the title outright — the strip rung (#112781) never matched this wording.
 The recovery is a step UP (``low``), memoised per (route, model) so the next thinking-off aux call
 on that route starts at the floor without the guaranteed 400.

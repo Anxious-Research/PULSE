@@ -9,7 +9,7 @@ import pytest
 
 from agent import empty_response_guard
 from agent.status_output import StatusOutputMixin
-from agent.turn_api_call import nous_rate_limit_guard
+from agent.turn_api_call import pulse_rate_limit_guard
 from agent.turn_empty_response import _terminal_empty
 from gateway.config import Platform
 from gateway.run import GatewayRunner, _load_gateway_config
@@ -21,7 +21,7 @@ from gateway.turn_context import TurnContext
 class Agent(StatusOutputMixin):
     suppress_status_output = True
     log_prefix = ""
-    provider = "nous"
+    provider = "pulse"
     model = "model"
     base_url = "https://example.invalid/v1"
     _fallback_chain = []
@@ -72,10 +72,10 @@ def test_real_retry_producers_keep_final_failure_and_persistence(tmp_path, monke
         result, source, [], SimpleNamespace(session_id="session"), None, None, None, "session", "slack", 0))
     assert response and response != "(empty)" and not silent
     sent.clear()
-    with patch("agent.nous_rate_guard.nous_rate_limit_remaining", return_value=60), \
+    with patch("agent.pulse_rate_guard.pulse_rate_limit_remaining", return_value=60), \
          patch("pulse_cli.anon_auth.apply_model_switch"), \
          patch("pulse_cli.anon_auth.route_is_welcome_host", return_value=False):
-        verdict = nous_rate_limit_guard(agent, _retry=SimpleNamespace(), api_messages=[], messages=[],
+        verdict = pulse_rate_limit_guard(agent, _retry=SimpleNamespace(), api_messages=[], messages=[],
             conversation_history=[], active_system_prompt="", retry_count=0, compression_attempts=0, api_call_count=0)
     assert bool(sent) is enabled
     assert verdict.result["failed"] and agent.persisted

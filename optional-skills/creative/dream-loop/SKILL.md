@@ -2,7 +2,7 @@
 name: dream-loop
 description: "Build stunning 3D scenes via a concept-art fidelity loop."
 version: 1.0.0
-author: Anshu Chimala (adapted by Nous Research)
+author: Anshu Chimala (adapted by Anxious Research)
 license: MIT
 dependencies: []
 platforms: [linux, macos]

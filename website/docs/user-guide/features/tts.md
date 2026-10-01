@@ -12,8 +12,8 @@ After a dependency change, reactivate the checkout and restart PULSE.
 
 PULSE Agent supports both text-to-speech output and voice message transcription across all messaging platforms.
 
-:::tip Nous Subscribers
-If you have a paid [Nous Portal](https://portal.anxious-research.com) subscription, OpenAI TTS is available through the **[Tool Gateway](tool-gateway.md)** without a separate OpenAI API key. New installs can run `pulse setup --portal` to log in and turn on every gateway tool at once; existing installs can pick **Nous Subscription** for just TTS via `pulse model` or `pulse tools`.
+:::tip PULSE Subscribers
+If you have a paid [Pulse Portal](https://portal.anxious-research.com) subscription, OpenAI TTS is available through the **[Tool Gateway](tool-gateway.md)** without a separate OpenAI API key. New installs can run `pulse setup --portal` to log in and turn on every gateway tool at once; existing installs can pick **PULSE Subscription** for just TTS via `pulse model` or `pulse tools`.
 :::
 
 ## Text-to-Speech
@@ -48,7 +48,7 @@ Convert text to speech with eleven providers:
 ```yaml
 # In ~/.pulse/config.yaml
 tts:
-  provider: "edge"              # "edge" | "elevenlabs" | "openai" | "minimax" | "mistral" | "gemini" | "xai" | "deepinfra" | "neutts" | "kittentts" | "piper" — or "nous" for the managed Tool Gateway (written when you pick Nous Subscription in `pulse tools`)
+  provider: "edge"              # "edge" | "elevenlabs" | "openai" | "minimax" | "mistral" | "gemini" | "xai" | "deepinfra" | "neutts" | "kittentts" | "piper" — or "pulse" for the managed Tool Gateway (written when you pick PULSE Subscription in `pulse tools`)
   speed: 1.0                    # Global speed multiplier (provider-specific settings override this)
   edge:
     voice: "en-US-AriaNeural"   # 322 voices, 74 languages

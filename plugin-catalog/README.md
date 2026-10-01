@@ -1,6 +1,6 @@
 # PULSE Plugin Catalog
 
-Curated, Nous-approved PULSE plugins. Each YAML file in this directory
+Curated, PULSE-approved PULSE plugins. Each YAML file in this directory
 (except `removed.yaml`) is one catalog entry, discoverable via
 `pulse plugins catalog` / `pulse plugins search` and installable with
 `pulse plugins install <name>`.

@@ -1,4 +1,4 @@
-"""Streamlined setup flows: the Nous Portal one-shot (`pulse portal`), first-time quick setup,
+"""Streamlined setup flows: the Pulse Portal one-shot (`pulse portal`), first-time quick setup,
 Blank Slate setup and the `--quick` missing-items pass. Names from setup.py are imported lazily
 per function so test patches on ``pulse_cli.setup`` take effect."""
 
@@ -35,32 +35,32 @@ def _reload_config_into(config: dict, *, dict_only: bool = False) -> None:
         config.update(refreshed)
 
 
-def _run_nous_flow(config: dict, *, context: str, cancel_exc: tuple, cancel_lines: tuple, print_error) -> bool:
-    """Run ``_model_flow_nous`` (login, model pick, provider switch, Tool Gateway opt-in) — the
+def _run_pulse_flow(config: dict, *, context: str, cancel_exc: tuple, cancel_lines: tuple, print_error) -> bool:
+    """Run ``_model_flow_pulse`` (login, model pick, provider switch, Tool Gateway opt-in) — the
     single source of truth shared with ``pulse model``. False when cancelled or failed (the
     message is already printed)."""
     from pulse_cli.setup import _info
     try:
-        from pulse_cli.model_setup_flows import _model_flow_nous
-        _model_flow_nous(config)
+        from pulse_cli.model_setup_flows import _model_flow_pulse
+        _model_flow_pulse(config)
         return True
     except cancel_exc:
-        # _login_nous raises SystemExit(130)/(1) on cancel/failure; the expired-session re-login
-        # path inside _model_flow_nous only catches Exception, so SystemExit would kill the CLI.
+        # _login_pulse raises SystemExit(130)/(1) on cancel/failure; the expired-session re-login
+        # path inside _model_flow_pulse only catches Exception, so SystemExit would kill the CLI.
         _info(*cancel_lines)
     except Exception as exc:
-        logger.debug("_model_flow_nous error during %s: %s", context, exc)
+        logger.debug("_model_flow_pulse error during %s: %s", context, exc)
         print_error(exc)
     return False
 
 
 def _run_portal_one_shot(config: dict) -> None:
-    """One-shot Nous Portal setup (``pulse setup --portal`` / ``pulse portal``)."""
+    """One-shot Pulse Portal setup (``pulse setup --portal`` / ``pulse portal``)."""
     from pulse_cli.setup import _info, _print_banner, _record_setup_completed, print_error, print_info, print_success
-    _print_banner("│     ☤ PULSE Setup — Nous Portal (one-shot)             │")
+    _print_banner("│     ☤ PULSE Setup — Pulse Portal (one-shot)             │")
     _info(None, "  One subscription, 300+ models, plus the Tool Gateway:",
           "    web search, image generation, TTS, browser automation",
-          "    — all routed through your Nous Portal sub.", None,
+          "    — all routed through your Pulse Portal sub.", None,
           "  Sign up: https://portal.anxious-research.com/manage-subscription", None)
 
     def _on_error(exc: Exception) -> None:
@@ -71,7 +71,7 @@ def _run_portal_one_shot(config: dict) -> None:
         for line in rest:
             print_info(f"  {line}")
 
-    if not _run_nous_flow(config, context="`pulse portal`", cancel_exc=(KeyboardInterrupt, EOFError, SystemExit),
+    if not _run_pulse_flow(config, context="`pulse portal`", cancel_exc=(KeyboardInterrupt, EOFError, SystemExit),
                           cancel_lines=(None, "  Setup cancelled.", "  You can retry later with `pulse portal`."),
                           print_error=_on_error):
         return
@@ -86,14 +86,14 @@ def _run_portal_one_shot(config: dict) -> None:
 
 
 def _run_first_time_quick_setup(config: dict, pulse_home, is_existing: bool):
-    """Streamlined first-time setup via Nous Portal: OAuth, model, terminal & messaging;
+    """Streamlined first-time setup via Pulse Portal: OAuth, model, terminal & messaging;
     everything else gets defaults."""
     from pulse_cli.setup import (
         _apply_default_agent_settings, _info, print_header, print_info, _print_setup_summary, print_success,
         print_warning, prompt_choice, save_config, setup_gateway, setup_terminal_backend
     )
-    # Step 1: Nous Portal — OAuth login + model selection (provider set to "nous" by the save).
-    print_header("Nous Portal", gap=True)
+    # Step 1: Pulse Portal — OAuth login + model selection (provider set to "pulse" by the save).
+    print_header("Pulse Portal", gap=True)
     _info("One subscription, 300+ models, plus the Tool Gateway:",
           "  web search, image generation, TTS, browser automation.",
           "Sign up: https://portal.anxious-research.com/manage-subscription", None)
@@ -105,8 +105,8 @@ def _run_first_time_quick_setup(config: dict, pulse_home, is_existing: bool):
         for line in rest:
             print_info(line)
 
-    _run_nous_flow(config, context="quick setup", cancel_exc=(KeyboardInterrupt, EOFError),
-                   cancel_lines=(None, "Nous Portal setup cancelled."), print_error=_on_error)
+    _run_pulse_flow(config, context="quick setup", cancel_exc=(KeyboardInterrupt, EOFError),
+                   cancel_lines=(None, "Pulse Portal setup cancelled."), print_error=_on_error)
     # The wizard's later save_config(config) must not clobber the login/model save.
     _reload_config_into(config)
 

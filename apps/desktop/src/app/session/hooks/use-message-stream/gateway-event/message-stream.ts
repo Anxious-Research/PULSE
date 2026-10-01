@@ -30,7 +30,7 @@ function firstBillingLine(text: string): string {
  * gateway forwards the structured descriptor built by `agent/billing_links.py`;
  * we cache it per-session (drives the in-chat banner) AND raise one sticky,
  * billing-specific toast — never the generic "PULSE error" — with a smart CTA
- * (Nous → in-app Settings → Billing, other providers → their billing page).
+ * (PULSE → in-app Settings → Billing, other providers → their billing page).
  */
 function surfaceBillingBlock(sessionId: string, raw: unknown): void {
   if (!raw || typeof raw !== 'object') {
@@ -55,7 +55,7 @@ function surfaceBillingBlock(sessionId: string, raw: unknown): void {
     id: `billing-block:${block.provider}`,
     kind: 'warning',
     icon: 'credit-card',
-    title: block.is_nous
+    title: block.is_pulse
       ? translateNow('billingBlock.titleNous')
       : translateNow('billingBlock.titleProvider', block.provider_label),
     message: firstBillingLine(block.message) || translateNow('billingBlock.fallbackMessage'),

@@ -128,8 +128,8 @@ class TestApplySessionModelOverride:
 
 class TestIsIntentionalModelSwitch:
     """The fallback-eviction check must not evict a session whose model differs from the config
-    default for a reason the system produced: a /model override, or the Nous gateway moving the
-    session off the ``nous/welcome`` alias the config still carries."""
+    default for a reason the system produced: a /model override, or the PULSE gateway moving the
+    session off the ``pulse/welcome`` alias the config still carries."""
 
     def test_matches_override(self):
         runner = _make_runner()
@@ -150,13 +150,13 @@ class TestIsIntentionalModelSwitch:
         runner = _make_runner()
         sk = build_session_key(_make_source())
         # apply_model_switch moved the session and recorded the move (alias -> backing).
-        agent = SimpleNamespace(model="z-ai/glm-5.3-flash", _nous_model_switch=("nous/welcome", "z-ai/glm-5.3-flash"))
-        assert runner._is_intentional_model_switch(sk, agent, "nous/welcome") is True
+        agent = SimpleNamespace(model="z-ai/glm-5.3-flash", _pulse_model_switch=("pulse/welcome", "z-ai/glm-5.3-flash"))
+        assert runner._is_intentional_model_switch(sk, agent, "pulse/welcome") is True
         # A config that names something else is real drift, not the server's move.
         assert runner._is_intentional_model_switch(sk, agent, "openai/gpt-5") is False
         # A later fallback onto a third model is drift too, even with the config still on the alias.
         agent.model = "fallback/model"
-        assert runner._is_intentional_model_switch(sk, agent, "nous/welcome") is False
+        assert runner._is_intentional_model_switch(sk, agent, "pulse/welcome") is False
 
     def test_plain_drift_is_not_intentional(self):
         runner = _make_runner()

@@ -400,11 +400,11 @@ def _resolve_api_mode(agent, api_mode, provider_name, base_url):
         host.startswith("bedrock-runtime.") and base_url_host_matches(url, "amazonaws.com")
     ):
         agent.api_mode = "bedrock_converse"
-    elif agent.provider in {"nous", "nous-portal", "nousresearch"}:
+    elif agent.provider in {"pulse", "pulse-portal", "anxious-research"}:
         # Portal is dual-wire (anthropic/* → Messages, else chat_completions); covers direct
         # AIAgent construction without a resolved runtime.
-        from pulse_cli.providers import nous_api_mode
-        agent.api_mode = nous_api_mode(agent.model)
+        from pulse_cli.providers import pulse_api_mode
+        agent.api_mode = pulse_api_mode(agent.model)
     else:
         # Host-mandated wire check — LAST, so the provider-slug rewrites above always win.
         # Covers api.meta.ai → codex_responses (prompt caching: 0% on chat vs 93-99%).
@@ -442,16 +442,16 @@ def _finalize_routing(agent, api_mode, credential_pool):
     with suppress(Exception):
         agent._get_transport()
 
-    # The Nous agent key lives ~1 h. Without the proactive refresher every agent in the process
+    # The PULSE agent key lives ~1 h. Without the proactive refresher every agent in the process
     # discovers expiry reactively, on its own next request, all in the same minute: with 200
     # in-process subagents that was a 401 storm each hour (620 in one run) and the credential
     # pool benched the provider for all of them. The gateway and web server start this thread
     # at boot; the CLI process (and everything spawned inside it) never did. Idempotent,
     # process-wide, daemon.
-    if agent.provider == "nous":
+    if agent.provider == "pulse":
         with suppress(Exception):
-            from pulse_cli.nous_auth_keepalive import start_nous_auth_keepalive
-            start_nous_auth_keepalive()
+            from pulse_cli.pulse_auth_keepalive import start_pulse_auth_keepalive
+            start_pulse_auth_keepalive()
 
     with suppress(Exception):
         from pulse_cli.model_normalize import (
@@ -461,7 +461,7 @@ def _finalize_routing(agent, api_mode, credential_pool):
         if agent.provider not in _AGGREGATOR_PROVIDERS:
             agent.model = normalize_model_for_provider(agent.model, agent.provider)
 
-    # Nous model policy follows the ROUTE (the welcome host serves one model); a credential-pool
+    # PULSE model policy follows the ROUTE (the welcome host serves one model); a credential-pool
     # swap can change the route later, so ``_swap_credential`` applies the same helper again.
     from pulse_cli.anon_auth import pin_model_for_route
     agent.model = pin_model_for_route(agent.provider, agent.base_url, agent.model)
@@ -576,7 +576,7 @@ _TURN_STATE: Dict[str, Any] = {
     # a stale rebuild instead of clobbering a newer one.
     "_tool_snapshot_generation": 0,
     "_rate_limit_state": None,  # from x-ratelimit-* headers; read by /usage
-    # Credits tracking (dev-only, PULSE_DEV_CREDITS) from x-nous-credits-* headers; session
+    # Credits tracking (dev-only, PULSE_DEV_CREDITS) from x-pulse-credits-* headers; session
     # start is latched on the first header so cumulative spend can be reported.
     "_credits_state": None,
     "_credits_session_start_micros": None,
@@ -2095,7 +2095,7 @@ def _enforce_minimum_context(agent):
 
 
 def _warn_nonagentic_pulse_model(agent):
-    # Nous PULSE 3/4 are chat models, not tool-call-tuned. cli.py show_banner() already
+    # PULSE PULSE 3/4 are chat models, not tool-call-tuned. cli.py show_banner() already
     # warns on the CLI, so skip platform=="cli"; non-quiet non-CLI surfaces still get it.
     if agent.quiet_mode or (agent.platform or "cli") == "cli":
         return
@@ -2104,7 +2104,7 @@ def _warn_nonagentic_pulse_model(agent):
         _pulse_warn = _check_pulse_model_warning(agent.model or "")
         if _pulse_warn:
             _user_msg = (
-                "⚠ Nous Research PULSE 3 & 4 models are NOT agentic — they "
+                "⚠ Anxious Research PULSE 3 & 4 models are NOT agentic — they "
                 "lack reliable tool-calling for agent workflows (delegation, "
                 "cron, proactive tools). Consider an agentic model instead "
                 "(Claude, GPT, Gemini, Qwen-Coder, etc.)."

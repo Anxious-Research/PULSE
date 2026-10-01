@@ -2,7 +2,7 @@
 
 ``get_catalog()`` returns the parsed manifest: in-process cache (TTL) → disk cache at
 ``~/.pulse/cache/model_catalog.json`` → master URL fetch; any fetch failure keeps the stale copy
-(or ``{}``). ``get_curated_openrouter_models()`` / ``get_curated_nous_models()`` are thin accessors
+(or ``{}``). ``get_curated_openrouter_models()`` / ``get_curated_pulse_models()`` are thin accessors
 whose callers fall back to the in-repo lists on ``None``.
 """
 
@@ -250,17 +250,17 @@ def refresh_interval_seconds() -> float:
 
 
 def refresh_catalogs() -> bool:
-    """Force-refresh every remote catalog the picker reads (manifest, OpenRouter live list, Nous Portal
+    """Force-refresh every remote catalog the picker reads (manifest, OpenRouter live list, Pulse Portal
     recommendations), writing each disk cache so the next ``/model`` open in ANY process sees them.
     Blocking; run it off the event loop."""
     if not _load_catalog_config()["enabled"]:
         return False
     catalog = get_catalog(force_refresh=True)
     try:
-        from pulse_cli.models import fetch_nous_recommended_models, fetch_openrouter_models
+        from pulse_cli.models import fetch_pulse_recommended_models, fetch_openrouter_models
 
         fetch_openrouter_models(force_refresh=True)
-        fetch_nous_recommended_models(force_refresh=True)
+        fetch_pulse_recommended_models(force_refresh=True)
     except Exception:
         logger.debug("provider catalog refresh failed", exc_info=True)
     return bool(catalog)
@@ -303,9 +303,9 @@ def get_curated_openrouter_models() -> list[tuple[str, str]] | None:
     return [(mid, str(m.get("description") or "")) for mid, m in rows] or None
 
 
-def get_curated_nous_models() -> list[str] | None:
-    """Nous Portal's curated model ids from the manifest."""
-    return [mid for mid, _ in _block_ids(_get_provider_block("nous"))] or None
+def get_curated_pulse_models() -> list[str] | None:
+    """Pulse Portal's curated model ids from the manifest."""
+    return [mid for mid, _ in _block_ids(_get_provider_block("pulse"))] or None
 
 
 def _default_model_from_block(block: dict[str, Any] | None) -> str | None:

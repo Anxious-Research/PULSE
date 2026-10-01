@@ -78,7 +78,7 @@ class _FakeAgent:
     the real policy against the latch (mirroring run_agent._emit_credits_notices,
     including the free-model suppression flag)."""
 
-    def __init__(self, provider="nous", model="", base_url="", session_id="session-1"):  # session_id may be None
+    def __init__(self, provider="pulse", model="", base_url="", session_id="session-1"):  # session_id may be None
         from agent.credits_tracker import evaluate_credits_notices, is_free_tier_model
 
         self.provider = provider
@@ -158,7 +158,7 @@ def test_seed_is_idempotent():
     assert a.emitted == []
 
 
-def test_seed_skips_non_nous():
+def test_seed_skips_non_pulse():
     from agent.credits_tracker import seed_credits_at_session_start
 
     a = _FakeAgent(provider="openrouter")
@@ -297,7 +297,7 @@ def _run_bg_seed(monkeypatch, agent, *, warm):
     import threading
 
     import agent.memory_provider as memory_provider
-    import pulse_cli.nous_account as nous_account
+    import pulse_cli.pulse_account as pulse_account
     from agent import credits_tracker
 
     release_worker = threading.Event()
@@ -314,9 +314,9 @@ def _run_bg_seed(monkeypatch, agent, *, warm):
         return thread
 
     monkeypatch.delenv("PULSE_DEV_CREDITS", raising=False)  # fixtures would take the sync path
-    monkeypatch.setattr(credits_tracker, "_warm_nous_pricing_cache", _gated_warm)
+    monkeypatch.setattr(credits_tracker, "_warm_pulse_pricing_cache", _gated_warm)
     monkeypatch.setattr(memory_provider, "spawn_context_thread", _capture_spawn)
-    monkeypatch.setattr(nous_account, "get_nous_portal_account_info", lambda *a, **kw: _DepletedAccount())
+    monkeypatch.setattr(pulse_account, "get_pulse_portal_account_info", lambda *a, **kw: _DepletedAccount())
     result = credits_tracker.seed_credits_at_session_start(agent)
     try:
         assert len(spawned) == 1
@@ -372,7 +372,7 @@ def test_bg_seed_reruns_the_policy_when_a_header_beat_it(monkeypatch):
     assert agent.emitted[-1] == ([], ["credits.depleted"])  # warm re-run: cleared, no "restored"
 
 
-# ── inference-header path: the catalog goes cold again after the Nous TTL ────
+# ── inference-header path: the catalog goes cold again after the PULSE TTL ────
 
 
 def _mixin_agent(model="openai/gpt-5.6-luna"):
@@ -381,7 +381,7 @@ def _mixin_agent(model="openai/gpt-5.6-luna"):
     from agent.status_output import StatusOutputMixin
 
     class _Agent(RateLimitCreditsMixin, StatusOutputMixin):
-        provider = "nous"
+        provider = "pulse"
         base_url = _NOUS_BASE
 
         def __init__(self):
@@ -403,7 +403,7 @@ def _join_pricing_warm(agent):
 
 
 def test_header_after_ttl_expiry_rewarms_instead_of_flashing_the_banner(monkeypatch):
-    """The session-start warm is one-shot; a Nous catalog expires after _NOUS_CATALOG_TTL_SECONDS. A
+    """The session-start warm is one-shot; a PULSE catalog expires after _NOUS_CATALOG_TTL_SECONDS. A
     header landing after that saw a cold peek and brought the depleted banner back for a
     subscription-billed model. Now the cold peek starts a re-warm and the banner never shows."""
     from agent import credits_tracker
@@ -417,7 +417,7 @@ def test_header_after_ttl_expiry_rewarms_instead_of_flashing_the_banner(monkeypa
     assert agent.shown == []  # warm catalog: suppressed
     models_pricing._pricing_cache_retry_after = {  # ...then the TTL passes
         k: v - models_pricing._NOUS_CATALOG_TTL_SECONDS - 1 for k, v in models_pricing._pricing_cache_retry_after.items()}
-    monkeypatch.setattr(credits_tracker, "_warm_nous_pricing_cache",
+    monkeypatch.setattr(credits_tracker, "_warm_pulse_pricing_cache",
                         lambda: models_pricing._pricing_cache.update(_SUBSCRIPTION_CATALOG))
 
     agent._emit_credits_notices()  # the next inference header
@@ -439,7 +439,7 @@ def test_header_on_a_cold_catalog_still_warns_when_the_warm_fails(monkeypatch):
         warms.append(1)
         models_pricing._cache_catalog(_NOUS_BASE[:-3] + models_pricing._PRICING_AUTH_KEY_PREFIX + "abc", {})
 
-    monkeypatch.setattr(credits_tracker, "_warm_nous_pricing_cache", _failed_fetch)
+    monkeypatch.setattr(credits_tracker, "_warm_pulse_pricing_cache", _failed_fetch)
     agent = _mixin_agent()
 
     agent._emit_credits_notices()

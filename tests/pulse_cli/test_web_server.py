@@ -3063,16 +3063,16 @@ class TestNewEndpoints:
         """Each provider row carries a server-computed readiness `status`.
 
         Regression: the GUI pilled every zero-env-var row "Ready" — including
-        logged-out Nous Subscription rows, xAI TTS without Grok OAuth, and
+        logged-out PULSE Subscription rows, xAI TTS without Grok OAuth, and
         never-installed KittenTTS/Piper. The endpoint now reports the honest
         state so keyless ≠ ready.
         """
         import pulse_cli.tools_config as tools_config
-        from pulse_cli.nous_account import NousPortalAccountInfo
+        from pulse_cli.pulse_account import NousPortalAccountInfo
 
-        # Logged out of Nous Portal → managed subscription rows need sign-in.
+        # Logged out of Pulse Portal → managed subscription rows need sign-in.
         monkeypatch.setattr(
-            "pulse_cli.nous_subscription.get_nous_portal_account_info",
+            "pulse_cli.pulse_subscription.get_pulse_portal_account_info",
             lambda *a, **k: NousPortalAccountInfo(
                 logged_in=False, source="none", fresh=False, paid_service_access=None
             ),
@@ -3095,7 +3095,7 @@ class TestNewEndpoints:
         # Genuinely-free keyless row stays Ready.
         assert by_name["Microsoft Edge TTS"]["status"] == "ready"
         # Keyless ≠ ready for gated rows:
-        assert by_name["Nous Subscription"]["status"] == "needs_auth"
+        assert by_name["PULSE Subscription"]["status"] == "needs_auth"
         assert by_name["xAI TTS"]["status"] == "needs_auth"
         assert by_name["KittenTTS"]["status"] == "needs_setup"
         assert by_name["Piper"]["status"] == "needs_setup"
@@ -3103,19 +3103,19 @@ class TestNewEndpoints:
         assert by_name["ElevenLabs"]["status"] == "needs_keys"
 
 
-    def test_select_managed_nous_provider_reports_needs_nous_auth(self, monkeypatch):
-        """Selecting a managed Nous row while logged out flags needs_nous_auth.
+    def test_select_managed_pulse_provider_reports_needs_pulse_auth(self, monkeypatch):
+        """Selecting a managed PULSE row while logged out flags needs_pulse_auth.
 
         Regression: the GUI PUT wrote browser.cloud_provider + use_gateway
         but skipped the Portal entitlement handshake the CLI runs inline
-        (ensure_nous_portal_access) — so the row never activated and nothing
+        (ensure_pulse_portal_access) — so the row never activated and nothing
         told the user to sign in. The endpoint now reports the entitlement
-        gap so the client can drive the existing Nous OAuth flow.
+        gap so the client can drive the existing PULSE OAuth flow.
         """
-        from pulse_cli.nous_account import NousPortalAccountInfo
+        from pulse_cli.pulse_account import NousPortalAccountInfo
 
         monkeypatch.setattr(
-            "pulse_cli.nous_subscription.get_nous_portal_account_info",
+            "pulse_cli.pulse_subscription.get_pulse_portal_account_info",
             lambda *a, **k: NousPortalAccountInfo(
                 logged_in=False, source="none", fresh=False, paid_service_access=None
             ),
@@ -3123,19 +3123,19 @@ class TestNewEndpoints:
 
         resp = self.client.put(
             "/api/tools/toolsets/browser/provider",
-            json={"provider": "Nous Subscription (Browser Use cloud)"},
+            json={"provider": "PULSE Subscription (Browser Use cloud)"},
         )
         assert resp.status_code == 200
         data = resp.json()
         assert data["ok"] is True
-        assert data["needs_nous_auth"] is True
+        assert data["needs_pulse_auth"] is True
         assert data["feature"] == "browser"
         # The selection is still persisted — activation is what's gated.
-        # Managed rows store the single 'nous' provider string (the runtime
-        # maps it to the Browser Use cloud through the Nous Tool Gateway).
+        # Managed rows store the single 'pulse' provider string (the runtime
+        # maps it to the Browser Use cloud through the PULSE Tool Gateway).
         from pulse_cli.config import load_config
         cfg = load_config()
-        assert cfg["browser"]["cloud_provider"] == "nous"
+        assert cfg["browser"]["cloud_provider"] == "pulse"
         assert "use_gateway" not in cfg["browser"]
 
 

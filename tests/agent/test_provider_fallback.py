@@ -143,12 +143,12 @@ class TestFallbackChainAdvancement:
         agent = _make_agent(fallback_model=[
             {"provider": "broken", "model": "nope"}, {"provider": "zai", "model": "glm-5.2"},
         ])
-        agent.provider = "nous"
+        agent.provider = "pulse"
         with patch("agent.auxiliary_client.resolve_provider_client",
                    side_effect=[(None, None), (_mock_client(base_url="https://api.z.ai/v1"), "glm-5.2")]):
             assert agent._try_activate_fallback(FailoverReason.rate_limit) is True
 
-        assert [(kw["from_provider"], kw["to_provider"]) for kw in calls] == [("nous", "zai")]
+        assert [(kw["from_provider"], kw["to_provider"]) for kw in calls] == [("pulse", "zai")]
         assert fallback_fields(**calls[0])["error_class"] == "rate_limit"
 
     def test_skips_provider_that_raises_to_next(self):
@@ -193,20 +193,20 @@ class TestFallbackChainAdvancement:
             assert mock_rpc.call_args.kwargs["explicit_api_key"] == "env-secret"
 
 
-    def test_nous_anthropic_fallback_uses_the_messages_wire(self, monkeypatch):
+    def test_pulse_anthropic_fallback_uses_the_messages_wire(self, monkeypatch):
         """Portal Claude fallbacks must not stay on chat_completions when the native wire is selected.
 
-        ``resolve_provider_client`` still returns an OpenAI client for Nous;
+        ``resolve_provider_client`` still returns an OpenAI client for PULSE;
         activation has to re-derive api_mode from the model and rebuild the
         Anthropic client — otherwise the turn POSTs /chat/completions. The wire
-        is opt-in since 2026-09-06 (``nous.anthropic_wire``, see ``nous_api_mode``).
+        is opt-in since 2026-09-06 (``pulse.anthropic_wire``, see ``pulse_api_mode``).
         """
         from pulse_cli import providers as _providers
-        monkeypatch.setattr(_providers, "_nous_anthropic_wire", lambda: "native")
+        monkeypatch.setattr(_providers, "_pulse_anthropic_wire", lambda: "native")
         portal = "https://inference-api.anxious-research.com/v1"
         fbs = [
             {
-                "provider": "nous",
+                "provider": "pulse",
                 "model": "anthropic/claude-opus-4.8",
             }
         ]
@@ -243,7 +243,7 @@ class TestFallbackChainAdvancement:
             assert agent._try_activate_fallback() is True
 
         assert agent.api_mode == "anthropic_messages"
-        assert agent.provider == "nous"
+        assert agent.provider == "pulse"
         assert agent.model == "anthropic/claude-opus-4.8"
         assert agent.client is None
         assert rebuilt["count"] == 1
@@ -251,9 +251,9 @@ class TestFallbackChainAdvancement:
         assert rebuilt["base_url"] == portal
         assert agent._anthropic_client is not None
 
-    def test_nous_non_anthropic_fallback_stays_on_chat_completions(self):
+    def test_pulse_non_anthropic_fallback_stays_on_chat_completions(self):
         portal = "https://inference-api.anxious-research.com/v1"
-        fbs = [{"provider": "nous", "model": "pulse-4-405b"}]
+        fbs = [{"provider": "pulse", "model": "pulse-4-405b"}]
         agent = _make_agent(fallback_model=fbs)
         with (
             patch(

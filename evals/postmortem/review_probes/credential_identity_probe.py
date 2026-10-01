@@ -15,7 +15,7 @@ os.environ.update(HOME=str(home), PULSE_HOME=str(home/'pulse'), XDG_CONFIG_HOME=
 for k in list(os.environ):
     if any(x in k for x in ('API_KEY','TOKEN','NOUS_','SECRET')): os.environ.pop(k, None)
 (home/'pulse').mkdir()
-(home/'pulse'/'config.yaml').write_text('nous:\n  keepalive_interval_seconds: 0\nmemory:\n  memory_enabled: false\n', encoding='utf-8')
+(home/'pulse'/'config.yaml').write_text('pulse:\n  keepalive_interval_seconds: 0\nmemory:\n  memory_enabled: false\n', encoding='utf-8')
 def guard(event,args):
     if event == 'socket.connect' and isinstance(args[1], tuple) and args[1][0] not in ('127.0.0.1','::1'):
         raise RuntimeError('External network forbidden by review probe')
@@ -44,23 +44,23 @@ class Handler(BaseHTTPRequestHandler):
 server=ThreadingHTTPServer(('127.0.0.1',0),Handler); threading.Thread(target=server.serve_forever,daemon=True).start()
 url=f'http://127.0.0.1:{server.server_port}/v1'
 # Runtime override preserves loopback routing, without relaxing URL validation.
-os.environ['NOUS_INFERENCE_BASE_URL']=url
+os.environ['PULSE_INFERENCE_BASE_URL']=url
 os.environ['PULSE_SHARED_AUTH_DIR']=str(home/'shared')
 from run_agent import AIAgent
 from agent.turn_iteration_prep import prepare_iteration
 import agent.client_lifecycle as lifecycle
 import pulse_cli.auth as auth
-print(json.dumps({'mode':MODE,'module':lifecycle.__file__,'has_new':hasattr(AIAgent,'_adopt_nous_key_before_expiry'),'home':str(home)}),flush=True)
+print(json.dumps({'mode':MODE,'module':lifecycle.__file__,'has_new':hasattr(AIAgent,'_adopt_pulse_key_before_expiry'),'home':str(home)}),flush=True)
 if MODE=='main':
     spec=importlib.util.spec_from_file_location('main_prep',Path(__file__).with_name('main-turn_iteration_prep.py')); mod=importlib.util.module_from_spec(spec);sys.modules[spec.name]=mod;spec.loader.exec_module(mod);prepare_iteration=mod.prepare_iteration
 
 def store(token):
     exp=claims(token)['exp']; state={'portal_base_url':'https://portal.anxious-research.com','inference_base_url':'https://inference-api.anxious-research.com/v1','client_id':'pulse-cli','token_type':'Bearer','scope':'inference:invoke','access_token':token,'refresh_token':'fixture-refresh-never-send','expires_at':datetime.fromtimestamp(exp,timezone.utc).isoformat(),'expires_in':3600,'agent_key':token,'agent_key_expires_at':datetime.fromtimestamp(exp,timezone.utc).isoformat()}
-    (home/'pulse'/'auth.json').write_text(json.dumps({'version':1,'active_provider':'nous','providers':{'nous':state}}), encoding='utf-8')
+    (home/'pulse'/'auth.json').write_text(json.dumps({'version':1,'active_provider':'pulse','providers':{'pulse':state}}), encoding='utf-8')
 results=[]
 for case, own_sub, store_sub, ttl in [('same-account','account-A','account-A',30),('explicit-account','account-A','account-B',30),('far-from-expiry','account-A','account-B',3000)]:
     own=jwt(own_sub,ttl);fresh=jwt(store_sub,3600);store(fresh)
-    agent=AIAgent(api_key=own,base_url=url,provider='nous',model='pulse-test',quiet_mode=True,skip_context_files=True,skip_memory=True,enabled_toolsets=[])
+    agent=AIAgent(api_key=own,base_url=url,provider='pulse',model='pulse-test',quiet_mode=True,skip_context_files=True,skip_memory=True,enabled_toolsets=[])
     messages=[{'role':'user','content':'local fixture'}]; before=json.dumps(messages)
     prepare_iteration(agent,messages=messages,api_call_count=0)
     client=agent._create_request_openai_client(reason='review_probe')
@@ -75,7 +75,7 @@ fresh=jwt('account-A',3600); store(fresh)
 expired=jwt('account-A',-30)
 barrier=threading.Barrier(12)
 def worker(_):
-    a=AIAgent(api_key=expired,base_url=url,provider='nous',model='pulse-test',quiet_mode=True,skip_context_files=True,skip_memory=True,enabled_toolsets=[])
+    a=AIAgent(api_key=expired,base_url=url,provider='pulse',model='pulse-test',quiet_mode=True,skip_context_files=True,skip_memory=True,enabled_toolsets=[])
     barrier.wait(timeout=30)
     messages=[{'role':'user','content':'concurrent local fixture'}]
     prepare_iteration(a,messages=messages,api_call_count=0)
@@ -98,7 +98,7 @@ if MODE != 'main':
     shutil.rmtree(home/'shared',ignore_errors=True)
     expired=jwt('account-A',30); store(expired)
     state_file=home/'pulse'/'auth.json'
-    state=json.loads(state_file.read_text(encoding='utf-8')); state['providers']['nous']['portal_base_url']=url.removesuffix('/v1');state_file.write_text(json.dumps(state), encoding='utf-8')
+    state=json.loads(state_file.read_text(encoding='utf-8')); state['providers']['pulse']['portal_base_url']=url.removesuffix('/v1');state_file.write_text(json.dumps(state), encoding='utf-8')
     barrier=threading.Barrier(12);records.clear()
     with ThreadPoolExecutor(max_workers=12) as executor:
         mint_statuses=list(executor.map(worker,range(12)))

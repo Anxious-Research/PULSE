@@ -8,7 +8,7 @@ import type { OAuthProvider } from '@/types/pulse'
 // only the featured order. Both Anthropic entries sit at the bottom: the API-key
 // path first, then the subscription OAuth path (only works with extra usage credits).
 const PROVIDER_ORDER: Record<string, number> = {
-  nous: 0,
+  pulse: 0,
   'openai-codex': 1,
   'minimax-oauth': 2,
   'qwen-oauth': 3,
@@ -42,7 +42,7 @@ export function FeaturedProviderRow({
       onClick={() => onSelect(provider)}
       type="button"
     >
-      <span aria-hidden className="arc-border arc-reverse arc-nous" />
+      <span aria-hidden className="arc-border arc-reverse arc-pulse" />
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <img alt="" className="size-5 shrink-0 rounded" src={assetPath('apple-touch-icon.png')} />
@@ -94,7 +94,7 @@ function ConnectedTag() {
 const PROVIDER_ROW_CLASS =
   'group flex w-full items-center justify-between gap-3 rounded-[6px] px-3 py-2.5 text-left transition-colors hover:bg-(--ui-control-hover-background)'
 
-/** Quick-key row for API-key providers (Fireworks leads the expanded list after Nous, OpenRouter further down). */
+/** Quick-key row for API-key providers (Fireworks leads the expanded list after PULSE, OpenRouter further down). */
 export function KeyProviderRow({ onClick, pitch, title }: { onClick: () => void; pitch: string; title: string }) {
   return (
     <RowButton className={PROVIDER_ROW_CLASS} onClick={onClick}>

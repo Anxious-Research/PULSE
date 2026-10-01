@@ -303,15 +303,15 @@ def test_account_gate_reads_the_portal_claim_not_entitlement(monkeypatch, claims
     mints. A token without it is not enabled however entitled it is."""
     import time
 
-    from pulse_cli import nous_account
+    from pulse_cli import pulse_account
     from tools.connectors.gateway.config import managed_tools_rolled_out
 
     monkeypatch.setattr(
         "pulse_cli.auth._decode_jwt_claims", lambda token: {"exp": time.time() + 3600, **claims})
-    account = nous_account._info_from_valid_jwt("tok", {}, None, 60)
+    account = pulse_account._info_from_valid_jwt("tok", {}, None, 60)
     assert account is not None and account.logged_in
 
-    monkeypatch.setattr(nous_account, "get_nous_portal_account_info", lambda **kw: account)
+    monkeypatch.setattr(pulse_account, "get_pulse_portal_account_info", lambda **kw: account)
     assert managed_tools_rolled_out() is rolled_out
     assert connectors_available(config_loader=lambda: ConnectorConfig(enabled=True),
                                 entitlement_check=managed_tools_rolled_out) is rolled_out

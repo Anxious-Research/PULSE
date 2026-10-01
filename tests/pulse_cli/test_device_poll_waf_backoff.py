@@ -1,7 +1,7 @@
 """Regression tests: edge/WAF non-JSON error responses must not abort an in-flight
 device-code login.
 
-Vercel fronts the Nous Portal and answers rate-limited clients with a text/plain
+Vercel fronts the Pulse Portal and answers rate-limited clients with a text/plain
 403 (``x-vercel-mitigated: deny``) or 429 — no JSON body, so the response can never
 carry ``authorization_pending``/``slow_down``. Before the fix, the generic
 device-token poll loop hit ``response.raise_for_status()`` on the first such

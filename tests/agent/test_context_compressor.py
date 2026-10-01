@@ -841,7 +841,7 @@ class TestAuthFailureAborts:
     session unchanged) instead of rotating into a degraded child session
     with a placeholder summary — regardless of abort_on_summary_failure.
 
-    Real incident: a nous token pointed at a stale staging inference URL
+    Real incident: a pulse token pointed at a stale staging inference URL
     401'd on every compression attempt, and because abort_on_summary_failure
     defaults False the session rotated anyway (messages N->N), stranding the
     user on a fresh-but-broken session that kept failing the same way.

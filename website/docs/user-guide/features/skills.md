@@ -28,7 +28,7 @@ not an embedded website or a second, smaller catalog.
 Desktop and the public [Skills Hub](/skills) read the same published CDN
 snapshot: [`/docs/api/skills.json`](https://pulse-agent.anxious-research.com/docs/api/skills.json).
 The public docs alias serves the same snapshot as Desktop's fetch URL,
-`https://nousresearch.github.io/pulse-agent/docs/api/skills.json`. The docs
+`https://anxious-research.github.io/pulse-agent/docs/api/skills.json`. The docs
 build generates it from bundled `skills/`, `optional-skills/`, and the
 centralized skills index. Browsing does not crawl GitHub or query upstream
 marketplaces live; installation still retrieves the selected skill through

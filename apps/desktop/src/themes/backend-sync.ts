@@ -57,7 +57,7 @@ $backendThemes.listen(themes => writeJson(BACKEND_THEMES_KEY, themes))
  *  built-in. The palette policy keeps built-in palettes (a user `mono.yaml`
  *  must not shadow the desktop's hand-tuned mono), but the user's CSS is still
  *  the skin file's truth — keyed by the name the desktop resolves the skin
- *  under (`default` → `nous`). Merged into the active theme in context.tsx. */
+ *  under (`default` → `pulse`). Merged into the active theme in context.tsx. */
 export const $backendCustomCSS = atom<Record<string, string>>({})
 
 /** One-shot skin name the ThemeProvider should switch to (it clears this). */
@@ -96,7 +96,7 @@ export function ingestBackendSkin(skin: PULSESkin | undefined | null, { apply }:
   // skin ("Classic PULSE — gold and kawaii") is *not* a desktop built-in, so
   // we register the converted palette under `default` and let it appear in the
   // Appearance grid / `/skin list` (#76579). Desktop's own boot default remains
-  // `nous` via DEFAULT_SKIN_NAME; selecting `default` paints the classic gold.
+  // `pulse` via DEFAULT_SKIN_NAME; selecting `default` paints the classic gold.
   if (!BUILTIN_THEMES[name]) {
     const theme = skinToDesktopTheme(skin as PULSESkin)
 

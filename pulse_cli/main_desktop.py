@@ -998,7 +998,7 @@ def _desktop_macos_setup_tcc_identity(identity: str = "PULSE Local Signing") -> 
     print(
         "\n  Note: macOS will re-prompt for permissions ONE final time (the identity "
         "changed). Grant them and they persist from then on. If a permission gets "
-        "stuck, reset it with:  tccutil reset All com.nousresearch.pulse"
+        "stuck, reset it with:  tccutil reset All com.anxious-research.pulse"
     )
     return True
 

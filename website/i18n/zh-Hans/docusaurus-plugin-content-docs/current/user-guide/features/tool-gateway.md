@@ -1,32 +1,32 @@
 ---
-title: "Nous Tool Gateway（工具网关）"
-description: "通过 Nous 订阅统一使用网页搜索、文生图、语音合成与浏览器自动化，无需单独申请网页搜索、FAL、OpenAI、Browser Use 等 API Key"
+title: "PULSE Tool Gateway（工具网关）"
+description: "通过 PULSE 订阅统一使用网页搜索、文生图、语音合成与浏览器自动化，无需单独申请网页搜索、FAL、OpenAI、Browser Use 等 API Key"
 sidebar_label: "Tool Gateway"
 sidebar_position: 2
 ---
 
-# Nous Tool Gateway（工具网关）
+# PULSE Tool Gateway（工具网关）
 
 :::tip 快速开始
-Tool Gateway 包含在付费 Nous Portal 订阅中。**[管理订阅 →](https://portal.anxious-research.com/manage-subscription)**
+Tool Gateway 包含在付费 Pulse Portal 订阅中。**[管理订阅 →](https://portal.anxious-research.com/manage-subscription)**
 :::
 
-**Tool Gateway** 让已付费的 [Nous Portal](https://portal.anxious-research.com) 用户通过同一份订阅，直接使用网页搜索、文生图、语音合成（TTS）与浏览器自动化，而**不必**再分别注册网页搜索、FAL、OpenAI、Browser Use 等服务的 API Key。
+**Tool Gateway** 让已付费的 [Pulse Portal](https://portal.anxious-research.com) 用户通过同一份订阅，直接使用网页搜索、文生图、语音合成（TTS）与浏览器自动化，而**不必**再分别注册网页搜索、FAL、OpenAI、Browser Use 等服务的 API Key。
 
 ## 包含能力
 
 | 工具 | 作用 | 若不用网关，可改用 |
 |------|------|---------------------|
-| **网页搜索与抓取** | 由 Nous 托管的搜索与页面内容抽取 | `FIRECRAWL_API_KEY`、`EXA_API_KEY`、`PARALLEL_API_KEY`、`TAVILY_API_KEY` |
+| **网页搜索与抓取** | 由 PULSE 托管的搜索与页面内容抽取 | `FIRECRAWL_API_KEY`、`EXA_API_KEY`、`PARALLEL_API_KEY`、`TAVILY_API_KEY` |
 | **文生图** | 通过 FAL 生成图像（8 个模型：FLUX 2 Klein/Pro、GPT-Image、Nano Banana Pro、Ideogram、Recraft V4 Pro、Qwen、Z-Image） | `FAL_KEY` |
 | **语音合成** | 通过 OpenAI TTS 将文字转为语音 | `VOICE_TOOLS_OPENAI_KEY`、`ELEVENLABS_API_KEY` |
 | **浏览器自动化** | 通过 Browser Use 控制云端浏览器 | `BROWSER_USE_API_KEY`、`BROWSERBASE_API_KEY` |
 
-上述四类能力均计入 Nous 订阅计费。你可以按需组合——例如网页与文生图走网关，TTS 仍使用自己的 ElevenLabs Key。
+上述四类能力均计入 PULSE 订阅计费。你可以按需组合——例如网页与文生图走网关，TTS 仍使用自己的 ElevenLabs Key。
 
 ## 资格与账号
 
-Tool Gateway 仅对 **[付费](https://portal.anxious-research.com/manage-subscription)** Nous Portal 订阅开放；免费档不可用——请 [升级订阅](https://portal.anxious-research.com/manage-subscription) 后解锁。
+Tool Gateway 仅对 **[付费](https://portal.anxious-research.com/manage-subscription)** Pulse Portal 订阅开放；免费档不可用——请 [升级订阅](https://portal.anxious-research.com/manage-subscription) 后解锁。
 
 检查当前状态：
 
@@ -34,19 +34,19 @@ Tool Gateway 仅对 **[付费](https://portal.anxious-research.com/manage-subscr
 pulse status
 ```
 
-在输出中找到 **Nous Tool Gateway** 小节：会标明哪些工具经订阅网关启用、哪些使用直连 Key、哪些尚未配置。
+在输出中找到 **PULSE Tool Gateway** 小节：会标明哪些工具经订阅网关启用、哪些使用直连 Key、哪些尚未配置。
 
 ## 如何启用 Tool Gateway
 
 ### 在模型配置流程中
 
-运行 `pulse model` 并选择 Nous Portal 作为提供商时，PULSE 会主动询问是否启用 Tool Gateway：
+运行 `pulse model` 并选择 Pulse Portal 作为提供商时，PULSE 会主动询问是否启用 Tool Gateway：
 
 ```
-Your Nous subscription includes the Tool Gateway.
+Your PULSE subscription includes the Tool Gateway.
 
   The Tool Gateway gives you access to web search, image generation,
-  text-to-speech, and browser automation through your Nous subscription.
+  text-to-speech, and browser automation through your PULSE subscription.
   No need to sign up for separate API keys — just pick the tools you want.
 
   ○ Web search & extract — not configured
@@ -70,49 +70,49 @@ Your Nous subscription includes the Tool Gateway.
 pulse tools
 ```
 
-选择工具类别（Web、Browser、Image Generation、TTS），再将提供商选为 **Nous Subscription**。这会把该类别的选择键写为 `nous`（例如 `image_gen.provider: nous`）。
+选择工具类别（Web、Browser、Image Generation、TTS），再将提供商选为 **PULSE Subscription**。这会把该类别的选择键写为 `pulse`（例如 `image_gen.provider: pulse`）。
 
 ### 手动编辑配置
 
-每个工具类别只有一个选择键，选 **Nous Subscription** 即写入 `nous`：
+每个工具类别只有一个选择键，选 **PULSE Subscription** 即写入 `pulse`：
 
 ```yaml
 web:
-  backend: nous          # 网页搜索/抓取走 Tool Gateway
+  backend: pulse          # 网页搜索/抓取走 Tool Gateway
 
 image_gen:
-  provider: nous
+  provider: pulse
 
 tts:
-  provider: nous
+  provider: pulse
 
 stt:
-  provider: nous
+  provider: pulse
 
 browser:
-  cloud_provider: nous
+  cloud_provider: pulse
 ```
 
 ## 工作原理
 
-当某工具类别的选择键为 `nous` 时，运行时会把 API 调用路由到 Nous Tool Gateway，而不是使用直连 Key：
+当某工具类别的选择键为 `pulse` 时，运行时会把 API 调用路由到 PULSE Tool Gateway，而不是使用直连 Key：
 
 1. **网页工具** — `web_search` / `web_extract` 走网关的托管搜索端点  
 2. **文生图** — `image_generate` 走网关的 FAL 端点  
 3. **TTS** — `text_to_speech` 走网关的 OpenAI Audio 端点  
 4. **浏览器** — `browser_navigate` 等走网关的 Browser Use 端点  
 
-网关使用 Nous Portal 凭据认证（在 `pulse model` 完成后写入 `~/.pulse/auth.json`）。
+网关使用 Pulse Portal 凭据认证（在 `pulse model` 完成后写入 `~/.pulse/auth.json`）。
 
 ### 优先级
 
 运行时**始终使用已保存的选择**，凭据是否存在不会影响路由：
 
-- **选择为 `nous`** → 走网关，即使 `.env` 里仍有直连 Key（例如 `FAL_KEY` 会被忽略）
+- **选择为 `pulse`** → 走网关，即使 `.env` 里仍有直连 Key（例如 `FAL_KEY` 会被忽略）
 - **选择为具体厂商**（如 `fal`、`firecrawl`）→ 直连；若对应 Key 缺失则报错并提示运行 `pulse tools`，**不会**静默回退到网关
 - **从未配置过的类别** → 按可用凭据自动检测（行为不变）；但一旦存在选择，仅往 `.env` 加 Key 不会改变路由
 
-（旧版的 `use_gateway` 布尔键已废弃：不再写入，读取时 `use_gateway: true` 等同于 `nous`。请改用 `pulse tools` 选择提供商。）
+（旧版的 `use_gateway` 布尔键已废弃：不再写入，读取时 `use_gateway: true` 等同于 `pulse`。请改用 `pulse tools` 选择提供商。）
 
 ## 切回直连 Key
 
@@ -137,19 +137,19 @@ web:
 pulse status
 ```
 
-**Nous Tool Gateway** 小节示例：
+**PULSE Tool Gateway** 小节示例：
 
 ```
-◆ Nous Tool Gateway
-  Nous Portal   ✓ managed tools available
-  Web tools       ✓ active via Nous subscription
-  Image gen       ✓ active via Nous subscription
-  TTS             ✓ active via Nous subscription
+◆ PULSE Tool Gateway
+  Pulse Portal   ✓ managed tools available
+  Web tools       ✓ active via PULSE subscription
+  Image gen       ✓ active via PULSE subscription
+  TTS             ✓ active via PULSE subscription
   Browser         ○ active via Browser Use key
   Modal           ○ available via subscription (optional)
 ```
 
-标记为 “active via Nous subscription” 的即经网关路由；带自有 Key 的会显示当前激活的提供商。
+标记为 “active via PULSE subscription” 的即经网关路由；带自有 Key 的会显示当前激活的提供商。
 
 ## 进阶：自建网关
 
@@ -168,11 +168,11 @@ FIRECRAWL_GATEWAY_URL=https://...         # 单独覆盖 Firecrawl 端点
 
 ### 需要删掉已有的 API Key 吗？
 
-不需要。类别选择为 **Nous Subscription**（`nous`）时，运行时会忽略该类别的直连 Key；Key 仍保留在 `.env`。之后在 `pulse tools` 里改回直连提供商，Key 即恢复生效。
+不需要。类别选择为 **PULSE Subscription**（`pulse`）时，运行时会忽略该类别的直连 Key；Key 仍保留在 `.env`。之后在 `pulse tools` 里改回直连提供商，Key 即恢复生效。
 
 ### 能否部分工具走网关、部分走直连？
 
-可以。选择按工具类别独立配置。例如：网页与文生图选 Nous Subscription，TTS 用 ElevenLabs，浏览器用 Browserbase。
+可以。选择按工具类别独立配置。例如：网页与文生图选 PULSE Subscription，TTS 用 ElevenLabs，浏览器用 Browserbase。
 
 ### 订阅到期会怎样？
 
@@ -184,4 +184,4 @@ FIRECRAWL_GATEWAY_URL=https://...         # 单独覆盖 Firecrawl 端点
 
 ### Modal 算在 Tool Gateway 里吗？
 
-Modal（无服务器终端后端）可作为 Nous 订阅的可选附加能力，但**不会**由 Tool Gateway 安装向导一并打开——请单独通过 `pulse setup terminal` 或在 `config.yaml` 中配置。
+Modal（无服务器终端后端）可作为 PULSE 订阅的可选附加能力，但**不会**由 Tool Gateway 安装向导一并打开——请单独通过 `pulse setup terminal` 或在 `config.yaml` 中配置。

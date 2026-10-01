@@ -70,7 +70,7 @@ def test_prompt_model_selection_requires_expensive_confirmation(monkeypatch, cap
 
     selected = _prompt_model_selection(
         ["openai/gpt-5.5-pro"],
-        confirm_provider="nous",
+        confirm_provider="pulse",
     )
 
     out = capsys.readouterr().out

@@ -13,7 +13,7 @@ export const zh = defineLocale({
   sharedMetrics: {
     consentTitle: '帮助改进 PULSE？',
     consentBody:
-      '共享指标只包含有上限的计数，绝不包含提示词、文件、路径或错误文本。收集仅在本地进行；发送给 Nous 需要另行同意。',
+      '共享指标只包含有上限的计数，绝不包含提示词、文件、路径或错误文本。收集仅在本地进行；发送给 PULSE 需要另行同意。',
     whatIsCollected: '收集哪些内容',
     collectedIntro: '仅限有上限的计数：',
     collectedActivity: '活动、会话时长、结果和错误类别',
@@ -26,22 +26,22 @@ export const zh = defineLocale({
     collectedMachine:
       '概略的机器信息：内存范围、GPU 类型、PULSE 版本新旧与发布通道、落后的更新数、是否使用本地模型服务器',
     installId:
-      '发送会把每日数据包上传到 Nous 遥测服务。数据包带有此配置文件的安装 ID：一个不含个人信息的固定随机 UUID，删除共享指标目录即可重置。',
+      '发送会把每日数据包上传到 PULSE 遥测服务。数据包带有此配置文件的安装 ID：一个不含个人信息的固定随机 UUID，删除共享指标目录即可重置。',
     consentWindow:
       '只有整个收集周期都落在已记录同意时段内的数据包才会被发送——你同意之前的数据，或发送关闭期间的数据，都会留在本机。你可以随时再次关闭发送。',
     readDocs: '查看完整说明',
-    share: '收集并发送给 Nous',
+    share: '收集并发送给 PULSE',
     local: '仅在本地收集',
     off: '不用了',
     changeLater: '你可以随时在 设置 → 安全 中更改。',
     saveFailed: '无法保存你的选择',
     collectLabel: '收集使用统计',
     collectDesc: '在此设备上保存有上限的计数。绝不包含提示词、文件、路径或错误文本。',
-    sendLabel: '向 Nous 发送使用统计',
-    sendDesc: '将每日数据包上传到 Nous 遥测服务。只发送同意时段内的数据。需要先开启收集。',
+    sendLabel: '向 PULSE 发送使用统计',
+    sendDesc: '将每日数据包上传到 PULSE 遥测服务。只发送同意时段内的数据。需要先开启收集。',
     unavailable: '请更新 PULSE 后端以更改此设置。',
     stripBody: '仅限有界计数器，绝不包含提示词或文件。',
-    stripChoices: { share: '发送给 Nous', local: '仅本地', off: '不用了' },
+    stripChoices: { share: '发送给 PULSE', local: '仅本地', off: '不用了' },
     stripDetails: '详情'
   },
   intro: introZh,
@@ -271,10 +271,10 @@ export const zh = defineLocale({
         `先退出已保存的远程浏览器会话，然后打开${signInLabel}。也可以使用本地网关切换到随应用提供的后端。`,
       signOutAndSignIn: '退出并重新登录',
       remoteFailureHint: '在“网关设置”中检查网关 URL 和登录，或切换到本地网关。',
-      cloudDownTitle: 'Nous Cloud 代理已宕机',
+      cloudDownTitle: 'Pulse Cloud 代理已宕机',
       cloudDownDescription:
-        '此网关连接的 Nous 托管云代理正在返回服务器错误。无法在此处重启——请检查其状态、切换到本地网关或获取支持。',
-      cloudDownHint: '使用下方按钮打开 Nous Portal（查看实例状态与操作）或加入 Discord 获取支持。',
+        '此网关连接的 PULSE 托管云代理正在返回服务器错误。无法在此处重启——请检查其状态、切换到本地网关或获取支持。',
+      cloudDownHint: '使用下方按钮打开 Pulse Portal（查看实例状态与操作）或加入 Discord 获取支持。',
       cloudDownCheckPortal: '查看 Portal 状态',
       cloudDownDiscord: '在 Discord 获取帮助',
       hideRecentLogs: '隐藏最近日志',
@@ -384,7 +384,7 @@ export const zh = defineLocale({
   },
 
   billingBlock: {
-    titleNous: 'Nous 额度已用尽',
+    titleNous: 'PULSE 额度已用尽',
     titleProvider: provider => `额度已用尽 — ${provider}`,
     fallbackMessage: '您的账户额度已用尽。请充值以继续使用。',
     openBilling: '打开账单',
@@ -393,9 +393,9 @@ export const zh = defineLocale({
   },
 
   sendDiagnostics: {
-    title: '向 Nous 发送诊断信息',
+    title: '向 PULSE 发送诊断信息',
     privacyNotice:
-      '这会将调试包上传到 Nous 内部存储（并非公开粘贴板）。内容包括系统信息（操作系统、版本、服务商、已配置的 API 密钥种类 — 绝不包含密钥本身）以及完整的 agent、gateway 和桌面端日志（每个最多 512 KB，很可能包含对话内容、工具输出与文件路径）。上传前会先脱敏。仅 Nous 员工与获准的 Discord 版主可查看，14 天后自动删除。',
+      '这会将调试包上传到 PULSE 内部存储（并非公开粘贴板）。内容包括系统信息（操作系统、版本、服务商、已配置的 API 密钥种类 — 绝不包含密钥本身）以及完整的 agent、gateway 和桌面端日志（每个最多 512 KB，很可能包含对话内容、工具输出与文件路径）。上传前会先脱敏。仅 PULSE 员工与获准的 Discord 版主可查看，14 天后自动删除。',
     upload: '上传',
     uploading: '上传中…',
     cancel: '取消',
@@ -406,11 +406,11 @@ export const zh = defineLocale({
     doneDescription: '调试包已私密上传。在您的支持会话中分享以下链接，团队即可查看您的日志。',
     failedTitle: '上传失败',
     failedHint:
-      '您也可以在终端运行 `pulse debug share --nous`，或运行 `pulse debug share --local` 在不上传的情况下查看报告。',
+      '您也可以在终端运行 `pulse debug share --pulse`，或运行 `pulse debug share --local` 在不上传的情况下查看报告。',
     handoffLead: '在以下位置继续讨论:',
     links: {
       github: 'GitHub Issues',
-      portal: 'Nous Portal 支持',
+      portal: 'Pulse Portal 支持',
       discord: 'Discord'
     }
   },
@@ -1569,7 +1569,7 @@ export const zh = defineLocale({
       cloudLoadingAgents: '正在加载你的智能体…',
       cloudNoAgents: {
         before: '此账户下未找到智能体。请在',
-        linkText: 'Nous 门户',
+        linkText: 'PULSE 门户',
         after: '中创建一个，然后刷新。'
       },
       cloudRefresh: '刷新',
@@ -1921,11 +1921,11 @@ export const zh = defineLocale({
       usageLabel: label => `${label}用量`,
       freeTier: {
         signIn: '登录',
-        title: '你正在使用 Nous 免费服务',
-        message: '登录 Nous 账户以解锁更多模型和工具。',
-        caption: '使用 nous/welcome，包含连接器。登录后会保留连接器，并增加需要账户的工具和其他所有模型。',
-        name: 'Nous · 免费服务',
-        footnote: '免费服务没有余额，无需支付。登录 Nous 账户后才会显示支付与用量。',
+        title: '你正在使用 PULSE 免费服务',
+        message: '登录 PULSE 账户以解锁更多模型和工具。',
+        caption: '使用 pulse/welcome，包含连接器。登录后会保留连接器，并增加需要账户的工具和其他所有模型。',
+        name: 'PULSE · 免费服务',
+        footnote: '免费服务没有余额，无需支付。登录 PULSE 账户后才会显示支付与用量。',
         plan: '免费服务',
         model: '模型',
         connectors: '连接器',
@@ -2024,8 +2024,8 @@ export const zh = defineLocale({
       state: {
         notice: {
           loggedOut: {
-            title: '连接你的 Nous 账户',
-            message: '登录你的 Nous 账户，即可在此查看余额、套餐和用量。',
+            title: '连接你的 PULSE 账户',
+            message: '登录你的 PULSE 账户，即可在此查看余额、套餐和用量。',
             action: '登录'
           },
           openPortal: '打开门户 ↗',
@@ -2221,13 +2221,13 @@ export const zh = defineLocale({
       activeBackend: '当前后端',
       activeBackendHint: '这是你当前使用的后端',
       useBackend: '使用此后端',
-      nousIncluded: '包含在 Nous 订阅中；登录 Nous Portal 即可激活。',
-      nousAuthNeededTitle: '登录 Nous Portal',
-      nousAuthNeededMessage: provider => `已保存 ${provider}，但在登录 Nous Portal 之前不会激活。`,
-      nousAuthSignIn: '登录',
-      nousAuthDoneTitle: '已连接 Nous Portal',
-      nousAuthDoneMessage: '订阅后端现已激活。',
-      nousAuthFailed: 'Nous Portal 登录未完成',
+      pulseIncluded: '包含在 PULSE 订阅中；登录 Pulse Portal 即可激活。',
+      pulseAuthNeededTitle: '登录 Pulse Portal',
+      pulseAuthNeededMessage: provider => `已保存 ${provider}，但在登录 Pulse Portal 之前不会激活。`,
+      pulseAuthSignIn: '登录',
+      pulseAuthDoneTitle: '已连接 Pulse Portal',
+      pulseAuthDoneMessage: '订阅后端现已激活。',
+      pulseAuthFailed: 'Pulse Portal 登录未完成',
       noApiKeyRequired: '不需要 API 密钥。',
       postSetupHint: step => `此后端需要一次性安装 (${step})。将在此机器上执行，可能需要几分钟。`,
       postSetupInstalledHint: '已安装。仅在出现问题时才需要重新运行安装。',
@@ -3678,8 +3678,8 @@ export const zh = defineLocale({
       '/browser': '管理浏览器 CDP 连接 [connect|disconnect|status]（仅限本地 gateway）',
       '/palette': '打开模糊搜索命令面板（也可使用 Ctrl+P）',
       '/usage': '显示 Token 用量与速率限制；`reset` 可兑换保留的 Codex 限额重置',
-      '/subscription': '查看你的 Nous 方案，并在浏览器中更改',
-      '/topup': '显示你的 Nous 余额，并在 Portal 管理账务',
+      '/subscription': '查看你的 PULSE 方案，并在浏览器中更改',
+      '/topup': '显示你的 PULSE 余额，并在 Portal 管理账务',
       '/platform': '暂停、恢复或列出故障的网关平台',
       '/version': '显示 PULSE Agent 版本',
       '/debug': '上传调试报告（系统信息与日志），并获取可分享链接',
@@ -4261,21 +4261,21 @@ export const zh = defineLocale({
   // Not yet translated — English fallbacks so the free-tier surfaces stay
   // readable until a zh pass lands.
   freeTier: {
-    providerRowTitle: 'Nous · 免费层',
-    providerRowPitch: '登录 Nous 账户以解锁更多模型和工具。',
+    providerRowTitle: 'PULSE · 免费层',
+    providerRowPitch: '登录 PULSE 账户以解锁更多模型和工具。',
     readyTitle: 'PULSE 已就绪。',
     readyCaption: '免费 · 含连接器',
     begin: '开始',
-    signInInstead: '改为登录 Nous 账户',
+    signInInstead: '改为登录 PULSE 账户',
     otherProviders: '其他提供方',
-    stripTitle: '免费的 Nous 推理和连接器现已可用。',
-    stripBody: '打开模型选择器试用，或登录 Nous 账户。',
+    stripTitle: '免费的 PULSE 推理和连接器现已可用。',
+    stripBody: '打开模型选择器试用，或登录 PULSE 账户。',
     openModelPicker: '打开模型选择器',
     dismiss: '关闭',
-    providerName: 'Nous',
-    statusLabel: model => `Nous · ${model}`,
+    providerName: 'PULSE',
+    statusLabel: model => `PULSE · ${model}`,
     signIn: '登录',
-    signInHeading: '登录 Nous 账户以解锁更多模型和工具。',
+    signInHeading: '登录 PULSE 账户以解锁更多模型和工具。',
     settingUp: '正在设置免费推理…',
     codeBody: '在浏览器中输入此代码以完成登录。',
     copyLink: '复制链接',
@@ -4300,7 +4300,7 @@ export const zh = defineLocale({
     retiredBody: '此免费层身份已被使用或已过期；下次启动时会重新设置。',
     errorBody: '登录未完成；请重试。',
     alreadySignedInHeading: '已登录。',
-    alreadySignedInBody: '此 PULSE 已登录 Nous 账户。'
+    alreadySignedInBody: '此 PULSE 已登录 PULSE 账户。'
   },
 
   modelPicker: {
@@ -4316,7 +4316,7 @@ export const zh = defineLocale({
     localDownloadsHeading: '本地',
     noAuthenticatedProviders: '没有已认证的提供方。',
     pro: 'Pro',
-    proNeedsSubscription: 'Pro 模型需要付费 Nous 订阅。',
+    proNeedsSubscription: 'Pro 模型需要付费 PULSE 订阅。',
     free: '免费',
     freeTier: '免费层',
     priceTitle: '每百万 token 的输入/输出价格',
