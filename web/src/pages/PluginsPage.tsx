@@ -15,18 +15,18 @@ import type {
   MemoryProviderSetupResult,
   PluginsHubResponse,
 } from "@/lib/api";
-import { Button } from "@anxious-research/ui/ui/components/button";
-import { Badge } from "@anxious-research/ui/ui/components/badge";
-import { Select, SelectOption } from "@anxious-research/ui/ui/components/select";
-import { Switch } from "@anxious-research/ui/ui/components/switch";
-import { Spinner } from "@anxious-research/ui/ui/components/spinner";
-import { CommandBlock, CopyButton } from "@anxious-research/ui/ui/components/command-block";
-import { Card, CardContent, CardHeader, CardTitle } from "@anxious-research/ui/ui/components/card";
-import { ConfirmDialog } from "@anxious-research/ui/ui/components/confirm-dialog";
-import { Input } from "@anxious-research/ui/ui/components/input";
-import { Label } from "@anxious-research/ui/ui/components/label";
-import { useToast } from "@anxious-research/ui/hooks/use-toast";
-import { Toast } from "@anxious-research/ui/ui/components/toast";
+import { Button } from "@nous-research/ui/ui/components/button";
+import { Badge } from "@nous-research/ui/ui/components/badge";
+import { Select, SelectOption } from "@nous-research/ui/ui/components/select";
+import { Switch } from "@nous-research/ui/ui/components/switch";
+import { Spinner } from "@nous-research/ui/ui/components/spinner";
+import { CommandBlock, CopyButton } from "@nous-research/ui/ui/components/command-block";
+import { Card, CardContent, CardHeader, CardTitle } from "@nous-research/ui/ui/components/card";
+import { ConfirmDialog } from "@nous-research/ui/ui/components/confirm-dialog";
+import { Input } from "@nous-research/ui/ui/components/input";
+import { Label } from "@nous-research/ui/ui/components/label";
+import { useToast } from "@nous-research/ui/hooks/use-toast";
+import { Toast } from "@nous-research/ui/ui/components/toast";
 import { useI18n } from "@/i18n";
 import { en } from "@/i18n/en";
 import { PluginSlot } from "@/plugins";
@@ -164,7 +164,7 @@ function MemoryProviderSetupHint({
   if (!hasDetails || !setup) {
     return (
       <p className="border border-destructive/50 px-3 py-2 text-xs text-destructive">
-        This provider is installed but unavailable. It may need local dependencies or a manual setup step before Pulse can activate it.
+        This provider is installed but unavailable. It may need local dependencies or a manual setup step before PULSE can activate it.
       </p>
     );
   }
@@ -178,7 +178,7 @@ function MemoryProviderSetupHint({
     >
       <p className={isBlocked ? "text-destructive" : "text-muted-foreground"}>
         {needsDependencySetup
-          ? "Finish these setup steps before Pulse can activate this provider."
+          ? "Finish these setup steps before PULSE can activate this provider."
           : "Provider dependency setup completed."}
       </p>
 
@@ -247,7 +247,7 @@ function MemoryProviderSetupHint({
       {setup.required_env.length && needsDependencySetup ? (
         <div className="grid gap-2">
           <p className="text-muted-foreground">
-            Required environment values. Fill the matching fields below, or set them in the Pulse environment.
+            Required environment values. Fill the matching fields below, or set them in the PULSE environment.
           </p>
           <div className="flex flex-wrap gap-2">
             {setup.required_env.map((envKey) => (
@@ -612,7 +612,7 @@ export default function PluginsPage() {
 
                   {!selectedMemoryName && (
                     <p className="text-xs text-muted-foreground">
-                      Pulse will use the built-in MEMORY.md and USER.md files.
+                      PULSE will use the built-in MEMORY.md and USER.md files.
                     </p>
                   )}
 
@@ -883,7 +883,7 @@ export default function PluginsPage() {
 
           <p className="text-xs tracking-[0.06em] text-text-tertiary">
             {t.pluginsPage.catalogHint ??
-              "Curated, Anxious-reviewed plugins pinned to exact commits."}
+              "Curated, Nous-reviewed plugins pinned to exact commits."}
           </p>
 
           <Input
@@ -904,11 +904,11 @@ export default function PluginsPage() {
               {t.pluginsPage.catalogEmpty ?? "No catalog entries match."}{" "}
               <a
                 className="underline"
-                href="https://pulse-agent.anxiousresearchlab.com/docs/plugins"
+                href="https://pulse-agent.anxious-research.com/docs/plugins"
                 target="_blank"
                 rel="noreferrer"
               >
-                {t.pluginsPage.catalogEmptyDocsLink ?? "Learn about Pulse plugins"}
+                {t.pluginsPage.catalogEmptyDocsLink ?? "Learn about PULSE plugins"}
               </a>
             </p>
           ) : (

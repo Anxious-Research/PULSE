@@ -1,8 +1,8 @@
-# A2A — Agent-to-Agent protocol for Pulse
+# A2A — Agent-to-Agent protocol for PULSE
 
 Talk to other agents, and let other agents talk to you, over the open
 [A2A protocol](https://a2a-protocol.org) **v1.0**. Works with any A2A-compliant
-peer (another Pulse, LangChain, CrewAI, Google ADK, OpenClaw, …). Stdlib only —
+peer (another PULSE, LangChain, CrewAI, Google ADK, OpenClaw, …). Stdlib only —
 no `a2a-sdk` dependency.
 
 ## Enable
@@ -42,7 +42,7 @@ The agent gets five tools:
 
 ## Inbound — be callable
 
-When the `a2a` platform is enabled, Pulse serves a v1.0 Agent Card at
+When the `a2a` platform is enabled, PULSE serves a v1.0 Agent Card at
 `http://<host>:<port>/.well-known/agent-card.json` (the legacy
 `/.well-known/agent.json` path is also answered for pre-1.0 clients) and
 accepts JSON-RPC

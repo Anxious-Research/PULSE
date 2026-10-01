@@ -35,6 +35,7 @@ import {
 import type { Session } from 'electron'
 
 import { type ActiveRuntimeState, classifyActiveRuntime } from './active-runtime-state'
+import { PULSE_API_EXPECTED_404 } from './api-expected-404'
 import {
   destroyKeepaliveAgents,
   htmlResponseError,
@@ -74,14 +75,14 @@ import { BackendDialClaims } from './backend-dial-claim'
 import type { HostBackendRecord } from './backend-discovery'
 import { buildDesktopBackendEnv, profileBackendParentEnv } from './backend-env'
 import { createBackendExitRecoveryLatch } from './backend-exit-recovery'
-import { isReauthRequiredError, waitForPulseReady } from './backend-health'
+import { isReauthRequiredError, waitForPULSEReady } from './backend-health'
 import {
   backendCommandMatches,
   type BackendOwnershipEntry,
   createBackendOwnership,
   createBackendShutdownCoordinator
 } from './backend-ownership'
-import { canImportPulseCli, PROBE_TIMEOUT_MS, shouldTrustPulseOverride, verifyPulseCli } from './backend-probes'
+import { canImportPULSECli, PROBE_TIMEOUT_MS, shouldTrustPULSEOverride, verifyPULSECli } from './backend-probes'
 import { waitForDashboardPortAnnouncement } from './backend-ready'
 import { recycleOwnedBackend } from './backend-recycle'
 import { isPidAliveWindows, waitForBackendRelease } from './backend-release-gate'
@@ -91,11 +92,14 @@ import {
   isHostKeyChangedBootFailure,
   isRetryableRemoteBootFailure,
   isSshAuthFailedBootFailure,
+  isSshClientFailedBootFailure,
   shouldHoldBootProgressForReauth,
   shouldLatchBackendStartFailure,
   shouldLatchHostKeyChangedFailure,
   shouldLatchRemoteReauthFailure,
-  shouldLatchSshAuthFailure
+  shouldLatchSshAuthFailure,
+  shouldLatchSshClientFailure,
+  sshClientFailedError
 } from './backend-start-failure'
 import { describeBootstrapFailure } from './bootstrap-failure-copy'
 import {
@@ -200,11 +204,17 @@ import {
   updateEligibility,
   upsertConnection
 } from './connection-registry'
+import type { RegistryConnection } from './connection-registry'
 import type { RosterProfileMetadata } from './connection-registry'
 import { liveWindowState, overlayWindowState } from './connection-window-state'
 import { describeCrashReason, installCrashForensics } from './crash-forensics'
-import { adoptServedDashboardToken, resolveServedDashboardToken } from './dashboard-token'
-import { resolveDesktopPulseHome, resolveDesktopUserData } from './data-paths'
+import {
+  adoptServedDashboardToken,
+  isAttachedBackendTokenDrifted,
+  resolveServedDashboardToken
+} from './dashboard-token'
+import { resolveDashboardWebDist } from './dashboard-web-dist'
+import { resolveDesktopPULSEHome, resolveDesktopUserData } from './data-paths'
 import { loadOrCreateInstallationId, sshOwnershipId } from './desktop-installation'
 import { formatDesktopLogLine, formatLogStamp } from './desktop-log-line'
 import {
@@ -241,7 +251,6 @@ import {
   tuiResumeArgs
 } from './external-terminal'
 import { f12ShortcutDecision, toF12KeyboardEventPayload } from './f12-shortcut'
-import { type FaviconIo, resolveFavicon } from './favicon'
 import { resolveFeatureFlags } from './feature-flags'
 import {
   installFindShortcut,
@@ -282,6 +291,8 @@ import {
   enableBasicPasswordStoreEncryption,
   encryptDesktopSecret as encryptDesktopSecretStrict,
   homeRelativeAttachmentCandidates,
+  isMissingFileError,
+  missingFileResult,
   readFileDataUrlForIpc,
   resolvePersistedRemoteToken,
   resolveReadableFileForIpc,
@@ -296,11 +307,14 @@ import {
 import {
   type AttachedBackend,
   attachOrReserveSpawn,
+  HOST_SPAWN_GATE_STALE_MS,
   spawnLedgerPath,
   type SpawnReservation
 } from './host-backend-attach'
 import { assertNoSecondLocalBackend, assertNotPassiveSpawn } from './host-backend-singleton'
 import { lookupPublishedSessionToken } from './host-published-token'
+import { claimHostSpawnGate } from './host-spawn-gate'
+import { PULSE_HUB_FALLBACK_ORIGIN, PULSE_HUB_ORIGIN, isPULSEHubClipboardWrite } from './hub-iframe-policy'
 import { requestHudClose } from './hud-close'
 import { cursorPointInWindow } from './hud-cursor'
 import { startHudGameOverlayWatch } from './hud-game-overlay'
@@ -311,17 +325,34 @@ import { applyHudElectronOverlay, promoteHudOverlay } from './hud-overlay'
 import { snapHudBounds } from './hud-snap'
 import { createHudSnapShortcut } from './hud-snap-shortcut'
 import { buildHudWindowUrl } from './hud-url'
-import { resolveHudWindowing } from './hud-windowing'
+import { linuxOzoneBackend, resolveHudWindowing } from './hud-windowing'
 import { INSTALL_STAMP, installShape } from './install-stamp'
 import type { InstallStamp } from './install-stamp'
 import { applyLaunchProfileOverride } from './launch-profile'
-import { CURL_TITLE_WRITE_OUT, parseCurlTitleResponse } from './link-title-curl'
-import { canonicalTitleCacheKey, isFetchableHttpUrl } from './link-title-url'
-import { isAuthWall, resolveLinkTitle } from './link-title-wall'
-import { createLinkTitleWindow, guardLinkTitleSession, readLinkTitleWindowTitle } from './link-title-window'
+import { fetchLinkTitle, resolveFaviconCached } from './link-metadata'
 import { CHROMIUM_LOG_FILENAME, enableLinuxCrashDiagnostics, linuxCrashDiagnostics } from './linux-crash-diagnostics'
+import {
+  decideLinuxGpuLaunch,
+  disableGpuSwitchNeededForReason,
+  LINUX_GPU_SILENT_RETRY_GRACE_S,
+  linuxGpuChildDeathPath,
+  linuxGpuFallbackMarker,
+  linuxGpuMarkerAfterSuccessfulBoot,
+  readLinuxGpuMarker,
+  shouldEngageSilentGpuRetryFallback,
+  writeLinuxGpuMarker
+} from './linux-gpu-fallback'
 import { notifyLauncherWindowRevealed } from './linux-launcher-ready'
-import { decideNvidiaEglFallback, parseNvidiaDriverMajor } from './linux-nvidia-egl-fallback'
+import {
+  decideNvidiaEglFallback,
+  nvidiaEglFallbackMarker,
+  nvidiaEglMarkerAfterSuccessfulBoot,
+  parseNvidiaDriverMajor,
+  parseNvidiaDriverVersion,
+  readNvidiaEglMarker,
+  shouldRelaunchForNvidiaGpuDeath,
+  writeNvidiaEglMarker
+} from './linux-nvidia-egl-fallback'
 import { createLocalBackendLifecycle, waitForTeardown } from './local-backend-lifecycle'
 import { resolveIpcFileReadPath, resolveMediaStreamFile, resolvePreviewTargetPath } from './local-read-path'
 import { localSkinProfileKey, readLocalSkinPayload } from './local-skin'
@@ -350,6 +381,7 @@ import {
   waitForManagedUpdateOperations
 } from './managed-ssh-update'
 import { registerMcpOauthCallbackIpc } from './mcp-oauth-callback-ipc'
+import { isMediaCapturePermission } from './media-capture-permission'
 import { createMediaProtocolHandler, MEDIA_PROTOCOL } from './media-protocol'
 import { fetchLocalMedia } from './media-range'
 import { createMinimizeToTray } from './minimize-to-tray'
@@ -384,7 +416,7 @@ import { wireOauthSessionResponse } from './oauth-session-response'
 import { listWindowsProcesses, reapPackageRootedProcesses } from './package-process-reap'
 import { createParentStartMarkerResolver, parentWatchdogEnv } from './parent-process-identity'
 import { bundledPayload, installIdForRoot, type PayloadInfo } from './payload-backend'
-import { petOverlayClickThrough } from './pet-overlay'
+import { petOverlayClickThrough, shouldPopInOnOverlayClosed } from './pet-overlay'
 import { placePetOverlay, registerPetOverlayIpc } from './pet-overlay-ipc'
 import {
   buildRegistryProfileRoutes,
@@ -392,7 +424,7 @@ import {
   localRouteFallbackProfiles,
   undialedSshRouteSeeds
 } from './plugin-profile-routes'
-import { clampPoolLimits, parsePoolLimits, POOL_LIMITS_DEFAULTS } from './pool-limits'
+import { clampPoolLimits, parsePoolLimits, POOL_LIMITS_DEFAULTS, POOL_LIMITS_MIN } from './pool-limits'
 import { createPoolRetirer } from './pool-retire'
 import { createPoolRetirementClient } from './pool-retire-http'
 import {
@@ -414,6 +446,7 @@ import { createKeepAwake } from './power-save'
 import { readPreUpdateBackupEnabled } from './pre-update-backup-config'
 import { capturePreviewContents } from './preview-capture'
 import { onPreviewWatchOwnerDestroyed, sendPreviewFileChangedToOwner } from './preview-file-watch'
+import { hasClosePreviewFlag, previewGuestInputAction } from './preview-guest-escape'
 import { PreviewReachRegistry } from './preview-reach'
 import {
   createPrimaryRemoteConnection,
@@ -452,9 +485,21 @@ import {
   tagRegistrySessionResponse,
   tagRemoteSessionRows
 } from './profile-session-routing'
-import { createQuickEntryShortcut, quickEntryWindowBounds, sanitizeQuickEntrySettings } from './quick-entry'
+import {
+  createQuickEntryShortcut,
+  createQuickEntrySubmitRelay,
+  quickEntryWindowBounds,
+  sanitizeQuickEntrySettings
+} from './quick-entry'
 import { createQuitFinalization } from './quit-finalization'
-import { type ActiveWork, backendOwnedByApp, mergeActiveWork, normalizeActiveWork, quitPromptFor } from './quit-guard'
+import {
+  type ActiveWork,
+  backendOwnedByApp,
+  mergeActiveWork,
+  normalizeActiveWork,
+  quitPromptFor,
+  shouldGuardWindowClose
+} from './quit-guard'
 import {
   backendQuitNeedsWait,
   backendTeardownOptions,
@@ -465,6 +510,7 @@ import * as remoteLifecycle from './remote-lifecycle'
 import {
   attachPowerResumeRemoteRevalidation,
   ensureHealthyPooledRemoteBackendForDispatch,
+  REMOTE_POOLED_LIVENESS_FAILURE_WINDOW_MS,
   RemoteLivenessTracker,
   RemoteRevalidationCoordinator,
   revalidatePooledRemoteBackends,
@@ -472,6 +518,7 @@ import {
   revalidateSuspectPooledRemoteBackends
 } from './remote-liveness'
 import { resolveRemoteOauthTicket, rosterSourceEnumerationTimeoutMs } from './remote-oauth-ticket'
+import { createRemoteOwnerCache } from './remote-owner-cache'
 import { remoteSessionCookies } from './remote-session-cookies'
 import {
   attachRemoteRequestHeaderListener,
@@ -486,6 +533,8 @@ import { missingRendererAssets, presentRendererIndexes } from './renderer-bundle
 import { planLaunchSwitches, readDesktopLaunchConfig } from './renderer-heap-flags'
 import { loadRendererLoadErrorPage } from './renderer-load-error-page'
 import { attachRendererConsoleCapture, formatRendererBoundaryReport } from './renderer-log'
+import { startRendererServer } from './renderer-server'
+import { isRendererUrl } from './renderer-url'
 import { fetchRosterSourceData } from './roster-source-fetch'
 import { rosterSourceStatus } from './roster-source-status'
 import {
@@ -507,8 +556,10 @@ import {
   SESSION_WINDOW_MIN_WIDTH
 } from './session-windows'
 import { ensureLoginShellPath } from './shell-path'
+import { removeStaleSingletonLock } from './singleton-lock'
 import { createSourcePythonBackend, resolveSourceInstallationBackend, type SourceBackend } from './source-backend'
 import { resolveSourcePython } from './source-python'
+import { resolveSshBinary } from './ssh-binary'
 import { createBootstrapCoordinator, sshConfigFingerprint } from './ssh-bootstrap-coordinator'
 import { collectSshConfigHosts, parseSshGOutput } from './ssh-config'
 import { createSshProbeConnection, pickLocalPort, redactSecrets, SshConnection } from './ssh-connection'
@@ -527,12 +578,14 @@ import {
   opacityNeedsSetting,
   translucencySupportedOn,
   vibrancyFor as vibrancyForTranslucency,
+  windowBackgroundMaterialOptions,
   windowBackingOptions,
   windowOpacityFor,
   windowOpacityOptions
 } from './translucency'
 import { updateGateReason, waitForUpdateClearance } from './update-gate'
 import { readLiveUpdateMarker, updateHandoffConflict, writeUpdateMarker } from './update-marker'
+import { updateConnectionsBeforeLocal } from './update-order'
 import {
   resolveUpdaterMechanism,
   type UpdaterApplyResultWire,
@@ -545,7 +598,8 @@ import {
   resolveStagedUpdaterBinary,
   resolveVenvDir,
   spawnUpdaterProcess,
-  stagedUpdaterSupportsPrewrittenMarker
+  stagedUpdaterSupportsPrewrittenMarker,
+  userLauncherInstallRoot
 } from './updater-process'
 import { AppInstallerStrategy } from './updater/app-installer'
 import { createChannelAppInstallerStrategy } from './updater/app-installer'
@@ -568,10 +622,9 @@ import {
 import { startRelaunchWaiter } from './updater/relaunch-waiter'
 import { preflightStateDb } from './updater/state-db-preflight'
 import { createStoreStrategy } from './updater/store-client'
-import { isExternalVenvHolder, isPulseOwnedVenvDaemon } from './venv-holder-select'
+import { isExternalVenvHolder, isPULSEOwnedVenvDaemon } from './venv-holder-select'
 import { fetchMarketplaceThemes, searchMarketplaceThemes } from './vscode-marketplace'
 import { createWakeIndicatorWindowController } from './wake-indicator-window'
-import { decodeWebText } from './web-text-decoder'
 import { windowAcceleratorAction } from './window-accelerator'
 import { enumerateWindowsFrontToBack, enumerationFailed, readWindowBelow } from './window-below'
 import { bindWindowChromeEvents } from './window-chrome-events'
@@ -582,6 +635,8 @@ import {
   WindowConnectionRouteRegistry
 } from './window-connection-route'
 import { registerWindowControlIpc, windowControlState } from './window-controls'
+import { revealAction, shouldFocusToTakeKeyboard } from './window-focus-policy'
+import { windowMenuTemplate } from './window-menu'
 import { createWindowOpenHandler } from './window-open-policy'
 import { installWindowRendererLifecycle } from './window-renderer-lifecycle'
 import { wireWindowReveal } from './window-reveal'
@@ -594,8 +649,8 @@ import {
   MIN_HEIGHT as WINDOW_MIN_HEIGHT,
   MIN_WIDTH as WINDOW_MIN_WIDTH
 } from './window-state'
-import { hiddenWindowsChildOptions } from './windows-child-options'
-import { buildPathExtCandidates, chooseUpdaterArgs, resolveVenvPulseCommand } from './windows-pulse-path'
+import { hiddenWindowsChildOptions, windowsShellCommand } from './windows-child-options'
+import { buildPathExtCandidates, chooseUpdaterArgs, resolveVenvPULSECommand } from './windows-pulse-path'
 import {
   connectWindowsRemote,
   detectRemotePlatform,
@@ -622,7 +677,7 @@ import {
   buildDisableGpuRelaunchArgs,
   decideWindowsGpuStackCookieLaunch,
   gpuStackCookieFallbackMarker,
-  isPulseDesktopGpuOverrideOff,
+  isPULSEDesktopGpuOverrideOff,
   markerAfterSuccessfulGpuStackCookieBoot,
   readGpuStackCookieMarker,
   shouldRelaunchForRendererStackCookieCrashLoop,
@@ -645,6 +700,7 @@ if (USER_DATA_OVERRIDE || process.env.PULSE_DATA_DIR_SUFFIX) {
 
 const DEV_SERVER = process.env.PULSE_DESKTOP_DEV_SERVER
 const IS_PACKAGED = app.isPackaged || Boolean(process.env.PULSE_DESKTOP_IS_PACKAGED)
+let packagedRendererServer: Awaited<ReturnType<typeof startRendererServer>> | null = null
 const IS_MAC = process.platform === 'darwin'
 const IS_WINDOWS = process.platform === 'win32'
 const IS_WSL = isWslEnvironment()
@@ -685,6 +741,15 @@ if (REMOTE_DISPLAY_REASON) {
   // Belt-and-suspenders for X11/VNC, where the Viz compositor can still glitch
   // with only --disable-gpu: force compositing onto the CPU too.
   app.commandLine.appendSwitch('disable-gpu-compositing')
+
+  // #97616: disableHardwareAcceleration() alone does NOT stop a GPU child
+  // from spawning (it then dies error_code=1002 on AMD/Mesa). For the explicit
+  // PULSE_DESKTOP_DISABLE_GPU override, fully spawn-block it. Remote-display
+  // detections keep their long-standing compositing-only behavior.
+  if (disableGpuSwitchNeededForReason(REMOTE_DISPLAY_REASON)) {
+    app.commandLine.appendSwitch('disable-gpu')
+  }
+
   console.log(
     `[pulse] remote display detected (${REMOTE_DISPLAY_REASON}); disabling GPU hardware acceleration to prevent flicker`
   )
@@ -752,44 +817,167 @@ if (DEV_CDP.port) {
 
 // WSLg: Chromium blocklists the Mesa vGPU → software compositing → typing lag.
 // /dev/dxg means a real GPU is available; un-blocklist it. Skipped when a remote
-// display already forced software (SSH'd-into-WSL).
-if (IS_WSL && !REMOTE_DISPLAY_REASON && fs.existsSync('/dev/dxg')) {
+// display already forced software (SSH'd-into-WSL), and on Wayland ozone: WSL has
+// no DRM render node, so forced GPU compositing segfaults the GPU process there.
+if (
+  IS_WSL &&
+  !REMOTE_DISPLAY_REASON &&
+  fs.existsSync('/dev/dxg') &&
+  linuxOzoneBackend(process.env, process.argv) !== 'wayland'
+) {
   app.commandLine.appendSwitch('ignore-gpu-blocklist')
   app.commandLine.appendSwitch('enable-gpu-rasterization')
   app.commandLine.appendSwitch('enable-zero-copy')
   console.log('[pulse] WSL GPU passthrough (/dev/dxg) detected; enabling GPU acceleration')
 }
 
-// #40077: NVIDIA driver 580.x breaks ANGLE's EGL probing (Invalid visual ID),
-// killing the GPU process at startup. Route ANGLE through its SwiftShader
-// backend instead — the app then launches and stays up (CPU rendering, slow
-// but stable). Deliberately NOT disableHardwareAcceleration(): on 580.173.02 +
-// Electron 40 that SIGKILLs the renderer (see the closed #40119). Must run
-// before app `ready` — the switch only applies pre-launch. Override with
-// PULSE_DESKTOP_NVIDIA_SWIFTSHADER (1/true → force on, 0/false → never).
+// #40077 / #124255: NVIDIA driver 580.x breaks ANGLE's EGL probing (Invalid
+// visual ID), killing the GPU process at startup. Route ANGLE through its
+// SwiftShader backend when the breakage is WITNESSED, not assumed: the same
+// point release breaks hosts where NVIDIA drives the display and renders fine
+// on hybrid hosts whose session EGL lands on the iGPU, so a driver-series gate
+// burns 4-9 CPU cores on healthy hosts (#124255). The gate is now behavioral —
+// boot with hardware GL and a marker; a GPU-process death before the first
+// window flips the marker sticky (per app + full driver version) and relaunches
+// once with SwiftShader. Deliberately NOT disableHardwareAcceleration(): on
+// 580.173.02 + Electron 40 that SIGKILLs the renderer (see the closed #40119).
+// Must run before app `ready` — the switch only applies pre-launch. Override
+// with PULSE_DESKTOP_NVIDIA_SWIFTSHADER (1/true → force on, 0/false → never).
+const NVIDIA_PROC_VERSION = (() => {
+  try {
+    return fs.readFileSync('/proc/driver/nvidia/version', 'utf8')
+  } catch {
+    return ''
+  }
+})()
+
+const NVIDIA_DRIVER_MAJOR = parseNvidiaDriverMajor(NVIDIA_PROC_VERSION)
+const NVIDIA_DRIVER_VERSION = parseNvidiaDriverVersion(NVIDIA_PROC_VERSION)
+
+let nvidiaEglFallbackActive = false
+let nvidiaEglRelaunchAttempted = false
+
 const NVIDIA_EGL_FALLBACK = decideNvidiaEglFallback({
-  driverMajor: parseNvidiaDriverMajor(
-    (() => {
-      try {
-        return fs.readFileSync('/proc/driver/nvidia/version', 'utf8')
-      } catch {
-        return ''
-      }
-    })()
-  ),
+  driverMajor: NVIDIA_DRIVER_MAJOR,
+  driverVersion: NVIDIA_DRIVER_VERSION,
+  marker: readNvidiaEglMarker(app.getPath('userData')),
+  appVersion: app.getVersion(),
   env: process.env,
   platform: process.platform,
   isWsl: IS_WSL,
   remoteDisplayReason: REMOTE_DISPLAY_REASON
 })
 
+nvidiaEglFallbackActive = NVIDIA_EGL_FALLBACK.enable
+
+// Persist the launch decision before GPU children start: a `booting` marker
+// left behind by a launch that never reached first paint is itself evidence
+// of a GPU death (the "GPU process isn't usable" FATAL abort wins the race
+// against our relaunch handler), and the next launch engages from it.
+if (NVIDIA_DRIVER_MAJOR !== null) {
+  try {
+    writeNvidiaEglMarker(app.getPath('userData'), NVIDIA_EGL_FALLBACK.nextMarker)
+  } catch {
+    void 0
+  }
+}
+
 if (NVIDIA_EGL_FALLBACK.enable) {
   app.commandLine.appendSwitch('use-angle', 'swiftshader')
   console.log(
     `[pulse] NVIDIA EGL fallback enabled (${NVIDIA_EGL_FALLBACK.reason}); routing ANGLE ` +
-      'through SwiftShader to avoid the NVIDIA 580-series EGL probe crash (#40077). ' +
-      'PULSE_DESKTOP_NVIDIA_SWIFTSHADER=0 to opt out.'
+      'through SwiftShader. Witnessed GPU-process death probe (#40077, #124255); an app or ' +
+      'driver update re-probes hardware GL once. PULSE_DESKTOP_NVIDIA_SWIFTSHADER=0 to opt out.'
   )
+}
+
+// The behavioral half of the gate: a GPU-process death on a Linux NVIDIA host
+// that booted with hardware GL is the #40077 signature. Catch it before
+// Chromium's "GPU process isn't usable" FATAL abort ends the process, flip the
+// marker sticky, and relaunch once with SwiftShader. `killed` counts (the
+// #40077 GPU process died to Chromium's health-check SIGTERM, exit_code=15).
+if (NVIDIA_DRIVER_MAJOR !== null && process.platform === 'linux') {
+  app.on('child-process-gone', (_event, details) => {
+    if (
+      !shouldRelaunchForNvidiaGpuDeath({
+        details,
+        fallbackActive: nvidiaEglFallbackActive,
+        relaunchAttempted: nvidiaEglRelaunchAttempted
+      })
+    ) {
+      return
+    }
+
+    nvidiaEglRelaunchAttempted = true
+
+    try {
+      writeNvidiaEglMarker(
+        app.getPath('userData'),
+        nvidiaEglFallbackMarker(app.getVersion(), NVIDIA_DRIVER_VERSION ?? String(NVIDIA_DRIVER_MAJOR))
+      )
+    } catch {
+      void 0
+    }
+
+    console.warn(
+      `[pulse] NVIDIA GPU process died (reason=${details?.reason}, exit=${details?.exitCode}); ` +
+        'relaunching once with --use-angle=swiftshader (#40077, #124255)'
+    )
+
+    try {
+      app.relaunch({
+        args: [...process.argv.slice(1), '--use-angle=swiftshader']
+      })
+      void exitAfterBackendShutdown(0)
+    } catch (error) {
+      console.error(`[pulse] NVIDIA SwiftShader relaunch failed: ${error?.message || error}`)
+    }
+  })
+}
+
+// #124843: on Mesa/Wayland the Chromium GPU child can fail init
+// (error_code=1002) and retry inside a sub-zygote forever — ~350% CPU, no
+// gpu-process, no crash. Bound it: one relaunch into software rendering,
+// then a sticky per-version marker so the next boot goes straight there.
+// Reactive only — healthy Mesa/Wayland stacks keep full acceleration. Must
+// run before app `ready`. Override with PULSE_DESKTOP_DISABLE_GPU
+// (1/true → always software, 0/false → keep GPU on).
+let linuxGpuFallbackActive = false
+let linuxGpuFallbackSticky = false
+let linuxGpuRelaunchAttempted = false
+
+const LINUX_GPU_SOFTWARE_ACTIVE =
+  Boolean(REMOTE_DISPLAY_REASON) || NVIDIA_EGL_FALLBACK.enable || alreadyHasDisableGpu(process.argv, process.env)
+
+if (process.platform === 'linux') {
+  const linuxGpuUserData = app.getPath('userData')
+
+  const linuxGpuDecision = decideLinuxGpuLaunch({
+    argv: process.argv,
+    env: process.env,
+    marker: readLinuxGpuMarker(linuxGpuUserData),
+    appVersion: app.getVersion(),
+    remoteDisplayReason: REMOTE_DISPLAY_REASON,
+    nvidiaFallbackActive: NVIDIA_EGL_FALLBACK.enable
+  })
+
+  linuxGpuFallbackActive = linuxGpuDecision.enable
+  linuxGpuFallbackSticky = linuxGpuDecision.nextMarker.state === 'fallback'
+
+  try {
+    writeLinuxGpuMarker(linuxGpuUserData, linuxGpuDecision.nextMarker)
+  } catch {
+    void 0
+  }
+
+  if (linuxGpuDecision.enable && linuxGpuDecision.reason !== 'already-enabled' && !LINUX_GPU_SOFTWARE_ACTIVE) {
+    app.disableHardwareAcceleration()
+    app.commandLine.appendSwitch('disable-gpu-compositing')
+    console.log(
+      `[pulse] Linux GPU software fallback enabled (${linuxGpuDecision.reason}); disabling GPU ` +
+        'hardware acceleration after a GPU-child init failure (#124843). PULSE_DESKTOP_DISABLE_GPU=0 to opt out.'
+    )
+  }
 }
 
 // Linux: point Chromium at the session's keychain backend so safeStorage can
@@ -828,7 +1016,15 @@ let windowsSandboxFallbackSticky = false
 let windowsSandboxFallbackReason: SandboxFallbackReason = 'boot-loop'
 let windowsNoSandboxRelaunchAttempted = false
 
-if (IS_WINDOWS) {
+// #121954: the two-strike boot-abort ladder now also covers Linux. On Linux
+// hosts where the sandboxed GPU child cannot start (dies pre-main on an
+// FD-ownership violation), Chromium prints "GPU process isn't usable.
+// Goodbye." and aborts — a 100% crash loop; the host isolation matrix in
+// #121954 shows only `--no-sandbox` reaches the UI. Same sticky per-version
+// recovery as #38216: two consecutive mid-boot aborts engage `--no-sandbox`,
+// an app update re-probes the sandbox once. Windows-only extras (ACL repair,
+// renderer crash-loop relaunch) stay inside the IS_WINDOWS branch.
+if (IS_WINDOWS || process.platform === 'linux') {
   const windowsUserData = app.getPath('userData')
   const priorMarker = readSandboxMarker(windowsUserData)
 
@@ -836,7 +1032,7 @@ if (IS_WINDOWS) {
   // engaged — icacls /T recurses the whole install tree, so healthy launches
   // skip it (the installer already granted the ACE at install time). Repair
   // targets the install dir only: granting AppContainer read on userData would
-  // expose Pulse sessions/config to every packaged app on the machine.
+  // expose PULSE sessions/config to every packaged app on the machine.
   if (shouldAttemptAclRepair(priorMarker)) {
     const exeDir = path.dirname(process.execPath)
     const acl = grantAllApplicationPackagesAcl(exeDir, { execFileSync })
@@ -866,45 +1062,115 @@ if (IS_WINDOWS) {
     app.commandLine.appendSwitch('no-sandbox')
     process.env.ELECTRON_DISABLE_SANDBOX = '1'
     console.log(
-      `[pulse] Windows sandbox fallback enabled (${sandboxDecision.reason}); launching with --no-sandbox (#38216)`
+      `[pulse] sandbox fallback enabled (${sandboxDecision.reason}); launching with --no-sandbox (#38216, #121954)`
     )
   }
 
   writeSandboxMarker(windowsUserData, sandboxDecision.nextMarker)
 
-  // Catch the first GPU breakpoint death and relaunch before Chromium's
-  // "GPU process isn't usable" FATAL abort ends the process with no recovery.
+  // One coalesced Linux GPU-child recovery (#86073, #124843, #121954): the
+  // sandbox signature is tried first (that host's matrix shows --disable-gpu
+  // still crashes), then the software ladder — including the relapse after a
+  // --no-sandbox boot died again. One death, one bounded relaunch; Windows
+  // keeps its breakpoint-signature fast path unchanged.
   app.on('child-process-gone', (_event, details) => {
-    if (
-      !shouldRelaunchForGpuSandboxCrash({
-        details,
-        alreadyNoSandbox: windowsSandboxFallbackActive || alreadyHasNoSandbox(process.argv, process.env),
-        relaunchAttempted: windowsNoSandboxRelaunchAttempted
-      })
-    ) {
+    if (IS_WINDOWS) {
+      if (
+        !shouldRelaunchForGpuSandboxCrash({
+          details,
+          alreadyNoSandbox: windowsSandboxFallbackActive || alreadyHasNoSandbox(process.argv, process.env),
+          relaunchAttempted: windowsNoSandboxRelaunchAttempted
+        })
+      ) {
+        return
+      }
+
+      windowsNoSandboxRelaunchAttempted = true
+      windowsSandboxFallbackActive = true
+      windowsSandboxFallbackSticky = true
+      windowsSandboxFallbackReason = 'gpu-breakpoint'
+
+      try {
+        writeSandboxMarker(app.getPath('userData'), fallbackMarker('gpu-breakpoint', app.getVersion()))
+      } catch {
+        void 0
+      }
+
+      console.warn(
+        `[pulse] GPU child died with the sandbox signature (exit=${details?.exitCode}); relaunching once with --no-sandbox (#38216)`
+      )
+
+      try {
+        app.relaunch({ args: buildNoSandboxRelaunchArgs(process.argv.slice(1)) })
+        void exitAfterBackendShutdown(0)
+      } catch (error) {
+        console.error(`[pulse] --no-sandbox relaunch failed: ${error?.message || error}`)
+      }
+
       return
     }
 
-    windowsNoSandboxRelaunchAttempted = true
-    windowsSandboxFallbackActive = true
-    windowsSandboxFallbackSticky = true
-    windowsSandboxFallbackReason = 'gpu-breakpoint'
+    const alreadySoftware =
+      LINUX_GPU_SOFTWARE_ACTIVE || linuxGpuFallbackActive || alreadyHasDisableGpu(process.argv, process.env)
 
-    try {
-      writeSandboxMarker(app.getPath('userData'), fallbackMarker('gpu-breakpoint', app.getVersion()))
-    } catch {
-      void 0
+    const path = linuxGpuChildDeathPath({
+      details,
+      alreadyNoSandbox: windowsSandboxFallbackActive || alreadyHasNoSandbox(process.argv, process.env),
+      alreadySoftware,
+      sandboxRelaunchAttempted: windowsNoSandboxRelaunchAttempted,
+      softwareRelaunchAttempted: linuxGpuRelaunchAttempted
+    })
+
+    if (path === 'no-sandbox') {
+      windowsNoSandboxRelaunchAttempted = true
+      windowsSandboxFallbackActive = true
+      windowsSandboxFallbackSticky = true
+      windowsSandboxFallbackReason = 'gpu-breakpoint'
+
+      try {
+        writeSandboxMarker(app.getPath('userData'), fallbackMarker('gpu-breakpoint', app.getVersion()))
+      } catch {
+        void 0
+      }
+
+      console.warn(
+        `[pulse] Linux GPU child died with the sandbox signature (exit=${details?.exitCode}); relaunching once with --no-sandbox (#121954)`
+      )
+
+      try {
+        app.relaunch({ args: buildNoSandboxRelaunchArgs(process.argv.slice(1)) })
+        void exitAfterBackendShutdown(0)
+      } catch (error) {
+        console.error(`[pulse] --no-sandbox relaunch failed: ${error?.message || error}`)
+      }
+
+      return
     }
 
-    console.warn(
-      `[pulse] Windows GPU sandbox crashed (exit=${details?.exitCode}); relaunching once with --no-sandbox (#38216)`
-    )
+    if (path === 'disable-gpu') {
+      linuxGpuRelaunchAttempted = true
+      linuxGpuFallbackActive = true
+      linuxGpuFallbackSticky = true
 
-    try {
-      app.relaunch({ args: buildNoSandboxRelaunchArgs(process.argv.slice(1)) })
-      void exitAfterBackendShutdown(0)
-    } catch (error) {
-      console.error(`[pulse] --no-sandbox relaunch failed: ${error?.message || error}`)
+      const reason =
+        String(details?.reason || '').toLowerCase() === 'launch-failure' ? 'gpu-launch-failure' : 'gpu-crash'
+
+      try {
+        writeLinuxGpuMarker(app.getPath('userData'), linuxGpuFallbackMarker(reason, app.getVersion()))
+      } catch {
+        void 0
+      }
+
+      console.warn(
+        `[pulse] Linux GPU child gone (reason=${details?.reason}); relaunching once with --disable-gpu (#124843)`
+      )
+
+      try {
+        app.relaunch({ args: buildDisableGpuRelaunchArgs(process.argv.slice(1)) })
+        void exitAfterBackendShutdown(0)
+      } catch (error) {
+        console.error(`[pulse] --disable-gpu relaunch failed: ${error?.message || error}`)
+      }
     }
   })
 }
@@ -922,7 +1188,7 @@ ipcMain.handle('pulse:get-remote-display-reason', () => REMOTE_DISPLAY_REASON)
 // `backgroundThrottling: false` on every chat window) pinned every renderer's
 // `document.visibilityState` to 'visible' forever — which silently turned all
 // the renderer's visibility-gated backstop polls and clock ticks into
-// always-on timers. A completely idle, minimized Pulse burned ~20% CPU
+// always-on timers. A completely idle, minimized PULSE burned ~20% CPU
 // around the clock. Throttling is now a runtime dial scoped to streaming:
 // see createStreamThrottle() — chat windows are unthrottled while any turn is
 // in flight (so a live answer keeps painting while blurred, occluded, or
@@ -946,10 +1212,33 @@ if (INSTALL_STAMP) {
 }
 
 const DESKTOP_PROFILE_CONFIG_PATH: string = path.join(app.getPath('userData'), 'active-profile.json')
+
 // Only the lock-owning destination may adopt a workspace or start a backend.
-const isPrimaryInstance: boolean = app.requestSingleInstanceLock()
+// #78101: on Linux/X11 a zombie/defunct Electron process leaves the
+// SingletonLock symlink behind with a PID that still answers kill(pid, 0),
+// so Chromium's own liveness probe keeps refusing every later launch and the
+// app silently exits. Clear a provably-dead owner and retry once; always log
+// when the lock is legitimately lost so the exit is diagnosable.
+function acquireSingleInstanceLock(): boolean {
+  if (app.requestSingleInstanceLock()) {
+    return true
+  }
+
+  const stalePid = removeStaleSingletonLock(app.getPath('userData'))
+
+  if (stalePid !== null) {
+    console.error(`[pulse] removed stale SingletonLock (owner ${stalePid} dead); retrying launch`)
+
+    return app.requestSingleInstanceLock()
+  }
+
+  return false
+}
+
+const isPrimaryInstance: boolean = acquireSingleInstanceLock()
 
 if (!isPrimaryInstance) {
+  console.error('[pulse] another PULSE Desktop instance holds the single-instance lock; exiting')
   app.exit(0)
 }
 
@@ -960,7 +1249,7 @@ if (process.env.PULSE_DESKTOP_TMPDIR) {
   delete process.env.PULSE_DESKTOP_TMPDIR
 }
 
-const PULSE_HOME: string = resolveDesktopPulseHome({
+const PULSE_HOME: string = resolveDesktopPULSEHome({
   home: app.getPath('home'),
   directoryExists,
   readWindowsHome: (): string | null => readWindowsUserEnvVar('PULSE_HOME')
@@ -972,6 +1261,10 @@ const PULSE_HOME: string = resolveDesktopPulseHome({
 // Start-menu / .desktop entry ran with no `--js-flags` at all. Apply them here
 // from config.yaml, before `ready` — Chromium copies `js-flags` to renderer
 // processes only from the browser's pre-launch command line.
+// `desktop.ssh_path` (#103288) rides the same pre-window read: an explicit
+// Windows ssh client for when the in-box OpenSSH is missing or broken.
+let desktopSshPathOverride = ''
+
 {
   let desktopLaunchYaml: string = ''
 
@@ -982,6 +1275,7 @@ const PULSE_HOME: string = resolveDesktopPulseHome({
   }
 
   const desktopLaunchConfig = readDesktopLaunchConfig(desktopLaunchYaml)
+  desktopSshPathOverride = desktopLaunchConfig.sshPath || ''
 
   // `desktop.renderer_accessibility: false` must reach packaged launches too,
   // not only the `pulse desktop` launcher's env bridge (#118271).
@@ -1005,7 +1299,7 @@ const PULSE_HOME: string = resolveDesktopPulseHome({
   }
 }
 
-// ACTIVE_PULSE_ROOT — the canonical mutable Pulse install. Same path
+// ACTIVE_PULSE_ROOT — the canonical mutable PULSE install. Same path
 // install.ps1 / install.sh use, so a desktop-only user and a CLI-only user end
 // up with identical layouts and can share one install.
 const ACTIVE_PULSE_ROOT = path.join(PULSE_HOME, 'pulse-agent')
@@ -1016,7 +1310,7 @@ const VENV_ROOT = path.join(ACTIVE_PULSE_ROOT, 'venv')
 // (Phase 1D) after install.ps1 has completed all stages and the user has
 // finished initial configuration. Presence of this marker means the install
 // is in a known-good state and we can skip the bootstrap flow on subsequent
-// boots, going straight to `resolvePulseBackend()`. Missing or stale marker
+// boots, going straight to `resolvePULSEBackend()`. Missing or stale marker
 // means we re-run the bootstrap; install.ps1's stages are idempotent so a
 // re-run on an already-good install just discovers everything in place.
 //
@@ -1037,8 +1331,8 @@ const DESKTOP_UPDATE_CONFIG_PATH = path.join(app.getPath('userData'), 'updates.j
 const DESKTOP_WINDOW_STATE_PATH = path.join(app.getPath('userData'), 'window-state.json')
 const DESKTOP_BACKEND_OWNERSHIP_PATH = path.join(app.getPath('userData'), 'backend-ownership.json')
 const DESKTOP_MANAGED_SSH_RECOVERY_PATH = path.join(app.getPath('userData'), 'managed-ssh-update-recovery.json')
-// active-profile.json records which Pulse profile the desktop launches its
-// local backend as. When set, startPulse() passes `pulse --profile <name>
+// active-profile.json records which PULSE profile the desktop launches its
+// local backend as. When set, startPULSE() passes `pulse --profile <name>
 // dashboard …`, which deterministically pins PULSE_HOME (see
 // _apply_profile_override in pulse_cli/main.py) and bypasses the sticky
 // ~/.pulse/active_profile file. Unset (null) preserves the legacy behavior:
@@ -1102,7 +1396,7 @@ const BOOT_FAKE_STEP_MS = (() => {
   return Math.max(120, raw)
 })()
 
-const APP_NAME: string = IDENTITY_APP_NAME || process.env.PULSE_DESKTOP_APP_NAME || 'Pulse'
+const APP_NAME: string = IDENTITY_APP_NAME || process.env.PULSE_DESKTOP_APP_NAME || 'PULSE'
 const HUD_WINDOW_TITLE = `${APP_NAME} HUD`
 const TITLEBAR_HEIGHT = 34
 const MACOS_TRAFFIC_LIGHTS_HEIGHT = 14
@@ -1320,7 +1614,7 @@ function chatWindowSurfaceOptions() {
     // opts into the documented transparent-window limits — including that a
     // RESIZABLE transparent window is unsupported and breaks (electron#48421).
     // Every chat window is resizable.
-    backgroundMaterial: IS_WINDOWS && GLASS_SUPPORTED ? backgroundMaterialFor(translucencyState) : undefined,
+    ...windowBackgroundMaterialOptions(translucencyState, IS_WINDOWS, GLASS_SUPPORTED),
     ...windowOpacityOptions(translucencyState),
     ...windowBackingOptions(translucencyState, getWindowBackgroundColor())
   }
@@ -1349,7 +1643,7 @@ const TITLEBAR_OVERLAY_COLOR = 'rgba(1, 0, 0, 0)'
 // Electron's own overlay drifts its hit-region under RAIL, so the renderer
 // paints its own min/max/close (wslg-window-controls.tsx) over the
 // pulse:window-control IPC channel. See titleBarOverlayOptions.
-function getTitleBarOverlayOptions() {
+function getTitleBarOverlayOptions(win?) {
   return titleBarOverlayOptions({
     platform: IS_MAC ? 'mac' : IS_WINDOWS ? 'windows' : IS_WSL ? 'wslg' : 'linux',
     darwinMajor: DARWIN_MAJOR,
@@ -1357,7 +1651,10 @@ function getTitleBarOverlayOptions() {
     color: TITLEBAR_OVERLAY_COLOR,
     foreground:
       rendererTitleBarTheme && isHexColor(rendererTitleBarTheme.foreground) ? rendererTitleBarTheme.foreground : null,
-    dark: nativeTheme.shouldUseDarkColors
+    dark: nativeTheme.shouldUseDarkColors,
+    // The native WCO buttons don't scale with the page; scale the overlay so
+    // its height tracks the zoomed renderer titlebar (#81086).
+    zoomFactor: win?.webContents?.getZoomFactor?.()
   })
 }
 
@@ -1366,7 +1663,7 @@ function getTitleBarOverlayOptions() {
 // returns false; the try/catch additionally guards builds where
 // setTitleBarOverlay isn't supported.
 function applyTitleBarOverlay(win) {
-  const options = getTitleBarOverlayOptions()
+  const options = getTitleBarOverlayOptions(win)
 
   if (!options || typeof options !== 'object') {
     return
@@ -1507,15 +1804,15 @@ Menu.setApplicationMenu(null)
 // Windows toast notifications silently no-op unless an AppUserModelID is set:
 // `new Notification().show()` returns without error and nothing appears. The
 // AUMID must match the installed Start Menu shortcut's AUMID, which
-// electron-builder derives from the build `appId` (com.anxious-research.pulse) —
+// electron-builder derives from the build `appId` (com.nousresearch.pulse) —
 // keep this string in sync with package.json `build.appId`. macOS/Linux don't
 // need this, so gate it on Windows. (Fixes: desktop approval/turn notifications
 // never firing on Windows.)
 if (IS_WINDOWS) {
-  app.setAppUserModelId(IDENTITY_APP_NAME ? PRODUCT_IDENTITY.appId : 'com.anxious-research.pulse')
+  app.setAppUserModelId(IDENTITY_APP_NAME ? PRODUCT_IDENTITY.appId : 'com.nousresearch.pulse')
 }
 
-// Seed the native About panel with the best-known Pulse version. This is
+// Seed the native About panel with the best-known PULSE version. This is
 // refreshed on every open via showAboutPanelFresh, so an in-place
 // `pulse update` mid-session is reflected without an app restart; the seed
 // covers the first open and any non-menu invocation path. Never seed empty:
@@ -1623,6 +1920,13 @@ function spawnOwnedBackend(...args: Parameters<typeof spawn>): ChildProcess {
 }
 
 const remoteLiveness = new RemoteLivenessTracker()
+
+// Pooled remotes are probed on the renderer reconnect cadence (minutes apart),
+// not the primary's sub-minute retry loop, so they need a failure window wider
+// than that cadence or a dead pooled descriptor's streak resets on every tick
+// and it is never dropped (#94381).
+const pooledRemoteLiveness = new RemoteLivenessTracker(undefined, REMOTE_POOLED_LIVENESS_FAILURE_WINDOW_MS)
+
 const remoteRevalidation = new RemoteRevalidationCoordinator()
 const registryDispatchRevalidation = new RemoteRevalidationCoordinator()
 // Single-owner reconnect/dial claim (#90812): reconnectGateway()'s in-flight
@@ -1635,16 +1939,16 @@ const backendDialClaims = new BackendDialClaims()
 // backend-exit toast so an intentional kill doesn't look like a crash.
 let softRehomeInProgress = false
 // Primary-slot bookkeeping for the exit supervisor (#112344). `primaryStartsInFlight`
-// counts startPulse() calls that have not settled; `primaryRecoverySuppressed`
+// counts startPULSE() calls that have not settled; `primaryRecoverySuppressed`
 // is set by every intentional invalidate of the slot and cleared by the next
-// startPulse(), so the dying child's stale exit never respawns behind a
+// startPULSE(), so the dying child's stale exit never respawns behind a
 // re-home, a quit, or a latched boot failure.
 let primaryStartsInFlight = 0
 let primaryRecoverySuppressed = false
 const primaryExitRecovery = createBackendExitRecoveryLatch()
 // Additional per-profile backends, keyed by profile name. The PRIMARY backend
 // (the desktop's launch profile) stays managed by backendConnectionState +
-// startPulse(); this pool only holds EXTRA profile
+// startPULSE(); this pool only holds EXTRA profile
 // backends spawned lazily when a session belongs to a different profile. A user
 // with no named profiles never populates this map, so their experience is
 // byte-for-byte the single-backend behavior.
@@ -1763,7 +2067,7 @@ function logPoolSpawnFailure(label: string, error: unknown): void {
     rememberLog(`Profile backend ${label} slot wait timed out (background); retry is backing off`)
   } else {
     rememberLog(
-      `Pulse backend for profile ${label} failed to start: ${error instanceof Error ? error.message : String(error)}`
+      `PULSE backend for profile ${label} failed to start: ${error instanceof Error ? error.message : String(error)}`
     )
   }
 }
@@ -1846,6 +2150,20 @@ const POOL_KEEPALIVE_FRESH_MS = Math.max(
   Number(process.env.PULSE_DESKTOP_POOL_KEEPALIVE_FRESH_MS) || 4 * 60_000
 )
 
+// Pinned-tier TTL (#105239): the renderer's 60s keepalive (touchPoolBackend)
+// refreshes lastActiveAt for every OPEN chat, so the idle reaper's only clock
+// never fires for the pinned tier — every profile whose chat was ever opened
+// held its ~120 MB serve child until app quit (126 processes / 7.5 GB on the
+// reporter's machine, all parented to PULSE.exe). A keepalive proves the
+// chat is open, not that anything streamed: retire a local child whose last
+// streamed turn is older than this window. Re-focusing the chat re-ensures it
+// idempotently (ensureBackend/ensureRegistryBackend reuse), and mid-stream
+// safety is unchanged — activeTurn entries are excluded by the retirer.
+const POOL_PINNED_IDLE_MS = Math.max(
+  POOL_LIMITS_MIN.idleMs,
+  Number(process.env.PULSE_DESKTOP_POOL_PINNED_IDLE_MS) || 60 * 60_000
+)
+
 let poolIdleReaper = null
 let backendOrphanReapPromise = null
 // Auto-reload budget for renderer crashes, shared by EVERY window (primary,
@@ -1858,7 +2176,7 @@ const RENDERER_RELOAD_WINDOW_MS = 60_000
 const RENDERER_RELOAD_MAX = 3
 const rendererReloadTimesRef: { current: number[] } = { current: [] }
 // Latched bootstrap failure: when the first-launch install fails, we hold
-// onto the error so subsequent startPulse() calls (e.g. the renderer's
+// onto the error so subsequent startPULSE() calls (e.g. the renderer's
 // ensureGatewayOpen retrying after the WS won't open) return the same error
 // instead of re-running install.ps1 in a hot loop. Cleared explicitly by
 // the renderer's "Reload and retry" path or by quitting the app.
@@ -1905,7 +2223,7 @@ let bootProgressState = {
   error: null,
   fakeMode: BOOT_FAKE_MODE,
   isCloudBackendDown: false,
-  message: 'Waiting to start Pulse backend',
+  message: 'Waiting to start PULSE backend',
   phase: 'idle',
   progress: 0,
   retryable: false,
@@ -2094,6 +2412,7 @@ const EXTERNAL_OPEN_DEPS: ExternalOpenDeps = {
   spawn: (cmd, args, opts) => spawn(cmd, args, opts),
   openExternal: url => shell.openExternal(url),
   openFile: openExternalFile,
+  openLocalPath: openLocalFilesystemPath,
   notifyFailure: broadcastOpenFailed,
   log: rememberLog
 }
@@ -2186,6 +2505,63 @@ async function openExternalFile(rawUrl: string) {
     shell.showItemInFolder(localPath)
   } catch (error) {
     rememberLog(`[file] reveal in folder failed: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
+// The `pulse:openExternal` route for a BARE local filesystem path — a chat
+// media link, a markdown href, or an artifacts-panel value carrying
+// `C:\…`, `~/…`, `/…` or a UNC path instead of a `file://` URL. `new URL()`
+// cannot express those (pulse-agent 80946): resolve through the same audited
+// `resolveRequestedPathForIpc` the file route uses, then OPEN with the OS
+// handler and fall back to reveal-in-folder, mirroring openExternalFile's
+// missing-file guard so a dead path reports "File not found" instead of a
+// silent no-op. Resolves false only when the path could not be resolved at
+// all; open failures are logged (with the path, so "Failed to open path" is
+// diagnosable) and still count as handled.
+async function openLocalFilesystemPath(rawPath: string): Promise<boolean> {
+  let localPath: string
+
+  try {
+    localPath = resolveRequestedPathForIpc(String(rawPath || ''), { purpose: 'Open external file' })
+  } catch {
+    return false
+  }
+
+  try {
+    assertExistingPathForOpen(localPath, 'Open external file')
+  } catch (error) {
+    if (reportPreOpenStatFailure(error, rawPath, GUARD_REPORT_DEPS)) {
+      return true
+    }
+  }
+
+  try {
+    const errorMessage = await shell.openPath(localPath)
+
+    if (!errorMessage) {
+      return true
+    }
+
+    // Include the path so "Failed to open path" is diagnosable (pulse-agent
+    // 84361), then reveal: on Windows archive artifacts have no usable
+    // association, and the reveal never re-opens so it can't loop (#53170).
+    rememberLog(`[file] openPath failed: ${errorMessage}; path=${localPath}; revealing in folder instead`)
+
+    try {
+      shell.showItemInFolder(localPath)
+    } catch (revealError) {
+      rememberLog(
+        `[file] showItemInFolder failed: ${revealError instanceof Error ? revealError.message : String(revealError)}; path=${localPath}`
+      )
+    }
+
+    return true
+  } catch (error) {
+    rememberLog(
+      `[file] openPath rejected: ${error instanceof Error ? error.message : String(error)}; path=${localPath}`
+    )
+
+    return true
   }
 }
 
@@ -2609,7 +2985,16 @@ function updateGateDeps() {
   return {
     hasLiveMarker: () => Boolean(readLiveUpdateMarker(PULSE_HOME)),
     isUpdateInFlight: () => updateInFlight,
-    isHandoffActive: () => isQuittingForHandoff
+    isHandoffActive: () => isQuittingForHandoff,
+    // The latest receipt is cross-process truth: a `pulse update` that failed
+    // records outcome "failed" even when its marker write/release raced a
+    // crash (#122206). Only a TERMINAL failure counts — "running" must keep
+    // parking, and "partial" kept the install usable.
+    hasFailedReceipt: () => {
+      const receipt = readLatestSyncReceipt()
+
+      return receipt?.outcome === 'failed'
+    }
   }
 }
 
@@ -2671,9 +3056,27 @@ function relaunchIntoSwappedBundle() {
 // rather than a frozen splash. Returns true if it parked at all.
 async function waitForUpdateToFinish() {
   let announced = false
+  let parkedOnFailedReceipt = false
 
   const outcome = await waitForUpdateClearance(updateGateDeps(), {
     signal: localBackendLifecycle.signal,
+    abandonOn: reason => {
+      // The update that owns the gate already recorded a terminal failure
+      // (#122206): parking the full 20-minute budget on a receipt that says
+      // "failed" strands the window behind a dead updater (486 silent polls
+      // measured). Stop waiting; the failure dialog below carries the
+      // recovery guidance and the backend's own launch path finishes only
+      // what is safely retryable, bounded by venv_sync's completion-retry
+      // backoff.
+      if (reason === 'failed-receipt') {
+        parkedOnFailedReceipt = true
+        rememberLog('[updates] latest update receipt records a failure; not parking the boot on it')
+
+        return true
+      }
+
+      return false
+    },
     onWaitTick: async reason => {
       if (!announced) {
         announced = true
@@ -2682,7 +3085,7 @@ async function waitForUpdateToFinish() {
 
       await advanceBootProgress(
         'backend.update-wait',
-        'An update is finishing — Pulse will start automatically when it completes…',
+        'An update is finishing — PULSE will start automatically when it completes…',
         12
       )
     },
@@ -2706,7 +3109,7 @@ async function waitForUpdateToFinish() {
       rememberLog(`[updates] detached update finished with manual action (branch ${result.branch}): ${result.message}`)
       dialog.showMessageBox({
         type: 'warning',
-        title: 'Pulse update',
+        title: 'PULSE update',
         message: 'The update finished, but needs one more step',
         detail: result.message
       })
@@ -2722,8 +3125,8 @@ async function waitForUpdateToFinish() {
       void dialog
         .showMessageBox({
           type: 'error',
-          title: 'Pulse update',
-          message: "Pulse couldn't finish updating",
+          title: 'PULSE update',
+          message: "PULSE couldn't finish updating",
           detail:
             "You're still on the previous version and can keep using it. Try the update again, or open the update log to report the problem.\n\n" +
             `Details: ${result.message}`,
@@ -2754,8 +3157,13 @@ async function waitForUpdateToFinish() {
 
   if (outcome === 'timeout') {
     rememberLog('[updates] update still in progress after wait timeout; starting backend anyway')
+  } else if (parkedOnFailedReceipt) {
+    // The gate closed on a terminal failure, not a live update: no swap to
+    // relaunch into (the update never succeeded), so boot the current build
+    // and let the failure dialog above carry the recovery guidance.
+    rememberLog('[updates] proceeding with backend start despite the failed update receipt')
   } else if (relaunchIntoSwappedBundle()) {
-    await advanceBootProgress('backend.update-restart', 'Restarting Pulse to load the updated app…', 14)
+    await advanceBootProgress('backend.update-restart', 'Restarting PULSE to load the updated app…', 14)
     // Park while the scheduled exit lands so this stale build never starts a
     // backend; the failsafe below only runs if the exit somehow does not.
     await new Promise(resolve => setTimeout(resolve, BUNDLE_SWAP_RELAUNCH_FAILSAFE_MS))
@@ -2819,13 +3227,13 @@ function isCommandScript(command) {
   return IS_WINDOWS && /\.(cmd|bat)$/i.test(command || '')
 }
 
-async function unwrapWindowsVenvPulseCommand(command, backendArgs) {
-  return resolveVenvPulseCommand(command, backendArgs, {
+async function unwrapWindowsVenvPULSECommand(command, backendArgs) {
+  return resolveVenvPULSECommand(command, backendArgs, {
     isWindows: IS_WINDOWS,
     isCommandScript,
     fileExists,
     directoryExists,
-    canImportPulseCli,
+    canImportPULSECli,
     getVenvPython,
     buildDesktopBackendEnv,
     resolvePath: (...segments) => path.resolve(...segments),
@@ -2895,7 +3303,7 @@ function looksLikeDesktopAppBinary(commandPath) {
   )
 }
 
-function isPulseSourceRoot(root) {
+function isPULSESourceRoot(root) {
   return directoryExists(root) && fileExists(path.join(root, 'pulse_cli', 'main.py'))
 }
 
@@ -2934,7 +3342,7 @@ async function findSystemPython() {
   //      miss real Python 3.13 installs (user-reported case).
   //
   // We also restrict ourselves to Python 3.11–3.13. 3.14 is the latest
-  // CPython but several Pulse deps (notably pywinpty's Rust-built
+  // CPython but several PULSE deps (notably pywinpty's Rust-built
   // windows_x86_64_msvc crate) don't yet publish 3.14 wheels, and
   // `pip install -e .` falls back to source-build, which fails without
   // a Rust toolchain. install.ps1 sidesteps this by pinning to 3.11
@@ -3204,7 +3612,7 @@ function resolveGhBinary() {
   return _ghBinaryCache
 }
 
-function recentPulseLog() {
+function recentPULSELog() {
   return pulseLog.slice(-20).join('\n')
 }
 
@@ -3246,7 +3654,10 @@ function readWindowState() {
 
 // Persist the window's restored (non-maximized) bounds plus its maximized flag.
 // getNormalBounds() keeps the pre-maximize size, so un-maximizing next session
-// lands back where the user actually sized the window.
+// lands back where the user actually sized the window. While fullscreen,
+// getNormalBounds() reports the fullscreen bounds with isMaximized=false — the
+// broken transition behind #94319 — so record that provenance and let recovery
+// on the next launch recognize the snapshot instead of guessing from geometry.
 function persistWindowState() {
   if (!mainWindow || mainWindow.isDestroyed() || mainWindow.isMinimized()) {
     return
@@ -3257,7 +3668,18 @@ function persistWindowState() {
     fs.mkdirSync(path.dirname(DESKTOP_WINDOW_STATE_PATH), { recursive: true })
     writeFileAtomic(
       DESKTOP_WINDOW_STATE_PATH,
-      JSON.stringify({ x, y, width, height, isMaximized: mainWindow.isMaximized() }, null, 2)
+      JSON.stringify(
+        {
+          x,
+          y,
+          width,
+          height,
+          isMaximized: mainWindow.isMaximized(),
+          boundsCapturedFullScreen: mainWindow.isFullScreen()
+        },
+        null,
+        2
+      )
     )
   } catch (err) {
     rememberLog(`[window-state] persist failed: ${err?.message || err}`)
@@ -3300,8 +3722,8 @@ function writeZoomState(zoomLevel) {
 function resolveUpdateRoot() {
   const candidates = [
     process.env.PULSE_DESKTOP_PULSE_ROOT && path.resolve(process.env.PULSE_DESKTOP_PULSE_ROOT),
-    !IS_PACKAGED && isPulseSourceRoot(SOURCE_REPO_ROOT) ? SOURCE_REPO_ROOT : null,
-    isPulseSourceRoot(ACTIVE_PULSE_ROOT) ? ACTIVE_PULSE_ROOT : null
+    !IS_PACKAGED && isPULSESourceRoot(SOURCE_REPO_ROOT) ? SOURCE_REPO_ROOT : null,
+    isPULSESourceRoot(ACTIVE_PULSE_ROOT) ? ACTIVE_PULSE_ROOT : null
   ].filter(Boolean)
 
   return candidates.find(isGitCheckout) || candidates[0] || ACTIVE_PULSE_ROOT
@@ -3545,7 +3967,7 @@ function resolveCheckoutUpdateStrategy(): UpdaterStrategy {
 
     emitUpdateProgress,
     rememberLog,
-    startPulse,
+    startPULSE,
     stopBackendsForUpdate,
     repairMacUpdaterHelper,
     preflightStateDb: async (home: string, log: (message: string) => void): Promise<void> => {
@@ -3556,7 +3978,7 @@ function resolveCheckoutUpdateStrategy(): UpdaterStrategy {
       // too (4de06d1dbf7b). An unreadable answer keeps the snapshot.
       if (
         !(await readPreUpdateBackupEnabled(
-          resolvePulseBackend(['config', 'get', 'updates.pre_update_backup', '--json']),
+          resolvePULSEBackend(['config', 'get', 'updates.pre_update_backup', '--json']),
           home
         ))
       ) {
@@ -3644,7 +4066,7 @@ async function restoreBundledBackend(): Promise<void> {
   }
 
   backendStartFailure = null
-  await startPulse()
+  await startPULSE()
 }
 
 // Set to true when the desktop is about to quit so a detached swap/install/
@@ -3704,7 +4126,7 @@ function repairMacUpdaterHelper(updater) {
 // Path to the venv shim whose lock decides whether `pulse update` can write
 // fresh entry points. On Windows this is the file the running backend
 // `pulse.exe` holds open; on POSIX it's never mandatory-locked.
-function venvPulseShimPath(updateRoot) {
+function venvPULSEShimPath(updateRoot) {
   const venvDir = resolveVenvDir(updateRoot)
 
   return IS_WINDOWS ? path.join(venvDir, 'Scripts', 'pulse.exe') : path.join(venvDir, 'bin', 'pulse')
@@ -3740,7 +4162,7 @@ function isShimLocked(shimPath) {
   }
 }
 
-// Kill only Pulse-OWNED venv daemons (the memory plugin's hindsight daemon:
+// Kill only PULSE-OWNED venv daemons (the memory plugin's hindsight daemon:
 // exe under venv\Scripts AND cmdline referencing hindsight_api.main). The
 // daemon is spawned DETACHED, so it outlives the backend tree-kill and keeps
 // venv files mapped. External holders (a user terminal running `pulse`,
@@ -3764,7 +4186,7 @@ function scanWindowsProcesses(): Array<{ ProcessId?: unknown; ExecutablePath?: s
   return Array.isArray(parsed) ? parsed : [parsed]
 }
 
-function killPulseOwnedVenvDaemons(updateRoot) {
+function killPULSEOwnedVenvDaemons(updateRoot) {
   if (!IS_WINDOWS) {
     return
   }
@@ -3774,7 +4196,7 @@ function killPulseOwnedVenvDaemons(updateRoot) {
   let holders = []
 
   try {
-    holders = scanWindowsProcesses().filter(p => isPulseOwnedVenvDaemon(p?.ExecutablePath, p?.CommandLine, scriptsDir))
+    holders = scanWindowsProcesses().filter(p => isPULSEOwnedVenvDaemon(p?.ExecutablePath, p?.CommandLine, scriptsDir))
   } catch {
     // Best-effort: the uninstall lock probe remains the backstop.
     return
@@ -3784,7 +4206,7 @@ function killPulseOwnedVenvDaemons(updateRoot) {
     const pid = Number(holder?.ProcessId)
 
     if (Number.isInteger(pid) && pid > 0) {
-      rememberLog(`[updates] stopping Pulse-owned venv daemon (hindsight) PID ${pid} before hand-off`)
+      rememberLog(`[updates] stopping PULSE-owned venv daemon (hindsight) PID ${pid} before hand-off`)
 
       try {
         forceKillProcessTree(pid)
@@ -3797,12 +4219,12 @@ function killPulseOwnedVenvDaemons(updateRoot) {
   }
 }
 
-// Kill EXTERNAL Pulse processes that hold this install's venv shim (#62311):
+// Kill EXTERNAL PULSE processes that hold this install's venv shim (#62311):
 // the gateway Startup item and dashboard Scheduled Task are launched outside
 // this app (Task Scheduler / autostart), so the backend teardown above never
 // sees them — yet they map venv files and made every update hand-off abort
 // with "venv shim still locked". Selection is deliberately narrow
-// (isExternalVenvHolder: exe under venv\Scripts AND unambiguously a Pulse
+// (isExternalVenvHolder: exe under venv\Scripts AND unambiguously a PULSE
 // program) — unrelated processes that merely mention the install root or use
 // the venv interpreter for their own scripts are never killed; the shim-lock
 // probe still aborts the hand-off for those. Called before the release gate
@@ -3829,7 +4251,7 @@ function killExternalVenvHolders(updateRoot) {
 
     if (Number.isInteger(pid) && pid > 0) {
       rememberLog(
-        `[updates] stopping external Pulse venv holder (autostart gateway/dashboard) PID ${pid} before hand-off`
+        `[updates] stopping external PULSE venv holder (autostart gateway/dashboard) PID ${pid} before hand-off`
       )
 
       try {
@@ -4191,7 +4613,7 @@ async function claimBackendChild(
   if (decision.action === 'fail') {
     await localBackendLifecycle.stop(child)
     throw new Error(
-      `Pulse backend (PID ${child.pid}) died before its identity could be recorded: ${decision.reason}${outputTail?.describe() ?? ''}`
+      `PULSE backend (PID ${child.pid}) died before its identity could be recorded: ${decision.reason}${outputTail?.describe() ?? ''}`
     )
   }
 
@@ -4200,7 +4622,7 @@ async function claimBackendChild(
   if (decision.action === 'degrade') {
     startMarker = pidOnlyStartMarker(child.pid)
     rememberLog(
-      `WARNING: process start marker probe failed for live Pulse backend PID ${child.pid}; ` +
+      `WARNING: process start marker probe failed for live PULSE backend PID ${child.pid}; ` +
         `claiming with PID-only identity instead of stopping it: ${decision.reason}`
     )
   } else {
@@ -4227,7 +4649,7 @@ async function claimBackendChild(
   } catch (error) {
     await localBackendLifecycle.stop(child)
     throw new Error(
-      `Could not persist ownership for the Pulse backend: ${error.message}${outputTail?.describe() ?? ''}`
+      `Could not persist ownership for the PULSE backend: ${error.message}${outputTail?.describe() ?? ''}`
     )
   }
 }
@@ -4305,22 +4727,22 @@ async function releaseBackendLock(updateRoot: string, tag: string): Promise<{ un
 
   // Uninstall deletes the whole runtime. Drain separately-running gateways
   // through the CLI, rather than targeting a gateway worker by PID.
-  stopGatewayBeforeUpdate(venvPulseShimPath(updateRoot), PULSE_HOME)
+  stopGatewayBeforeUpdate(venvPULSEShimPath(updateRoot), PULSE_HOME)
 
-  // Reap Pulse-OWNED venv daemons the tree-kill above cannot reach: the
+  // Reap PULSE-OWNED venv daemons the tree-kill above cannot reach: the
   // memory plugin's hindsight daemon is spawned DETACHED (it outlives the
   // backend) yet runs off venv\Scripts\pythonw.exe, keeping venv files
   // mapped past the backend teardown (#75477/#75478). Narrowly scoped
   // (venv-holder-select) — external holders are never killed here.
-  killPulseOwnedVenvDaemons(updateRoot)
+  killPULSEOwnedVenvDaemons(updateRoot)
 
-  // External autostart Pulse processes (gateway Startup item, dashboard
+  // External autostart PULSE processes (gateway Startup item, dashboard
   // Scheduled Task) also hold the venv shim and are invisible to the backend
   // teardown (#62311). Kill them before the gate AND re-scan inside each gate
   // pass, so a respawning holder loses the race instead of the update.
   killExternalVenvHolders(updateRoot)
 
-  const shim = venvPulseShimPath(updateRoot)
+  const shim = venvPULSEShimPath(updateRoot)
 
   const gate = await waitForBackendRelease(
     initialPids,
@@ -4333,10 +4755,10 @@ async function releaseBackendLock(updateRoot: string, tag: string): Promise<{ un
         killExternalVenvHolders(updateRoot)
         const stragglers = []
 
-        const currentPulseProcess = backendConnectionState.getProcess()
+        const currentPULSEProcess = backendConnectionState.getProcess()
 
-        if (currentPulseProcess && Number.isInteger(currentPulseProcess.pid)) {
-          stragglers.push(currentPulseProcess.pid)
+        if (currentPULSEProcess && Number.isInteger(currentPULSEProcess.pid)) {
+          stragglers.push(currentPULSEProcess.pid)
         }
 
         for (const entry of backendPool.values()) {
@@ -4383,7 +4805,7 @@ async function releaseBackendLock(updateRoot: string, tag: string): Promise<{ un
 //
 // The desktop is a pure consumer: it does NOT git pull / pip install / rebuild
 // itself (the old open-coded git dance lived here and drifted from
-// `pulse update`). Instead we spawn the staged Pulse-Setup binary with
+// `pulse update`). Instead we spawn the staged PULSE-Setup binary with
 // --update and quit, so it can run `pulse update` (which refuses while we
 // hold the venv shim) and rebuild the desktop with our exe already gone.
 //
@@ -4395,6 +4817,15 @@ async function applyUpdates(): Promise<UpdaterApplyResultWire> {
     let handedOff: boolean = false
 
     try {
+      // The local handoff asks the window to exit and the update scripts only
+      // wait so long for that PID — never start that deadline while quit would
+      // still be gated on a managed SSH update or its recovery transaction
+      // (before-quit joins the same operations; the updater must not race them).
+      await waitForManagedUpdateOperations(() => [
+        ...managedConnectionUpdates.values(),
+        ...managedConnectionRecoveries.values()
+      ])
+
       const packaged: UpdaterStrategy | null = await resolvePackagedUpdateStrategy()
       const strategy: UpdaterStrategy = packaged ?? resolveCheckoutUpdateStrategy()
       const result: UpdaterApplyResultWire = await desktopMetrics.trackUpdateApply(packaged, strategy)
@@ -4753,6 +5184,10 @@ function resolveRendererIndex() {
   return resolveRendererIndexWithMissing().index
 }
 
+function rendererBaseUrl() {
+  return DEV_SERVER || packagedRendererServer?.origin || pathToFileURL(resolveRendererIndex()).toString()
+}
+
 // True when `dir` lives inside the packaged app bundle / install tree.
 // Packaged Electron's process.cwd() (and npm's INIT_CWD when dev tooling
 // leaked into a release build) often resolve here — e.g. win-unpacked on
@@ -4768,9 +5203,9 @@ function isPackagedInstallPath(dir) {
   })
 }
 
-function resolvePulseCwd() {
+function resolvePULSECwd() {
   // In a packaged build, `process.cwd()` resolves to the install root (e.g.
-  // `…/win-unpacked` on Windows or `/Applications/Pulse.app/Contents/...`
+  // `…/win-unpacked` on Windows or `/Applications/PULSE.app/Contents/...`
   // on macOS). Sessions spawned there leave files inside the app bundle
   // and bewilder users when "where did my files go?" is the install dir.
   // The user-configurable default project directory wins over everything,
@@ -4808,7 +5243,7 @@ function sanitizeWorkspaceCwd(cwd) {
   const trimmed = typeof cwd === 'string' ? cwd.trim() : ''
 
   if (!trimmed || isPackagedInstallPath(trimmed)) {
-    return { cwd: resolvePulseCwd(), sanitized: Boolean(trimmed) }
+    return { cwd: resolvePULSECwd(), sanitized: Boolean(trimmed) }
   }
 
   try {
@@ -4821,7 +5256,7 @@ function sanitizeWorkspaceCwd(cwd) {
     // Fall through to the resolved default.
   }
 
-  return { cwd: resolvePulseCwd(), sanitized: Boolean(trimmed) }
+  return { cwd: resolvePULSECwd(), sanitized: Boolean(trimmed) }
 }
 
 // Persisted "Default project directory" — surfaced as a setting in the
@@ -4868,7 +5303,7 @@ function writeDefaultProjectDir(dir) {
 
 const installedRuntimeGate = createInstalledRuntimeGate(process.env, rememberLog)
 
-async function resolvePulseBackend(backendArgs: string[]): Promise<ResolvedPulseBackend> {
+async function resolvePULSEBackend(backendArgs: string[]): Promise<ResolvedPULSEBackend> {
   const payload = bundledPayload(process.resourcesPath)
 
   if (payload) {
@@ -4894,7 +5329,7 @@ async function resolvePulseBackend(backendArgs: string[]): Promise<ResolvedPulse
   const overrideRoot: string | undefined =
     process.env.PULSE_DESKTOP_PULSE_ROOT && path.resolve(process.env.PULSE_DESKTOP_PULSE_ROOT)
 
-  if (overrideRoot && isPulseSourceRoot(overrideRoot)) {
+  if (overrideRoot && isPULSESourceRoot(overrideRoot)) {
     const backend: SourceBackend | null = createSourcePythonBackend(
       overrideRoot,
       await findPythonForRoot(overrideRoot),
@@ -4909,8 +5344,8 @@ async function resolvePulseBackend(backendArgs: string[]): Promise<ResolvedPulse
   // 2. Development source -- when running `npm run dev` from a checkout, the
   //    cloned repo at SOURCE_REPO_ROOT takes precedence over ACTIVE and any
   //    installed `pulse` on PATH so local Python edits are actually exercised.
-  //    (In dev with no checkout, SOURCE_REPO_ROOT won't pass isPulseSourceRoot.)
-  if (!IS_PACKAGED && isPulseSourceRoot(SOURCE_REPO_ROOT)) {
+  //    (In dev with no checkout, SOURCE_REPO_ROOT won't pass isPULSESourceRoot.)
+  if (!IS_PACKAGED && isPULSESourceRoot(SOURCE_REPO_ROOT)) {
     const backend: SourceBackend | null = createSourcePythonBackend(
       SOURCE_REPO_ROOT,
       await findPythonForRoot(SOURCE_REPO_ROOT),
@@ -4937,16 +5372,16 @@ async function resolvePulseBackend(backendArgs: string[]): Promise<ResolvedPulse
     } else if (!isWindowsBinaryPathInWsl(pulseOverride, { isWsl: IS_WSL })) {
       pulseCommand = pulseOverride
     } else {
-      rememberLog(`Ignoring Windows Pulse override under WSL: ${pulseOverride}`)
+      rememberLog(`Ignoring Windows PULSE override under WSL: ${pulseOverride}`)
     }
 
     if (pulseCommand) {
       if (looksLikeDesktopAppBinary(pulseCommand)) {
-        rememberLog(`Ignoring desktop app executable on PATH while resolving Pulse CLI: ${pulseCommand}`)
+        rememberLog(`Ignoring desktop app executable on PATH while resolving PULSE CLI: ${pulseCommand}`)
         pulseCommand = null
       } else {
-        const unwrapped: Awaited<ReturnType<typeof unwrapWindowsVenvPulseCommand>> =
-          await unwrapWindowsVenvPulseCommand(pulseCommand, backendArgs)
+        const unwrapped: Awaited<ReturnType<typeof unwrapWindowsVenvPULSECommand>> =
+          await unwrapWindowsVenvPULSECommand(pulseCommand, backendArgs)
 
         if (unwrapped) {
           return unwrapped
@@ -4955,11 +5390,11 @@ async function resolvePulseBackend(backendArgs: string[]): Promise<ResolvedPulse
         const shellForProbe: boolean = isCommandScript(pulseCommand)
 
         if (
-          shouldTrustPulseOverride(pulseOverride) ||
-          (await verifyPulseCli(pulseCommand, { shell: shellForProbe }))
+          shouldTrustPULSEOverride(pulseOverride) ||
+          (await verifyPULSECli(pulseCommand, { shell: shellForProbe }))
         ) {
           return {
-            label: `existing Pulse CLI at ${pulseCommand}`,
+            label: `existing PULSE CLI at ${pulseCommand}`,
             command: pulseCommand,
             args: backendArgs,
             bootstrap: false,
@@ -4971,7 +5406,7 @@ async function resolvePulseBackend(backendArgs: string[]): Promise<ResolvedPulse
         }
 
         rememberLog(
-          `Ignoring existing Pulse CLI at ${pulseCommand}: --version probe failed; falling through to bootstrap.`
+          `Ignoring existing PULSE CLI at ${pulseCommand}: --version probe failed; falling through to bootstrap.`
         )
       }
     }
@@ -4995,7 +5430,7 @@ async function resolvePulseBackend(backendArgs: string[]): Promise<ResolvedPulse
   if (activeBackend && !bootstrapRepairRequested) {
     if (!activeRuntime.hasValidMarker) {
       rememberLog(
-        `[bootstrap] Active Pulse runtime at ${ACTIVE_PULSE_ROOT} is usable but the bootstrap marker is missing or stale; skipping first-run bootstrap.`
+        `[bootstrap] Active PULSE runtime at ${ACTIVE_PULSE_ROOT} is usable but the bootstrap marker is missing or stale; skipping first-run bootstrap.`
       )
     }
 
@@ -5004,21 +5439,44 @@ async function resolvePulseBackend(backendArgs: string[]): Promise<ResolvedPulse
 
   if (bootstrapRepairRequested) {
     rememberLog('[bootstrap] repair requested; bypassing the usable active runtime to re-run the installer')
+  } else {
+    // 5. A source install outside ACTIVE_PULSE_ROOT (install.sh --dir, a
+    //    setup-pulse.sh clone), found through the launcher it published at a
+    //    fixed user-bin location: a Finder/Dock launch inherits a PATH without
+    //    ~/.local/bin. The reported root is then resolved and probed like any
+    //    installed runtime; PULSE_DESKTOP_IGNORE_EXISTING=1 skips it too.
+    const userInstall: ReturnType<typeof userLauncherInstallRoot> = userLauncherInstallRoot(IS_WINDOWS, PULSE_HOME)
+
+    if (userInstall) {
+      const userBackend: SourceBackend | null = await installedRuntimeGate.resolve(userInstall.root, () =>
+        resolveSourceInstallationBackend(userInstall.root, backendArgs, { pulseHome: PULSE_HOME })
+      )
+
+      if (userBackend) {
+        rememberLog(`[boot] Using PULSE install at ${userInstall.root} (published launcher ${userInstall.launcher})`)
+
+        return userBackend
+      }
+
+      rememberLog(`[bootstrap] PULSE install at ${userInstall.root} (from ${userInstall.launcher}) is not usable`)
+    } else {
+      rememberLog(`[bootstrap] no usable PULSE install at ${ACTIVE_PULSE_ROOT} and no published user-bin launcher`)
+    }
   }
 
-  // 5. Nothing usable yet -- signal the bootstrap runner that we need to
+  // 6. Nothing usable yet -- signal the bootstrap runner that we need to
   //    clone+install. Phase 1D's bootstrap-runner consumes this sentinel
   //    and drives install.ps1 stages with a progress UI. Until 1D lands,
   //    callers see the sentinel and surface it as a user-facing error
   //    explaining what's missing.
   //
   //    We deliberately do NOT throw here -- throwing inside
-  //    resolvePulseBackend was the old "no payload" path and forced the
+  //    resolvePULSEBackend was the old "no payload" path and forced the
   //    user into a dead end. With the bootstrap protocol, "no install yet"
   //    is a recoverable state the GUI can drive through.
   return {
     kind: 'bootstrap-needed',
-    label: 'Pulse Agent not installed yet; bootstrap required',
+    label: 'PULSE Agent not installed yet; bootstrap required',
     command: null,
     args: backendArgs,
     bootstrap: true,
@@ -5033,7 +5491,7 @@ async function resolvePulseBackend(backendArgs: string[]): Promise<ResolvedPulse
   }
 }
 
-interface ResolvedPulseBackend {
+interface ResolvedPULSEBackend {
   kind: string
   label: string
   command: string | null
@@ -5051,9 +5509,9 @@ interface ResolvedPulseBackend {
 }
 
 async function ensureRuntime(
-  backend: ResolvedPulseBackend,
+  backend: ResolvedPULSEBackend,
   assertStillOwned: () => void
-): Promise<ResolvedPulseBackend> {
+): Promise<ResolvedPULSEBackend> {
   localBackendLifecycle.assertCanStart()
   assertStillOwned()
 
@@ -5063,7 +5521,7 @@ async function ensureRuntime(
     return backend
   }
 
-  // backend.kind === 'bootstrap-needed' means resolvePulseBackend couldn't
+  // backend.kind === 'bootstrap-needed' means resolvePULSEBackend couldn't
   // find anything to spawn. Hand off to the bootstrap runner which drives the
   // platform installer, writes the bootstrap-complete marker on success, then
   // we re-resolve to get the now-installed backend.
@@ -5078,7 +5536,7 @@ async function ensureRuntime(
     rememberLog('[bootstrap] REFUSING installer on a bundled install; payload missing or damaged — reinstall the app')
 
     const bundledError: Error & { isBootstrapFailure?: boolean } = new Error(
-      'This app bundles its own Pulse runtime, but the runtime files are missing or damaged. Reinstall Pulse Desktop to restore it.'
+      'This app bundles its own PULSE runtime, but the runtime files are missing or damaged. Reinstall PULSE Desktop to restore it.'
     )
 
     bundledError.isBootstrapFailure = true
@@ -5087,11 +5545,11 @@ async function ensureRuntime(
   }
 
   if (backend.kind === 'bootstrap-needed') {
-    rememberLog('[bootstrap] no Pulse install found; starting first-launch bootstrap')
+    rememberLog('[bootstrap] no PULSE install found; starting first-launch bootstrap')
 
     if (await handOffWindowsBootstrapRecovery('bootstrap-needed')) {
       const handoffError: Error & { isBootstrapFailure?: boolean; bootstrapHandedOff?: boolean } = new Error(
-        'Pulse recovery was handed off to Pulse Setup. The desktop will restart when recovery completes.'
+        'PULSE recovery was handed off to PULSE Setup. The desktop will restart when recovery completes.'
       )
 
       handoffError.isBootstrapFailure = true
@@ -5155,7 +5613,7 @@ async function ensureRuntime(
     bootstrapAbortController = null
 
     if (bootstrapResult.cancelled) {
-      const cancelledError = new Error('Pulse install was cancelled.') as any
+      const cancelledError = new Error('PULSE install was cancelled.') as any
       cancelledError.isBootstrapFailure = true
       cancelledError.bootstrapCancelled = true
       bootstrapFailure = cancelledError
@@ -5171,7 +5629,7 @@ async function ensureRuntime(
 
       bootstrapError.isBootstrapFailure = true
       bootstrapError.failedStage = bootstrapResult.failedStage || null
-      // Latch the failure so subsequent startPulse() calls return this
+      // Latch the failure so subsequent startPULSE() calls return this
       // same error without re-running install.ps1.  Cleared by the
       // pulse:bootstrap:reset IPC (renderer's "Reload and retry").
       bootstrapFailure = bootstrapError
@@ -5182,7 +5640,7 @@ async function ensureRuntime(
 
     // Resolve the newly published launcher after the installer completes.
     return ensureRuntime(
-      await installedRuntimeGate.afterInstall(() => resolvePulseBackend(backend.args)),
+      await installedRuntimeGate.afterInstall(() => resolvePULSEBackend(backend.args)),
       assertStillOwned
     )
   }
@@ -5230,7 +5688,7 @@ function fetchJson(url, token, options: any = {}) {
         const timeoutMs = resolveTimeoutMs(options.timeoutMs, DEFAULT_FETCH_TIMEOUT_MS)
 
         if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-          reject(new Error(`Unsupported Pulse backend URL protocol: ${parsed.protocol}`))
+          reject(new Error(`Unsupported PULSE backend URL protocol: ${parsed.protocol}`))
 
           return
         }
@@ -5244,7 +5702,7 @@ function fetchJson(url, token, options: any = {}) {
               ...headersForRemoteRequest(url),
               ...(options.headers || {}),
               'Content-Type': contentType,
-              'X-Pulse-Session-Token': token,
+              'X-PULSE-Session-Token': token,
               // RFC 8252 native flow authenticates the gated gateway with a bearer
               // token instead of the loopback session-token header. When
               // ``options.bearer`` is set we send Authorization: Bearer <token>;
@@ -5306,7 +5764,7 @@ function fetchJson(url, token, options: any = {}) {
 
         req.on('error', reject)
         req.setTimeout(timeoutMs, () => {
-          req.destroy(new Error(`Timed out connecting to Pulse backend after ${timeoutMs}ms`))
+          req.destroy(new Error(`Timed out connecting to PULSE backend after ${timeoutMs}ms`))
         })
 
         // From here the request goes on the wire: a later transport error can no
@@ -5327,7 +5785,7 @@ function fetchJson(url, token, options: any = {}) {
 function fetchPublicJson(url, options: any = {}) {
   // Credential-free JSON GET/POST for public gateway endpoints
   // (``/api/status``, ``/api/auth/providers``). Unlike ``fetchJson`` it sends
-  // NO ``X-Pulse-Session-Token`` header — used by the auth-mode probe before
+  // NO ``X-PULSE-Session-Token`` header — used by the auth-mode probe before
   // any credentials exist, and any time we must not leak a token to an
   // endpoint that doesn't need one.
   return withRetry(
@@ -5349,7 +5807,7 @@ function fetchPublicJson(url, options: any = {}) {
         const timeoutMs = resolveTimeoutMs(options.timeoutMs, DEFAULT_FETCH_TIMEOUT_MS)
 
         if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-          reject(new Error(`Unsupported Pulse backend URL protocol: ${parsed.protocol}`))
+          reject(new Error(`Unsupported PULSE backend URL protocol: ${parsed.protocol}`))
 
           return
         }
@@ -5410,7 +5868,7 @@ function fetchPublicJson(url, options: any = {}) {
 
         req.on('error', reject)
         req.setTimeout(timeoutMs, () => {
-          req.destroy(new Error(`Timed out connecting to Pulse backend after ${timeoutMs}ms`))
+          req.destroy(new Error(`Timed out connecting to PULSE backend after ${timeoutMs}ms`))
         })
 
         // Past this point the request is on the wire — see fetchJson.
@@ -5474,462 +5932,6 @@ function filenameFromUrl(rawUrl, fallback = 'image') {
   } catch {
     return fallback
   }
-}
-
-// Link title resolution — curl (tier 1) → hidden BrowserWindow (tier 2).
-const titleCache = new Map()
-const titleInflight = new Map()
-const TITLE_CACHE_LIMIT = 500
-const TITLE_BYTE_BUDGET = 96 * 1024
-const TITLE_TIMEOUT_MS = 5000
-const TITLE_MAX_REDIRECTS = 3
-
-// Browser-shaped UA — many bot-walled sites (GetYourGuide, Cloudflare-protected
-// pages) refuse anything that doesn't look like a real Chrome.
-const TITLE_USER_AGENT =
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
-
-const HTML_ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', '#39': "'" }
-
-// Tier-2 renderer fallback config. Only invoked when curl came back with no
-// usable title and no sign-in wall (electron/link-title-wall.ts) — keeps
-// cold/CDN-cached pages on the cheap path.
-const RENDER_TITLE_MAX_CONCURRENT = 2
-const RENDER_TITLE_TIMEOUT_MS = 8000
-const RENDER_TITLE_GRACE_MS = 700
-
-// Resource types we cancel before the network even fires — keeps the hidden
-// renderer fast and cuts third-party tracking noise.
-const RENDER_TITLE_BLOCKED_RESOURCES = new Set([
-  'cspReport',
-  'font',
-  'imageset',
-  'media',
-  'object',
-  'ping',
-  'stylesheet'
-])
-
-let linkTitleSession = null
-let oauthSession = null
-let renderTitleInFlight = 0
-const renderTitleQueue = []
-
-function cacheTitle(key, title) {
-  if (titleCache.size >= TITLE_CACHE_LIMIT) {
-    titleCache.delete(titleCache.keys().next().value)
-  }
-
-  titleCache.set(key, title)
-}
-
-function decodeHtmlEntities(value) {
-  return value
-    .replace(/&(amp|lt|gt|quot|apos|nbsp|#39);/gi, (_, k) => HTML_ENTITIES[k.toLowerCase()] ?? '')
-    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16) || 32))
-    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10) || 32))
-}
-
-function parseHtmlTitle(html) {
-  const raw = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]
-
-  return raw ? decodeHtmlEntities(raw).replace(/\s+/g, ' ').trim() : ''
-}
-
-const URL_EFFECTIVE_TAIL_BYTES = 4096
-
-function fetchHtmlTitleWithCurl(rawUrl: string): Promise<{ authWall: boolean; title: string }> {
-  return new Promise(resolve => {
-    const url = String(rawUrl || '').trim()
-
-    if (!url) {
-      return resolve({ authWall: false, title: '' })
-    }
-
-    const args = [
-      '--silent',
-      '--show-error',
-      '--location',
-      '--max-redirs',
-      String(TITLE_MAX_REDIRECTS),
-      '--max-time',
-      String(Math.max(2, Math.ceil(TITLE_TIMEOUT_MS / 1000))),
-      '--connect-timeout',
-      '4',
-      '--user-agent',
-      TITLE_USER_AGENT,
-      '--header',
-      'Accept: text/html,application/xhtml+xml;q=0.9,*/*;q=0.5',
-      '--header',
-      'Accept-Language: en-US,en;q=0.7',
-      '--header',
-      'Accept-Encoding: identity',
-      '--raw',
-      // Arrival URL after redirects, on its own line after the body: a sign-in
-      // wall is proven from where curl landed even when the page has no markup id.
-      '--write-out',
-      CURL_TITLE_WRITE_OUT,
-      url
-    ]
-
-    const child = spawn('curl', args, hiddenWindowsChildOptions({ stdio: ['ignore', 'pipe', 'ignore'] }))
-    const chunks: Buffer[] = []
-    // The last bytes of stdout, kept past the body budget so the `--write-out`
-    // arrival URL survives a body larger than TITLE_BYTE_BUDGET.
-    let tail = Buffer.alloc(0)
-    let bytes = 0
-
-    child.stdout.on('data', chunk => {
-      const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)
-      tail = Buffer.concat([tail, buffer]).subarray(-URL_EFFECTIVE_TAIL_BYTES)
-
-      if (bytes >= TITLE_BYTE_BUDGET) {
-        return
-      }
-
-      const remaining = TITLE_BYTE_BUDGET - bytes
-      const next = buffer.length > remaining ? buffer.subarray(0, remaining) : buffer
-      chunks.push(next)
-      bytes += next.length
-    })
-
-    child.on('error', () => resolve({ authWall: false, title: '' }))
-    child.on('close', () => {
-      if (!chunks.length) {
-        return resolve({ authWall: false, title: '' })
-      }
-
-      // The trailer is inside `bodyWithTrailer` unless the budget cut it off;
-      // then it is still present in the separately retained tail.
-      const bodyWithTrailer = Buffer.concat(chunks)
-      const { effectiveUrl, html } = parseCurlTitleResponse(bodyWithTrailer, tail)
-
-      const title = parseHtmlTitle(html)
-
-      // A sign-in wall answers the cookieless title partition, and tier 2 must
-      // never load it: the wall asks the OS for a passkey.
-      resolve({ authWall: isAuthWall({ body: html, effectiveUrl, title }), title })
-    })
-  })
-}
-
-function getLinkTitleSession() {
-  if (linkTitleSession || !app.isReady()) {
-    return linkTitleSession
-  }
-
-  linkTitleSession = session.fromPartition('pulse:link-titles', { cache: false })
-  linkTitleSession.webRequest.onBeforeRequest((details, callback) => {
-    callback({ cancel: RENDER_TITLE_BLOCKED_RESOURCES.has(details.resourceType) })
-  })
-  guardLinkTitleSession(linkTitleSession)
-
-  return linkTitleSession
-}
-
-function dequeueRenderTitle() {
-  while (renderTitleInFlight < RENDER_TITLE_MAX_CONCURRENT && renderTitleQueue.length) {
-    const item = renderTitleQueue.shift()
-    renderTitleInFlight += 1
-    runRenderTitleJob(item.url).then(title => {
-      renderTitleInFlight -= 1
-      item.resolve(title)
-      dequeueRenderTitle()
-    })
-  }
-}
-
-function runRenderTitleJob(rawUrl) {
-  return new Promise(resolve => {
-    if (!app.isReady()) {
-      return resolve('')
-    }
-
-    const partitionSession = getLinkTitleSession()
-
-    if (!partitionSession) {
-      return resolve('')
-    }
-
-    let settled = false
-    let window = null
-    let hardTimer = null
-    let graceTimer = null
-
-    const finish = title => {
-      if (settled) {
-        return
-      }
-
-      settled = true
-
-      if (hardTimer) {
-        clearTimeout(hardTimer)
-      }
-
-      if (graceTimer) {
-        clearTimeout(graceTimer)
-      }
-
-      const value = (title || '').replace(/\s+/g, ' ').trim()
-
-      try {
-        if (window && !window.isDestroyed()) {
-          window.destroy()
-        }
-      } catch {
-        // BrowserWindow may already be torn down; ignore.
-      }
-
-      resolve(value)
-    }
-
-    try {
-      window = createLinkTitleWindow(BrowserWindow, partitionSession)
-    } catch {
-      return finish('')
-    }
-
-    const finishWithTitle = () => finish(readLinkTitleWindowTitle(window))
-
-    const scheduleGrace = () => {
-      if (graceTimer) {
-        clearTimeout(graceTimer)
-      }
-
-      graceTimer = setTimeout(finishWithTitle, RENDER_TITLE_GRACE_MS)
-    }
-
-    hardTimer = setTimeout(finishWithTitle, RENDER_TITLE_TIMEOUT_MS)
-
-    window.webContents.setUserAgent(TITLE_USER_AGENT)
-    window.webContents.on('page-title-updated', scheduleGrace)
-    window.webContents.on('did-finish-load', scheduleGrace)
-    window.webContents.on('did-fail-load', (_event, _code, _desc, _validatedURL, isMainFrame) => {
-      if (isMainFrame) {
-        finish('')
-      }
-    })
-
-    window
-      .loadURL(rawUrl, {
-        httpReferrer: 'https://www.google.com/',
-        userAgent: TITLE_USER_AGENT
-      })
-      .catch(() => finish(''))
-  })
-}
-
-function fetchHtmlTitleWithRenderer(rawUrl: string): Promise<string> {
-  return new Promise(resolve => {
-    renderTitleQueue.push({ resolve, url: rawUrl })
-    dequeueRenderTitle()
-  })
-}
-
-// Tier ladder (curl → hidden renderer) and its sign-in-wall rule live in
-// electron/link-title-wall.ts; main.ts only supplies the two tiers' I/O.
-function fetchLinkTitle(rawUrl) {
-  const url = String(rawUrl || '').trim()
-
-  // Scheme gate (#93893): only absolute http(s) URLs enter the title
-  // pipeline. Anything else — leaked `@url:` markup, placeholders, garbage —
-  // must never reach curl or the hidden title window's loadURL(), where it
-  // surfaces as a repeating `Failed to load URL: … ERR_NAME_NOT_RESOLVED`
-  // loop. canonicalTitleCacheKey's '' return is the second layer of the same
-  // guard; this check keeps non-URLs out even when a parseable-but-wrong
-  // scheme (file:, mailto:) would still build a cache key.
-  if (!isFetchableHttpUrl(url)) {
-    return Promise.resolve('')
-  }
-
-  const key = canonicalTitleCacheKey(url)
-
-  if (!key) {
-    return Promise.resolve('')
-  }
-
-  if (titleCache.has(key)) {
-    return Promise.resolve(titleCache.get(key))
-  }
-
-  if (titleInflight.has(key)) {
-    return Promise.resolve(titleInflight.get(key))
-  }
-
-  const pending = resolveLinkTitle({
-    curl: () => fetchHtmlTitleWithCurl(url),
-    renderer: () => fetchHtmlTitleWithRenderer(url),
-    url
-  }).then(clean => {
-    cacheTitle(key, clean)
-    titleInflight.delete(key)
-
-    return clean
-  })
-
-  titleInflight.set(key, pending)
-
-  return pending
-}
-
-// ─── Favicon resolution ──────────────────────────────────────────────────────
-// The ladder itself is electron/favicon.ts; this is its I/O, its cache, and
-// the one rule that belongs to the app rather than the algorithm: one icon
-// per host. A connector's mark doesn't vary by path, and hosting the cache on
-// the host key means Linear's docs page and Linear's MCP endpoint cost one
-// lookup between them.
-
-const FAVICON_CACHE_PATH = path.join(app.getPath('userData'), 'favicon-cache.json')
-const FAVICON_CACHE_LIMIT = 400
-const FAVICON_TTL_MS = 30 * 24 * 60 * 60 * 1000
-// A miss is cheap to re-check and expensive to be wrong about (a site that
-// was behind a captcha yesterday has a logo today), so it expires fast.
-const FAVICON_MISS_TTL_MS = 12 * 60 * 60 * 1000
-const FAVICON_TIMEOUT_MS = 6000
-const FAVICON_MAX_BYTES = 256 * 1024
-const FAVICON_WRITE_DEBOUNCE_MS = 3000
-
-let faviconCache: Map<string, { at: number; icon: string }> | null = null
-let faviconWriteTimer: null | ReturnType<typeof setTimeout> = null
-const faviconInflight = new Map<string, Promise<string>>()
-
-function faviconCacheKey(rawUrl: string): string {
-  try {
-    return new URL(rawUrl).hostname.replace(/^www\./i, '').toLowerCase()
-  } catch {
-    return ''
-  }
-}
-
-function loadFaviconCache(): Map<string, { at: number; icon: string }> {
-  if (faviconCache) {
-    return faviconCache
-  }
-
-  faviconCache = new Map()
-
-  try {
-    const raw = JSON.parse(fs.readFileSync(FAVICON_CACHE_PATH, 'utf8'))
-
-    for (const [host, entry] of Object.entries(raw?.icons ?? {})) {
-      const at = Number((entry as { at?: number })?.at)
-      const icon = String((entry as { icon?: string })?.icon ?? '')
-
-      if (Number.isFinite(at) && Date.now() - at < (icon ? FAVICON_TTL_MS : FAVICON_MISS_TTL_MS)) {
-        faviconCache.set(host, { at, icon })
-      }
-    }
-  } catch {
-    // No cache yet, or it's unreadable — resolving again is the whole cost.
-  }
-
-  return faviconCache
-}
-
-function saveFaviconCacheSoon() {
-  if (faviconWriteTimer) {
-    return
-  }
-
-  faviconWriteTimer = setTimeout(() => {
-    faviconWriteTimer = null
-
-    try {
-      const icons = Object.fromEntries(loadFaviconCache())
-
-      fs.writeFileSync(FAVICON_CACHE_PATH, JSON.stringify({ icons }), 'utf8')
-    } catch {
-      // Cache is an optimization; failing to persist it costs one refetch.
-    }
-  }, FAVICON_WRITE_DEBOUNCE_MS)
-
-  faviconWriteTimer.unref?.()
-}
-
-async function faviconFetch(url: string, accept: string) {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), FAVICON_TIMEOUT_MS)
-
-  try {
-    return await electronNet.fetch(url, {
-      // Same browser-shaped identity the title fetcher uses: a plain Electron
-      // UA gets a challenge page from anything behind a bot wall.
-      headers: { Accept: accept, 'Accept-Language': 'en-US,en;q=0.7', 'User-Agent': TITLE_USER_AGENT },
-      redirect: 'follow',
-      signal: controller.signal
-    })
-  } finally {
-    clearTimeout(timer)
-  }
-}
-
-const faviconIo: FaviconIo = {
-  fetchImage: async url => {
-    const response = await faviconFetch(url, 'image/avif,image/webp,image/svg+xml,image/*;q=0.8,*/*;q=0.5')
-
-    if (!response.ok) {
-      return null
-    }
-
-    const buffer = await response.arrayBuffer()
-
-    if (buffer.byteLength === 0 || buffer.byteLength > FAVICON_MAX_BYTES) {
-      return null
-    }
-
-    return { bytes: new Uint8Array(buffer), mime: response.headers.get('content-type') ?? '' }
-  },
-  fetchText: async url => {
-    const response = await faviconFetch(url, 'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.5')
-
-    if (!response.ok) {
-      return ''
-    }
-
-    const bytes = new Uint8Array(await response.arrayBuffer()).subarray(0, TITLE_BYTE_BUDGET * 2)
-
-    return decodeWebText(bytes, response.headers.get('content-type') ?? '')
-  }
-}
-
-function resolveFaviconCached(rawUrl: string): Promise<string> {
-  const key = faviconCacheKey(String(rawUrl || '').trim())
-
-  if (!key) {
-    return Promise.resolve('')
-  }
-
-  const cache = loadFaviconCache()
-  const hit = cache.get(key)
-
-  if (hit && Date.now() - hit.at < (hit.icon ? FAVICON_TTL_MS : FAVICON_MISS_TTL_MS)) {
-    return Promise.resolve(hit.icon)
-  }
-
-  const inflight = faviconInflight.get(key)
-
-  if (inflight) {
-    return inflight
-  }
-
-  const pending = resolveFavicon(rawUrl, faviconIo)
-    .catch(() => '')
-    .then(icon => {
-      if (cache.size >= FAVICON_CACHE_LIMIT) {
-        cache.delete(cache.keys().next().value)
-      }
-
-      cache.set(key, { at: Date.now(), icon })
-      saveFaviconCacheSoon()
-      faviconInflight.delete(key)
-
-      return icon
-    })
-
-  faviconInflight.set(key, pending)
-
-  return pending
 }
 
 async function resourceBufferFromUrl(rawUrl) {
@@ -6068,9 +6070,28 @@ function expandUserPath(filePath) {
   return value
 }
 
+/** Markdown hrefs must percent-encode spaces (`/my%20notes/x.md`), but the
+ *  on-disk path is the decoded form. When the raw path misses, retry decoded
+ *  so chat links to paths with spaces still open in the preview rail. */
+function decodedPathIfMissing(resolvedPath) {
+  if (!/%[0-9a-fA-F]{2}/.test(resolvedPath)) {
+    return null
+  }
+
+  let decoded
+
+  try {
+    decoded = decodeURIComponent(resolvedPath)
+  } catch {
+    return null
+  }
+
+  return decoded !== resolvedPath ? decoded : null
+}
+
 async function previewFileTarget(rawTarget, baseDir) {
   const raw = String(rawTarget || '').trim()
-  const base = baseDir ? path.resolve(expandUserPath(baseDir)) : resolvePulseCwd()
+  const base = baseDir ? path.resolve(expandUserPath(baseDir)) : resolvePULSECwd()
 
   // A plain backend target is a WSL/POSIX path; bridge it to a Windows-
   // accessible form before resolving so the existence checks below (and the
@@ -6096,15 +6117,48 @@ async function previewFileTarget(rawTarget, baseDir) {
     }
   }
 
+  // Markdown hrefs must percent-encode spaces (`/my%20notes/x.md`), but the
+  // on-disk path is the decoded form. When the encoded path misses, retry the
+  // decoded form so chat links to paths with spaces still open in the preview
+  // rail (#102782) — before the directory/missing classification below, so a
+  // decoded target is typed by what it actually is.
+  if (!fileExists(resolved) && !directoryExists(resolved)) {
+    const decoded = decodedPathIfMissing(resolved)
+
+    if (decoded && (fileExists(decoded) || directoryExists(decoded))) {
+      resolved = decoded
+    }
+  }
+
+  // A directory is not a preview (#101683). Overloading it as
+  // `<dir>/index.html` made a directory without one classify as missing, and
+  // the renderer's blind fallback then fabricated a broken text-preview tab.
+  // Answer with a typed non-previewable result so the card can offer the
+  // native folder action, and a typed `missing` result so a dead link reports
+  // instead of previewing.
   if (directoryExists(resolved)) {
-    resolved = path.join(resolved, 'index.html')
+    return {
+      kind: 'file',
+      label: path.basename(resolved) || resolved,
+      path: resolved,
+      previewKind: 'directory',
+      source: raw,
+      url: pathToFileURL(resolved).toString()
+    }
+  }
+
+  if (!fileExists(resolved)) {
+    return {
+      kind: 'file',
+      label: path.basename(resolved) || raw,
+      path: resolved,
+      previewKind: 'missing',
+      source: raw,
+      url: pathToFileURL(resolved).toString()
+    }
   }
 
   const ext = path.extname(resolved).toLowerCase()
-
-  if (!fileExists(resolved)) {
-    return null
-  }
 
   ;({ resolvedPath: resolved } = await resolveReadableFileForIpc(resolved, { purpose: 'Preview target' }))
 
@@ -6179,7 +6233,21 @@ async function filePathFromPreviewUrl(rawUrl) {
 }
 
 async function watchPreviewFile(owner, rawUrl) {
-  const filePath = await filePathFromPreviewUrl(rawUrl)
+  let filePath
+
+  try {
+    filePath = await filePathFromPreviewUrl(rawUrl)
+  } catch (error) {
+    // A restored tab probing a file that is gone is an expected outcome —
+    // answer it like the read handlers do instead of rejecting (Electron logs
+    // every rejected handler as a stack trace at startup).
+    if (isMissingFileError(error)) {
+      return missingFileResult(rawUrl, error)
+    }
+
+    throw error
+  }
+
   const watchDir = path.dirname(filePath)
   const targetName = path.basename(filePath)
   const id = crypto.randomBytes(12).toString('base64url')
@@ -6348,7 +6416,7 @@ async function gatewayAuthProviders(baseUrl, headers = {}) {
 // an anonymous probe 401s forever against a live session, and it can never
 // see the 404 that identifies a backend predating /api/health (the auth gate
 // answers before the SPA catch-all). `probeIsCredentialed` tells
-// waitForPulseReady how to read a 401 — rejected session vs gated route.
+// waitForPULSEReady how to read a 401 — rejected session vs gated route.
 async function buildReadinessHealthProbe(baseUrl, authMode, token) {
   if (authMode === 'oauth') {
     return {
@@ -6377,16 +6445,16 @@ async function buildReadinessHealthProbe(baseUrl, authMode, token) {
   return { probeHealth: fetchPublicJson, probeIsCredentialed: false }
 }
 
-// Boot-time readiness for a remote connection object. For a Pulse Cloud agent
-// whose own session cookie has expired, `waitForPulse` ends in the terminal
+// Boot-time readiness for a remote connection object. For a PULSE Cloud agent
+// whose own session cookie has expired, `waitForPULSE` ends in the terminal
 // reauth error even though the portal session that can silently re-mint that
 // cookie is still live: the per-agent cascade (`cloudAgentSilentSignIn`) was
 // only ever driven by the settings UI, never by boot, so every relaunch needed
 // a manual "Use gateway" click. Run the cascade once and retry once; anything
 // that is not that exact case surfaces unchanged.
-async function waitForRemotePulse(remote) {
+async function waitForRemotePULSE(remote) {
   try {
-    await waitForPulse(remote.baseUrl, remote.token, undefined, remote.authMode, remote.headers)
+    await waitForPULSE(remote.baseUrl, remote.token, undefined, remote.authMode, remote.headers)
   } catch (error) {
     if (!shouldAttemptCloudBootCascade(remote, error)) {
       throw error
@@ -6406,11 +6474,11 @@ async function waitForRemotePulse(remote) {
       throw error
     }
 
-    await waitForPulse(remote.baseUrl, remote.token, undefined, remote.authMode, remote.headers)
+    await waitForPULSE(remote.baseUrl, remote.token, undefined, remote.authMode, remote.headers)
   }
 }
 
-async function waitForPulse(
+async function waitForPULSE(
   baseUrl: string,
   token: string | null | undefined,
   signal?: AbortSignal,
@@ -6420,7 +6488,7 @@ async function waitForPulse(
 ): Promise<void> {
   const { probeHealth, probeIsCredentialed } = await buildReadinessHealthProbe(baseUrl, authMode, token)
 
-  return waitForPulseReady(baseUrl, {
+  return waitForPULSEReady(baseUrl, {
     token,
     signal,
     fetchPublicJson,
@@ -6609,7 +6677,7 @@ function sendOpenFolderRequested() {
 
 // Tell the renderer the machine just woke. Sleep silently drops the
 // renderer's WebSocket to the local backend; the renderer reconnects on this
-// signal so the chat composer doesn't stay stuck on "Starting Pulse...".
+// signal so the chat composer doesn't stay stuck on "Starting PULSE...".
 function sendPowerResume() {
   if (!mainWindow || mainWindow.isDestroyed()) {
     return
@@ -6710,11 +6778,16 @@ function sendOpenUpdatesRequested() {
 
   webContents.send('pulse:open-updates')
 
+  // #83998: never pump the Windows foreground from an ambient surface —
+  // showInactive + a guarded focus keep the raise from dismissing another
+  // app's native dialog.
   if (!mainWindow.isVisible()) {
-    mainWindow.show()
+    mainWindow.showInactive()
   }
 
-  mainWindow.focus()
+  if (shouldFocusToTakeKeyboard(mainWindow)) {
+    mainWindow.focus()
+  }
 }
 
 // Push titlebar/fullscreen chrome state to a window's renderer. Defaults to the
@@ -6868,12 +6941,7 @@ function buildApplicationMenu() {
       { role: 'togglefullscreen' }
     ]
   })
-  template.push({
-    label: 'Window',
-    submenu: IS_MAC
-      ? [{ role: 'minimize' }, { role: 'zoom' }, { role: 'front' }]
-      : [{ role: 'minimize' }, { role: 'close' }]
-  })
+  template.push(windowMenuTemplate(IS_MAC))
   template.push({
     label: 'Help',
     role: 'help',
@@ -7025,6 +7093,10 @@ function setAndPersistZoomLevel(window, zoomLevel) {
   // changes made via the keyboard shortcuts or the View menu.
   const next = applyZoomLevel(window.webContents, zoomLevel)
 
+  // The native window-controls overlay doesn't scale with the page; re-apply
+  // it at the new zoom so its height tracks the zoomed titlebar (#81086).
+  applyTitleBarOverlay(window)
+
   // Primary store: main-process JSON (survives crash recovery — #56726).
   writeZoomState(next)
   // Secondary mirror: renderer localStorage (legacy store; kept in sync so a
@@ -7063,6 +7135,7 @@ function restorePersistedZoomLevel(window) {
     }
 
     applyZoomLevel(window.webContents, saved)
+    applyTitleBarOverlay(window)
 
     return
   }
@@ -7071,6 +7144,7 @@ function restorePersistedZoomLevel(window) {
   // doesn't flash Chromium 100%, then try localStorage for pre-JSON installs
   // and overwrite if a legacy value is there.
   applyZoomLevel(window.webContents, DEFAULT_ZOOM_LEVEL)
+  applyTitleBarOverlay(window)
 
   window.webContents
     .executeJavaScript(
@@ -7084,6 +7158,7 @@ function restorePersistedZoomLevel(window) {
       const level = stored == null ? DEFAULT_ZOOM_LEVEL : Number(stored)
       const applied = applyZoomLevel(window.webContents, level)
       writeZoomState(applied)
+      applyTitleBarOverlay(window)
     })
     .catch(error => rememberLog(`[zoom] restore failed: ${error?.message || error}`))
 }
@@ -7153,47 +7228,6 @@ function installContextMenuBridge(window: BrowserWindow) {
   })
 }
 
-// Microphone and camera capture. The voice composer drives mic access and
-// renderer features (e.g. desktop plugins) can drive camera access, both
-// through getUserMedia, which Chromium gates behind these two session hooks.
-//
-// The naive `details.mediaTypes.includes('audio')` check works on macOS but
-// breaks on Windows: Chromium frequently fires the request with an empty or
-// undefined `mediaTypes`, so a strict check denies it and getUserMedia throws
-// NotAllowedError. We therefore allow the capture permissions and treat absent
-// metadata as allowed.
-//
-// Granting here is not the last gate: the OS still applies its own capture
-// permission (macOS TCC prompts on first use, per the NSMicrophone/NSCamera
-// usage strings), so the user keeps a real allow/deny and can revoke it in
-// System Settings afterwards.
-function isMediaCapturePermission(permission, details) {
-  // HTML5 video/audio fullscreen asks the request handler for 'fullscreen'
-  // and the check handler for 'automatic-fullscreen'. Both must be allowed
-  // or the native fullscreen button on <video controls> does nothing.
-  if (permission === 'fullscreen' || permission === 'automatic-fullscreen') {
-    return true
-  }
-
-  if (permission === 'audioCapture' || permission === 'videoCapture') {
-    return true
-  }
-
-  if (permission !== 'media') {
-    return false
-  }
-
-  const mediaTypes = details?.mediaTypes
-
-  // Windows: mediaTypes is often empty for a capture request. Don't deny on
-  // missing metadata.
-  if (!Array.isArray(mediaTypes) || mediaTypes.length === 0) {
-    return true
-  }
-
-  return mediaTypes.includes('audio') || mediaTypes.includes('video')
-}
-
 // Chromium-initiated downloads (renderer anchor/blob downloads, drag-outs)
 // land here. Without a handler the OS save dialog opens with the process cwd
 // as the default directory (win-unpacked in packaged installs) and whatever
@@ -7226,29 +7260,110 @@ function installDownloadHandling() {
 
 function installMediaPermissions() {
   // Async request handler: the prompt-style path (most platforms).
-  session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback, details) => {
+  // clipboard-sanitized-write is granted ONLY to the exact Skills Hub origins
+  // (hub-iframe-policy.ts): the picker's Copy controls write to the clipboard,
+  // and every other frame — artifact previews included — stays denied.
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback, details) => {
+    if ((permission as string) === 'clipboard-sanitized-write') {
+      callback(isPULSEHubClipboardWrite(focusedFrameOrigin(webContents)))
+
+      return
+    }
+
     callback(isMediaCapturePermission(permission, details))
   })
 
   // Synchronous check handler: Chromium consults this for getUserMedia on
   // Windows in addition to (or instead of) the request handler. Without it,
   // the check defaults to false and capture is denied before the request
-  // handler ever runs.
-  session.defaultSession.setPermissionCheckHandler((_webContents, permission) => {
-    return (
-      permission === 'media' ||
-      (permission as string) === 'automatic-fullscreen' ||
-      permission === ('audioCapture' as any) /* todo: is this needed? */ ||
-      permission === ('videoCapture' as any)
-    )
+  // handler ever runs. The check handler carries no mediaTypes metadata, so
+  // the shared predicate runs with `undefined` details and allows the capture
+  // permissions — identical policy to the request handler below, just without
+  // the metadata refinement (absent metadata is allowed there too).
+  session.defaultSession.setPermissionCheckHandler((webContents, permission) => {
+    if ((permission as string) === 'clipboard-sanitized-write') {
+      return isPULSEHubClipboardWrite(focusedFrameOrigin(webContents))
+    }
+
+    return isMediaCapturePermission(permission, undefined)
   })
+}
+
+// Origin of the frame a permission request came from. The request handler is
+// given the webContents of the TOP document (Chromium routes subframe
+// permission requests through it in Electron 40 without exposing the frame
+// directly), so when the top document is NOT on a hub origin we fall back to
+// the request's own `requestingUrl` — the URL the frame actually asked for —
+// whose origin is exact for both hub deployments and `null` for anything
+// sandboxed or opaque.
+function focusedFrameOrigin(
+  webContents: { getURL?: () => string } | null | undefined,
+  details?: { requestingUrl?: string }
+): string | null {
+  try {
+    if (details?.requestingUrl) {
+      return new URL(details.requestingUrl).origin
+    }
+
+    if (webContents?.getURL) {
+      return new URL(webContents.getURL()).origin
+    }
+  } catch {
+    // Unparseable URL — report no origin; callers deny.
+  }
+
+  return null
+}
+
+/** The picker embed URL the hub iframe starts on (both deployments). */
+function isPULSEHubPickerUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url)
+    const isHubOrigin = parsed.origin === PULSE_HUB_ORIGIN || parsed.origin === PULSE_HUB_FALLBACK_ORIGIN
+    const isPickerPath = parsed.pathname === '/pulse-agent/docs/skills' || parsed.pathname === '/docs/skills'
+
+    return isHubOrigin && isPickerPath
+  } catch {
+    return false
+  }
+}
+
+/** Look up a subframe by its process/routing id; never throws. */
+function findFrameByIdentifier(
+  webContents: { frames?: readonly unknown[]; framesInSubtree?: readonly unknown[] } | null | undefined,
+  frameProcessId: number,
+  frameRoutingId: number
+): { origin?: string; reload?: () => void } | null {
+  const candidates = [...(webContents?.frames ?? []), ...(webContents?.framesInSubtree ?? [])] as Array<{
+    processId?: number
+    routingId?: number
+    frameProcessId?: number
+    frameRoutingId?: number
+    origin?: string
+    reload?: () => void
+  }>
+
+  return (
+    candidates.find(
+      f => (f.frameProcessId ?? f.processId) === frameProcessId && (f.frameRoutingId ?? f.routingId) === frameRoutingId
+    ) ?? null
+  )
+}
+
+/** `frame.origin` as a safe string; destroyed frames report opaque/'null'. */
+function safeFrameOrigin(frame: { origin?: string } | null | undefined): string | null {
+  if (!frame?.origin || frame.origin === 'null') {
+    return null
+  }
+
+  return frame.origin
 }
 
 // ---------------------------------------------------------------------------
 // OAuth remote-gateway auth.
 //
-// Hosted Pulse gateways gate the dashboard behind an OAuth provider (e.g.
-// Anxious Research) instead of a static session token. The auth model is
+// Hosted PULSE gateways gate the dashboard behind an OAuth provider (e.g.
+// Nous Research) instead of a static session token. The auth model is
 // fundamentally different from the token path:
 //
 //   * REST is authed by HttpOnly session cookies (``pulse_session_at``),
@@ -7261,7 +7376,7 @@ function installMediaPermissions() {
 //   * WebSocket upgrades require a single-use ``?ticket=`` minted at
 //     ``POST /api/auth/ws-ticket`` (cookie-authed). The legacy ``?token=``
 //     path is unconditionally rejected by gated gateways.
-//   * Pulse Portal now issues a 24h ROTATING, reuse-detected refresh token
+//   * Nous Portal now issues a 24h ROTATING, reuse-detected refresh token
 //     alongside the ~15-min access token (Portal NAS #293 / pulse #37247).
 //     Both are set as HttpOnly cookies (``pulse_session_at`` ~15 min,
 //     ``pulse_session_rt`` 24h). When the AT cookie lapses but the RT cookie
@@ -7274,6 +7389,8 @@ function installMediaPermissions() {
 // ---------------------------------------------------------------------------
 
 const OAUTH_SESSION_PARTITION = LEGACY_OAUTH_PARTITION
+
+let oauthSession = null
 
 function getOauthSession() {
   if (oauthSession || !app.isReady()) {
@@ -7336,8 +7453,8 @@ function getOauthSessionForUrl(url, { connectionId = '', pendingAuthMode = '', p
 // cookies.get() on a fresh cold start can resolve BEFORE the jar has finished
 // hydrating from disk and return an empty array — even though the user is
 // signed in. That false-negative used to make hasLiveOauthSession() report
-// "not signed in", which on the initial boot path (startPulse → the renderer's
-// single-shot boot() with no retry) surfaced as the "Pulse couldn't start"
+// "not signed in", which on the initial boot path (startPULSE → the renderer's
+// single-shot boot() with no retry) surfaced as the "PULSE couldn't start"
 // OAuth overlay that vanishes the instant the user clicks Retry.
 //
 // We force the store to hydrate once, up front: flushStorageData() then a
@@ -7466,7 +7583,7 @@ async function hasLiveOauthSession(baseUrl) {
 
   // Cold-start false-negative guard. A `persist:` partition's cookie store
   // loads lazily, so the FIRST read on a fresh boot can come back empty even
-  // for a signed-in user — the exact race that produced the transient "Pulse
+  // for a signed-in user — the exact race that produced the transient "PULSE
   // couldn't start / not signed in" overlay that Retry always cleared. Before
   // trusting a negative, force the store to hydrate and re-read a couple of
   // times with a short backoff. A genuinely signed-out user still resolves
@@ -7608,7 +7725,7 @@ function openOauthLoginWindow(
       win = new BrowserWindow({
         width: 520,
         height: 720,
-        title: silent ? 'Connecting to Pulse Cloud agent…' : 'Sign in to Pulse gateway',
+        title: silent ? 'Connecting to PULSE Cloud agent…' : 'Sign in to PULSE gateway',
         autoHideMenuBar: true,
         // Silent cascade: start HIDDEN. The auto-SSO 302 chain completes in
         // well under a second, so the window normally never needs to show. We
@@ -7739,7 +7856,7 @@ function fetchJsonViaOauthSession(url, options: any = {}) {
       }
 
       if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-        reject(new Error(`Unsupported Pulse backend URL protocol: ${parsed.protocol}`))
+        reject(new Error(`Unsupported PULSE backend URL protocol: ${parsed.protocol}`))
 
         return
       }
@@ -7782,7 +7899,7 @@ function fetchJsonViaOauthSession(url, options: any = {}) {
           // already finished
         }
 
-        reject(new Error(`Timed out connecting to Pulse backend after ${timeoutMs}ms`))
+        reject(new Error(`Timed out connecting to PULSE backend after ${timeoutMs}ms`))
       }, timeoutMs)
 
       request.on('response', (res: Electron.IncomingMessage): void => {
@@ -8105,10 +8222,10 @@ async function freshGatewayWsUrl(profile) {
   return connection.wsUrl
 }
 
-// --- Pulse Cloud discovery + silent per-agent sign-in (cloud-auto-discovery
+// --- PULSE Cloud discovery + silent per-agent sign-in (cloud-auto-discovery
 // Phase 3) ---------------------------------------------------------------
 //
-// The "cloud" connection mode lets a user sign in to the Pulse portal ONCE in
+// The "cloud" connection mode lets a user sign in to the Nous portal ONCE in
 // the OAuth session partition, then (a) discover their hosted agents and (b)
 // connect to any of them with no second interactive sign-in. Both ride the one
 // portal session cookie living in `persist:pulse-remote-oauth`:
@@ -8119,13 +8236,13 @@ async function freshGatewayWsUrl(profile) {
 //     with that agent's session cookie — no prompt. Each agent still completes
 //     its own PKCE exchange; SSO removes the human click, not a security check.
 
-// Canonical Pulse portal base URL, overridable for staging/dev. Mirrors the CLI
-// Canonical Pulse portal base URL, overridable for staging/dev.
-// so a single override flips every Pulse surface to the same portal.
-const DEFAULT_PULSE_PORTAL_URL = 'https://github.com/Anxious-Research/PULSE'  // no hosted portal; override via PULSE_PORTAL_BASE_URL
+// Canonical Nous portal base URL, overridable for staging/dev. Mirrors the CLI
+// convention (pulse_cli/auth.py DEFAULT_NOUS_PORTAL_URL + the same env names)
+// so a single override flips every PULSE surface to the same portal.
+const DEFAULT_NOUS_PORTAL_URL = 'https://portal.anxious-research.com'
 
 function resolvePortalBaseUrl() {
-  const raw = process.env.PULSE_PORTAL_BASE_URL || process.env.NOUS_PORTAL_BASE_URL || DEFAULT_PULSE_PORTAL_URL
+  const raw = process.env.PULSE_PORTAL_BASE_URL || process.env.NOUS_PORTAL_BASE_URL || DEFAULT_NOUS_PORTAL_URL
 
   return String(raw).trim().replace(/\/+$/, '')
 }
@@ -8140,7 +8257,7 @@ const { hasLivePortalSession, hasPortalAccessToken, renewPortalAccessSilently, o
     rememberLog
   })
 
-// Discover the hosted (Pulse Cloud) agents the signed-in user can see. Calls
+// Discover the hosted (PULSE Cloud) agents the signed-in user can see. Calls
 // the NAS trimmed-summary endpoint over the partition-bound net, so the portal
 // session cookie is attached automatically (no bearer needed — NAS accepts the
 // cookie). Returns { agents } on success, or { needsOrgSelection: true, orgs }
@@ -8153,7 +8270,7 @@ async function discoverCloudAgents(org?: string) {
 
   if (!(await hasLivePortalSession())) {
     const err = new Error(
-      'You are not signed in to Pulse Cloud. Open Settings → Gateway, choose Pulse Cloud, and sign in.'
+      'You are not signed in to PULSE Cloud. Open Settings → Gateway, choose PULSE Cloud, and sign in.'
     ) as any
 
     err.needsCloudLogin = true
@@ -8204,7 +8321,7 @@ async function discoverCloudAgents(org?: string) {
       // recover it) — surface it as a re-login, not a generic failure.
       if (error && error.statusCode === 401) {
         const err = new Error(
-          'Your Pulse Cloud session has expired. Open Settings → Gateway and sign in again.'
+          'Your PULSE Cloud session has expired. Open Settings → Gateway and sign in again.'
         ) as any
 
         err.needsCloudLogin = true
@@ -8299,7 +8416,7 @@ async function cloudAgentSilentSignIn(dashboardUrl) {
   // interactive prompt rather than a silent cascade. Discovery already gates on
   // this, but a selection can arrive after the session lapsed.
   if (!(await hasLivePortalSession())) {
-    const err = new Error('Your Pulse Cloud session has expired. Sign in to Pulse Cloud again.') as any
+    const err = new Error('Your PULSE Cloud session has expired. Sign in to PULSE Cloud again.') as any
     err.needsCloudLogin = true
     throw err
   }
@@ -8811,7 +8928,7 @@ function sanitizeConnectionProfiles(raw: Record<string, any>) {
       cleaned.headers = headers
     }
 
-    // Preserve the Pulse Cloud org tag on cloud-mode entries so Settings can
+    // Preserve the PULSE Cloud org tag on cloud-mode entries so Settings can
     // reopen into the same org for a per-profile cloud connection.
     if (cleaned.mode === 'cloud') {
       const cloudName = String(entry.name || '').trim()
@@ -9103,7 +9220,7 @@ function sanitizeConnectionsRegistry(registry = readDesktopConnectionsRegistry()
 /**
  * Save (create or edit) a registry connection from a renderer payload.
  * Edits merge over the stored entry (mergeConnectionInput) so fields the
- * editor doesn't carry — cloud `org`, ssh `remotePulsePath`/`remoteProfile` —
+ * editor doesn't carry — cloud `org`, ssh `remotePULSEPath`/`remoteProfile` —
  * survive a rename. Token handling mirrors coerceDesktopConnectionConfig: an
  * incoming plaintext token is encrypted (honoring the same allowPlainTextToken
  * opt-in seam as Settings → Gateway); an absent token field inherits the
@@ -9206,7 +9323,7 @@ function writeActiveDesktopProfile(name: string | null): string | null {
 // True when the given pid belongs to a running process whose command line
 // contains "pulse", avoiding false positives from stale gateway.pid files
 // whose PID was recycled by the OS to an unrelated process.
-function isPulseProcess(pid) {
+function isPULSEProcess(pid) {
   try {
     process.kill(pid, 0) // signal 0 = existence check, no signal sent
   } catch {
@@ -9252,7 +9369,7 @@ function migrateActiveProfileIfMissing() {
     readFileSync: (p, enc) => fs.readFileSync(p, enc),
     statSync: p => fs.statSync(p),
     readdirSync: (p, opts) => fs.readdirSync(p, opts as { withFileTypes: true }),
-    isPulseProcess,
+    isPULSEProcess,
     now: () => Date.now(),
     writeJson: (target, decision) => {
       // Mirror writeActiveDesktopProfile's atomic-write + parent-dir-create
@@ -9323,7 +9440,7 @@ async function sanitizeDesktopConnectionConfig(config = readDesktopConnectionCon
     remoteAuthMode: authMode,
     remoteOauthConnected,
     remoteUrl,
-    // The persisted Pulse Cloud org (slug/id) for a cloud connection, or '' for
+    // The persisted PULSE Cloud org (slug/id) for a cloud connection, or '' for
     // remote/local. Lets Settings → Gateway reopen into the same org.
     cloudOrg: mode === 'cloud' ? String(block.org || '') : '',
     remoteTokenPreview: tokenPreview(remoteToken),
@@ -9338,7 +9455,7 @@ async function sanitizeDesktopConnectionConfig(config = readDesktopConnectionCon
     sshUser: (ssh || savedSsh)?.user || '',
     sshPort: (ssh || savedSsh)?.port || null,
     sshKeyPath: (ssh || savedSsh)?.keyPath || '',
-    sshRemotePulsePath: (ssh || savedSsh)?.remotePulsePath || '',
+    sshRemotePULSEPath: (ssh || savedSsh)?.remotePULSEPath || '',
     sshRemoteProfile: (ssh || savedSsh)?.remoteProfile || '',
     // The env override only forces the global/primary connection; a per-profile
     // scope is never overridden by PULSE_DESKTOP_REMOTE_URL.
@@ -9349,7 +9466,7 @@ async function sanitizeDesktopConnectionConfig(config = readDesktopConnectionCon
 // Build + validate a `{ url, authMode, token }` remote block. OAuth gateways
 // authenticate via the login-window session cookie (verified at connect time in
 // resolveRemoteBackend), so only token-auth remotes require a saved token.
-// `org` (optional) is the Pulse Cloud org slug/id the instance was discovered
+// `org` (optional) is the PULSE Cloud org slug/id the instance was discovered
 // under — persisted so Settings can reopen into the same org; omitted from the
 // block when empty so plain remote connections stay unchanged.
 function buildRemoteBlock(
@@ -9418,7 +9535,7 @@ function coerceDesktopConnectionConfig(input: any = {}, existing = readDesktopCo
   // The block being edited: a per-profile entry or the global remote block.
   const rawExistingBlock = key ? existing.profiles?.[key] || {} : existing.remote || {}
   // Leaving a CLOUD connection unselects it: a cloud block's url/org/token
-  // describe a discovered Pulse Cloud instance, NOT a user-owned remote gateway,
+  // describe a discovered PULSE Cloud instance, NOT a user-owned remote gateway,
   // so switching to local or remote must NOT inherit them (otherwise the stale
   // cloud URL lingers and re-selecting Cloud looks "already connected"). When the
   // saved block was cloud and the new mode is not cloud, start from an empty
@@ -9532,7 +9649,7 @@ function buildSshBlock(input: any, existingBlock: any = {}) {
     user: input.sshUser ?? existingBlock.user,
     port: input.sshPort ?? existingBlock.port,
     keyPath: input.sshKeyPath ?? existingBlock.keyPath,
-    remotePulsePath: input.sshRemotePulsePath ?? existingBlock.remotePulsePath,
+    remotePULSEPath: input.sshRemotePULSEPath ?? existingBlock.remotePULSEPath,
     remoteProfile: input.sshRemoteProfile ?? existingBlock.remoteProfile
   })
 
@@ -9598,7 +9715,7 @@ async function buildRemoteConnection(
 
   if (!token) {
     throw new Error(
-      'Remote Pulse gateway is selected, but no session token is saved. ' +
+      'Remote PULSE gateway is selected, but no session token is saved. ' +
         'Open Settings → Gateway and save a token, or switch back to Local.'
     )
   }
@@ -10034,11 +10151,25 @@ async function reachablePreviewUrl(webContentsId: number, rawUrl: string): Promi
   }
 }
 
+// The ssh client every desktop spawn uses (#103288): `desktop.ssh_path`, then
+// the in-box System32 OpenSSH, then Git for Windows' ssh.exe, then PATH.
+// Bare `ssh` on every other platform.
+function desktopSshBinary(): string {
+  return resolveSshBinary({
+    platform: process.platform,
+    override: desktopSshPathOverride,
+    env: {
+      systemRoot: process.env.SystemRoot || process.env.windir || 'C:\\Windows',
+      localAppData: process.env.LOCALAPPDATA || '',
+      programFiles: process.env['ProgramFiles'] || 'C:\\Program Files',
+      programFilesX86: process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)'
+    },
+    fs: { existsSync: fileExists, readdirSync: dir => fs.readdirSync(dir) }
+  })
+}
+
 async function effectiveSshConfigFingerprint(sshConfig) {
-  const ssh =
-    process.platform === 'win32'
-      ? path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'OpenSSH', 'ssh.exe')
-      : 'ssh'
+  const ssh = desktopSshBinary()
 
   const args = ['-G']
 
@@ -10051,7 +10182,17 @@ async function effectiveSshConfigFingerprint(sshConfig) {
   }
 
   args.push('--', sshConfig.user ? `${sshConfig.user}@${sshConfig.host}` : sshConfig.host)
-  const output = await execText(ssh, args, { timeout: 10_000 })
+  let output: string
+
+  try {
+    output = await execText(ssh, args, { timeout: 10_000 })
+  } catch (error) {
+    // `ssh -G` only parses local config, so a failure here is the local client
+    // itself (missing, broken, or a bad ssh_config) and retrying cannot fix
+    // it. Tag it terminal so boot lands on the failure overlay instead of
+    // re-driving the same probe every ~2s (#103288).
+    throw sshClientFailedError(ssh, error)
+  }
 
   return crypto.createHash('sha256').update(output).digest('hex')
 }
@@ -10174,6 +10315,7 @@ async function bootstrapSshConnectionInner(profile, sshConfig, reuseToken, sourc
       { host: sshConfig.host, user: sshConfig.user, port: sshConfig.port, keyPath: sshConfig.keyPath },
       {
         rememberLog: sshRememberLog,
+        sshBinary: desktopSshBinary(),
         ownershipId: sshOwnershipKey(profile),
         scope,
         effectiveConfigFingerprint: sshConfig.effectiveConfigFingerprint
@@ -10190,19 +10332,19 @@ async function bootstrapSshConnectionInner(profile, sshConfig, reuseToken, sourc
       managedConnectionUpdateGate.assertCanDial(metadata.registryConnectionId, metadata.managedUpdateCorrelation || '')
     }
 
-    const platform = await detectRemotePlatform(ssh, sshConfig.remotePulsePath || '')
+    const platform = await detectRemotePlatform(ssh, sshConfig.remotePULSEPath || '')
     const lifecycle = platform.os === 'Windows' ? connectWindowsRemote : remoteLifecycle.connect
     result = await lifecycle({
       ssh,
       platform,
       profile: resolveRemoteSshDashboardProfile(sshConfig.remoteProfile, profile),
-      remotePulsePath: sshConfig.remotePulsePath || '',
+      remotePULSEPath: sshConfig.remotePULSEPath || '',
       ownershipId: sshOwnershipKey(profile),
       reuseToken: reuseToken || '',
       forward: (localPort, remotePort) => ssh.forward(localPort, remotePort),
       cancelForward: (localPort, remotePort) => ssh.cancelForward(localPort, remotePort),
       pickLocalPort,
-      waitForPulse: (baseUrl, token) => waitForPulse(baseUrl, token, lease.signal, 'token'),
+      waitForPULSE: (baseUrl, token) => waitForPULSE(baseUrl, token, lease.signal, 'token'),
       probeReuseProof: sshProbeReuseProof,
       adoptServedToken: adoptServedDashboardToken,
       rememberLog: sshRememberLog,
@@ -10281,7 +10423,7 @@ async function bootstrapSshConnectionInner(profile, sshConfig, reuseToken, sourc
           metadata.registryConnectionId ||
           (typeof source === 'string' && source.startsWith('registry:') ? source.slice('registry:'.length) : ''),
         // Never infer primary ownership from a non-composite scope key: legacy
-        // per-profile pools also use bare keys. Only startPulse' explicit call
+        // per-profile pools also use bare keys. Only startPULSE' explicit call
         // site may label a registry-qualified SSH scope as the primary backend.
         primaryRegistryScope: metadata.primaryRegistryScope === true
       })
@@ -10307,13 +10449,13 @@ async function bootstrapSshConnectionInner(profile, sshConfig, reuseToken, sourc
 
   return {
     ...connection,
-    remotePulseVersion: result.pulseVersion || '',
+    remotePULSEVersion: result.pulseVersion || '',
     ssh: {
       effectiveConfigFingerprint: sshConfig.effectiveConfigFingerprint,
       host: sshConfig.host,
       keyPath: sshConfig.keyPath,
       port: sshConfig.port,
-      remotePulsePath: sshConfig.remotePulsePath,
+      remotePULSEPath: sshConfig.remotePULSEPath,
       remoteProfile: sshConfig.remoteProfile,
       user: sshConfig.user
     }
@@ -10534,7 +10676,7 @@ function registryPrimaryIsRemote() {
 // True when the PRIMARY profile's backend resolves to a remote/cloud host —
 // i.e. resolveRemoteBackend(primaryProfileKey()) would return a descriptor
 // rather than null. Mirrors that function's precedence (per-profile override →
-// env → global) so a startPulse() failure can be classified as remote (never
+// env → global) so a startPULSE() failure can be classified as remote (never
 // latch — transient, must stay retryable) vs local (latch to break install
 // loops) BEFORE the throwing resolve/mint runs.
 function primaryBackendIsRemote() {
@@ -10555,7 +10697,7 @@ async function requestJsonForProfile(profile: string, path: string, method: stri
 
 async function probeRemoteAuthMode(rawUrl) {
   // Determine how a remote gateway expects callers to authenticate, WITHOUT
-  // sending any credentials. ``/api/status`` is public on every Pulse
+  // sending any credentials. ``/api/status`` is public on every PULSE
   // gateway (it backs the portal liveness probe) and reports:
   //   auth_required: true  → OAuth gate is engaged (cookie + ws-ticket auth)
   //   auth_required: false → loopback/--insecure: legacy session-token auth
@@ -10588,7 +10730,7 @@ async function probeRemoteAuthMode(rawUrl) {
 
   if (authRequired) {
     // Best-effort: a gated gateway exposes the registered providers so the
-    // button can read "Sign in with Anxious Research" instead of a generic
+    // button can read "Sign in with Nous Research" instead of a generic
     // label, and so a username/password provider can be distinguished from
     // an OAuth-redirect one (``supports_password``). A failure here doesn't
     // change the auth mode, so swallow it.
@@ -10628,7 +10770,7 @@ async function testDesktopConnectionConfig(input: any = {}) {
       user: input.sshUser,
       port: input.sshPort,
       keyPath: input.sshKeyPath,
-      remotePulsePath: input.sshRemotePulsePath
+      remotePULSEPath: input.sshRemotePULSEPath
     })
 
     if (!sshConfig) {
@@ -10637,7 +10779,7 @@ async function testDesktopConnectionConfig(input: any = {}) {
 
     const ssh = createSshProbeConnection(
       { host: sshConfig.host, user: sshConfig.user, port: sshConfig.port, keyPath: sshConfig.keyPath },
-      { rememberLog: sshRememberLog }
+      { rememberLog: sshRememberLog, sshBinary: desktopSshBinary() }
     )
 
     try {
@@ -10649,7 +10791,7 @@ async function testDesktopConnectionConfig(input: any = {}) {
       for (;;) {
         try {
           await ssh.open()
-          const platform: any = await detectRemotePlatform(ssh, sshConfig.remotePulsePath || '')
+          const platform: any = await detectRemotePlatform(ssh, sshConfig.remotePULSEPath || '')
           let pulsePath
           let pulseVersion
           let supported
@@ -10661,8 +10803,8 @@ async function testDesktopConnectionConfig(input: any = {}) {
             pulseVersion = inspection.version
             supported = inspection.supported
           } else {
-            pulsePath = await remoteLifecycle.locatePulse(ssh, sshConfig.remotePulsePath || '')
-            pulseVersion = await remoteLifecycle.probePulseVersion(ssh, pulsePath)
+            pulsePath = await remoteLifecycle.locatePULSE(ssh, sshConfig.remotePULSEPath || '')
+            pulseVersion = await remoteLifecycle.probePULSEVersion(ssh, pulsePath)
             supported = await remoteLifecycle.remoteSupportsSshOwnership(ssh, pulsePath)
           }
 
@@ -10670,7 +10812,7 @@ async function testDesktopConnectionConfig(input: any = {}) {
             return {
               reachable: false,
               sshError: 'update-required',
-              error: 'Update Pulse on the remote host before connecting with Desktop SSH.'
+              error: 'Update PULSE on the remote host before connecting with Desktop SSH.'
             }
           }
 
@@ -10679,8 +10821,8 @@ async function testDesktopConnectionConfig(input: any = {}) {
             sshError: null,
             error: null,
             remotePlatform: `${platform.os}/${platform.arch}`,
-            remotePulsePath: pulsePath,
-            remotePulseVersion: pulseVersion,
+            remotePULSEPath: pulsePath,
+            remotePULSEVersion: pulseVersion,
             host: sshConfig.user ? `${sshConfig.user}@${sshConfig.host}` : sshConfig.host
           }
         } catch (error: any) {
@@ -10733,7 +10875,7 @@ async function testDesktopConnectionConfig(input: any = {}) {
       token = decryptDesktopSecret(block.token)
     }
   } else {
-    const remote = (await resolveRemoteBackend(key)) || (await startPulse())
+    const remote = (await resolveRemoteBackend(key)) || (await startPULSE())
     baseUrl = remote.baseUrl
     token = remote.token
     authMode = normAuthMode(remote.authMode)
@@ -10747,7 +10889,7 @@ async function testDesktopConnectionConfig(input: any = {}) {
   // connects — a separate transport with separate server-side guards (Host/
   // Origin, ws-ticket/token auth). Validating only the HTTP side produced a
   // false-positive "reachable" while the real boot still failed with "Could not
-  // connect to Pulse gateway". Mirror the renderer's connect here so the test
+  // connect to PULSE gateway". Mirror the renderer's connect here so the test
   // reflects the full path the app actually uses.
   const wsUrl = await resolveTestWsUrl(baseUrl, authMode, token, {
     mintTicket: url => mintGatewayWsTicket(url, testHeaders)
@@ -10795,11 +10937,11 @@ function resetBootProgressForReconnect() {
 
 // Reset routing and UI state only. Local callers must await physical teardown.
 // Remote revalidation has no local child and can reset this state directly.
-function resetPulseConnectionState({ soft = false }: { soft?: boolean } = {}): void {
+function resetPULSEConnectionState({ soft = false }: { soft?: boolean } = {}): void {
   backendStartFailure = null
   remoteReauthFailure = null
   remoteLiveness.clear()
-  // The next startPulse() re-reads active-profile.json for its launch profile.
+  // The next startPULSE() re-reads active-profile.json for its launch profile.
   primaryProfilePin.clear()
   invalidatePrimaryConnection()
 
@@ -10818,7 +10960,7 @@ function invalidatePrimaryConnection() {
 
 // Re-home the primary backend: reset connection state, then wait for the live
 // dashboard process to actually exit (SIGKILL after 5s) so the next
-// startPulse() spawns fresh instead of racing the dying one. Shared by the
+// startPULSE() spawns fresh instead of racing the dying one. Shared by the
 // connection-config and profile switch flows.
 async function teardownPrimaryBackendAndWait({ soft = false }: { soft?: boolean } = {}): Promise<void> {
   const stopping = backendConnectionState.stopProcess(localBackendLifecycle.stop)
@@ -10828,7 +10970,7 @@ async function teardownPrimaryBackendAndWait({ soft = false }: { soft?: boolean 
   }
 
   try {
-    resetPulseConnectionState({ soft })
+    resetPULSEConnectionState({ soft })
     await stopping
   } finally {
     if (soft) {
@@ -10867,7 +11009,7 @@ function broadcastConnectionsChanged(payload: { connectionId: string; reason: 'r
 }
 
 // The profile the primary (window) backend was actually LAUNCHED as. Pinned by
-// startPulse() and cleared when the primary is torn down; while a primary is
+// startPULSE() and cleared when the primary is torn down; while a primary is
 // live this must NOT follow active-profile.json (see primary-profile-pin.ts).
 const primaryProfilePin = new PrimaryProfilePin()
 
@@ -10932,7 +11074,7 @@ async function ensureBackend(
   const route = resolveProfileBackendRoute(key, routeOpts)
 
   if (route.backend === 'primary') {
-    const connection = await startPulse()
+    const connection = await startPULSE()
     setWslBridgeProfileState(key, connection.mode !== 'remote')
 
     // A shared backend still owes the caller its profile scope, so renderer-side
@@ -11060,7 +11202,7 @@ async function ensureRegistryBackend(
         user: source.user,
         port: source.port,
         keyPath: source.keyPath,
-        remotePulsePath: source.remotePulsePath,
+        remotePULSEPath: source.remotePULSEPath,
         remoteProfile: source.remoteProfile || (profileKey === 'default' ? '' : profileKey)
       })
     }
@@ -11364,7 +11506,7 @@ async function connectRegistryBackend(
     source.headers
   )
 
-  await waitForRemotePulse(connection)
+  await waitForRemotePULSE(connection)
   poolEntry.remoteBaseUrl = connection.baseUrl
 
   // Remote/cloud backends live on another host too — disable the WSL path
@@ -11444,7 +11586,7 @@ async function restoreManagedPrimarySshBackend(source, profile, correlationId) {
   backendConnectionState.invalidate()
 
   try {
-    return await startPulse()
+    return await startPULSE()
   } finally {
     if (managedPrimaryRestoreOwners.get(source.id)?.correlationId === correlationId) {
       managedPrimaryRestoreOwners.delete(source.id)
@@ -11461,7 +11603,7 @@ function managedSshConfig(source, profile = '') {
     user: source.user,
     port: source.port,
     keyPath: source.keyPath,
-    remotePulsePath: source.remotePulsePath,
+    remotePULSEPath: source.remotePULSEPath,
     remoteProfile: source.remoteProfile || (profileKey === 'default' ? '' : profileKey)
   })
 }
@@ -11615,16 +11757,16 @@ async function openManagedSshUpdateTransport(
 
   const ssh = createSshProbeConnection(
     { host: config.host, user: config.user, port: config.port, keyPath: config.keyPath },
-    { rememberLog: sshRememberLog }
+    { rememberLog: sshRememberLog, sshBinary: desktopSshBinary() }
   )
 
   await ssh.open()
 
   try {
-    const platform: any = await detectRemotePlatform(ssh, config.remotePulsePath || '')
+    const platform: any = await detectRemotePlatform(ssh, config.remotePULSEPath || '')
 
     if (platform.os === 'Windows') {
-      const runtime = platform.pulsePath ? platform : await probeWindowsRemote(ssh, config.remotePulsePath || '')
+      const runtime = platform.pulsePath ? platform : await probeWindowsRemote(ssh, config.remotePULSEPath || '')
 
       return {
         close: () => ssh.close(),
@@ -11638,8 +11780,8 @@ async function openManagedSshUpdateTransport(
       }
     }
 
-    const pulsePath = await remoteLifecycle.locatePulse(ssh, config.remotePulsePath || '')
-    const pulseHome = await remoteLifecycle.probeRemotePulseHome(ssh)
+    const pulsePath = await remoteLifecycle.locatePULSE(ssh, config.remotePULSEPath || '')
+    const pulseHome = await remoteLifecycle.probeRemotePULSEHome(ssh)
 
     return {
       close: () => ssh.close(),
@@ -11702,10 +11844,10 @@ async function drainManagedSshScope(scope) {
         // exact token first; only recreate the forward when cancellation was
         // confirmed, avoiding a duplicate-bind attempt that masks recovery.
         if (!forwardClosed) {
-          await waitForPulse(`http://127.0.0.1:${state.localPort}`, scope.reuseToken, undefined, 'token')
+          await waitForPULSE(`http://127.0.0.1:${state.localPort}`, scope.reuseToken, undefined, 'token')
         } else {
           await state.ssh.forward(state.localPort, state.remotePort)
-          await waitForPulse(`http://127.0.0.1:${state.localPort}`, scope.reuseToken, undefined, 'token')
+          await waitForPULSE(`http://127.0.0.1:${state.localPort}`, scope.reuseToken, undefined, 'token')
         }
 
         scope.forwardRestored = true
@@ -11926,6 +12068,13 @@ function touchPoolBackend(profile, options: { activeTurn?: boolean } = {}) {
 
       if (typeof options.activeTurn === 'boolean') {
         entry.activeTurn = options.activeTurn
+
+        // A prompt turn leasing this backend IS streamed activity (#105239):
+        // the keepalive touch alone only proves the chat is open, so the
+        // pinned-tier TTL reads this stamp, not lastActiveAt.
+        if (options.activeTurn) {
+          entry.lastStreamedAt = Date.now()
+        }
       }
 
       return
@@ -11956,10 +12105,26 @@ function startPoolIdleReaper() {
     const now = Date.now()
 
     for (const [profile, entry] of [...backendPool.entries()]) {
-      if (now - (entry.lastActiveAt || 0) > poolIdleMs()) {
-        // Remote descriptors hold no child/slot. Local children require the
-        // same admission authority as foreground and LRU reclamation.
-        const retiring = entry.process ? poolRetirer.retireIdle(profile, poolIdleMs()) : stopPoolBackend(profile)
+      // Remote descriptors hold no child/slot. Local children require the
+      // same admission authority as foreground and LRU reclamation.
+      // Pinned-tier TTL (#105239): the keepalive refreshes lastActiveAt for
+      // every open chat, so that clock alone never fires for the pinned tier.
+      // A local child whose last STREAMED turn (activeTurn touch) is older
+      // than POOL_PINNED_IDLE_MS is idle even while keepalive-fresh; entries
+      // without the stamp keep the legacy lastActiveAt clock.
+      const idleFor = now - (entry.lastActiveAt || 0)
+      const streamedIdleFor = entry.lastStreamedAt ? now - entry.lastStreamedAt : null
+      const reapable = idleFor > poolIdleMs() || (streamedIdleFor !== null && streamedIdleFor > POOL_PINNED_IDLE_MS)
+
+      if (reapable) {
+        const retiring = entry.process
+          ? poolRetirer.retireIdle(profile, poolIdleMs(), candidate =>
+              Boolean(
+                Date.now() - (candidate.lastActiveAt || 0) > poolIdleMs() ||
+                (candidate.lastStreamedAt ? Date.now() - candidate.lastStreamedAt > POOL_PINNED_IDLE_MS : false)
+              )
+            )
+          : stopPoolBackend(profile)
 
         void retiring.catch(error => rememberLog(`Pool idle retirement failed: ${String(error)}`))
       }
@@ -12008,7 +12173,7 @@ function teardownFailedLocalBackend(poolKey: string, entry: any): Promise<void> 
 }
 
 // Spawn an additional dashboard backend pinned to a named profile. Mirrors the
-// local-spawn portion of startPulse() but without the boot-progress UI,
+// local-spawn portion of startPULSE() but without the boot-progress UI,
 // bootstrap, or remote handling (those belong to the primary backend only).
 // `opts.forceLocal` skips remote resolution entirely (the registry 'local'
 // entry means THIS machine regardless of the v1 routing table); `opts.poolKey`
@@ -12051,7 +12216,7 @@ async function runPoolBackendStart(
   profileDeletionGate.assertCanStart(profile)
 
   if (remote) {
-    await waitForRemotePulse(remote)
+    await waitForRemotePULSE(remote)
 
     // Recorded on the entry so revalidation can probe this descriptor without
     // awaiting connectionPromise, which may still be pending for a sibling.
@@ -12172,15 +12337,21 @@ async function runPoolBackendStart(
   // --port 0: the OS assigns an ephemeral port; the child announces it on stdout.
   const backendArgs = ['--profile', profile, 'serve', '--host', '127.0.0.1', '--port', '0']
 
-  const backend = await ensureRuntime(await resolvePulseBackend(backendArgs), () =>
+  const backend = await ensureRuntime(await resolvePULSEBackend(backendArgs), () =>
     assertPoolEntryStillOwned(poolKey, entry, backendPool, localBackendLifecycle.signal)
   )
 
   // Route old runtimes (no `serve`) through the legacy `dashboard --no-open`.
   backend.args = await getBackendArgsForRuntime(backend)
   assertPoolEntryStillOwned(poolKey, entry, backendPool, localBackendLifecycle.signal)
-  const pulseCwd = resolvePulseCwd()
-  const webDist = resolveWebDist()
+  const pulseCwd = resolvePULSECwd()
+
+  const webDist = resolveDashboardWebDist({
+    activePULSERoot: ACTIVE_PULSE_ROOT,
+    appRoot: APP_ROOT,
+    env: process.env
+  })
+
   const readyFile = backend.readyFile ? makeDashboardReadyFile() : null
 
   // Guard BEFORE the "Starting" line: a profile that only exists on a remote
@@ -12191,7 +12362,7 @@ async function runPoolBackendStart(
   assertLocalProfileCanStart(profile, profileDeletionGate, key =>
     directoryExists(path.join(PULSE_HOME, 'profiles', key))
   )
-  rememberLog(`Starting Pulse backend for profile "${profile}" via ${backend.label}`)
+  rememberLog(`Starting PULSE backend for profile "${profile}" via ${backend.label}`)
 
   const parentStartMarker = await desktopParentStartMarker()
   const backendNonce = crypto.randomBytes(16).toString('hex')
@@ -12199,7 +12370,7 @@ async function runPoolBackendStart(
   assertPoolEntryStillOwned(poolKey, entry, backendPool, localBackendLifecycle.signal)
 
   const child = spawnOwnedBackend(
-    backend.command,
+    windowsShellCommand(backend.command, Boolean(backend.shell)),
     backend.args,
     hiddenWindowsChildOptions({
       cwd: pulseCwd,
@@ -12252,22 +12423,22 @@ async function runPoolBackendStart(
   startFailed.catch(() => {})
 
   child.once('error', error => {
-    rememberLog(`Pulse backend for profile "${profile}" failed to start: ${error.message}`)
+    rememberLog(`PULSE backend for profile "${profile}" failed to start: ${error.message}`)
     void teardownFailedLocalBackend(poolKey, entry).catch(cleanupError => {
       rememberLog(
-        `Pulse backend for profile "${profile}" cleanup failed: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}`
+        `PULSE backend for profile "${profile}" cleanup failed: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}`
       )
     })
     rejectStart?.(error)
   })
   child.once('exit', (code, signal) => {
-    rememberLog(formatBackendExitLine(`Pulse backend for profile "${profile}" exited`, code, signal, outputTail))
+    rememberLog(formatBackendExitLine(`PULSE backend for profile "${profile}" exited`, code, signal, outputTail))
     releaseBackendChild(child)
 
     if (!ready) {
       rejectStart?.(
         new Error(
-          `Pulse backend for profile "${profile}" exited before it became ready (${signal || code}).${outputTail.describe()}`
+          `PULSE backend for profile "${profile}" exited before it became ready (${signal || code}).${outputTail.describe()}`
         )
       )
     }
@@ -12301,7 +12472,7 @@ async function runPoolBackendStart(
   entry.port = port
 
   const baseUrl = `http://127.0.0.1:${port}`
-  await Promise.race([waitForPulse(baseUrl, token), startFailed])
+  await Promise.race([waitForPULSE(baseUrl, token), startFailed])
   assertPoolEntryStillOwned(poolKey, entry, backendPool, localBackendLifecycle.signal)
   ready = true
 
@@ -12309,7 +12480,7 @@ async function runPoolBackendStart(
 
   const authToken = await adoptServedDashboardToken(baseUrl, token, {
     childAlive,
-    label: `Pulse backend for profile "${profile}"`,
+    label: `PULSE backend for profile "${profile}"`,
     rememberLog
   })
 
@@ -12331,7 +12502,7 @@ async function runPoolBackendStart(
 
   if (!wsProbe.ok) {
     throw new Error(
-      `Pulse backend for profile "${profile}" is HTTP-reachable but the WebSocket (/api/ws) rejected the session token: ${wsProbe.reason}`
+      `PULSE backend for profile "${profile}" is HTTP-reachable but the WebSocket (/api/ws) rejected the session token: ${wsProbe.reason}`
     )
   }
 
@@ -12435,7 +12606,7 @@ async function stopAllPoolBackends() {
  * root — it is machine-scoped and shared with the surviving gateway and
  * other installs; image locks there are the updater's pause/resume job.
  * Runs after the graceful backend teardown, skips the pids it owned and
- * every live Pulse runtime process, so it is only the net for what
+ * every live PULSE runtime process, so it is only the net for what
  * detached. Best effort throughout; see package-process-reap.ts.
  */
 function reapInstallRootedStragglers(excludePids: number[]): void {
@@ -12569,7 +12740,7 @@ async function prepareProfileRenameRequest(request) {
       mainWindow?.reload()
     },
     restartPrimaryBackend: async () => {
-      await startPulse()
+      await startPULSE()
     },
     teardownPoolBackendAndWait,
     teardownPrimaryBackendAndWait,
@@ -12599,17 +12770,36 @@ function stopAttachedBackendMonitor() {
  * invalidates the connection and hands the respawn to the same supervisor path
  * a dead child would (which re-runs discovery and spawns, since the host now
  * has no backend).
+ *
+ * A backend recycled by an external supervisor (e.g. launchd `KeepAlive`)
+ * into a new process on the same port passes the readiness probe (it's a
+ * public route) while serving a brand-new session token, so also re-read the
+ * served token on every tick and treat drift the same as "gone" (#121988).
+ *
+ * This teardown is unexpected, not intentional (nobody asked for a re-home),
+ * so it must clear the slot via `backendConnectionState.invalidate()` directly
+ * rather than `invalidatePrimaryConnection()`: the latter also sets
+ * `primaryRecoverySuppressed`, which `scheduleUnexpectedPrimaryRecovery()`
+ * below would then read back as `intentionalTeardown` and refuse to claim,
+ * leaving the app with no backend and no respawn scheduled.
  */
 function startAttachedBackendMonitor(attached: AttachedBackend) {
   stopAttachedBackendMonitor()
 
   attachedBackendMonitor = setInterval(() => {
-    void waitForPulse(attached.baseUrl, attached.token, undefined, 'token', {}, { alreadyBound: true }).catch(() => {
-      stopAttachedBackendMonitor()
-      rememberLog(`[attach] attached backend on ${attached.baseUrl} (pid ${attached.pid}) is gone; recovering`)
-      invalidatePrimaryConnection()
-      scheduleUnexpectedPrimaryRecovery({ error: 'The Pulse backend this app attached to exited.', ready: true })
-    })
+    void waitForPULSE(attached.baseUrl, attached.token, undefined, 'token', {})
+      .then(() => resolveServedDashboardToken(attached.baseUrl, attached.token).catch(() => attached.token))
+      .then(servedToken => {
+        if (isAttachedBackendTokenDrifted({ servedToken, adoptedToken: attached.token })) {
+          throw new Error('attached backend is serving a different session token')
+        }
+      })
+      .catch(() => {
+        stopAttachedBackendMonitor()
+        rememberLog(`[attach] attached backend on ${attached.baseUrl} (pid ${attached.pid}) is gone; recovering`)
+        backendConnectionState.invalidate()
+        scheduleUnexpectedPrimaryRecovery({ error: 'The PULSE backend this app attached to exited.', ready: true })
+      })
   }, ATTACHED_LIVENESS_POLL_MS)
 
   attachedBackendMonitor.unref?.()
@@ -12641,6 +12831,9 @@ function attachToRunningHostBackend(): Promise<AttachedBackend | null> {
 
 function hostBackendAttachDeps() {
   return {
+    // Skip ledger records whose backend is already gone before dialling
+    // anything: the ledger survives the process it describes (#123586).
+    isPidAlive: isPidAliveWindows,
     log: rememberLog,
     readLedger: (target: string) => {
       try {
@@ -12670,7 +12863,7 @@ function hostBackendAttachDeps() {
     // port is a dead record (a hard-killed backend leaves both the record and
     // its published token behind), not one still starting.
     waitForReady: (baseUrl: string, token: string) =>
-      waitForPulse(baseUrl, token, undefined, 'token', {}, { alreadyBound: true })
+      waitForPULSE(baseUrl, token, undefined, 'token', {}, { alreadyBound: true })
   }
 }
 
@@ -12702,24 +12895,10 @@ function hostSpawnGateDeps() {
         return null
       }
     },
-    take: () => {
-      const gatePath = hostSpawnGatePath()
-
-      try {
-        fs.writeFileSync(gatePath, JSON.stringify({ pid: process.pid, startedAt: Date.now() }), { mode: 0o600 })
-      } catch {
-        // A gate we cannot write is a race we cannot win; spawning anyway is
-        // exactly today's behaviour, so never fail boot over it.
-      }
-
-      return () => {
-        try {
-          fs.unlinkSync(gatePath)
-        } catch {
-          // Already gone / never written.
-        }
-      }
-    },
+    take: () =>
+      claimHostSpawnGate(hostSpawnGatePath(), {
+        staleAfterMs: HOST_SPAWN_GATE_STALE_MS
+      }),
     sleep: (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
   }
 }
@@ -12729,14 +12908,14 @@ function releaseHostSpawnReservation() {
   hostSpawnReservation = null
 }
 
-function startPulse({ supervisorRecovery = false }: { supervisorRecovery?: boolean } = {}): Promise<
+function startPULSE({ supervisorRecovery = false }: { supervisorRecovery?: boolean } = {}): Promise<
   Awaited<ReturnType<typeof backendConnectionState.getPromise>>
 > {
   primaryRecoverySuppressed = false
   primaryStartsInFlight += 1
 
   const start: Promise<Awaited<ReturnType<typeof backendConnectionState.getPromise>>> = localBackendLifecycle.start(
-    () => runPulseStart({ supervisorRecovery })
+    () => runPULSEStart({ supervisorRecovery })
   )
 
   const releaseStart = (): void => {
@@ -12775,7 +12954,7 @@ function reportPrimaryRecoveryCrashLoop(code: number | null, signal: string | nu
   }
 
   const message =
-    'Pulse backend keeps crashing right after it restarts; not restarting it again. Relaunch Pulse Desktop.'
+    'PULSE backend keeps crashing right after it restarts; not restarting it again. Relaunch PULSE Desktop.'
 
   rememberLog(`[supervisor] ${message}`)
   sendBackendExit({ code, signal, error: message })
@@ -12786,7 +12965,7 @@ function reportPrimaryRecoveryCrashLoop(code: number | null, signal: string | nu
 const firstLine = (text: string): string => (text || '').split('\n').find(Boolean) || ''
 
 function runPrimaryRecoverySpawn(code: number | null, signal: string | null) {
-  startPulse({ supervisorRecovery: true }).catch(respawnError => {
+  startPULSE({ supervisorRecovery: true }).catch(respawnError => {
     rememberLog(`[supervisor] backend respawn failed: ${firstLine(respawnError.message)}`)
 
     // Terminal boot failures still own their existing recovery UI. Only a
@@ -12800,8 +12979,8 @@ function runPrimaryRecoverySpawn(code: number | null, signal: string | null) {
       return
     }
 
-    // releaseStart (startPulse) already ran: same-promise reaction order, so
-    // hasPendingStart is false here. See the ordering contract in startPulse.
+    // releaseStart (startPULSE) already ran: same-promise reaction order, so
+    // hasPendingStart is false here. See the ordering contract in startPULSE.
     if (primaryExitRecovery.retryAfterFailedStart(primaryRecoveryState())) {
       rememberLog('[supervisor] backend respawn failed before ready; retrying within crash-loop budget')
       runPrimaryRecoverySpawn(code, signal)
@@ -12846,14 +13025,14 @@ function scheduleUnexpectedPrimaryRecovery({
  * The terminal boot failure currently latched in this process, if any. These
  * latches are cleared only by an explicit recovery path (reset, repair,
  * apply-config, confirmed sign-in, or the child 'exit' handler), never by a
- * retry, so both the per-request short-circuit in runPulseStart and the
+ * retry, so both the per-request short-circuit in runPULSEStart and the
  * supervisor's respawn refusal must consult the same trio in the same order.
  */
 function latchedBootFailure(): Error | null {
   return bootstrapFailure ?? backendStartFailure ?? remoteReauthFailure ?? null
 }
 
-async function runPulseStart({ supervisorRecovery = false }: { supervisorRecovery?: boolean } = {}): Promise<
+async function runPULSEStart({ supervisorRecovery = false }: { supervisorRecovery?: boolean } = {}): Promise<
   Awaited<ReturnType<typeof backendConnectionState.getPromise>>
 > {
   // Only the single-instance lock holder may reap/spawn/claim the desktop
@@ -12862,14 +13041,14 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
   // otherwise SIGTERMs the running instance's live backend (#87295).
   if (!isPrimaryInstance) {
     rememberLog('[boot] non-primary instance: skipping backend machinery')
-    throw new Error('Pulse Desktop is already running in another window.')
+    throw new Error('PULSE Desktop is already running in another window.')
   }
 
   await reapOrphanedBackendsOnce()
   localBackendLifecycle.assertCanStart()
 
   // Latched-failure short-circuit: once bootstrap has failed in this
-  // process, every subsequent startPulse() call re-throws the same error
+  // process, every subsequent startPULSE() call re-throws the same error
   // without re-running install.ps1. This prevents the renderer's
   // ensureGatewayOpen retries (and any other getConnection callers) from
   // restarting a 5-10 minute install loop while the user is still reading
@@ -12880,7 +13059,7 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
   // its "Sign in" button clickable, instead of re-driving boot on every retry.
   //
   // Deliberately silent: this runs on every proxied request while a failure is
-  // latched (ensureBackend -> startPulse), so a log line here would flood the
+  // latched (ensureBackend -> startPULSE), so a log line here would flood the
   // bounded rememberLog ring and evict the lines that explain the original
   // failure. The supervisor logs the refusal once in runPrimaryRecoverySpawn.
   const latched = latchedBootFailure()
@@ -12892,7 +13071,7 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
   // E2E: simulate a boot failure without breaking the real backend. The boot
   // progresses a few steps, then fails with the given error message.
   if (BOOT_FAKE_ERROR) {
-    await advanceBootProgress('backend.resolve', 'Resolving Pulse backend', 8)
+    await advanceBootProgress('backend.resolve', 'Resolving PULSE backend', 8)
     const error = new Error(BOOT_FAKE_ERROR) as any
     error.isBootstrapFailure = true
     bootstrapFailure = error
@@ -12921,7 +13100,7 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
   // pulse:profile:remember landing mid-startup becomes the NEXT boot's
   // preference instead of splitting routing identity from the launch
   // argument. (The pin below still honors a live primary — but a primary
-  // being live means startPulse never got here.)
+  // being live means startPULSE never got here.)
   const { argvProfile: activeProfile, routingProfile: primaryProfile } = resolveLaunchProfile(readActiveDesktopProfile)
 
   // Pin the routing table to the profile this primary actually boots as; a
@@ -12944,8 +13123,8 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
       // remotes and Apply invalidated this attempt), bail before probing.
       backendConnectionState.assertCurrentAttempt(connectionAttempt)
 
-      await advanceBootProgress('backend.remote', `Connecting to remote Pulse backend at ${remote.baseUrl}`, 24)
-      await waitForRemotePulse(remote)
+      await advanceBootProgress('backend.remote', `Connecting to remote PULSE backend at ${remote.baseUrl}`, 24)
+      await waitForRemotePULSE(remote)
 
       // Second async boundary: the health probe itself can outlive the
       // attempt. A late success here must not publish a stale descriptor.
@@ -12953,7 +13132,7 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
 
       updateBootProgress({
         phase: 'backend.ready',
-        message: 'Remote Pulse backend is ready',
+        message: 'Remote PULSE backend is ready',
         progress: 94,
         running: true,
         error: null
@@ -12962,7 +13141,7 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
       return createPrimaryRemoteConnection(remote, pulseLog.slice(-80), getWindowState())
     }
 
-    await advanceBootProgress('backend.resolve', 'Resolving Pulse backend', 8)
+    await advanceBootProgress('backend.resolve', 'Resolving PULSE backend', 8)
     // Resolve for the desktop's primary profile so a per-profile remote
     // override on the active profile is honored (falls back to env / global).
 
@@ -12983,8 +13162,8 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
 
     const token = crypto.randomBytes(32).toString('base64url')
     // Pin the desktop's chosen profile via the global --profile flag. A launch
-    // override is persisted into active-profile.json before startPulse, so
-    // Pulse.exe --profile <name> and pulse -p <name> desktop both land here.
+    // override is persisted into active-profile.json before startPULSE, so
+    // PULSE.exe --profile <name> and pulse -p <name> desktop both land here.
     // Null (no stored preference, no launch flag) keeps the legacy bare serve
     // so the child still follows the sticky active_profile file.
     // `activeProfile` is the SAME decision that pinned routing above — never
@@ -13000,9 +13179,9 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
       ensureLocalRuntime: backend =>
         ensureRuntime(backend, () => backendConnectionState.assertCurrentAttempt(connectionAttempt)),
       prepareLocalBackend: async () => {
-        await advanceBootProgress('backend.runtime', 'Resolving Pulse runtime', 28)
+        await advanceBootProgress('backend.runtime', 'Resolving PULSE runtime', 28)
 
-        return resolvePulseBackend(backendArgs)
+        return resolvePULSEBackend(backendArgs)
       },
       resolveRemote: () => {
         // Classify immediately before each throwing resolve. This callback runs
@@ -13050,7 +13229,7 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
 
       updateBootProgress({
         phase: 'backend.ready',
-        message: 'Attached to the running Pulse backend',
+        message: 'Attached to the running PULSE backend',
         progress: 94,
         running: true,
         error: null
@@ -13079,12 +13258,18 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
     // Route old runtimes (no `serve`) through the legacy `dashboard --no-open`.
     backend.args = await getBackendArgsForRuntime(backend)
     backendConnectionState.assertCurrentAttempt(connectionAttempt)
-    const pulseCwd = resolvePulseCwd()
-    const webDist = resolveWebDist()
+    const pulseCwd = resolvePULSECwd()
+
+    const webDist = resolveDashboardWebDist({
+      activePULSERoot: ACTIVE_PULSE_ROOT,
+      appRoot: APP_ROOT,
+      env: process.env
+    })
+
     const readyFile = backend.readyFile ? makeDashboardReadyFile() : null
 
-    await advanceBootProgress('backend.spawn', `Starting Pulse backend via ${backend.label}`, 84)
-    rememberLog(`Starting Pulse backend via ${backend.label}`)
+    await advanceBootProgress('backend.spawn', `Starting PULSE backend via ${backend.label}`, 84)
+    rememberLog(`Starting PULSE backend via ${backend.label}`)
 
     const profile = primaryProfile
     const parentStartMarker = await desktopParentStartMarker()
@@ -13094,7 +13279,7 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
     backendConnectionState.assertCurrentAttempt(connectionAttempt)
 
     const pulseProcess = spawnOwnedBackend(
-      backend.command,
+      windowsShellCommand(backend.command, Boolean(backend.shell)),
       backend.args,
       hiddenWindowsChildOptions({
         cwd: pulseCwd,
@@ -13103,7 +13288,7 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
             // Never another profile's dotenv credentials from the Desktop env (#68367).
             ...profileBackendParentEnv({ pulseHome: PULSE_HOME, profile: activeProfile }),
             // Explicitly pin PULSE_HOME for the child so Python's get_pulse_home()
-            // resolves to the SAME location our resolvePulseHome() picked. Without
+            // resolves to the SAME location our resolvePULSEHome() picked. Without
             // this pin, Python falls back to ~/.pulse on every platform — fine on
             // mac/linux (where our default matches), but on Windows our default is
             // %LOCALAPPDATA%\pulse, which differs from C:\Users\<u>\.pulse.
@@ -13172,7 +13357,7 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
     if (!processOwner) {
       await localBackendLifecycle.stop(pulseProcess)
       releaseBackendChild(pulseProcess)
-      throw new Error('Pulse backend start was superseded by a newer connection attempt.')
+      throw new Error('PULSE backend start was superseded by a newer connection attempt.')
     }
 
     pulseProcess.stdout.on('data', rememberLog)
@@ -13188,9 +13373,9 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
       releaseBackendChild(pulseProcess)
 
       if (!backendConnectionState.clearForCurrentProcess(processOwner)) {
-        rememberLog(`Ignoring stale Pulse backend error: ${error.message}`)
+        rememberLog(`Ignoring stale PULSE backend error: ${error.message}`)
         scheduleUnexpectedPrimaryRecovery({ error: error.message, ready: backendReady })
-        rejectBackendStart?.(new Error('Pulse backend start was superseded by a newer connection attempt.'))
+        rejectBackendStart?.(new Error('PULSE backend start was superseded by a newer connection attempt.'))
 
         return
       }
@@ -13200,11 +13385,11 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
       // (#108417), and the stale branch above never reaches this clear.
       primaryProfilePin.clear()
 
-      rememberLog(`Pulse backend failed to start: ${error.message}`)
+      rememberLog(`PULSE backend failed to start: ${error.message}`)
       updateBootProgress(
         {
           error: error.message,
-          message: `Pulse backend failed to start: ${error.message}`,
+          message: `PULSE backend failed to start: ${error.message}`,
           phase: 'backend.error',
           running: false
         },
@@ -13217,23 +13402,23 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
       releaseBackendChild(pulseProcess)
 
       if (!backendConnectionState.clearForCurrentProcess(processOwner)) {
-        rememberLog(formatBackendExitLine('Ignoring stale Pulse backend exit', code, signal, primaryOutputTail))
+        rememberLog(formatBackendExitLine('Ignoring stale PULSE backend exit', code, signal, primaryOutputTail))
 
         scheduleUnexpectedPrimaryRecovery({ code, signal, ready: backendReady })
 
         if (!backendReady) {
-          rejectBackendStart?.(new Error('Pulse backend start was superseded by a newer connection attempt.'))
+          rejectBackendStart?.(new Error('PULSE backend start was superseded by a newer connection attempt.'))
         }
 
         return
       }
 
-      rememberLog(formatBackendExitLine('Pulse backend exited', code, signal, primaryOutputTail))
+      rememberLog(formatBackendExitLine('PULSE backend exited', code, signal, primaryOutputTail))
 
       // The current primary child is gone; release its routing pin so the
-      // next startPulse() re-reads active-profile.json instead of re-pinning
+      // next startPULSE() re-reads active-profile.json instead of re-pinning
       // the dead child's profile (#108417). Supervisor respawns go through
-      // startPulse, which makes a fresh decision — a respawn cannot inherit
+      // startPULSE, which makes a fresh decision — a respawn cannot inherit
       // a pin from a process that no longer exists.
       primaryProfilePin.clear()
 
@@ -13242,7 +13427,7 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
       }
 
       if (!backendReady) {
-        const message = `Pulse backend exited before it became ready (${signal || code}).${primaryOutputTail.describe()}`
+        const message = `PULSE backend exited before it became ready (${signal || code}).${primaryOutputTail.describe()}`
         updateBootProgress(
           {
             error: message,
@@ -13254,13 +13439,13 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
         )
         rejectBackendStart?.(
           new Error(
-            `Pulse backend exited before it became ready (${signal || code}). Log: ${DESKTOP_LOG_PATH}\n${recentPulseLog()}`
+            `PULSE backend exited before it became ready (${signal || code}). Log: ${DESKTOP_LOG_PATH}\n${recentPULSELog()}`
           )
         )
       }
     })
 
-    await advanceBootProgress('backend.port', 'Waiting for Pulse backend to launch', 86)
+    await advanceBootProgress('backend.port', 'Waiting for PULSE backend to launch', 86)
     backendConnectionState.assertCurrentAttempt(connectionAttempt)
 
     // Discover the ephemeral port the child bound to
@@ -13272,9 +13457,9 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
     }
 
     const baseUrl = `http://127.0.0.1:${port}`
-    await advanceBootProgress('backend.wait', 'Waiting for Pulse backend to become ready', 90)
+    await advanceBootProgress('backend.wait', 'Waiting for PULSE backend to become ready', 90)
     backendConnectionState.assertCurrentAttempt(connectionAttempt)
-    await Promise.race([waitForPulse(baseUrl, token), backendStartFailed])
+    await Promise.race([waitForPULSE(baseUrl, token), backendStartFailed])
     backendConnectionState.assertCurrentAttempt(connectionAttempt)
     backendReady = true
     // The host now has a bound, registered backend: the next launcher will
@@ -13305,13 +13490,13 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
 
     if (!wsProbe.ok) {
       throw new Error(
-        `Local Pulse backend is HTTP-reachable but the WebSocket (/api/ws) rejected the session token: ${wsProbe.reason}`
+        `Local PULSE backend is HTTP-reachable but the WebSocket (/api/ws) rejected the session token: ${wsProbe.reason}`
       )
     }
 
     updateBootProgress({
       phase: 'backend.ready',
-      message: 'Pulse backend is ready. Finalizing desktop startup',
+      message: 'PULSE backend is ready. Finalizing desktop startup',
       progress: 94,
       running: true,
       error: null
@@ -13357,6 +13542,7 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
     const message = error instanceof Error ? error.message : String(error)
     const hostKeyChanged = isHostKeyChangedBootFailure(error)
     const sshAuthFailed = isSshAuthFailedBootFailure(error)
+    const sshClientFailed = isSshClientFailedBootFailure(error)
 
     // Carry structured Cloud-down metadata through the boot-progress / IPC
     // boundary when present, so the renderer overlay can key on it rather than
@@ -13398,6 +13584,14 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
       backendStartFailure = error instanceof Error ? error : new Error(message)
     }
 
+    // A dead local ssh client (`ssh -G` failed) is terminal too (#103288):
+    // every retry re-runs the same local probe, so boot looped every ~2s and
+    // the user never reached Settings. Latch it so the overlay holds still;
+    // reset/repair/apply-config release it (desktop.ssh_path needs a restart).
+    if (shouldLatchSshClientFailure({ attemptedRemote, isReauth: false, isSshClientFailed: sshClientFailed })) {
+      backendStartFailure = error instanceof Error ? error : new Error(message)
+    }
+
     // A confirmed reauth rejection latches separately: it can't self-heal, and
     // leaving it unlatched hides the overlay's "Sign in" button on every retry.
     if (shouldLatchRemoteReauthFailure({ attemptedRemote, isReauth: isReauthRequiredError(error) })) {
@@ -13420,7 +13614,8 @@ async function runPulseStart({ supervisorRecovery = false }: { supervisorRecover
           attemptedRemote,
           isReauth: isReauthRequiredError(error),
           isHostKeyChanged: hostKeyChanged,
-          isSshAuthFailed: sshAuthFailed
+          isSshAuthFailed: sshAuthFailed,
+          isSshClientFailed: sshClientFailed
         }),
         running: false,
         statusCode: Number.isInteger(statusCode) ? statusCode : undefined
@@ -13478,16 +13673,96 @@ function wireCommonWindowHandlers(win, { zoom = true }: { zoom?: boolean } = {})
   installContextMenuBridge(win)
   // Always deny, never open as a side effect: GHSA-9f4c-93c8-jc8g. Trusted
   // links arrive via `pulse:openExternal`, not here. See window-open-policy.ts.
+  // The trusted-hub delegation (window-open-policy.ts, #91612) also never
+  // creates a window: it hands http/https/mailto opens from the EXACT hub
+  // origin to the audited `openExternalUrl` as a deny side effect.
   win.webContents.setWindowOpenHandler(
-    createWindowOpenHandler(origin => rememberLog(`[window-open] denied: ${origin}`))
+    createWindowOpenHandler(origin => rememberLog(`[window-open] denied: ${origin}`), {
+      getOpenerOrigin: () => win.webContents.getFocusedFrame?.()?.origin ?? null,
+      openExternalUrl: (url: string) => void openExternalUrl(url)
+    })
   )
+  // The embedded Skills Hub picker must stay pinned to its picker URL
+  // (#91612): the frame is free to navigate itself within the picker (search,
+  // pagination), but the moment it tries to escape to the full docs site —
+  // whose layout is not embeddable and whose links are then dead — the
+  // navigation is denied and the frame is reloaded onto the picker URL.
+  win.webContents.on('will-frame-navigate', (event, url, isMainFrame, frameProcessId, frameRoutingId) => {
+    if (isMainFrame) {
+      return
+    }
+
+    const frame = findFrameByIdentifier(win.webContents, frameProcessId, frameRoutingId)
+    const frameOrigin = safeFrameOrigin(frame)
+
+    if (frameOrigin !== PULSE_HUB_ORIGIN && frameOrigin !== PULSE_HUB_FALLBACK_ORIGIN) {
+      return
+    }
+
+    if (isPULSEHubPickerUrl(url)) {
+      return
+    }
+
+    event.preventDefault()
+
+    // Reload the frame back onto the picker instead of leaving it on a
+    // half-navigated document.
+    try {
+      frame?.reload()
+    } catch {
+      // A destroyed frame is gone; nothing to restore.
+    }
+  })
   win.webContents.on('will-navigate', (event, url) => {
-    if ((DEV_SERVER && url.startsWith(DEV_SERVER)) || (!DEV_SERVER && url.startsWith('file:'))) {
+    if (isRendererUrl(url, rendererBaseUrl())) {
       return
     }
 
     event.preventDefault()
     void openExternalUrl(url)
+  })
+}
+
+/**
+ * The guaranteed exit path for a fullscreened preview guest (#97213).
+ *
+ * `before-input-event` fires on the guest's own webContents before the page
+ * sees the key, so this works even while the guest holds fullscreen input
+ * focus — the one interception point neither the renderer (no focus
+ * visibility into the guest) nor the OS (Wayland has no xdotool/wmctrl) can
+ * provide. The routing decision lives in preview-guest-escape.ts.
+ */
+function installPreviewGuestEscapeHatch() {
+  app.on('web-contents-created', (_event, contents) => {
+    if (contents.getType() !== 'webview') {
+      return
+    }
+
+    contents.on('before-input-event', (event, input) => {
+      const owner = BrowserWindow.fromWebContents(contents.hostWebContents ?? contents)
+
+      switch (previewGuestInputAction(input, Boolean(owner?.isFullScreen()))) {
+        case 'exit-fullscreen': {
+          event.preventDefault()
+
+          if (owner && !owner.isDestroyed()) {
+            owner.setFullScreen(false)
+          }
+
+          break
+        }
+
+        case 'close-preview': {
+          event.preventDefault()
+          sendClosePreviewRequested()
+
+          break
+        }
+
+        default:
+          break
+      }
+    })
   })
 }
 
@@ -13556,11 +13831,18 @@ function focusWindow(win) {
     win.restore()
   }
 
-  if (!win.isVisible()) {
-    win.show()
+  // #83998: show() and focus() both seize the Windows OS foreground,
+  // dismissing other apps' native save/confirm dialogs while PULSE streams
+  // in the background. Reveal without activation, and only take the keyboard
+  // when the window doesn't already have focus — a redundant focus() still
+  // pumps SetForegroundWindow.
+  if (revealAction(win.isVisible()) === 'showInactive') {
+    win.showInactive()
   }
 
-  win.focus()
+  if (shouldFocusToTakeKeyboard(win)) {
+    win.focus()
+  }
 }
 
 function spawnSecondaryWindow({
@@ -13576,7 +13858,7 @@ function spawnSecondaryWindow({
     height: SESSION_WINDOW_MIN_HEIGHT,
     minWidth: SESSION_WINDOW_MIN_WIDTH,
     minHeight: SESSION_WINDOW_MIN_HEIGHT,
-    title: 'Pulse',
+    title: 'PULSE',
     titleBarStyle: 'hidden',
     titleBarOverlay: getTitleBarOverlayOptions(),
     trafficLightPosition: IS_MAC ? WINDOW_BUTTON_POSITION : undefined,
@@ -13594,6 +13876,7 @@ function spawnSecondaryWindow({
 
   // Chat-surface registration: applyWindowTranslucency swaps this window's
   // backing between opaque-themed and alpha-0 when glass toggles.
+  registerChatWindow(win)
   minimizeToTray.registerWindow(win)
   translucencyBackedWindows.add(win)
 
@@ -13639,9 +13922,14 @@ function spawnSecondaryWindow({
     win,
     buildSessionWindowUrl(sessionId, {
       connectionId,
-      devServer: DEV_SERVER,
       profile,
-      rendererIndexPath: DEV_SERVER ? undefined : resolveRendererIndex(),
+      // Prefer the packaged renderer HTTP server when it is running: loading the
+      // renderer over http:// gives embeds a real origin, which `file://` cannot
+      // provide (YouTube rejects file-origin embeds). Fall back to upstream's
+      // rendererIndexPath path so the file:// URL is still built correctly --
+      // passing a file:// URL as `devServer` would yield `index.html/?win=...`.
+      devServer: DEV_SERVER || packagedRendererServer?.origin,
+      rendererIndexPath: DEV_SERVER || packagedRendererServer?.origin ? undefined : resolveRendererIndex(),
       watch
     }),
     'Session window'
@@ -13680,7 +13968,7 @@ function spawnBrowserWindow(tabId) {
     height: BROWSER_WINDOW_HEIGHT,
     minWidth: BROWSER_WINDOW_MIN_WIDTH,
     minHeight: BROWSER_WINDOW_MIN_HEIGHT,
-    title: 'Pulse',
+    title: 'PULSE',
     titleBarStyle: 'hidden',
     titleBarOverlay: getTitleBarOverlayOptions(),
     trafficLightPosition: IS_MAC ? WINDOW_BUTTON_POSITION : undefined,
@@ -13724,8 +14012,10 @@ function spawnBrowserWindow(tabId) {
   loadWindowUrl(
     win,
     buildBrowserWindowUrl(tabId, {
-      devServer: DEV_SERVER,
-      rendererIndexPath: DEV_SERVER ? undefined : resolveRendererIndex()
+      // Prefer the packaged renderer HTTP server when it is running (real
+      // origin for embeds — see rendererBaseUrl()).
+      devServer: DEV_SERVER || packagedRendererServer?.origin,
+      rendererIndexPath: DEV_SERVER || packagedRendererServer?.origin ? undefined : resolveRendererIndex()
     }),
     'Browser window'
   )
@@ -13787,7 +14077,7 @@ function createInstanceWindow(
     ...nextInstanceBounds(source),
     minWidth: WINDOW_MIN_WIDTH,
     minHeight: WINDOW_MIN_HEIGHT,
-    title: 'Pulse',
+    title: 'PULSE',
     titleBarStyle: 'hidden',
     titleBarOverlay: getTitleBarOverlayOptions(),
     trafficLightPosition: IS_MAC ? WINDOW_BUTTON_POSITION : undefined,
@@ -13797,6 +14087,7 @@ function createInstanceWindow(
     webPreferences: chatWindowWebPreferences(PRELOAD_PATH)
   })
 
+  registerChatWindow(win)
   instanceWindows.add(win)
   minimizeToTray.registerWindow(win)
   recordWindowConnectionRoute(win.webContents, { ...route, registryScoped: route.connectionId !== null })
@@ -13841,8 +14132,10 @@ function createInstanceWindow(
     win,
     buildInstanceWindowUrl({
       ...route,
-      devServer: DEV_SERVER,
-      rendererIndexPath: DEV_SERVER ? undefined : resolveRendererIndex()
+      // Prefer the packaged renderer HTTP server when it is running (real
+      // origin for embeds — see rendererBaseUrl()).
+      devServer: DEV_SERVER || packagedRendererServer?.origin,
+      rendererIndexPath: DEV_SERVER || packagedRendererServer?.origin ? undefined : resolveRendererIndex()
     }),
     'Instance window'
   )
@@ -13867,12 +14160,20 @@ registerMachineProfile()
 
 // The pet overlay: a single transparent, frameless, always-on-top window that
 // hosts ONLY the floating mascot. Shift-clicking the in-window pet "pops it out"
-// here so it can leave the app's bounds and stay visible while Pulse is
+// here so it can leave the app's bounds and stay visible while PULSE is
 // minimized (Codex-style task-completion glance). It carries no gateway
 // connection of its own — the main renderer is the single source of truth and
 // pushes pet state over IPC (pulse:pet-overlay:state); the overlay just renders
 // it. Control flows back (pop-in, composer submit) via pulse:pet-overlay:control.
 let petOverlayWindow = null
+// Set once the app is really exiting (before-quit, or the primary window's
+// close on Windows/Linux where closing it IS quitting). Distinct from
+// isQuittingForHandoff, which is specific to the update/swap hand-off and is
+// reset when a hand-off is aborted: a quit latch must never reset. The pet
+// overlay's 'closed' handler reads it to suppress its pop-in echo so the
+// persisted popped-out flag survives for the next boot's restorePetOverlay
+// (#55920).
+let appQuitting = false
 // Set while a close is in flight: Electron's close() is async and can be
 // aborted on macOS, so the window may still be alive after closePetOverlay().
 // openPetOverlay must never reuse (or leave) a closing window — otherwise two
@@ -13881,11 +14182,9 @@ let petOverlayWindow = null
 let petOverlayClosing = false
 
 function petOverlayUrl() {
-  if (DEV_SERVER) {
-    return `${DEV_SERVER.endsWith('/') ? DEV_SERVER.slice(0, -1) : DEV_SERVER}/?win=overlay#/`
-  }
+  const base = rendererBaseUrl().replace(/\/$/, '')
 
-  return `${pathToFileURL(resolveRendererIndex()).toString()}?win=overlay#/`
+  return `${base}/?win=overlay#/`
 }
 
 function spawnPetOverlayWindow(bounds) {
@@ -13905,7 +14204,7 @@ function spawnPetOverlayWindow(bounds) {
     // taskbar/alt-tab entry. On macOS, cmd-tab is app-level and this can make
     // the whole app look like it vanished when the only newly-created visible
     // window is a frameless overlay. Use NSPanel + Mission Control hiding below
-    // instead, leaving the main Pulse app as the Dock/cmd-tab anchor.
+    // instead, leaving the main PULSE app as the Dock/cmd-tab anchor.
     skipTaskbar: !IS_MAC,
     hasShadow: false,
     alwaysOnTop: true,
@@ -13915,7 +14214,7 @@ function spawnPetOverlayWindow(bounds) {
     hiddenInMissionControl: IS_MAC,
     // Non-activating: the overlay must never become the app's key/main window,
     // or it (a frameless, taskbar-skipping panel) becomes the app's switcher
-    // anchor and the Pulse icon drops out of cmd/alt-tab — especially when the
+    // anchor and the PULSE icon drops out of cmd/alt-tab — especially when the
     // main window is minimized. We flip this on only while the composer needs
     // the keyboard (see pulse:pet-overlay:set-focusable).
     focusable: false,
@@ -13958,7 +14257,7 @@ function spawnPetOverlayWindow(bounds) {
   try {
     // Electron docs: macOS may transform process type on each
     // setVisibleOnAllWorkspaces() call unless skipTransformProcessType=true,
-    // which briefly hides the Dock/cmd-tab presence. Keep Pulse in the normal
+    // which briefly hides the Dock/cmd-tab presence. Keep PULSE in the normal
     // ForegroundApplication class so shift-clicking the pet never drops the app
     // out of app switchers.
     win.setVisibleOnAllWorkspaces(
@@ -13989,9 +14288,12 @@ function spawnPetOverlayWindow(bounds) {
     petOverlayClosing = false
 
     // If the overlay went away on its own (e.g. ⌘W), tell the main renderer to
-    // pop the pet back in so it doesn't stay hidden. Harmless echo when we're
-    // the ones who closed it (popInPet already cleared the active flag).
-    if (mainWindow && !mainWindow.isDestroyed()) {
+    // pop the pet back in so it doesn't stay hidden. Never during a quit:
+    // popInPet() persists $petOverlayActive=false, which would wipe the
+    // popped-out state the next boot's restorePetOverlay() needs (#55920).
+    if (
+      shouldPopInOnOverlayClosed({ appQuitting, mainWindowAlive: Boolean(mainWindow && !mainWindow.isDestroyed()) })
+    ) {
       mainWindow.webContents.send('pulse:pet-overlay:control', { type: 'pop-in' })
     }
   })
@@ -14082,7 +14384,7 @@ function rehomePetOverlay() {
 // ── HUD mode ────────────────────────────────────────────────────────────────
 //
 // The chrome-free floating chat: a transparent, frameless, always-on-top
-// window showing only the composer and its scrollback, so Pulse can be driven
+// window showing only the composer and its scrollback, so PULSE can be driven
 // while the user works in another app.
 //
 // Unlike the pet overlay / quick entry, this is a FULL app renderer with its
@@ -14100,7 +14402,7 @@ const hudWindows = new WeakSet<BrowserWindow>()
 // live main window exists at HUD-open time, visible or not: the HUD hides the
 // app window itself, so a main window minimized or behind another app when
 // the HUD opened still needs a surface back — arming only on `isVisible()`
-// left the user with NO Pulse window after the second toggle (#88513).
+// left the user with NO PULSE window after the second toggle (#88513).
 let hudRestoreMainWindow = false
 
 // The session the HUD is currently on, reported by its renderer whenever the
@@ -14383,9 +14685,11 @@ function hudUrl(sessionId, profile) {
   // non-primary profile's conversation resolves the session id against the
   // wrong backend and falls back to the default profile's last session.
   return buildHudWindowUrl(sessionId, {
-    devServer: DEV_SERVER,
+    // Prefer the packaged renderer HTTP server when it is running (real
+    // origin for embeds — see rendererBaseUrl()).
+    devServer: DEV_SERVER || packagedRendererServer?.origin,
     profile,
-    rendererIndexPath: DEV_SERVER ? undefined : resolveRendererIndex()
+    rendererIndexPath: DEV_SERVER || packagedRendererServer?.origin ? undefined : resolveRendererIndex()
   })
 }
 
@@ -14666,11 +14970,9 @@ function writeQuickEntrySettings(settings) {
 }
 
 function quickEntryUrl() {
-  if (DEV_SERVER) {
-    return `${DEV_SERVER.endsWith('/') ? DEV_SERVER.slice(0, -1) : DEV_SERVER}/?win=quick#/`
-  }
+  const base = rendererBaseUrl().replace(/\/$/, '')
 
-  return `${pathToFileURL(resolveRendererIndex()).toString()}?win=quick#/`
+  return `${base}/?win=quick#/`
 }
 
 function spawnQuickEntryWindow() {
@@ -14858,7 +15160,7 @@ function createWindow() {
     ),
     minWidth: WINDOW_MIN_WIDTH,
     minHeight: WINDOW_MIN_HEIGHT,
-    title: 'Pulse',
+    title: 'PULSE',
     // Frameless title bar on every platform so the renderer can paint the
     // "hide sidebar" button (and other left-side titlebar tools) flush with
     // the top edge — matching the macOS layout where the traffic lights sit
@@ -14884,6 +15186,7 @@ function createWindow() {
 
   const createdMainWindow = mainWindow
   minimizeToTray.registerWindow(createdMainWindow, { closeToTray: true })
+  registerChatWindow(createdMainWindow)
   const defaultRoute = desktopProfilePreferences.getDefault()
 
   if (defaultRoute) {
@@ -14931,11 +15234,30 @@ function createWindow() {
       // window is on screen (a STARTING gnome-shell app must not see its entry change).
       notifyLauncherWindowRevealed()
 
-      // #38216: clear the mid-boot marker only after a window is actually usable.
-      // Keep sticky `fallback` when we launched with --no-sandbox so the next
-      // Start Menu click does not re-enter the GPU FATAL crash loop. The marker
-      // records the app version so the next update re-probes the sandbox.
-      if (IS_WINDOWS) {
+      // #124255: the first revealed window means the GPU survived this boot.
+      // Keep a sticky SwiftShader marker when we launched with the fallback;
+      // otherwise mark the probe healthy so future launches trust hardware GL.
+      if (NVIDIA_DRIVER_MAJOR !== null) {
+        try {
+          writeNvidiaEglMarker(
+            app.getPath('userData'),
+            nvidiaEglMarkerAfterSuccessfulBoot({
+              fallbackActive: nvidiaEglFallbackActive,
+              appVersion: app.getVersion(),
+              driverVersion: NVIDIA_DRIVER_VERSION
+            })
+          )
+        } catch {
+          void 0
+        }
+      }
+
+      // #38216/#121954: clear the mid-boot marker only after a window is
+      // actually usable. Keep sticky `fallback` when we launched with
+      // --no-sandbox so the next launcher click does not re-enter the GPU
+      // FATAL crash loop. The marker records the app version so the next
+      // update re-probes the sandbox.
+      if (IS_WINDOWS || process.platform === 'linux') {
         try {
           writeSandboxMarker(
             app.getPath('userData'),
@@ -14961,6 +15283,70 @@ function createWindow() {
           rememberLog(`[gpu] stack-cookie marker update after main-window reveal failed: ${error?.message || error}`)
         }
       }
+
+      // #124843: clear the mid-boot marker only after a window is actually
+      // usable. Keep sticky `fallback` when we launched with software
+      // rendering so the next launch skips the GPU-child retry loop.
+      if (process.platform === 'linux') {
+        try {
+          writeLinuxGpuMarker(
+            app.getPath('userData'),
+            linuxGpuMarkerAfterSuccessfulBoot({
+              fallbackActive: linuxGpuFallbackSticky,
+              appVersion: app.getVersion()
+            })
+          )
+        } catch (error) {
+          rememberLog(`[gpu] linux marker update after main-window reveal failed: ${error?.message || error}`)
+        }
+
+        // #124843 silent-retry manifestation: the boot "succeeded" (window
+        // revealed, marker ok) while a sub-zygote retries GPU init forever —
+        // no child-process-gone event ever fires, so the reactive ladder
+        // above never engages. After a grace window, a boot that should have
+        // a GPU child but has none is that retry loop: engage the sticky
+        // software fallback so the NEXT launch skips it (this boot's switches
+        // already applied pre-ready and cannot change now).
+        if (!linuxGpuFallbackSticky) {
+          const checkSilentGpuRetry = (): void => {
+            const alreadySoftware =
+              LINUX_GPU_SOFTWARE_ACTIVE ||
+              linuxGpuFallbackActive ||
+              alreadyHasDisableGpu(process.argv, process.env) ||
+              isPULSEDesktopGpuOverrideOff(process.env)
+
+            const gpuChildPresent = app
+              .getAppMetrics()
+              .some(metric => String(metric?.type || '').toLowerCase() === 'gpu')
+
+            if (
+              shouldEngageSilentGpuRetryFallback({
+                gpuChildPresent,
+                graceElapsed: true,
+                alreadySoftware
+              })
+            ) {
+              linuxGpuFallbackActive = true
+              linuxGpuFallbackSticky = true
+
+              try {
+                writeLinuxGpuMarker(
+                  app.getPath('userData'),
+                  linuxGpuFallbackMarker('gpu-launch-failure', app.getVersion())
+                )
+              } catch {
+                void 0
+              }
+
+              console.warn(
+                '[pulse] Linux: no GPU child after window reveal — GPU init is retrying silently; software fallback engaged for the next launch (#124843)'
+              )
+            }
+          }
+
+          setTimeout(checkSilentGpuRetry, LINUX_GPU_SILENT_RETRY_GRACE_S).unref()
+        }
+      }
     }
   })
 
@@ -14978,7 +15364,18 @@ function createWindow() {
   bindGeometryPersistence(mainWindow, schedulePersistWindowState)
   mainWindow.on('maximize', schedulePersistWindowState)
   mainWindow.on('unmaximize', schedulePersistWindowState)
-  mainWindow.on('close', () => schedulePersistWindowState.flush())
+  mainWindow.on('close', () => {
+    schedulePersistWindowState.flush()
+
+    // On Windows/Linux, closing the primary window IS quitting (the
+    // window-all-closed handler calls app.quit()). Latch the quit flag here,
+    // before 'closed' fires closePetOverlay() — otherwise the overlay's
+    // 'closed' handler echoes pop-in and wipes the persisted popped-out state
+    // the next boot needs (#55920).
+    if (!IS_MAC) {
+      appQuitting = true
+    }
+  })
 
   // the closed wrapper remains truthy, so clear only the window this callback owns.
   mainWindow.on('closed', () => {
@@ -15021,7 +15418,7 @@ function createWindow() {
             windowsGpuStackCookieFallbackActive ||
             alreadyHasDisableGpu(process.argv, process.env),
           relaunchAttempted: windowsGpuStackCookieRelaunchAttempted,
-          gpuOverrideOff: isPulseDesktopGpuOverrideOff(process.env)
+          gpuOverrideOff: isPULSEDesktopGpuOverrideOff(process.env)
         }
 
         if (shouldRelaunchForRendererStackCookieCrashLoop(stackCookieCrashLoop)) {
@@ -15061,7 +15458,7 @@ function createWindow() {
             errorDescription:
               'The desktop renderer crashed repeatedly (Windows STATUS_STACK_BUFFER_OVERRUN / 0xC0000409). GPU fallback could not recover the window.',
             repairHint: 'pulse desktop --force-build',
-            reloadUrl: DEV_SERVER || pathToFileURL(resolveRendererIndex()).toString()
+            reloadUrl: rendererBaseUrl()
           })
 
           return
@@ -15118,7 +15515,7 @@ function createWindow() {
           url: details?.url,
           errorDescription: 'The desktop renderer failed to load repeatedly after the update.',
           repairHint: 'pulse desktop --force-build',
-          reloadUrl: DEV_SERVER || pathToFileURL(resolveRendererIndex()).toString()
+          reloadUrl: rendererBaseUrl()
         })
       },
       // #116472: the OS/Chromium can kill a renderer while the window is live (memory
@@ -15136,11 +15533,11 @@ function createWindow() {
         const exit = details?.exitCode === undefined ? '' : `, exit code ${String(details.exitCode)}`
         rememberLog(`[renderer:main] renderer terminated while live (reason=${reason}${exit}); surfacing recovery page`)
         void loadRendererLoadErrorPage(mainWindow, {
-          title: 'Pulse desktop UI was terminated',
+          title: 'PULSE desktop UI was terminated',
           errorDescription:
             `The desktop UI process was terminated unexpectedly (reason: ${reason}${exit}). ` +
             'Your sessions and the background gateway are unaffected — reload to continue.',
-          reloadUrl: DEV_SERVER || pathToFileURL(resolveRendererIndex()).toString()
+          reloadUrl: rendererBaseUrl()
         })
       }
     },
@@ -15179,14 +15576,10 @@ function createWindow() {
       errorDescription: `The desktop renderer bundle is incomplete after the last update (${tornAssets.length} missing file(s)).`,
       missingAssets: tornAssets,
       repairHint: 'pulse desktop --force-build',
-      reloadUrl: pathToFileURL(rendererIndex).toString()
+      reloadUrl: rendererBaseUrl()
     })
   } else {
-    loadWindowUrl(
-      mainWindow,
-      DEV_SERVER || pathToFileURL(rendererIndex || resolveRendererIndex()).toString(),
-      'Renderer'
-    )
+    loadWindowUrl(mainWindow, rendererBaseUrl(), 'Renderer')
   }
 
   // Start the Python backend NOW, in parallel with the renderer load — not on
@@ -15196,7 +15589,7 @@ function createWindow() {
   // shared (backendConnectionState), so the renderer's getConnection() joins
   // this in-flight boot instead of duplicating it; early boot-progress events
   // the renderer misses are recovered by its getBootProgress() pull on mount.
-  const startup = defaultRoute ? connectDesktopProfileRoute(defaultRoute) : startPulse()
+  const startup = defaultRoute ? connectDesktopProfileRoute(defaultRoute) : startPULSE()
   startup.catch(error => rememberLog(error.stack || error.message))
 
   mainWindow.webContents.once('did-finish-load', () => {
@@ -15242,7 +15635,7 @@ async function connectDesktopProfileRoute(
   }
 
   // Every republish carries LIVE window state (#102451): the backend pool entry
-  // (and the getWindowState() snapshot startPulse baked into it) outlives
+  // (and the getWindowState() snapshot startPULSE baked into it) outlives
   // reloads, reconnects and sleep/wake, so a reply built only from the cached
   // descriptor overwrites the renderer's live fullscreen flag with the
   // mint-time snapshot. Reading the caller's state HERE keeps registry-scoped,
@@ -15316,7 +15709,7 @@ ipcMain.on('pulse:connection:active-route', (event, route) => recordWindowConnec
 // so the 'exit'/'error' handlers that would clear a dead connection promise never
 // fire — once the remote becomes unreachable across a sleep/wake the renderer
 // re-dials the same dead descriptor forever and the composer stays stuck on
-// "Starting Pulse…". Before the renderer's backoff loop reconnects, it asks us
+// "Starting PULSE…". Before the renderer's backoff loop reconnects, it asks us
 // to confirm the cached PRIMARY backend is still reachable; if a remote one is
 // not, we drop the cache so the next getConnection() rebuilds it. Local backends
 // self-heal via their child 'exit' handler, so we never touch them here.
@@ -15339,7 +15732,7 @@ ipcMain.handle('pulse:connection:revalidate', async () => {
         currentConnectionPromise: () => backendConnectionState.getPromise(),
         log: rememberLog,
         probe: (connection, path, options) => fetchJsonForBackend(connection, path, options),
-        resetConnection: () => resetPulseConnectionState({ soft: true }),
+        resetConnection: () => resetPULSEConnectionState({ soft: true }),
         tracker: remoteLiveness
       }),
       revalidatePool()
@@ -15371,7 +15764,7 @@ function revalidatePool() {
     log: rememberLog,
     probe: (connection, path, options) => fetchJsonForBackend(connection, path, options),
     stopBackend: stopPoolBackend,
-    tracker: remoteLiveness
+    tracker: pooledRemoteLiveness
   })
 }
 
@@ -15468,6 +15861,20 @@ ipcMain.handle('pulse:window:openBrowser', async (_event, tabId) => {
   return { ok: true }
 })
 
+// Cross-window renderer relay. The Browser pop-out, the primary window, and
+// session tiles are separate renderers; packaged `file://` windows must not
+// depend on BroadcastChannel origin semantics, so main relays opaque payloads
+// between them over IPC. Destination validation and reply correlation stay
+// renderer-side, so every feature riding this relay still fails closed instead
+// of falling through to whatever window happens to be active later.
+ipcMain.on('pulse:window:relay', (event, payload) => {
+  for (const other of BrowserWindow.getAllWindows()) {
+    if (!other.isDestroyed() && other.webContents.id !== event.sender.id) {
+      other.webContents.send('pulse:window:relay', payload)
+    }
+  }
+})
+
 // Hand a session to the user's OWN terminal emulator, running the TUI against
 // it (`pulse --tui --resume <id>`). Not the in-app terminal pane: the point is
 // to continue the chat in the terminal they already live in.
@@ -15485,10 +15892,10 @@ ipcMain.handle('pulse:window:openInTerminal', async (_event, sessionId, opts) =>
 
   try {
     const profile = typeof opts?.profile === 'string' ? opts.profile.trim() : ''
-    const backend = await resolvePulseBackend(tuiResumeArgs(sessionId.trim(), profile || undefined))
+    const backend = await resolvePULSEBackend(tuiResumeArgs(sessionId.trim(), profile || undefined))
 
     if (!backend.command) {
-      return { ok: false, error: 'Pulse is not installed yet' }
+      return { ok: false, error: 'PULSE is not installed yet' }
     }
 
     const { cwd } = sanitizeWorkspaceCwd(opts?.cwd)
@@ -15594,7 +16001,7 @@ ipcMain.handle('pulse:backend:recycle', async (_event, profile) => {
 })
 ipcMain.handle('pulse:bootstrap:reset', async () => {
   // Renderer's "Reload and retry" path. Clear the latched failure and
-  // reset connection state so the next startPulse() call restarts the
+  // reset connection state so the next startPULSE() call restarts the
   // full backend flow (including a fresh runBootstrap pass).
   rememberLog('[bootstrap] reset requested by renderer; clearing latched failure')
   await teardownPrimaryBackendAndWait()
@@ -15618,7 +16025,7 @@ ipcMain.handle('pulse:bootstrap:repair', async (): Promise<{ ok: boolean; bundle
     return { ok: false, error: 'bundled-immutable' }
   }
 
-  // Forceful repair: force the next startPulse() through the full installer
+  // Forceful repair: force the next startPULSE() through the full installer
   // (refreshing a broken/partial venv) and clear any latched failure + live
   // connection. The renderer reloads afterwards to re-drive the boot flow.
   //
@@ -15656,7 +16063,7 @@ ipcMain.handle('pulse:bootstrap:repair', async (): Promise<{ ok: boolean; bundle
   // The guard may decide the install is healthy enough that a restart
   // (without touching the venv) is the right answer. Translate that into
   // the existing flag: if the guard said "soft restart", we skip the
-  // "bypass active runtime" path inside startPulse() and fall through
+  // "bypass active runtime" path inside startPULSE() and fall through
   // to the normal restart branch, which just kills the current child
   // and respawns it against the same venv. See #74874 — this is what
   // breaks the infinite reinstall loop the user hit.
@@ -15696,7 +16103,7 @@ ipcMain.handle('pulse:bootstrap:get', async () => getBootstrapState())
 ipcMain.handle('pulse:local-backend:probe', async () => {
   // Resolution only. ensureRuntime/runBootstrap must not start from a hover
   // or a click that has not confirmed the install.
-  const backend = await resolvePulseBackend([])
+  const backend = await resolvePULSEBackend([])
 
   return { bootstrapNeeded: backend?.kind === 'bootstrap-needed' }
 })
@@ -15769,7 +16176,11 @@ ipcMain.handle('pulse:plugin-profile-routes', async (_event, rawProfileNames) =>
     ]
   }
 
-  return buildRegistryProfileRoutes({ agents, sources: registry.connections })
+  return buildRegistryProfileRoutes({
+    agents,
+    primaryConnectionId: registry.primary,
+    sources: registry.connections
+  })
 })
 ipcMain.handle('pulse:ssh-config:hosts', async () => ({ hosts: collectSshConfigHosts() }))
 ipcMain.handle('pulse:ssh-config:resolve', async (_event, host) => {
@@ -15779,10 +16190,7 @@ ipcMain.handle('pulse:ssh-config:resolve', async (_event, host) => {
     throw new Error('SSH host is required.')
   }
 
-  const ssh =
-    process.platform === 'win32'
-      ? path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'OpenSSH', 'ssh.exe')
-      : 'ssh'
+  const ssh = desktopSshBinary()
 
   return new Promise((resolve, reject) => {
     const child = spawn(ssh, ['-G', '--', value], hiddenWindowsChildOptions({ stdio: ['ignore', 'pipe', 'pipe'] }))
@@ -15889,7 +16297,7 @@ ipcMain.handle('pulse:connections:test', async (_event, id) => {
       sshUser: entry.user,
       sshPort: entry.port,
       sshKeyPath: entry.keyPath,
-      sshRemotePulsePath: entry.remotePulsePath
+      sshRemotePULSEPath: entry.remotePULSEPath
     })
 
     if (result?.reachable) {
@@ -15914,7 +16322,7 @@ ipcMain.handle('pulse:connections:test', async (_event, id) => {
   let testHeaders = {}
 
   if (entry.kind === 'local') {
-    const local = await startPulse()
+    const local = await startPULSE()
     baseUrl = local.baseUrl
     token = local.token
     authMode = normAuthMode(local.authMode)
@@ -16035,7 +16443,7 @@ async function probeSshProfileInventory(connection) {
     user: connection.user,
     port: connection.port,
     keyPath: connection.keyPath,
-    remotePulsePath: connection.remotePulsePath
+    remotePULSEPath: connection.remotePULSEPath
   })
 
   if (!sshConfig) {
@@ -16044,12 +16452,12 @@ async function probeSshProfileInventory(connection) {
 
   const ssh = createSshProbeConnection(
     { host: sshConfig.host, user: sshConfig.user, port: sshConfig.port, keyPath: sshConfig.keyPath },
-    { rememberLog: sshRememberLog }
+    { rememberLog: sshRememberLog, sshBinary: desktopSshBinary() }
   )
 
   try {
     await ssh.open()
-    const profiles = await remoteLifecycle.listRemotePulseProfiles(ssh)
+    const profiles = await remoteLifecycle.listRemotePULSEProfiles(ssh)
 
     if (profiles.length > 0) {
       sshRosterCache.set(connection.id, profiles)
@@ -16362,55 +16770,57 @@ ipcMain.handle('pulse:connections:update-all', async (_event, payload) => {
     Array.isArray((payload as any)?.excludeIds) ? (payload as any).excludeIds.map((id: unknown) => String(id)) : []
   )
 
-  const results = await Promise.all(
-    registry.connections
-      .filter(connection => !excludeIds.has(connection.id))
-      .map(async connection => {
-        const base = { connectionId: connection.id, label: connection.label, kind: connection.kind }
-        const eligibility = updateEligibility(connection)
+  // Remote entries settle before the local handoff runs: the local updater
+  // waits on the window PID exiting, so a still-running managed SSH update
+  // would eat into (or outlive) that deadline. Order of results is preserved.
+  const results = await updateConnectionsBeforeLocal(
+    registry.connections.filter(connection => !excludeIds.has(connection.id)),
+    async (connection: RegistryConnection) => {
+      const base = { connectionId: connection.id, label: connection.label, kind: connection.kind }
+      const eligibility = updateEligibility(connection)
 
-        if (!eligibility.eligible) {
-          return { ...base, ok: false, skipped: true, reason: eligibility.reason }
+      if (!eligibility.eligible) {
+        return { ...base, ok: false, skipped: true, reason: eligibility.reason }
+      }
+
+      try {
+        if (connection.kind === 'local') {
+          // The app-managed runtime updates through the same pipeline as the
+          // Settings → Updates button (marker + venv gate + relaunch flow).
+          const result: any = await applyUpdates()
+
+          return { ...base, ok: result?.ok !== false, detail: result?.message || 'update started' }
         }
 
-        try {
-          if (connection.kind === 'local') {
-            // The app-managed runtime updates through the same pipeline as the
-            // Settings → Updates button (marker + venv gate + relaunch flow).
-            const result: any = await applyUpdates()
-
-            return { ...base, ok: result?.ok !== false, detail: result?.message || 'update started' }
-          }
-
-          if (connection.kind === 'ssh') {
-            return managedSshUpdateAllRow(base, await requestManagedSshUpdate(connection.id))
-          }
-
-          // Claim-guarded (#90812): coalesce with a concurrent renderer dial
-          // for the same connection instead of bootstrapping a second backend.
-          const descriptor: any = await backendDialClaims.run(backendScopeKey(connection.id, null), () =>
-            ensureRegistryBackend(connection.id, null)
-          )
-
-          const body: any = await postJsonForBackend(descriptor, '/api/pulse/update', {}, { timeoutMs: 15_000 })
-
-          if (body?.ok === false) {
-            // The backend refused (docker/nix/externally-managed installs) —
-            // surface ITS message, per-row, instead of failing the batch.
-            return {
-              ...base,
-              ok: false,
-              skipped: true,
-              reason: body?.error || 'backend-refused',
-              detail: body?.message
-            }
-          }
-
-          return { ...base, ok: true, detail: body?.message || 'update started' }
-        } catch (error: any) {
-          return { ...base, ok: false, error: String(error?.message || error) }
+        if (connection.kind === 'ssh') {
+          return managedSshUpdateAllRow(base, await requestManagedSshUpdate(connection.id))
         }
-      })
+
+        // Claim-guarded (#90812): coalesce with a concurrent renderer dial
+        // for the same connection instead of bootstrapping a second backend.
+        const descriptor: any = await backendDialClaims.run(backendScopeKey(connection.id, null), () =>
+          ensureRegistryBackend(connection.id, null)
+        )
+
+        const body: any = await postJsonForBackend(descriptor, '/api/pulse/update', {}, { timeoutMs: 15_000 })
+
+        if (body?.ok === false) {
+          // The backend refused (docker/nix/externally-managed installs) —
+          // surface ITS message, per-row, instead of failing the batch.
+          return {
+            ...base,
+            ok: false,
+            skipped: true,
+            reason: body?.error || 'backend-refused',
+            detail: body?.message
+          }
+        }
+
+        return { ...base, ok: true, detail: body?.message || 'update started' }
+      } catch (error: any) {
+        return { ...base, ok: false, error: String(error?.message || error) }
+      }
+    }
   )
 
   return { ok: true, results }
@@ -16562,7 +16972,7 @@ ipcMain.handle('pulse:connection-config:oauth-login', async (_event, rawUrl, raw
 
       nativeAccessTokenCoordinator.storeTokens(baseUrl, tokens)
       // Confirmed sign-in — release the reauth latch so the next
-      // startPulse() re-dials instead of replaying the stale rejection.
+      // startPULSE() re-dials instead of replaying the stale rejection.
       remoteReauthFailure = null
 
       return { ok: true, baseUrl, connected: true, connectionId: loginConnectionId || undefined }
@@ -16624,7 +17034,7 @@ ipcMain.handle('pulse:connection-config:oauth-logout', async (_event, rawUrl) =>
   return { ok: true, connected }
 })
 
-// --- Pulse Cloud (cloud-auto-discovery Phase 3) ---
+// --- PULSE Cloud (cloud-auto-discovery Phase 3) ---
 // One portal login in the OAuth partition powers both discovery and the silent
 // per-agent cascade. See the discovery/cascade helpers above.
 ipcMain.handle('pulse:cloud:status', async () => ({
@@ -16986,11 +17396,11 @@ async function remoteSessionList(profile, searchParams) {
 }
 
 // #85834: find which remote profile owns a session id when the caller gave no
-// profile hint (pure lookup lives in profile-session-routing.ts). Results are
-// memoized briefly so a burst of hint-less reads (transcript + messages)
-// costs one sweep across the configured remotes.
-const remoteOwnerBySessionId = new Map<string, { at: number; profile: null | string }>()
-const REMOTE_OWNER_CACHE_TTL_MS = 30_000
+// profile hint (pure lookup lives in profile-session-routing.ts; the bounded
+// memo lives in remote-owner-cache.ts — #58485: it only ever INSERTS, so the
+// raw Map grew one entry per session id ever resolved, unbounded, on the main
+// process heap).
+const remoteOwnerCache = createRemoteOwnerCache()
 
 async function remoteOwnerProfileForSession(sessionId: string) {
   if (!sessionId) {
@@ -17003,9 +17413,9 @@ async function remoteOwnerProfileForSession(sessionId: string) {
     return null
   }
 
-  const cached = remoteOwnerBySessionId.get(sessionId)
+  const cached = remoteOwnerCache.fresh(sessionId)
 
-  if (cached && Date.now() - cached.at < REMOTE_OWNER_CACHE_TTL_MS) {
+  if (cached) {
     return cached.profile
   }
 
@@ -17013,7 +17423,7 @@ async function remoteOwnerProfileForSession(sessionId: string) {
     remoteSessionList(profile, params)
   ).catch(() => null)
 
-  remoteOwnerBySessionId.set(sessionId, { at: Date.now(), profile: owner })
+  remoteOwnerCache.remember(sessionId, owner)
 
   return owner
 }
@@ -17217,7 +17627,14 @@ async function teardownConnectionScopedProfileBackend(connectionId, profile) {
   ])
 }
 
-async function handlePulseApiRequest(request) {
+// A 404 raised by `fetchJson` — the shape is `404: <body>` (see fetchJson).
+// Session lookups are a probe ladder: "not on this profile" is a normal rung
+// outcome, not a failure.
+function isNotFoundApiError(error) {
+  return /(?:^|\s)404\b/.test(String((error as any)?.message ?? error))
+}
+
+async function handlePULSEApiRequest(request) {
   // Registry-pinned request (request.connectionId): the renderer is working
   // against a REGISTERED gateway connection, so the data — cron jobs and their
   // run sessions included — lives in THAT host's state.db, not any local
@@ -17352,17 +17769,36 @@ ipcMain.handle('pulse:api', async (_event, request) => {
     }
 
     if (!mutatingProfile) {
-      return await handlePulseApiRequest(request)
+      return await handlePULSEApiRequest(request)
     }
 
     const releaseProfileDeletion = profileDeletionGate.acquire(mutatingProfile)
 
-    return await handlePulseApiRequest(request).finally(releaseProfileDeletion)
+    return await handlePULSEApiRequest(request).finally(releaseProfileDeletion)
   } catch (error) {
+    // Electron logs "Error occurred in handler for 'pulse:api'" with a full
+    // stack for EVERY rejected invoke, and there is no opt-out on the handler.
+    // Session resolution is a deliberate probe ladder (`resolveStoredSession`:
+    // cache → active backend → each other profile) and the renderer already
+    // handles a miss by falling to the next rung — so an expected 404 is not an
+    // error condition. Left rejecting, it printed a multi-line stack per probe
+    // on every startup and session switch: pure noise that buries genuine
+    // handler failures.
+    //
+    // So don't reject for that one case — RESOLVE with a sentinel and let
+    // preload (our own code, the other side of the same seam) turn it back into
+    // a rejection with the identical `404: <body>` message. The renderer
+    // contract is unchanged; only Electron's logging is bypassed. Every other
+    // failure still rejects and still logs in full.
+    if (isNotFoundApiError(error)) {
+      return { [PULSE_API_EXPECTED_404]: String((error as any)?.message ?? error) }
+    }
+
     // Persist the failure (full stack) before the rejection crosses to the
     // renderer, where the invoke wrapper strips it to a one-line message.
     rememberLog(formatApiRequestFailure(request, error))
     flushDesktopLogBufferSync()
+
     throw error
   }
 })
@@ -17430,11 +17866,19 @@ ipcMain.handle('pulse:readFileDataUrl', async (_event, filePath) => {
   // Windows host bridge them to a UNC/drive form, same as directory reads.
   const bridgedPath = resolveIpcFileReadPath(filePath)
 
-  return readFileDataUrlForIpc(bridgedPath, {
-    maxBytes: dataUrlReadMaxBytesFromMb(dataUrlReadMaxMb),
-    mimeType: mimeTypeForPath(resolveRequestedPathForIpc(bridgedPath, { purpose: 'File preview' })),
-    purpose: 'File preview'
-  })
+  try {
+    return await readFileDataUrlForIpc(bridgedPath, {
+      maxBytes: dataUrlReadMaxBytesFromMb(dataUrlReadMaxMb),
+      mimeType: mimeTypeForPath(resolveRequestedPathForIpc(bridgedPath, { purpose: 'File preview' })),
+      purpose: 'File preview'
+    })
+  } catch (error) {
+    if (isMissingFileError(error)) {
+      return missingFileResult(filePath, error)
+    }
+
+    throw error
+  }
 })
 
 // Remote attachment transfer is independent of the preview / Settings path.
@@ -17444,38 +17888,59 @@ ipcMain.handle('pulse:readFileDataUrl', async (_event, filePath) => {
 ipcMain.handle('pulse:readFileDataUrlForAttach', async (_event, filePath) => {
   const bridgedPath = resolveIpcFileReadPath(filePath)
 
-  return readFileDataUrlForIpc(bridgedPath, {
-    maxBytes: ATTACHMENT_UPLOAD_DEFAULT_MAX_BYTES,
-    mimeType: mimeTypeForPath(resolveRequestedPathForIpc(bridgedPath, { purpose: 'Attachment upload' })),
-    purpose: 'Attachment upload'
-  })
+  try {
+    return await readFileDataUrlForIpc(bridgedPath, {
+      maxBytes: ATTACHMENT_UPLOAD_DEFAULT_MAX_BYTES,
+      mimeType: mimeTypeForPath(resolveRequestedPathForIpc(bridgedPath, { purpose: 'Attachment upload' })),
+      purpose: 'Attachment upload'
+    })
+  } catch (error) {
+    if (isMissingFileError(error)) {
+      return missingFileResult(filePath, error)
+    }
+
+    throw error
+  }
 })
 
 ipcMain.handle('pulse:readFileText', async (_event, filePath) => {
-  const { resolvedPath, stat } = await resolveReadableFileForIpc(resolveIpcFileReadPath(filePath), {
-    maxBytes: TEXT_PREVIEW_SOURCE_MAX_BYTES,
-    purpose: 'Text preview'
-  })
-
-  const ext = path.extname(resolvedPath).toLowerCase()
-  const handle = await fs.promises.open(resolvedPath, 'r')
-  const bytesToRead = Math.min(stat.size, TEXT_PREVIEW_MAX_BYTES)
-
   try {
-    const buffer = Buffer.alloc(bytesToRead)
-    const { bytesRead } = await handle.read(buffer, 0, bytesToRead, 0)
+    const { resolvedPath, stat } = await resolveReadableFileForIpc(resolveIpcFileReadPath(filePath), {
+      maxBytes: TEXT_PREVIEW_SOURCE_MAX_BYTES,
+      purpose: 'Text preview'
+    })
 
-    return {
-      binary: looksBinary(buffer.subarray(0, Math.min(bytesRead, 4096))),
-      byteSize: stat.size,
-      language: PREVIEW_LANGUAGE_BY_EXT[ext] || 'text',
-      mimeType: mimeTypeForPath(resolvedPath),
-      path: resolvedPath,
-      text: buffer.subarray(0, bytesRead).toString('utf8'),
-      truncated: stat.size > TEXT_PREVIEW_MAX_BYTES
+    const ext = path.extname(resolvedPath).toLowerCase()
+    const handle = await fs.promises.open(resolvedPath, 'r')
+    const bytesToRead = Math.min(stat.size, TEXT_PREVIEW_MAX_BYTES)
+
+    try {
+      const buffer = Buffer.alloc(bytesToRead)
+      const { bytesRead } = await handle.read(buffer, 0, bytesToRead, 0)
+
+      return {
+        binary: looksBinary(buffer.subarray(0, Math.min(bytesRead, 4096))),
+        byteSize: stat.size,
+        language: PREVIEW_LANGUAGE_BY_EXT[ext] || 'text',
+        mimeType: mimeTypeForPath(resolvedPath),
+        path: resolvedPath,
+        text: buffer.subarray(0, bytesRead).toString('utf8'),
+        truncated: stat.size > TEXT_PREVIEW_MAX_BYTES
+      }
+    } finally {
+      await handle.close()
     }
-  } finally {
-    await handle.close()
+  } catch (error) {
+    // A preview probing a file that is gone (deleted, moved, or cleared from
+    // /tmp since the tab/transcript reference was written) is an expected
+    // outcome. Return a structured error instead of rejecting — Electron logs
+    // every rejected handler with a stack trace even though the renderer shows
+    // "preview unavailable" either way.
+    if (isMissingFileError(error)) {
+      return missingFileResult(filePath, error)
+    }
+
+    throw error
   }
 })
 
@@ -17680,10 +18145,32 @@ ipcMain.handle('pulse:stopPreviewFileWatch', (_event, id) => stopPreviewFileWatc
 // merged picture. Keyed by webContents id so a closed window stops counting.
 const activeWorkByWebContents = new Map<number, ActiveWork>()
 
+// Synchronous, webContents-independent cache of the most recent active-work
+// summary we heard from *any* renderer. The per-webContents map above is
+// dropped the moment a webContents is destroyed (a stream can reload its
+// webContents mid-turn), so at quit time it can read empty even though a turn
+// is live. This cached value survives that and is what the quit guard falls
+// back to. It is only ever refreshed by real publishes, so an idle app
+// (count=0) clears it — no false positives after a turn ends.
+let lastActiveWorkSeen: ActiveWork = { count: 0, titles: [] }
+
+// Every window that hosts a chat surface (primary, session, instance). The
+// last-window close guard below is installed centrally for all of them.
+const chatWindows = new Set<BrowserWindow>()
+
+function hasOtherChatWindows(window: BrowserWindow): boolean {
+  return [...chatWindows].some(candidate => candidate !== window && !candidate.isDestroyed())
+}
+
 // The same merged picture drives background throttling: chat windows run
 // unthrottled while any turn is in flight (streaming must paint while hidden)
 // and fall back to Chromium's default throttling at idle. See stream-throttle.ts.
-const streamThrottle = createStreamThrottle()
+const streamThrottle = createStreamThrottle(undefined, undefined, {
+  // #94865 is specific to native Wayland fullscreen surfaces. Reuse the same
+  // Ozone resolver as the rest of Desktop so XWayland/macOS/Windows retain the
+  // normal idle throttling contract.
+  keepFullscreenPainting: process.platform === 'linux' && linuxOzoneBackend(process.env, process.argv) === 'wayland'
+})
 
 function updateStreamThrottleFromActiveWork() {
   streamThrottle.update(mergeActiveWork(activeWorkByWebContents.values()).count > 0)
@@ -17699,7 +18186,9 @@ ipcMain.on('pulse:active-work', (event, payload) => {
     })
   }
 
-  activeWorkByWebContents.set(id, normalizeActiveWork(payload))
+  const work = normalizeActiveWork(payload)
+  activeWorkByWebContents.set(id, work)
+  lastActiveWorkSeen = work
   updateStreamThrottleFromActiveWork()
 })
 
@@ -17790,7 +18279,7 @@ ipcMain.on('pulse:translucency:support', event => {
 // Feature-flag facts the renderer needs before first paint (same sendSync
 // pattern as translucency). Resolved in feature-flags.ts from the launch
 // argv and the artifact's channel: `--local` (from `pulse desktop --local`
-// or directly on Pulse.exe, a shortcut edit) gates the local-models GUI on
+// or directly on PULSE.exe, a shortcut edit) gates the local-models GUI on
 // stable builds, and canary builds get the same surfaces by default. Launch
 // flags survive self-relaunches because collectRelaunchArgs only strips
 // internal flags.
@@ -17907,27 +18396,63 @@ ipcMain.handle('pulse:quick-entry:settings:set', async (_event, patch) => {
 // owns the one prompt-submit path, and forwarding keeps it that way. The
 // payload is `{ target, text }` — target routing (current chat / a picked
 // session / new) is the renderer's job too.
-ipcMain.on('pulse:quick-entry:submit', (_event, payload) => {
-  hideQuickEntryWindow()
+const quickEntrySubmitRelay = createQuickEntrySubmitRelay({
+  // A late ack for a timed-out submit proves the outcome. Forward it to the
+  // capture window so it can reconcile the unknown state instead of the user
+  // resending a prompt that may already be delivered.
+  onLateResult: (correlationId, result) => {
+    if (quickEntryWindow && !quickEntryWindow.isDestroyed()) {
+      quickEntryWindow.webContents.send('pulse:quick-entry:late-result', { correlationId, result })
+    }
+  },
+  onSuccess: () => {
+    hideQuickEntryWindow()
 
-  const text = typeof payload?.text === 'string' ? payload.text.trim() : ''
+    if (process.platform === 'darwin') {
+      app.dock?.show()
+    }
+
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show()
+      mainWindow.focus()
+    }
+  }
+})
+
+// Main owns the request lifecycle so the capture window can keep text until
+// the primary renderer confirms delivery (#85590).
+ipcMain.handle('pulse:quick-entry:submit', (event, payload) => {
+  if (!quickEntryWindow || event.sender !== quickEntryWindow.webContents) {
+    return { code: 'forbidden', message: 'Quick Entry sender is not authorized.', ok: false, retryable: false }
+  }
+
+  const text =
+    typeof payload === 'string' ? payload.trim() : typeof payload?.text === 'string' ? payload.text.trim() : ''
 
   if (!text) {
-    return
+    return { code: 'empty', message: 'Enter a prompt before submitting.', ok: false, retryable: false }
   }
 
   if (!mainWindow || mainWindow.isDestroyed()) {
-    rememberLog('[quick-entry] dropped a submit: no primary window to route it to')
+    return { code: 'no-primary', message: 'The primary PULSE window is unavailable.', ok: false, retryable: true }
+  }
 
+  const target =
+    typeof payload === 'object' && typeof payload?.target === 'string' && payload.target ? payload.target : 'current'
+
+  return quickEntrySubmitRelay.begin(correlationId => {
+    mainWindow.webContents.send('pulse:quick-entry:submit', { correlationId, target, text })
+  })
+})
+
+// Main cannot invoke the primary renderer, so the primary returns by id. Stale
+// or duplicate acknowledgements are intentionally ignored (#85590).
+ipcMain.on('pulse:quick-entry:ack', (event, payload) => {
+  if (!mainWindow || event.sender !== mainWindow.webContents) {
     return
   }
 
-  // Deliberately does NOT raise/focus the main window — the user asked to fire
-  // a prompt from wherever they were, not to be yanked into the app.
-  mainWindow.webContents.send('pulse:quick-entry:submit', {
-    target: typeof payload?.target === 'string' && payload.target ? payload.target : 'current',
-    text
-  })
+  quickEntrySubmitRelay.acknowledge(payload?.correlationId, payload?.result)
 })
 
 // Primary renderer → main → quick window: gateway connection state + the
@@ -18041,12 +18566,12 @@ ipcMain.handle('pulse:openPreviewInBrowser', async (_event, url) => {
 
 // User-configurable default project directory. The renderer reads this on
 // settings mount and seeds the value into the picker; writing back persists
-// it via writeDefaultProjectDir so resolvePulseCwd picks it up on the next
+// it via writeDefaultProjectDir so resolvePULSECwd picks it up on the next
 // session spawn (no app restart needed).
 ipcMain.handle('pulse:setting:defaultProjectDir:get', async () => ({
   dir: readDefaultProjectDir(),
   defaultLabel: app.getPath('home'),
-  resolvedCwd: resolvePulseCwd()
+  resolvedCwd: resolvePULSECwd()
 }))
 
 ipcMain.handle('pulse:workspace:sanitize', async (_event, cwd) => sanitizeWorkspaceCwd(cwd))
@@ -18165,6 +18690,7 @@ const terminalIpc = registerTerminalIpc({
   findOnPath,
   rememberLog,
   activeSshTerminalTarget,
+  sshBinary: desktopSshBinary,
   ensureBackend: webContentsId => ensureTerminalBackend(webContentsId),
   getSshConnectionState: scope => sshConnections.get(scope)
 })
@@ -18204,8 +18730,8 @@ ipcMain.handle(
   }
 )
 
-function resolvePulseVersion(scope: { connectionId?: string; profile?: string } = {}): Promise<string> {
-  return resolveGatewayVersion(path => handlePulseApiRequest({ ...scope, path, timeoutMs: 5000 }))
+function resolvePULSEVersion(scope: { connectionId?: string; profile?: string } = {}): Promise<string> {
+  return resolveGatewayVersion(path => handlePULSEApiRequest({ ...scope, path, timeoutMs: 5000 }))
 }
 
 // Renderer-bundle skew: `pulse update` moves the SOURCE TREE, but the UI
@@ -18227,12 +18753,12 @@ async function detectRendererSkew() {
   return checkRendererSkew(resolveUpdateRoot())
 }
 
-// Re-resolve the live Pulse version and push it into the native About panel
+// Re-resolve the live PULSE version and push it into the native About panel
 // just before showing it, so an in-place `pulse update` is reflected without
 // an app restart. macOS only — `showAboutPanel()` is a no-op elsewhere, and the
 // other platforms don't use this menu item.
 function showAboutPanelFresh(): void {
-  void Promise.all([detectRendererSkew(), resolvePulseVersion()]).then(([skew, version]) => {
+  void Promise.all([detectRendererSkew(), resolvePULSEVersion()]).then(([skew, version]) => {
     const info: AppVersionInfo = appVersionInfo(INSTALL_STAMP, version, app.getVersion())
     // The product name already identifies canary and commit builds. Never pass
     // through empty/placeholder: the panel would render the bundle's 0.0.0 (#124581).
@@ -18247,7 +18773,7 @@ function showAboutPanelFresh(): void {
 }
 
 ipcMain.handle('pulse:version', async (_event, scope?: { connectionId?: string; profile?: string }) => {
-  const [skew, version] = await Promise.all([detectRendererSkew(), resolvePulseVersion(scope)])
+  const [skew, version] = await Promise.all([detectRendererSkew(), resolvePULSEVersion(scope)])
 
   return {
     ...appVersionInfo(INSTALL_STAMP, version, app.getVersion()),
@@ -18272,7 +18798,7 @@ ipcMain.handle('pulse:version', async (_event, scope?: { connectionId?: string; 
     // Bundled artifacts always run their payload; light artifacts have no
     // runtime and only reach remote backends. External builds classify from
     // the install stamp (git/docker/nix), 'unknown' when it can't be told.
-    pulseRuntime: resolvePulseRuntime(),
+    pulseRuntime: resolvePULSERuntime(),
     // True when the bundle on disk is not the one this process loaded — a
     // plain app restart (no rebuild, no installer) clears the skew above.
     // Packaged only: a dev `--build-only` rewrites build/install-stamp.json
@@ -18282,7 +18808,7 @@ ipcMain.handle('pulse:version', async (_event, scope?: { connectionId?: string; 
   }
 })
 
-// The About page's "Restart Pulse" button (shown when bundleSwapPending):
+// The About page's "Restart PULSE" button (shown when bundleSwapPending):
 // load the already-swapped bundle without asking the user to quit manually.
 // app.relaunch() re-executes by path, so the fresh process picks up whatever
 // bundle now lives there.
@@ -18350,7 +18876,7 @@ export function isInstallerCreatedCheckout(root: string | null = ACTIVE_PULSE_RO
  *  the canonical-root checkout stamp plus the bootstrap marker, or the app
  *  stamp's `source`, so About's Runtime row names
  *  git/docker/nix/desktop-bootstrap instead of a bare "external". */
-function resolvePulseRuntime() {
+function resolvePULSERuntime() {
   const stamp = INSTALL_STAMP as InstallStamp | null
 
   if (stamp?.payload === 'light') {
@@ -18408,7 +18934,7 @@ function uninstallVenvPython(): string {
 function fallbackUninstallSummary(): UninstallSummaryDetails {
   return {
     pulse_home: PULSE_HOME,
-    agent_installed: isPulseSourceRoot(ACTIVE_PULSE_ROOT) && fileExists(uninstallVenvPython()),
+    agent_installed: isPULSESourceRoot(ACTIVE_PULSE_ROOT) && fileExists(uninstallVenvPython()),
     gui_installed: true,
     source_built_artifacts: [],
     packaged_app_paths: [],
@@ -18494,7 +19020,7 @@ async function runDesktopUninstall(mode: string): Promise<DesktopUninstallResult
     return {
       ok: false,
       error: 'agent-missing',
-      message: `Can't run the uninstaller: no Pulse agent venv at ${VENV_ROOT}.`
+      message: `Can't run the uninstaller: no PULSE agent venv at ${VENV_ROOT}.`
     }
   }
 
@@ -18611,7 +19137,7 @@ ipcMain.handle('pulse:vscode-theme:search', async (_event, query) => searchMarke
 
 // ---------------------------------------------------------------------------
 // pulse:// deep links (e.g. pulse://blueprint/morning-brief?time=08:00,
-// pulse://mcp/install?name=NAME&config=B64 — the vendor "Add to Pulse"
+// pulse://mcp/install?name=NAME&config=B64 — the vendor "Add to PULSE"
 // button, or pulse://plugin/install?repo=owner/repo). Dev
 // (`PULSE_DESKTOP_DEV_SERVER`) registers pulse-dev:// instead — bare
 // Electron or a stale OS handler often owns pulse:// on dev machines.
@@ -18681,6 +19207,29 @@ function handleDeepLink(url) {
     return
   }
 
+  // pulse://close-preview — the out-of-band exit hatch for a preview pane
+  // that fullscreened itself and now owns all input (#97213). Handled here
+  // rather than in the renderer because the whole point is to work when the
+  // renderer cannot hear anything: exit the fullscreen window and close the
+  // pane from the main process.
+  if (kind === 'close-preview') {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore()
+      }
+
+      mainWindow.focus()
+
+      if (mainWindow.isFullScreen()) {
+        mainWindow.setFullScreen(false)
+      }
+
+      sendClosePreviewRequested()
+    }
+
+    return
+  }
+
   if (!_rendererReadyForDeepLink || !mainWindow || mainWindow.isDestroyed()) {
     _pendingDeepLink = payload
 
@@ -18692,7 +19241,12 @@ function handleDeepLink(url) {
       mainWindow.restore()
     }
 
-    mainWindow.focus()
+    // #83998: a deep link must deliver without re-pumping the Windows
+    // foreground when the window already has focus.
+    if (shouldFocusToTakeKeyboard(mainWindow)) {
+      mainWindow.focus()
+    }
+
     mainWindow.webContents.send('pulse:deep-link', payload)
     rememberLog(`[deeplink] delivered ${kind}/${name}`)
   } catch (err) {
@@ -18757,14 +19311,14 @@ if (!isPrimaryInstance) {
   // Hard-exit, not app.quit(): the before-quit teardown coordinator defers a
   // plain quit (event.preventDefault + async backend shutdown), and in that
   // window `ready` still fires — the lock-losing instance then runs the full
-  // startup (shortcut registration, createWindow → startPulse), whose
+  // startup (shortcut registration, createWindow → startPULSE), whose
   // reapOrphans() SIGTERMs the running instance's live backend (#87295).
   // app.exit() terminates immediately, before `ready`, so a second launch
   // routes into the running window and never touches backend machinery.
   app.exit(0)
 } else {
   // Cold-start --profile must win over the stored preference before
-  // startPulse() reads active-profile.json. Only the instance that will
+  // startPULSE() reads active-profile.json. Only the instance that will
   // boot writes: a second launch must not retarget the running app. A missing
   // or invalid flag is a no-op, so the stored profile stays.
   try {
@@ -18776,6 +19330,14 @@ if (!isPrimaryInstance) {
   }
 
   app.on('second-instance', (_event, argv) => {
+    // --close-preview: the same escape hatch as pulse://close-preview, for
+    // environments where spawning a URL is harder than a flag (kiosk launchers,
+    // SSH-started sessions). Checked before deep links so a carried `pulse://`
+    // URL still routes normally when no flag is present.
+    if (hasClosePreviewFlag(argv)) {
+      handleDeepLink('pulse://close-preview')
+    }
+
     const url = _extractDeepLink(argv)
 
     if (url) {
@@ -18799,10 +19361,17 @@ app.on('open-url', (event, url) => {
   handleDeepLink(url)
 })
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // Serve the packaged renderer over loopback HTTP (real origin for embeds —
+  // see renderer-server.ts) before any window loads it. In dev the Vite dev
+  // server already provides the origin.
+  if (!DEV_SERVER) {
+    packagedRendererServer = await startRendererServer(path.dirname(resolveRendererIndex()))
+  }
+
   // Post-update relaunch detection (App Installer arm): when the previous
   // version wrote the one-shot pending-relaunch marker before quitting into
-  // an OS package swap, consume it here — the renderer toasts "Pulse
+  // an OS package swap, consume it here — the renderer toasts "PULSE
   // updated to vX.Y.Z" once its bridge is up. Same-version markers (update
   // never landed) are deleted silently.
   const relaunchInfo: ConsumedRelaunch = consumePendingRelaunch(app, app.getVersion())
@@ -18862,6 +19431,7 @@ app.whenReady().then(() => {
     registerDeepLinkProtocol()
   }
 
+  installPreviewGuestEscapeHatch()
   installPreviewGuestPreload()
 
   ensureWslWindowsFonts()
@@ -18872,7 +19442,7 @@ app.whenReady().then(() => {
   mainProcessLagWatchdog.start()
   f12Blocked = readPersistedDisableF12()
   // Seed this before the first window exists: a picker can open before
-  // startPulse() finishes resolving the configured backend.
+  // startPULSE() finishes resolving the configured backend.
   const primaryProfile = primaryProfileKey()
 
   setActiveGatewayProfile(primaryProfile)
@@ -18881,9 +19451,9 @@ app.whenReady().then(() => {
   // it without the renderer visiting Settings. A failed registration is logged
   // here and surfaced in Settings via the IPC state (never silent).
   applyQuickEntrySettings(readQuickEntrySettings())
-  installCommandScreenshot({ rendererUrl: DEV_SERVER || pathToFileURL(resolveRendererIndex()).toString() })
+  installCommandScreenshot({ rendererUrl: rendererBaseUrl() })
   installHudModifierTap({
-    rendererUrl: DEV_SERVER || pathToFileURL(resolveRendererIndex()).toString(),
+    rendererUrl: rendererBaseUrl(),
     summon: () => {
       if (!isQuittingForHandoff && !backendShutdown.hasStarted()) {
         openHudWindow(null, null)
@@ -19012,11 +19582,12 @@ function heldQuitForActiveWork(event: Electron.Event): boolean {
     return true
   }
 
-  const prompt = quitPromptFor(
-    mergeActiveWork(activeWorkByWebContents.values()),
-    isQuittingForHandoff,
-    quitStopsBackendWork()
-  )
+  // The per-webContents map can read empty at quit time even though a turn
+  // is live (a stream can reload its webContents mid-turn, dropping the entry
+  // before the guard runs), so merge in the last summary any renderer sent.
+  const work = mergeActiveWork([...activeWorkByWebContents.values(), lastActiveWorkSeen])
+
+  const prompt = quitPromptFor(work, isQuittingForHandoff, quitStopsBackendWork())
 
   // A tray quit with live work still needs the ordinary visible confirmation.
   if (prompt && minimizeToTray.status().available) {
@@ -19061,7 +19632,41 @@ function heldQuitForActiveWork(event: Electron.Event): boolean {
   return true
 }
 
+// Intercept the close of the LAST chat window while the window and its
+// active-work report are still alive. On Windows/Linux the primary quit
+// gesture is the title-bar close button: closing the final window destroys
+// its webContents (clearing the active-work map) BEFORE window-all-closed
+// reactively calls app.quit() — by the time before-quit runs, heldQuitForActiveWork
+// finds nothing and the app exits silently (#96139). Running the same guard
+// here, on the close event itself, catches it in time; "Quit Anyway" re-enters
+// before-quit with the latch set and falls through.
+function registerChatWindow(window: BrowserWindow) {
+  chatWindows.add(window)
+  window.on('close', (event: Electron.Event) => {
+    // The tray's close-to-tray handler runs first (registered first) and
+    // absorbs the close into a hide — the work keeps running, so there is
+    // nothing to confirm.
+    if (event.defaultPrevented) {
+      return
+    }
+
+    const work = mergeActiveWork(activeWorkByWebContents.values())
+
+    if (!shouldGuardWindowClose(work, isQuittingForHandoff, IS_MAC, hasOtherChatWindows(window))) {
+      return
+    }
+
+    heldQuitForActiveWork(event)
+  })
+  window.once('closed', () => chatWindows.delete(window))
+}
+
 app.on('before-quit', event => {
+  // Latch first, before ANY teardown below closes the pet overlay: its
+  // 'closed' handler must not echo pop-in during quit, or the persisted
+  // popped-out state is wiped and the overlay never restores (#55920).
+  appQuitting = true
+
   // Runs ahead of every teardown below, so "Keep Running" leaves the app
   // exactly as it was.
   if (heldQuitForActiveWork(event)) {
@@ -19129,9 +19734,19 @@ app.on('before-quit', event => {
   // FATAL GPU aborts skip before-quit, leaving the `booting` marker in place.
   // Keyed on sticky (not active): a manual --no-sandbox run still records a
   // clean quit, while an engaged fallback keeps its sticky marker.
-  if (IS_WINDOWS && !windowsSandboxFallbackSticky) {
+  if ((IS_WINDOWS || process.platform === 'linux') && !windowsSandboxFallbackSticky) {
     try {
       writeSandboxMarker(app.getPath('userData'), markerAfterSuccessfulBoot({ fallbackActive: false }))
+    } catch {
+      void 0
+    }
+  }
+
+  // #124843: a clean quit mid-boot must not trip next-launch --disable-gpu.
+  // Keyed on sticky (not active) so an engaged fallback keeps its marker.
+  if (process.platform === 'linux' && !linuxGpuFallbackSticky) {
+    try {
+      writeLinuxGpuMarker(app.getPath('userData'), linuxGpuMarkerAfterSuccessfulBoot({ fallbackActive: false }))
     } catch {
       void 0
     }
@@ -19155,8 +19770,10 @@ app.on('before-quit', event => {
 
   hudWindow = null
 
+  void packagedRendererServer?.close()
+
   // Same for the Quick Entry composer — and release its global accelerator so a
-  // quitting Pulse never keeps another app's chord hostage.
+  // quitting PULSE never keeps another app's chord hostage.
   closeQuickEntryWindow()
 
   // Quitting mid-install should stop the installer, not orphan it.

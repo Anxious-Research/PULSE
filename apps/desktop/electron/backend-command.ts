@@ -1,4 +1,4 @@
-// Backend subcommand routing for the desktop-managed Pulse process.
+// Backend subcommand routing for the desktop-managed PULSE process.
 //
 // The desktop app launches its own headless backend via `pulse serve` — it
 // must NEVER depend on or launch the browser `dashboard`. But `serve` is a
@@ -11,12 +11,17 @@
 //
 // These helpers are pure so they can be unit-tested without Electron.
 
+import { backendProfileArg } from './profile-id-guard'
+
 /**
  * Build the canonical headless backend argv (always `serve`).
- * @param {string} [profile] optional Pulse profile to pin via `--profile`.
+ * @param {string} [profile] optional PULSE profile to pin via `--profile`.
  */
 export function serveBackendArgs(profile?: string) {
-  const head = profile ? ['--profile', profile] : []
+  // A non-slug value (numeric roster id, display label) must never cross into
+  // spawn argv: the CLI used to str()-coerce it into a phantom profiles/0 dir (#88842).
+  const pinned = backendProfileArg(profile)
+  const head = pinned ? ['--profile', pinned] : []
 
   return [...head, 'serve', '--host', '127.0.0.1', '--port', '0']
 }

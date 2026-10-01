@@ -1,7 +1,7 @@
 name: tool-slimmer
 repo: https://github.com/aliasocracy/pulse-tool-slimmer
 sha: 3128c8fe3c27694c7d2f2dd16e5d639cf65b63f6
-description: Reduce Pulse tool-schema overhead and show selector savings in the dashboard.
+description: Reduce PULSE tool-schema overhead and show selector savings in the dashboard.
 maintainer: aliasocracy
 tier: community
 category: tools

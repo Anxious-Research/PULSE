@@ -8,8 +8,8 @@ from typing import Callable
 def build_backup_parser(subparsers, *, cmd_backup: Callable) -> None:
     """Attach the ``backup`` subcommand to ``subparsers``."""
     backup_parser = subparsers.add_parser(
-        "backup", help="Back up Pulse home directory to a zip file",
-        description="Create a zip archive of your entire Pulse configuration, "
+        "backup", help="Back up PULSE home directory to a zip file",
+        description="Create a zip archive of your entire PULSE configuration, "
         "skills, sessions, and data (excludes the pulse-agent codebase). "
         "Use --quick for a fast snapshot of just critical state files.")
     backup_parser.add_argument(

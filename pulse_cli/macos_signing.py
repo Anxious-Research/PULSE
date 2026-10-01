@@ -8,7 +8,7 @@ import shutil
 import subprocess
 
 logger = logging.getLogger(__name__)
-_IDENTIFIER = "com.anxiousresearchlab.pulse.managed-python"
+_IDENTIFIER = "com.nousresearch.pulse.managed-python"
 
 
 def sign_managed_python(python: Path) -> bool:

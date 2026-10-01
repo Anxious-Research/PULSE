@@ -1,7 +1,7 @@
 # Design System: Framer
 
 
-> **Pulse Agent — Implementation Notes**
+> **PULSE Agent — Implementation Notes**
 >
 > The original site uses proprietary fonts. For self-contained HTML output, use these CDN substitutes:
 > - **Primary:** `Inter` | **Mono:** `Azeret Mono`

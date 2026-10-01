@@ -12,7 +12,7 @@ const gatewayMocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@/pulse', async importOriginal => {
-  const actual = await importOriginal<typeof PulseModule>()
+  const actual = await importOriginal<typeof PULSEModule>()
 
   class FakePulseGateway {
     connectionState = 'closed'
@@ -50,7 +50,7 @@ vi.mock('@/pulse', async importOriginal => {
   return { ...actual, PulseGateway: FakePulseGateway }
 })
 
-import type * as PulseModule from '@/pulse'
+import type * as PULSEModule from '@/pulse'
 import type { PulseGateway } from '@/pulse'
 import {
   $gateway,

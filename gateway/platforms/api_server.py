@@ -73,8 +73,8 @@ _STATIC_FEATURE_FLAGS = {
     "reasoning_streaming": True,
     "admin_config_rw": False, "jobs_admin": False, "memory_write_api": False,
     "skills_api": True, "audio_api": False, "realtime_voice": False,
-    "session_continuity_header": "X-Pulse-Session-Id",
-    "session_key_header": "X-Pulse-Session-Key"}
+    "session_continuity_header": "X-PULSE-Session-Id",
+    "session_key_header": "X-PULSE-Session-Key"}
 # /v1/capabilities "endpoints" table: name -> (method, path).
 _CAPABILITY_ENDPOINTS = (
     ("health", ("GET", "/health")), ("health_detailed", ("GET", "/health/detailed")),
@@ -144,6 +144,7 @@ from gateway.platforms.base import (
     MEDIA_TAG_CLEANUP_RE, BasePlatformAdapter, SendResult, _terminal_sentinel_start, is_network_accessible,
     validate_media_delivery_path)
 from gateway.platforms.api_server_run_idempotency import RunIdempotencyStore
+from agent.i18n import t
 from agent.redact import redact_sensitive_text
 from agent.interrupt_compat import request_hard_interrupt
 from gateway.readiness import collect_runtime_readiness
@@ -363,7 +364,7 @@ def _request_agent_overrides(
 
     The virtual model (``pulse-agent``) means "gateway default". A bare ``model`` without
     ``provider`` is honored only when ``allow_bare_model`` (generic clients hardcode "gpt-4o";
-    OpenAI-compatible handlers pass the ``direct_model_requests`` opt-in, Pulse-native
+    OpenAI-compatible handlers pass the ``direct_model_requests`` opt-in, PULSE-native
     endpoints always allow it). An explicit ``provider`` is always honored.
     """
     if not isinstance(body, dict):
@@ -822,7 +823,7 @@ class ResponseStore:
 
 _CORS_HEADERS = {
     "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Authorization, Content-Type, Idempotency-Key, X-Pulse-Session-Id"}
+    "Access-Control-Allow-Headers": "Authorization, Content-Type, Idempotency-Key, X-PULSE-Session-Id"}
 _SECURITY_HEADERS = {
     "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
@@ -1071,7 +1072,7 @@ def _names_launch_profile(profile: str) -> bool:
 def _derive_chat_session_id(system_prompt: Optional[str], first_user_message: str,
                             profile: Optional[str] = None) -> str:
     """Stable session id from the system prompt + first user message (constant across all
-    turns of an Open WebUI-style conversation), so one Pulse session/sandbox is reused.
+    turns of an Open WebUI-style conversation), so one PULSE session/sandbox is reused.
     A routed ``/p/<profile>/`` prefix namespaces the seed: the id keys process-wide state
     (session store, per-session sandbox), so two profiles opening with identical text must not
     collide (#123989). Default/standalone ids are unchanged so live conversations survive, and
@@ -1117,19 +1118,31 @@ except Exception:  # pragma: no cover - scanner is optional hardening
     _scan_cron_prompt = None
 
 
+# English labels stay as constants: ``gateway.run._GATEWAY_AUTH_ERROR_RE`` / ``_GATEWAY_RATE_LIMIT_RE``
+# sniff these words in failure envelopes, so matchers and tests key off them regardless of the
+# display language. ``user_text()`` renders the human-facing line through ``t()``.
+PROVIDER_AUTH_FAILED_LABEL = "Provider authentication failed"
+PROVIDER_RATE_LIMITED_LABEL = "Provider rate-limited"
+
+
 class _ProviderAuthResolutionError(RuntimeError):
     """Provider credential resolution failed. Typed so callers never mislabel other
     RuntimeErrors from run_conversation() (e.g. a closed OpenAI client) as auth failures."""
 
-    def user_text(self) -> str:
-        """Raw-surface failure line. A quota/429 cap with valid credentials must not be labelled an
-        authentication failure — the cause chain (RuntimeError -> AuthError) tells them apart (#89401)."""
+    def is_rate_limited(self) -> bool:
+        """A quota/429 cap with valid credentials must not be labelled an authentication
+        failure — the cause chain (RuntimeError -> AuthError) tells them apart (#89401)."""
         from pulse_cli.auth import is_rate_limited_auth_error
 
         cause = self.__cause__
         cause = getattr(cause, "__cause__", None) if isinstance(cause, RuntimeError) else cause
-        label = "Provider rate-limited" if is_rate_limited_auth_error(cause) else "Provider authentication failed"
-        return f"⚠️ {label}: {self}"
+        return bool(is_rate_limited_auth_error(cause))
+
+    def user_text(self) -> str:
+        """Raw-surface failure line shown as the assistant reply in API-backed chat UIs."""
+        label = t("platform.api_server.provider_rate_limited" if self.is_rate_limited()
+                  else "platform.api_server.provider_auth_failed")
+        return t("platform.api_server.provider_error_line", label=label, error=self)
 
 
 class _SessionEventQueue:
@@ -1218,7 +1231,7 @@ class APIServerAdapter(OpenAICompatRoutesMixin, BasePlatformAdapter):
         # hardcode "gpt-4o" etc., hence off by default).
         # Off by default: generic OpenAI clients routinely hardcode model names ("gpt-4o", ...), and
         # existing deployments rely on those falling back to the gateway default rather than switching the
-        # executing model. Requests that send an explicit ``provider`` — and the Pulse-native session-chat
+        # executing model. Requests that send an explicit ``provider`` — and the PULSE-native session-chat
         # and /v1/runs endpoints — are always honored regardless of this flag. (Idea credit: PR #22825 by
         # @mssteuer.)
         self._direct_model_requests: bool = _coerce_request_bool(
@@ -1788,7 +1801,7 @@ class APIServerAdapter(OpenAICompatRoutesMixin, BasePlatformAdapter):
     _SESSION_SOURCE = "api_server"
 
     def _declared_conversation_session(self, gateway_session_key: Optional[str]) -> Optional[str]:
-        """Resolve the live session a client declared with ``X-Pulse-Session-Key`` (the key
+        """Resolve the live session a client declared with ``X-PULSE-Session-Key`` (the key
         names the conversation, ``session_id`` its current transcript). Same reset-fenced
         recovery as ``SessionStore._recover_session_for_peer``; concurrent first requests
         converge (later row wins). None when undeclared, no live row, or DB error."""
@@ -1838,17 +1851,17 @@ class APIServerAdapter(OpenAICompatRoutesMixin, BasePlatformAdapter):
 
     def _parse_session_key_header(
         self, request: "web.Request") -> tuple[Optional[str], Optional["web.Response"]]:
-        """Validate ``X-Pulse-Session-Key`` (per-channel memory scope) -> ``(key_or_None, None)``
+        """Validate ``X-PULSE-Session-Key`` (per-channel memory scope) -> ``(key_or_None, None)``
         or ``(None, error)``. Requires API-key auth so a client can't guess another scope."""
-        raw = request.headers.get("X-Pulse-Session-Key", "").strip()
+        raw = request.headers.get("X-PULSE-Session-Key", "").strip()
         if not raw:
             return None, None
         if not self._api_key:
             logger.warning(
-                "X-Pulse-Session-Key rejected: no API key configured. "
+                "X-PULSE-Session-Key rejected: no API key configured. "
                 "Set API_SERVER_KEY to enable long-term memory scoping.")
             return None, _error_response(
-                "X-Pulse-Session-Key requires API key authentication. "
+                "X-PULSE-Session-Key requires API key authentication. "
                 "Configure API_SERVER_KEY to enable this feature.", 403)
         # Control characters could enable header injection on the echo path.
         if re.search(r'[\r\n\x00]', raw):
@@ -2530,7 +2543,7 @@ class APIServerAdapter(OpenAICompatRoutesMixin, BasePlatformAdapter):
             "runtime": {
                 "mode": "server_agent", "tool_execution": "server", "split_runtime": False,
                 "description": (
-                    "The API server creates a server-side Pulse AIAgent; "
+                    "The API server creates a server-side PULSE AIAgent; "
                     "tools execute on the API-server host unless a future "
                     "explicit split-runtime mode is enabled.")},
             "features": {
@@ -2782,7 +2795,7 @@ class APIServerAdapter(OpenAICompatRoutesMixin, BasePlatformAdapter):
             from pulse_cli.profiles import get_profile_dir
             root = Path(get_profile_dir(profile or "default")) / "artifacts" / "browser-control"
         except Exception:
-            # Unscoped fallback (tests/manual wiring): controlled root under the Pulse home.
+            # Unscoped fallback (tests/manual wiring): controlled root under the PULSE home.
             try:
                 from pulse_state import get_pulse_home
                 root = Path(get_pulse_home()) / "artifacts" / "browser-control"
@@ -2959,11 +2972,11 @@ class APIServerAdapter(OpenAICompatRoutesMixin, BasePlatformAdapter):
             from pulse_cli.config import load_config
             from pulse_cli.tools_config import (
                 _get_effective_configurable_toolsets, _get_platform_tools, _toolset_has_keys,
-                get_anxious_subscription_features)
+                get_nous_subscription_features)
             from toolsets import resolve_toolset
             config = load_config()
             enabled_toolsets = _get_platform_tools(config, "api_server", include_default_mcp_servers=False)
-            features = get_anxious_subscription_features(config)
+            features = get_nous_subscription_features(config)
             data: List[Dict[str, Any]] = []
             for name, label, desc in _get_effective_configurable_toolsets():
                 try:
@@ -3010,6 +3023,23 @@ class APIServerAdapter(OpenAICompatRoutesMixin, BasePlatformAdapter):
         # Full system prompts / model_config never cross the client API; only their presence.
         payload["has_system_prompt"] = bool(session.get("system_prompt"))
         payload["has_model_config"] = bool(session.get("model_config"))
+        raw_model_config = session.get("model_config")
+        try:
+            model_config = (
+                json.loads(raw_model_config)
+                if isinstance(raw_model_config, str)
+                else raw_model_config
+            )
+        except (TypeError, json.JSONDecodeError):
+            model_config = None
+        # Exact-id consumers may inspect/resume delegate children even though
+        # list endpoints intentionally omit them. Project only the provenance
+        # bit the client needs so it cannot accidentally promote such a row
+        # into an ordinary session list; never expose the model snapshot.
+        payload["is_internal_child"] = bool(
+            isinstance(model_config, dict)
+            and model_config.get("_delegate_from") is not None
+        )
         return payload
 
     @staticmethod
@@ -3059,7 +3089,7 @@ class APIServerAdapter(OpenAICompatRoutesMixin, BasePlatformAdapter):
 
     @_require_auth
     async def _handle_list_sessions(self, request: "web.Request") -> "web.Response":
-        """GET /api/sessions — list persisted Pulse sessions."""
+        """GET /api/sessions — list persisted PULSE sessions."""
         db = await self._ensure_session_db_async()
         if db is None:
             return self._session_db_unavailable()
@@ -3114,7 +3144,7 @@ class APIServerAdapter(OpenAICompatRoutesMixin, BasePlatformAdapter):
 
     @_require_auth
     async def _handle_create_session(self, request: "web.Request") -> "web.Response":
-        """POST /api/sessions -- create an empty Pulse session row. Existence check, insert and
+        """POST /api/sessions -- create an empty PULSE session row. Existence check, insert and
         title handling run as ONE off-loop write so concurrent same-id creates can't both 201."""
         body, err = await self._read_json_body(request)
         if err:
@@ -3284,8 +3314,11 @@ class APIServerAdapter(OpenAICompatRoutesMixin, BasePlatformAdapter):
         default_page = requested_limit is None
         latest_page = order == "latest" or (order is None and default_page)
         limit = 500 if default_page else min(requested_limit, 500)
+        include_compacted = _coerce_request_bool(request.query.get("include_compacted"), default=False)
+        # Compression lineage: return root→tip messages, matching the REST router (#51058).
         messages = await asyncio.to_thread(
-            db.get_messages, resolved_id, limit=limit, offset=offset, latest=latest_page)
+            db.get_messages, resolved_id, limit=limit, offset=offset, latest=latest_page,
+            include_compacted=include_compacted, include_ancestors=True)
         return web.json_response({
             "object": "list", "session_id": resolved_id,
             "data": [self._message_response(m) for m in messages],
@@ -3409,10 +3442,10 @@ class APIServerAdapter(OpenAICompatRoutesMixin, BasePlatformAdapter):
 
     @staticmethod
     def _session_headers(session_id: str, gateway_session_key: Optional[str]) -> Dict[str, str]:
-        """``X-Pulse-Session-Id`` (+ ``X-Pulse-Session-Key`` when declared) response headers."""
-        headers = {"X-Pulse-Session-Id": session_id}
+        """``X-PULSE-Session-Id`` (+ ``X-PULSE-Session-Key`` when declared) response headers."""
+        headers = {"X-PULSE-Session-Id": session_id}
         if gateway_session_key:
-            headers["X-Pulse-Session-Key"] = gateway_session_key
+            headers["X-PULSE-Session-Key"] = gateway_session_key
         return headers
 
     def _effective_turn_runtime(self, runtime_request: Dict[str, Any], result: Any, usage: Any) -> Dict[str, Any]:

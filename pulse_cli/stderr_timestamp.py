@@ -94,9 +94,9 @@ def _install_signal_forwarders(proc: subprocess.Popen[bytes]) -> dict[int, objec
 
 
 def _is_pulse_gateway_run_argv(command: Sequence[str]) -> bool:
-    """True for Pulse ``gateway run`` argv this wrapper is allowed to upgrade.
+    """True for PULSE ``gateway run`` argv this wrapper is allowed to upgrade.
 
-    The wrapper is generic. Only historical/current Pulse gateway shapes get ``--external-
+    The wrapper is generic. Only historical/current PULSE gateway shapes get ``--external-
     supervisor``; an arbitrary launchd child must not be marked as gateway-supervised (#87005).
     """
     try:

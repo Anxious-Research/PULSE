@@ -196,7 +196,7 @@ TOOLSETS = {
         posture=True,
     ),
 
-    # Full Pulse toolsets (CLI + messaging platforms). All share the core tools;
+    # Full PULSE toolsets (CLI + messaging platforms). All share the core tools;
     # there is deliberately no agent-callable send_message tool. pulse-acp is the
     # coding posture minus the interactive clarify UI.
     "pulse-acp": _ts(
@@ -225,7 +225,7 @@ TOOLSETS = {
     "pulse-signal": _bundle("Signal bot toolset - encrypted messaging platform (full access)"),
     "pulse-bluebubbles": _bundle("BlueBubbles iMessage bot toolset - Apple iMessage via local BlueBubbles server"),
     "pulse-homeassistant": _bundle("Home Assistant bot toolset - smart home event monitoring and control"),
-    "pulse-email": _bundle("Email bot toolset - interact with Pulse via email (IMAP/SMTP)"),
+    "pulse-email": _bundle("Email bot toolset - interact with PULSE via email (IMAP/SMTP)"),
     "pulse-mattermost": _bundle("Mattermost bot toolset - self-hosted team messaging (full access)"),
     "pulse-matrix": _bundle("Matrix bot toolset - decentralized encrypted messaging (full access)"),
     "pulse-dingtalk": _bundle("DingTalk bot toolset - enterprise messaging platform (full access)"),
@@ -240,7 +240,7 @@ TOOLSETS = {
         "module": "tools.yuanbao_tools",
         "includes": [],
     },
-    "pulse-sms": _bundle("SMS bot toolset - interact with Pulse via SMS (Twilio)"),
+    "pulse-sms": _bundle("SMS bot toolset - interact with PULSE via SMS (Twilio)"),
     "pulse-webhook": _ts("Webhook toolset - receive and process external webhook events", _PULSE_WEBHOOK_SAFE_TOOLS),
     "pulse-gateway": _ts(
         "Gateway toolset - union of all messaging platform tools",
@@ -254,6 +254,11 @@ TOOLSETS = {
         ],
     ),
 }
+
+# Captured before create_custom_toolset() can add user-named tools: shared metrics may export only
+# these names, so a plugin, MCP server or custom toolset name never leaves the machine.
+BUILTIN_TOOL_NAMES = frozenset(tool for spec in TOOLSETS.values() for tool in spec["tools"])
+BUILTIN_TOOLSET_NAMES = frozenset(TOOLSETS)
 
 
 def _registry():
@@ -485,28 +490,3 @@ def get_toolset_info(name: str) -> Dict[str, Any]:
         "resolved_tools": resolved_tools, "tool_count": len(resolved_tools),
         "is_composite": bool(toolset["includes"]),
     }
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-def resolve_multiple_toolsets(toolset_names: List[str]) -> List[str]:
-    """
-    Resolve multiple toolsets and combine their tools.
-
-    Args:
-        toolset_names (List[str]): List of toolset names to resolve
-
-    Returns:
-        List[str]: Combined list of all tool names (deduplicated)
-    """
-    all_tools = set()
-
-    for name in toolset_names:
-        tools = resolve_toolset(name)
-        all_tools.update(tools)
-
-    return sorted(all_tools)
-# ---- END PLUGIN-COMPAT ----

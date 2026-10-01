@@ -1,4 +1,4 @@
-"""Shared ``OAuthClientProvider`` customizations for Pulse MCP OAuth.
+"""Shared ``OAuthClientProvider`` customizations for PULSE MCP OAuth.
 
 Two code paths build an SDK provider — ``tools.mcp_oauth.build_oauth_auth`` (legacy public
 API) and ``tools.mcp_oauth_manager.MCPOAuthManager`` — and both need the same real-world
@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit
 
 if TYPE_CHECKING:
-    from tools.mcp_oauth import PulseTokenStorage
+    from tools.mcp_oauth import PULSETokenStorage
 logger = logging.getLogger(__name__)
 
 # Authorization servers that advertise ``authorization_response_iss_parameter_supported`` and then
@@ -27,10 +27,10 @@ _DISCOVERY_CONTEXT_LEAD = "Could not read authorization-server metadata"
 
 
 def _default_auth_request_user_agent() -> str:
-    """``Pulse-Agent/<version>`` for SDK-built OAuth requests that would otherwise carry no User-Agent at
+    """``PULSE-Agent/<version>`` for SDK-built OAuth requests that would otherwise carry no User-Agent at
     all; versioned so an operator debugging a WAF block can tell which client they are looking at."""
     from pulse_cli.version_info import get_version_info
-    return f"Pulse-Agent/{get_version_info().base_version}"
+    return f"PULSE-Agent/{get_version_info().base_version}"
 
 
 DEFAULT_AUTH_REQUEST_USER_AGENT = _default_auth_request_user_agent()
@@ -72,7 +72,7 @@ def _with_discovery_context(exc: Exception, failures: list[str]):
 class _RefreshCompletedByPeer(Exception):
     """Restart the SDK auth flow: a peer rotated the grant we were about to present."""
 
-class PulseProviderMixin:
+class PULSEProviderMixin:
     """Token-endpoint fixes layered over the SDK's ``OAuthClientProvider`` (must precede it in
     the MRO; subclasses set ``_pulse_logger`` to keep their own logger name).
 
@@ -81,7 +81,7 @@ class PulseProviderMixin:
       endpoint rejects the exchange (looping the browser page) — coerce ``client_secret_post``.
     - ``token_user_agent`` (``oauth.user_agent``) is stamped onto token-endpoint requests only
       (some authorization servers/WAFs reject httpx's default); unset falls back to the shared
-      ``Pulse-Agent/<version>`` default, since a header-less token POST is 403'd by WAF-fronted
+      ``PULSE-Agent/<version>`` default, since a header-less token POST is 403'd by WAF-fronted
       authorization servers (#115329).
     - Any 2xx token/refresh response is accepted; token bodies never leak into errors/logs."""
 
@@ -163,7 +163,7 @@ class PulseProviderMixin:
         installed on the context here and the SDK is handed an empty 204: ``handle_auth_metadata_response``
         reads that as "stop trying", leaving the installed document in place. ``auth_server_url`` is left
         untouched, so the SEP-2352 credential binding still uses the advertised identifier (stable across
-        runs), while the RFC 9207 ``iss`` check and Pulse' refresh-token binding use the document's issuer.
+        runs), while the RFC 9207 ``iss`` check and PULSE' refresh-token binding use the document's issuer.
         Every other response goes back to the SDK unchanged, including its issuer check."""
         # This compatibility shim is only for authorization-server metadata
         # responses. Never consume arbitrary 200 responses here: MCP resource
@@ -192,7 +192,7 @@ class PulseProviderMixin:
 
     def _prepare_token_request(self, request):
         """Stamp a token/refresh request's User-Agent: the configured ``oauth.user_agent`` when set,
-        else the shared ``Pulse-Agent/<version>`` default. These requests are built by hand — the
+        else the shared ``PULSE-Agent/<version>`` default. These requests are built by hand — the
         SDK's ``_exchange_token_authorization_code``/``_refresh_token`` and ``tools.mcp_oauth_device``
         — and travel through ``client.send()``, which never merges the client's default headers, so
         without a stamp the POST leaves with NO ``User-Agent`` at all and a WAF-fronted authorization
@@ -203,15 +203,15 @@ class PulseProviderMixin:
         return stamp_default_user_agent(request)
 
     def _coerce_client_secret_post(self) -> None:
-        """Same rule as ``PulseTokenStorage._coerce_secret_auth_method``, applied to the
+        """Same rule as ``PULSETokenStorage._coerce_secret_auth_method``, applied to the
         in-memory client info BEFORE the SDK builds a token-endpoint request from it."""
         info = self.context.client_info
         if not info:
             return
         from mcp.shared.auth import OAuthClientInformationFull
-        from tools.mcp_oauth import PulseTokenStorage
+        from tools.mcp_oauth import PULSETokenStorage
         data = info.model_dump(mode="json", exclude_none=True)
-        if PulseTokenStorage._coerce_secret_auth_method(data):
+        if PULSETokenStorage._coerce_secret_auth_method(data):
             self.context.client_info = OAuthClientInformationFull.model_validate(data)
 
     async def _exchange_token_authorization_code(self, *args: Any, **kwargs: Any):
@@ -329,7 +329,7 @@ class PulseProviderMixin:
         """True when the installed token is not known to be past due.
 
         Storage clamps a past-due token to ``expires_in == 0`` on read (see
-        PulseTokenStorage.get_tokens); the SDK's is_token_valid() compares
+        PULSETokenStorage.get_tokens); the SDK's is_token_valid() compares
         ``time.time() <= expiry`` and still reports True for that boundary,
         which would make us adopt a token the server rejects immediately.
         ``expires_in`` is optional in RFC 6749: None means no expiry was
@@ -352,7 +352,7 @@ class PulseProviderMixin:
         await self._pulse_release_refresh_fence()
         storage = self.context.storage
         tokens_path = getattr(storage, "_tokens_path", None)
-        if tokens_path is None:  # pragma: no cover - non-Pulse storage
+        if tokens_path is None:  # pragma: no cover - non-PULSE storage
             return
         self._pulse_fence = await acquire_refresh_fence(tokens_path())
 
@@ -403,8 +403,8 @@ class PulseProviderMixin:
         then enforce refresh-token issuer binding."""
         await super()._initialize()
         storage = self.context.storage
-        from tools.mcp_oauth import PulseTokenStorage
-        if isinstance(storage, PulseTokenStorage) and self.context.oauth_metadata is None:
+        from tools.mcp_oauth import PULSETokenStorage
+        if isinstance(storage, PULSETokenStorage) and self.context.oauth_metadata is None:
             meta = storage.load_oauth_metadata()
             if meta is not None:
                 self.context.oauth_metadata = meta
@@ -450,7 +450,7 @@ class PulseProviderMixin:
         if not (200 <= response.status_code < 300):
             self._pulse_logger.warning("Token refresh failed: %s", response.status_code)
             # A writer outside the fence (interactive `pulse mcp login`, or a
-            # pre-fence Pulse sharing this PULSE_HOME) may have rotated the
+            # pre-fence PULSE sharing this PULSE_HOME) may have rotated the
             # grant and persisted the replacement. Providers issuing single-use
             # refresh tokens reject our stale copy with a 400. Re-read disk
             # before destroying the session.
@@ -489,7 +489,7 @@ class PulseProviderMixin:
         Returns True only when disk holds a pair that is BOTH different from
         the one we just failed with AND still live. That is the signature of
         a writer outside the fence (an interactive ``pulse mcp login`` or a
-        pre-fence Pulse) having rotated the grant between our read and our
+        pre-fence PULSE) having rotated the grant between our read and our
         POST -- a recoverable race, not a dead credential.
 
         Returns False for the genuinely-expired case (nobody wrote a newer
@@ -567,11 +567,11 @@ def google_offline_access_params(context: Any) -> dict[str, str]:
 
 def bind_issuer_from_context(context: Any) -> None:
     """Record the discovered issuer so the next ``storage.set_tokens`` (exchange or refresh) carries
-    it. No-op when metadata is not discovered yet or storage is not Pulse'."""
-    from tools.mcp_oauth import PulseTokenStorage
+    it. No-op when metadata is not discovered yet or storage is not PULSE'."""
+    from tools.mcp_oauth import PULSETokenStorage
     storage = getattr(context, "storage", None)
     issuer = _metadata_issuer(context)
-    if isinstance(storage, PulseTokenStorage) and issuer:
+    if isinstance(storage, PULSETokenStorage) and issuer:
         storage.bind_issuer(issuer)
 
 
@@ -584,10 +584,10 @@ def enforce_refresh_token_issuer(context: Any) -> None:
     access token stays usable; full re-authorization happens at expiry. Token files predating the field
     adopt the current issuer once rather than forcing a re-login. Runs after ``_initialize`` restored
     tokens + metadata, before the SDK's ``can_refresh_token()`` decision."""
-    from tools.mcp_oauth import PulseTokenStorage
+    from tools.mcp_oauth import PULSETokenStorage
     storage = getattr(context, "storage", None)
     tokens = getattr(context, "current_tokens", None)
-    if not isinstance(storage, PulseTokenStorage) or tokens is None or not getattr(tokens, "refresh_token", None):
+    if not isinstance(storage, PULSETokenStorage) or tokens is None or not getattr(tokens, "refresh_token", None):
         return
     current = _metadata_issuer(context)
     if current is None:  # not discovered yet; the SDK's 401-branch discovery + _store_tokens stamp it later
@@ -603,17 +603,17 @@ def enforce_refresh_token_issuer(context: Any) -> None:
         tokens.refresh_token = None
 
 
-def prepare_oauth_config(server_name: str, server_url: str, oauth_config: dict | None) -> tuple[dict, "PulseTokenStorage"]:
+def prepare_oauth_config(server_name: str, server_url: str, oauth_config: dict | None) -> tuple[dict, "PULSETokenStorage"]:
     """Copy the ``oauth:`` block, apply provider defaults, open its token storage. The copy
     matters: later steps record ``_resolved_port`` / ``_cimd_url`` in the dict, which must
     never leak back into the caller's config."""
     from tools import mcp_oauth as mo
     cfg = dict(oauth_config or {})
     mo.apply_oauth_provider_defaults(cfg, server_name=server_name, server_url=server_url)
-    return cfg, mo.PulseTokenStorage(server_name)
+    return cfg, mo.PULSETokenStorage(server_name)
 
 
-def build_provider_kwargs(cfg: dict, storage: "PulseTokenStorage", *, ssh_proxy_hint: bool) -> dict[str, Any]:
+def build_provider_kwargs(cfg: dict, storage: "PULSETokenStorage", *, ssh_proxy_hint: bool) -> dict[str, Any]:
     """Resolve the callback port and return the shared provider constructor kwargs. Order
     matters: metadata needs the resolved port, pre-registration needs the metadata.
     ``ssh_proxy_hint`` lets the redirect handler tailor its remote-session hint to a configured

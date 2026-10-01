@@ -589,7 +589,7 @@ def command_line_runs_inline_source(tokens: list[str]) -> bool:
     return inline_source_flag_index(tokens) is not None
 
 
-# Pulse' own inline bootstraps hand control to a Pulse entry point IN this process, so the argv
+# PULSE' own inline bootstraps hand control to a PULSE entry point IN this process, so the argv
 # they run with is this process's own identity; every other ``-c`` program keeps its trailing argv
 # as data (#107002). Each pattern is one emitted source shape, anchored at both ends so a program
 # merely CARRYING a bootstrap command line (the restart watcher's respawn argv) never matches.
@@ -635,7 +635,7 @@ def _bootstrap_entry(source: str, argv: list[str]) -> list[str] | None:
 
 def inline_bootstrap_argv(tokens: list[str]) -> list[str] | None:
     """*tokens* as the equivalent ``python -m <module> <argv…>`` when this interpreter's ``-c`` source
-    is a Pulse bootstrap running an entry point in-process; None for any other inline source.
+    is a PULSE bootstrap running an entry point in-process; None for any other inline source.
 
     Command lines usually arrive space-joined (``/proc``, psutil, ``ps``), which splits the source
     across tokens; the shortest token run that ends in a recognised tail is the source, whatever
@@ -653,9 +653,9 @@ def inline_bootstrap_argv(tokens: list[str]) -> list[str] | None:
 
 
 def _gateway_command_subcommand(command: str | None) -> str | None:
-    """Pulse gateway lifecycle subcommand from a command line, or None. No loose substring matches
+    """PULSE gateway lifecycle subcommand from a command line, or None. No loose substring matches
     (``"gateway" in cmdline`` also matched ``gateway status`` / ``python -m tui_gateway``): needs a
-    Pulse entrypoint plus the ``gateway`` subcommand, or a gateway-dedicated entrypoint. Tokenizes
+    PULSE entrypoint plus the ``gateway`` subcommand, or a gateway-dedicated entrypoint. Tokenizes
     quote-aware (Windows paths with spaces); ``--profile``/``-p`` selectors are stripped anywhere in
     argv since ``_apply_profile_override`` removes them before argparse."""
     if not command:
@@ -674,7 +674,7 @@ def _gateway_command_subcommand(command: str | None) -> str | None:
     # the inline source will spawn later, not to this process (#107002). Case-preserving tokens:
     # the operand-taking ``-X``/``-W``/``-Q`` must not be conflated with ``-q``/``-b``.
     if command_line_runs_inline_source(cased_tokens):
-        # …unless the source is a Pulse bootstrap running the entry point in THIS process (store
+        # …unless the source is a PULSE bootstrap running the entry point in THIS process (store
         # launcher, launcher script, venv_sync re-entry): then its argv is this process's (#124318).
         cased_tokens = inline_bootstrap_argv(cased_tokens)
         if cased_tokens is None:
@@ -688,7 +688,7 @@ def _gateway_command_subcommand(command: str | None) -> str | None:
     # Gateway-dedicated entrypoints carry no subcommand to inspect.
     if any(t == "gateway/run.py" or t.endswith("/gateway/run.py") for t in tokens):
         return "run"
-    # Atomic Pulse' bundled desktop runner shares PULSE_HOME with the CLI; without this,
+    # Atomic PULSE' bundled desktop runner shares PULSE_HOME with the CLI; without this,
     # `gateway run --replace` does not recognise it as a running gateway, skips the
     # terminate-and-scoped-lock-handoff path, and collides with its still-held scoped locks
     # (e.g. the Discord bot-token lock). See #22418.
@@ -760,12 +760,12 @@ def looks_like_gateway_command_line(command: str | None) -> bool:
 def looks_like_gateway_runtime_command_line(command: str | None) -> bool:
     """True for command lines that can host the runtime (``run`` or ``restart``: without a service
     manager the manual restart fallback runs ``run_gateway()`` in-process). For validating
-    Pulse-owned records / cleanup scans only; ``looks_like_gateway_command_line`` stays strict."""
+    PULSE-owned records / cleanup scans only; ``looks_like_gateway_command_line`` stays strict."""
     return _gateway_command_subcommand(command) in {"run", "restart"}
 
 
 def _looks_like_gateway_process(pid: int) -> bool:
-    """True when the live PID still looks like the Pulse gateway."""
+    """True when the live PID still looks like the PULSE gateway."""
     cmdline = _read_process_cmdline(pid)
     return bool(cmdline) and looks_like_gateway_command_line(cmdline)
 
@@ -834,11 +834,13 @@ def _command_line_belongs_to_profile(command: str, profile_home: Path) -> bool:
         if profile_flag_value(command_lc) == profile_name.lower():
             return True
         return command_line_names_pulse_home(command_lc, home_lc)
-    # Default profile: accept unless argv names another profile (any spelling the CLI pre-parser
+    # Default profile: accept unless argv names ANOTHER profile (any spelling the CLI pre-parser
     # accepts, ``--profile=ops`` included -- a substring test let that gateway pass as the default's)
     # or a conflicting explicit PULSE_HOME= (its absence is not disqualifying -- PULSE_HOME usually
-    # arrives via the env).
-    if profile_flag_value(command_lc) is not None:
+    # arrives via the env). ``--profile default`` names this profile: a hand-written launchd plist
+    # mirrors the named-profile service shape, and rejecting it reported a live default gateway
+    # as stopped (#100817).
+    if profile_flag_value(command_lc) not in (None, "default"):
         return False
     return not pulse_home_assignments(command_lc) or command_line_names_pulse_home(command_lc, home_lc)
 
@@ -1408,7 +1410,7 @@ class GatewayLiveness:
 
 
 def profile_name_for_home(profile_home: Path) -> Optional[str]:
-    """Profile id of any Pulse home: ``<root>/profiles/<name>`` → ``<name>``, the default root →
+    """Profile id of any PULSE home: ``<root>/profiles/<name>`` → ``<name>``, the default root →
     ``"default"``, anything else → None. Multiplex-only makes ``default`` an ordinary served
     profile, so reporting surfaces need a name for it too."""
     home = Path(profile_home)
@@ -1447,8 +1449,12 @@ def multiplexer_liveness_for_profile(profile_dir: Path) -> Optional[tuple[int, d
     if name != "default" and not _same_pulse_home(profile_dir, get_default_pulse_root() / "profiles" / name):
         return None
     topology = host_gateway_topology()
+    # The multiplexer's record lives in the home that LAUNCHED it; a named-hosted multiplexer leaves
+    # a possibly stale standalone record at the default root, which must not be projected.
+    launch_home = get_default_pulse_root()
     if topology is not None and topology.serves(name):
         pid: Optional[int] = topology.pid
+        launch_home = topology.home or launch_home
     elif name != "default" and named_profile_served_by_running_multiplexer(name):
         # Config-derived fallback for a record that predates ``served_profiles``.
         pid = live_default_gateway_pid()
@@ -1456,7 +1462,7 @@ def multiplexer_liveness_for_profile(profile_dir: Path) -> Optional[tuple[int, d
         return None
     if pid is None:
         return None
-    return pid, read_runtime_status(get_default_pulse_root() / "gateway_state.json") or {}
+    return pid, read_runtime_status(launch_home / "gateway_state.json") or {}
 
 
 def shared_listener_mirror_platforms(runtime: Optional[dict[str, Any]], profile: str) -> dict[str, Any]:
@@ -1495,6 +1501,13 @@ def profile_platforms_from_multiplexer(runtime: Optional[dict[str, Any]], profil
     prefix = f"{profile}:"
     own = {key[len(prefix):]: value for key, value in plats.items()
            if isinstance(key, str) and key.startswith(prefix) and isinstance(value, dict)}
+    if profile == "default":
+        # The flat keys ARE the default's own adapters (a multiplex host's primary map is always
+        # ``default``, whoever launched it; a standalone gateway writes only flat keys). Dropping
+        # them projected ``{}`` for the one profile the record never prefixes → "Restart needed"
+        # forever on /api/status and the Messaging card (#123088, #123869).
+        own.update({key: value for key, value in plats.items()
+                    if isinstance(key, str) and ":" not in key and isinstance(value, dict)})
     return {**shared_listener_mirror_platforms(runtime, profile), **own}
 
 
@@ -2201,25 +2214,3 @@ def get_running_pid_cached(
     with _gateway_running_pid_cache_lock:
         _gateway_running_pid_cache[key] = (time.monotonic(), refreshed_signature, pid)
     return pid
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-def clear_planned_stop_marker() -> None:
-    """Remove the planned-stop marker unconditionally."""
-    try:
-        _get_planned_stop_marker_path().unlink(missing_ok=True)
-    except OSError:
-        pass
-
-def is_gateway_running(
-    pid_path: Optional[Path] = None,
-    *,
-    cleanup_stale: bool = True,
-) -> bool:
-    """Check if the gateway daemon is currently running."""
-    return get_running_pid(pid_path, cleanup_stale=cleanup_stale) is not None
-# ---- END PLUGIN-COMPAT ----

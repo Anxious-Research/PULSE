@@ -287,7 +287,7 @@ test('addWorktree: base origin/main does not set up upstream tracking', async ()
       '-c',
       'user.email=pulse@localhost',
       '-c',
-      'user.name=Pulse',
+      'user.name=PULSE',
       'commit',
       '--allow-empty',
       '-m',
@@ -326,7 +326,7 @@ test('addWorktree: base origin/main does not set up upstream tracking', async ()
 // installers made: remote.origin.fetch maps only the tag, so no branch has a
 // tracking ref. The remote has `main` and `feature` one commit past the tag.
 // Returns both paths and the tip. The caller must remove them.
-const IDENT = ['-c', 'user.email=pulse@localhost', '-c', 'user.name=Pulse']
+const IDENT = ['-c', 'user.email=pulse@localhost', '-c', 'user.name=PULSE']
 
 function seedNarrowClone(label) {
   const remoteDir = fs.mkdtempSync(path.join(os.tmpdir(), `pulse-${label}-remote-`))
@@ -494,7 +494,7 @@ function seedRemoteAndClone(label, branches) {
       .trim()
 
   execFileSync('git', ['init', '-b', 'main', remoteDir])
-  remoteGit('-c', 'user.email=pulse@localhost', '-c', 'user.name=Pulse', 'commit', '--allow-empty', '-m', 'root')
+  remoteGit('-c', 'user.email=pulse@localhost', '-c', 'user.name=PULSE', 'commit', '--allow-empty', '-m', 'root')
 
   for (const branch of branches) {
     remoteGit('branch', branch)

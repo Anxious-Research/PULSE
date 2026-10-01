@@ -61,7 +61,7 @@ if _race_path.exists():
     exec(compile(open(_race_path).read(), str(_race_path), 'exec'), _caller_globals)
 
 # ═══════════════════════════════════════════════════════════════════
-# Pulse config paths
+# PULSE config paths
 # ═══════════════════════════════════════════════════════════════════
 
 PULSE_HOME = Path(os.getenv("PULSE_HOME", Path.home() / ".pulse"))
@@ -185,7 +185,7 @@ MODEL_STRATEGIES = {
             ),
         },
     },
-    # Anxious/Pulse models — already uncensored, just needs clean prompt
+    # Nous/PULSE models — already uncensored, just needs clean prompt
     "pulse": {
         "order": ["prefill_only"],
         "system_templates": {},
@@ -312,7 +312,7 @@ def _detect_model_family(model: str) -> str:
         return "gemini"
     if "grok" in model_lower or "x-ai" in model_lower:
         return "grok"
-    if "pulse" in model_lower or "anxious" in model_lower:
+    if "pulse" in model_lower or "nous" in model_lower:
         return "pulse"
     if "deepseek" in model_lower:
         return "deepseek"
@@ -326,7 +326,7 @@ def _detect_model_family(model: str) -> str:
 
 
 def _get_current_model() -> tuple:
-    """Read current model and provider from Pulse config.yaml.
+    """Read current model and provider from PULSE config.yaml.
     Returns (model_str, base_url)."""
     if not CONFIG_PATH.exists():
         return None, None
@@ -675,7 +675,7 @@ def auto_jailbreak(model=None, base_url=None, api_key=None,
             if verbose:
                 print(f"[LOCKED] Config written to: {config_written}")
                 print()
-                print("[DONE] Jailbreak locked in. Restart Pulse for changes to take effect.")
+                print("[DONE] Jailbreak locked in. Restart PULSE for changes to take effect.")
         else:
             if verbose:
                 print("[DRY RUN] Would write config + prefill but dry_run=True")
@@ -743,7 +743,7 @@ def undo_jailbreak(verbose=True):
             print(f"[UNDO] Deleted {PREFILL_PATH}")
 
     if verbose:
-        print("[UNDO] Jailbreak removed. Restart Pulse for changes to take effect.")
+        print("[UNDO] Jailbreak removed. Restart PULSE for changes to take effect.")
 
 
 # ═══════════════════════════════════════════════════════════════════

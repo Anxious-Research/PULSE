@@ -69,7 +69,7 @@ class AudioBridge:
         try:
             sink_out = _pactl(
                 "load-module", "module-null-sink", f"sink_name={sink_name}",
-                "sink_properties=device.description=PulseMeetSink", check=True)
+                "sink_properties=device.description=PULSEMeetSink", check=True)
         except FileNotFoundError as exc:
             raise RuntimeError("pactl not found — install PulseAudio/pipewire-pulse") from exc
         except subprocess.CalledProcessError as exc:
@@ -109,33 +109,3 @@ class AudioBridge:
             return int(token)
         except ValueError as exc:
             raise RuntimeError(f"could not parse pactl module id from: {stdout!r}") from exc
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-def chrome_fake_audio_flags(bridge_info: dict) -> list[str]:
-    """Return Chrome flags for using the fake audio input.
-
-    The PulseAudio source is selected via the ``PULSE_SOURCE`` env var,
-    which callers must set in Chrome's environment before launch:
-
-        env["PULSE_SOURCE"] = bridge_info["device_name"]
-
-    On macOS the caller must ensure the system default audio input is
-    set to the returned BlackHole device (we do not flip that switch).
-    """
-    system = platform.system()
-    if system == "Linux":
-        # Chromium on Linux picks up the PulseAudio source selected via
-        # PULSE_SOURCE env var; the fake-ui flag skips the permission
-        # prompt so the bot can pick "use my mic" without user input.
-        return ["--use-fake-ui-for-media-stream"]
-    if system == "Darwin":
-        return ["--use-fake-ui-for-media-stream"]
-    if system == "Windows":
-        raise RuntimeError("windows not supported in v2")
-    raise RuntimeError(f"unsupported platform: {system}")
-# ---- END PLUGIN-COMPAT ----

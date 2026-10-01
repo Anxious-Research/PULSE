@@ -3,7 +3,7 @@ name: unreal-mcp
 description: Automate Unreal Engine editor scenes, actors, and renders.
 version: 1.0.0
 requires: Unreal Editor 5.8+ with the Unreal MCP plugin enabled and its server running
-author: Pulse Agent
+author: PULSE Agent
 license: MIT
 tags: [unreal, unreal-engine, ue5, 3d, mcp, scenes, cinematics, lighting, gamedev]
 platforms: [linux, macos, windows]
@@ -15,7 +15,7 @@ metadata:
 
 # Unreal Engine MCP Skill
 
-Companion skill for the `unreal-engine` entry in the Pulse MCP catalog. The
+Companion skill for the `unreal-engine` entry in the PULSE MCP catalog. The
 MCP server (Epic's official, experimental "Unreal MCP" plugin, internal id
 `ModelContextProtocol`) runs INSIDE the Unreal Editor process and exposes
 editor functionality as typed tools. This skill teaches how to drive it well:
@@ -39,7 +39,7 @@ code work — use the terminal; this skill is about the live editor).
 
 ## Prerequisites
 
-Two halves, in this order: the editor side must be up before Pulse connects.
+Two halves, in this order: the editor side must be up before PULSE connects.
 
 ### One-time, editor side
 
@@ -59,7 +59,7 @@ Two halves, in this order: the editor side must be up before Pulse connects.
    To start manually instead, run `ModelContextProtocol.StartServer` in the
    editor console (backtick key).
 
-### One-time, Pulse side
+### One-time, PULSE side
 
     pulse mcp install unreal-engine
 
@@ -69,8 +69,8 @@ while the editor + server are up so the probe sees the real surface. If the
 user changed port/path in Editor Preferences, edit the `url` in
 `~/.pulse/config.yaml` under `mcp_servers.unreal-engine` to match.
 
-Do NOT use `ModelContextProtocol.GenerateClientConfig` for Pulse — that
-writes `.mcp.json`-style files for Claude Code/Cursor/etc. Pulse connects
+Do NOT use `ModelContextProtocol.GenerateClientConfig` for PULSE — that
+writes `.mcp.json`-style files for Claude Code/Cursor/etc. PULSE connects
 from `config.yaml` via the catalog entry.
 
 ### Every session
@@ -78,19 +78,19 @@ from `config.yaml` via the catalog entry.
 1. Launch Unreal Editor, wait for the project to finish loading; confirm the
    server started (Output Log shows the bind address, or run
    `ModelContextProtocol.StartServer` manually).
-2. Start the Pulse session. Tools register as `mcp_unreal_engine_*`. If
+2. Start the PULSE session. Tools register as `mcp_unreal_engine_*`. If
    they're missing: editor wasn't up first — start it, then open a new
-   Pulse session.
+   PULSE session.
 3. Sanity check: call `mcp_unreal_engine_list_toolsets` and confirm toolsets
    come back.
 
 ## The Tool Surface: Discovery, Not a Fixed List
 
 By default the plugin runs in **tool-search mode**: `tools/list` returns only
-three meta-tools, and every real tool is reached through them. Through Pulse
+three meta-tools, and every real tool is reached through them. Through PULSE
 they appear as:
 
-| Pulse tool | Purpose |
+| PULSE tool | Purpose |
 |---|---|
 | `mcp_unreal_engine_list_toolsets` | Names + descriptions of every registered toolset |
 | `mcp_unreal_engine_describe_toolset` | Full JSON schemas for one named toolset's tools |
@@ -137,7 +137,7 @@ Every Unreal task follows the same loop:
    server-side without breaking the serial rule
    (`references/advanced-workflows.md`).
 3. **NEVER issue overlapping calls.** Do not batch multiple
-   `mcp_unreal_engine_*` calls in one turn — Pulse runs batched calls
+   `mcp_unreal_engine_*` calls in one turn — PULSE runs batched calls
    concurrently, and parallel calls against the game thread deadlock or
    fail. Strictly one call, await result, next call. This overrides the
    general parallel-tool-calls guidance.
@@ -215,7 +215,7 @@ Load on demand; keep SKILL.md-level rules in mind throughout.
 
 ## Pitfalls (top of mind — full list in references/pitfalls.md)
 
-- **Start order matters.** Editor + server up first, then the Pulse
+- **Start order matters.** Editor + server up first, then the PULSE
   session. Missing `mcp_unreal_engine_*` tools = wrong order.
 - **One call at a time.** Serial game thread; no batching, no overlap.
 - **The editor UI freezes during each call.** That's by design (game-thread
@@ -223,7 +223,7 @@ Load on demand; keep SKILL.md-level rules in mind throughout.
 - **Modal dialogs block everything.** A tool call that opens (or collides
   with) a modal editor dialog stalls until a human dismisses it. If a call
   hangs indefinitely, tell the user to check the editor for a dialog.
-- **Timeouts on long operations.** Pulse' per-call default is 120 s; asset
+- **Timeouts on long operations.** PULSE' per-call default is 120 s; asset
   imports, big level saves, and renders can exceed it. Raise
   `mcp_servers.unreal-engine.timeout` in `~/.pulse/config.yaml` for
   render/import-heavy sessions.

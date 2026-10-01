@@ -7,7 +7,7 @@ description: >-
   GLM (z.ai), OpenRouter, Grok (xAI), Codex (OpenAI), OpenAI, Anthropic, Groq,
   Cerebras, Moonshot Kimi, MiniMax, Google Gemini, Hugging Face, Mistral, and
   Qwen. DeepSeek and GLM show peak/off-peak gauges and countdowns. Includes
-  OAuth and multi-key pools. This edition does not rotate Pulse environment
+  OAuth and multi-key pools. This edition does not rotate PULSE environment
   keys on exhaust. Codex and Grok checks use their CLI client identity and
   user-agent.
 maintainer: apoapostolov

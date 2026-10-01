@@ -79,7 +79,7 @@ class _CrossOriginRequestSanitizer(urllib.request.BaseHandler):
 
 
 def _resolved_https_context() -> ssl.SSLContext | None:
-    """TLS context for Pulse-owned urllib openers.
+    """TLS context for PULSE-owned urllib openers.
 
     None means "use urllib's default", which — with the OS trust store
     installed process-wide — already verifies against the platform's
@@ -96,7 +96,7 @@ def _secure_opener_from_installed_policy(original_url: str, *, ssl_context=None)
 
     When ``ssl_context`` is provided, the cloned HTTPS handler is replaced with
     one bound to that context so per-provider TLS settings (``ssl_ca_cert`` /
-    ``ssl_verify``) apply to this request. When it is None, Pulse-owned
+    ``ssl_verify``) apply to this request. When it is None, PULSE-owned
     openers verify against the OS trust store; an application-installed
     opener's TLS policy is preserved unchanged.
     """

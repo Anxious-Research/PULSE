@@ -4,7 +4,7 @@
  * Pure, electron-free helpers for the desktop's multi-connection registry —
  * the v2 successor to the single global `mode` + `remote` block in
  * connection.json. The registry is a named list of agent SOURCES (local
- * runtime, remote gateways, Pulse Cloud instances, SSH hosts) that are all
+ * runtime, remote gateways, PULSE Cloud instances, SSH hosts) that are all
  * registered at once; routing/pooling changes that consume the registry land
  * separately, so this module is deliberately storage-shaped, not
  * transport-shaped.
@@ -71,7 +71,7 @@ export interface RegistryConnection {
   user?: string
   port?: number
   keyPath?: string
-  remotePulsePath?: string
+  remotePULSEPath?: string
   remoteProfile?: string
 }
 
@@ -229,7 +229,7 @@ export interface ResolvedConnectionSshDescriptor {
   host?: string
   keyPath?: string
   port?: number
-  remotePulsePath?: string
+  remotePULSEPath?: string
   remoteProfile?: string
   user?: string
 }
@@ -428,7 +428,7 @@ export async function reuseMatchingPrimarySshBackend({
     !sourceFingerprint ||
     !activeSsh ||
     sourceFingerprint !== String(activeSsh.effectiveConfigFingerprint || '').trim() ||
-    String(source.remotePulsePath || '').trim() !== String(activeSsh.remotePulsePath || '').trim() ||
+    String(source.remotePULSEPath || '').trim() !== String(activeSsh.remotePULSEPath || '').trim() ||
     rootProfile(source.remoteProfile) !== rootProfile(activeSsh.remoteProfile)
   ) {
     return null
@@ -853,7 +853,7 @@ export interface UpdateEligibility {
 }
 
 /**
- * Whether "Update all instances" may drive this connection. Pulse Cloud
+ * Whether "Update all instances" may drive this connection. PULSE Cloud
  * instances are platform-managed — we never run `pulse update` against them.
  * Local, remote, and ssh sources are all eligible (reachability and busy
  * checks happen at dispatch time, not here).
@@ -929,7 +929,7 @@ export interface ConnectionInput {
   user?: string
   port?: number | string
   keyPath?: string
-  remotePulsePath?: string
+  remotePULSEPath?: string
   remoteProfile?: string
 }
 
@@ -940,7 +940,7 @@ export interface ConnectionInput {
  * edit and that entry is excluded from the label-collision check.
  */
 /**
- * Auth mode a stored remote-shaped entry actually uses. A Pulse Cloud gateway
+ * Auth mode a stored remote-shaped entry actually uses. A PULSE Cloud gateway
  * signs in through its OAuth session and never keeps a pasted token (the save
  * path drops one), so a cloud entry on token auth with no token has no
  * credential at all and Test can only fail (#89529). Read it as oauth; a cloud
@@ -998,7 +998,7 @@ export function normalizeConnectionInput(input: ConnectionInput, registry: Conne
       user: input.user,
       port: input.port,
       keyPath: input.keyPath,
-      remotePulsePath: input.remotePulsePath,
+      remotePULSEPath: input.remotePULSEPath,
       remoteProfile: input.remoteProfile
     })
 
@@ -1064,7 +1064,7 @@ export function normalizeConnectionInput(input: ConnectionInput, registry: Conne
     // Extra gateway headers (access-proxy credentials) apply to any
     // remote-shaped entry regardless of auth mode — Cloudflare Access sits in
     // front of both token- and OAuth-gated gateways. Normalization drops
-    // transport-/Pulse-managed names; an empty result stores nothing.
+    // transport-/PULSE-managed names; an empty result stores nothing.
     if (input.headers !== undefined) {
       const headers = normalizeRemoteHeaders(input.headers)
 
@@ -1096,7 +1096,7 @@ export function normalizeConnectionInput(input: ConnectionInput, registry: Conne
  * editor doesn't carry survive a save. Renaming a migrated cloud entry must
  * not drop its `org` (downstream update-fanout uses it to skip
  * platform-managed instances), and renaming an ssh entry must not drop
- * `remotePulsePath`/`remoteProfile`. Only fields the payload explicitly
+ * `remotePULSEPath`/`remoteProfile`. Only fields the payload explicitly
  * carries (non-undefined) override; `token` is deliberately NOT merged here —
  * the caller owns secret handling.
  */
@@ -1126,7 +1126,7 @@ export function mergeConnectionInput(input: ConnectionInput, existing?: null | R
 
   inherit('host')
   inherit('keyPath')
-  inherit('remotePulsePath')
+  inherit('remotePULSEPath')
   inherit('remoteProfile')
   // Headers inherit like other dial fields: an edit payload that omits the
   // field keeps the stored set; an explicit payload (even {}) is
@@ -1168,7 +1168,7 @@ export function connectionDialFieldsChanged(before: RegistryConnection, after: R
     'user',
     'port',
     'keyPath',
-    'remotePulsePath',
+    'remotePULSEPath',
     'remoteProfile'
   ]
 
@@ -1405,7 +1405,7 @@ export function migrateV1ToRegistry(v1: unknown): ConnectionRegistry {
     }
 
     const label = uniqueLabel(
-      hostLabelFromBaseUrl(url) || (kind === 'cloud' ? 'Pulse Cloud' : 'Remote gateway'),
+      hostLabelFromBaseUrl(url) || (kind === 'cloud' ? 'PULSE Cloud' : 'Remote gateway'),
       connections.map(c => c.label)
     )
 
@@ -1620,7 +1620,7 @@ export function reconcileAppliedGlobalConnection(
 
   const kind: ConnectionKind = mode === 'cloud' ? 'cloud' : 'remote'
 
-  const hostLabel = hostLabelFromBaseUrl(url) || (kind === 'cloud' ? 'Pulse Cloud' : 'Remote gateway')
+  const hostLabel = hostLabelFromBaseUrl(url) || (kind === 'cloud' ? 'PULSE Cloud' : 'Remote gateway')
   const name = kind === 'cloud' ? String(block.name ?? existing?.name ?? '').trim() : ''
 
   const label =
@@ -1697,20 +1697,40 @@ export function reconcileRegistryDrift(
 
     const target = normalizedSshTarget(ssh)
 
-    const alreadyRegistered = registry.connections.some(
+    const registered = registry.connections.find(
       connection =>
         connection.kind === 'ssh' &&
         normalizedSshTarget(connection) === target &&
         (connection.port ?? 22) === (ssh.port ?? 22)
     )
 
-    if (alreadyRegistered) {
+    const { mode: _mode, ...sshFields } = ssh
+
+    if (registered) {
       // Route is known; if primary names another source, that is the user's
       // Connections-panel choice, not drift.
-      return unchanged
-    }
+      //
+      // Known by target is not enough, though: the router tags the live
+      // window by the FULL route identity (matchingConnectionId also compares
+      // keyPath, remotePULSEPath and remoteProfile). A v1 route carrying a
+      // keyPath the registered entry never had resolves to no connectionId,
+      // the renderer treats the untagged window as the unscoped local backend
+      // ("This device") and the roster force-spawns a phantom local child.
+      // Align the registered entry's identity fields with the route the app
+      // actually dials so both sides compare equal.
+      if (matchingConnectionId(registry, { ...ssh, kind: 'ssh' }, 'unique')) {
+        return unchanged
+      }
 
-    const { mode: _mode, ...sshFields } = ssh
+      const { host: _host, user: _user, port: _port, ...identityFields } = sshFields
+      const aligned: RegistryConnection = { ...registered }
+      delete aligned.keyPath
+      delete aligned.remotePULSEPath
+      delete aligned.remoteProfile
+      Object.assign(aligned, identityFields)
+
+      return { changed: true, registry: upsertConnection(registry, aligned) }
+    }
 
     let entry: RegistryConnection
 

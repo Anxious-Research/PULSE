@@ -493,7 +493,7 @@ def _gateway_liveness_notice(plural: bool = False) -> dict:
         return {
             "gateway_running": False,
             "warning": (
-                f"The Pulse gateway is not running — {subject} "
+                f"The PULSE gateway is not running — {subject} "
                 "but will NOT fire until the gateway is started "
                 "(pulse gateway install / pulse gateway start). "
                 "Tell the user the task is scheduled but not active yet."),

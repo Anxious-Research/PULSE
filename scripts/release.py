@@ -1,5 +1,5 @@
 #!/usr/bin/env -S bash -c 'exec "$BASH" "$(dirname "$0")/_pulse-python" "$0" "$@"'
-"""Pulse Agent release entrypoint.
+"""PULSE Agent release entrypoint.
 
 Stable releases use the ``release``, ``publish``, and ``abandon`` subcommands.
 Canary, commit, and dynamic-channel operations retain their top-level flags.
@@ -228,7 +228,7 @@ def parse_coauthors(body: str) -> list:
         return []
     # AI/bot emails to ignore in co-author trailers
     _ignored_emails = {"noreply@anthropic.com", "noreply@github.com",
-                       "cursoragent@cursor.com", "pulse@anxiousresearchlab.com"}
+                       "cursoragent@cursor.com", "pulse@anxious-research.com"}
     _ignored_names = re.compile(r"^(Claude|Copilot|Cursor Agent|GitHub Actions?|dependabot|renovate)", re.IGNORECASE)
     pattern = re.compile(r"Co-authored-by:\s*(.+?)\s*<([^>]+)>", re.IGNORECASE)
     results = []
@@ -309,7 +309,7 @@ def generate_changelog(commits, tag_name, semver, repo_url="https://github.com/A
     # Header
     now = datetime.now()
     date_str = now.strftime("%B %d, %Y")
-    lines.append(f"# Pulse Agent v{semver} ({tag_name})")
+    lines.append(f"# PULSE Agent v{semver} ({tag_name})")
     lines.append("")
     lines.append(f"**Release Date:** {date_str}")
     lines.append("")
@@ -326,7 +326,7 @@ def generate_changelog(commits, tag_name, semver, repo_url="https://github.com/A
 
     if first_release:
         lines.append("> 🎉 **First official release!** This marks the beginning of regular weekly releases")
-        lines.append("> for Pulse Agent. See below for everything included in this initial release.")
+        lines.append("> for PULSE Agent. See below for everything included in this initial release.")
         lines.append("")
 
     all_authors = set()
@@ -439,7 +439,7 @@ def _resume_canary(tag: str, remote: str, repository: str, *, notes_file: Path |
         create = [
             "gh", "release", "create", tag, "--repo", repository,
             "--verify-tag", "--draft", "--prerelease",
-            "--title", f"Pulse Agent canary {tag}",
+            "--title", f"PULSE Agent canary {tag}",
         ]
         create.extend(["--notes-file", str(notes_file)] if notes_file else ["--generate-notes"])
         created = subprocess.run(
@@ -535,7 +535,7 @@ def cmd_canary(args) -> None:
         return
 
     tag_result = git_result(
-        "tag", "-a", tag_name, "-m", f"Pulse Agent canary {date_utc}"
+        "tag", "-a", tag_name, "-m", f"PULSE Agent canary {date_utc}"
     )
     if tag_result.returncode != 0:
         print(f"✗ Failed to create tag {tag_name}: {tag_result.stderr.strip()}")
@@ -608,7 +608,7 @@ def prune_old_canaries(args) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Pulse Agent Release Tool")
+    parser = argparse.ArgumentParser(description="PULSE Agent Release Tool")
     parser.add_argument("--canary", action="store_true",
                         help="Tag + publish a stable-core canary "
                              "(v<stable>+canary.<YYYYMMDDTHHMMSSZ>); no-op when "

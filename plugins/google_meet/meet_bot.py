@@ -340,7 +340,7 @@ def _config_from_env() -> _BotConfig:
         out_dir=Path(out_raw) if out_raw else None,
         headed=env("PULSE_MEET_HEADED", "").lower() in {"1", "true", "yes"},
         auth_state=env("PULSE_MEET_AUTH_STATE", "").strip(),
-        guest_name=env("PULSE_MEET_GUEST_NAME", "Pulse Agent"),
+        guest_name=env("PULSE_MEET_GUEST_NAME", "PULSE Agent"),
         duration_s=_parse_duration(env("PULSE_MEET_DURATION", "")),
         realtime=env("PULSE_MEET_MODE", "transcribe").strip().lower() == "realtime",
         # PULSE_MEET_REALTIME_KEY is resolved by process_manager.start() via the parent's
@@ -531,15 +531,3 @@ def _parse_duration(raw: str) -> Optional[float]:
 
 if __name__ == "__main__":  # pragma: no cover — subprocess entry point
     sys.exit(run_bot())
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-import json  # noqa: F401,E402
-
-SAY_PCM_FILENAME = "speaker.pcm"
-
-SAY_QUEUE_FILENAME = "say_queue.jsonl"
-# ---- END PLUGIN-COMPAT ----

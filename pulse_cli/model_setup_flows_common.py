@@ -18,6 +18,13 @@ from pulse_cli.config import clear_model_endpoint_credentials
 _HTTP = ("http://", "https://")
 
 
+def _note_setup_failure(failure_class: str) -> None:
+    """Why a flow returns without a pick, for the provider-setup metric (no-op outside a tracked flow)."""
+    from pulse_cli.observability.shared_metrics_setup import note_provider_setup_failure
+
+    note_provider_setup_failure(failure_class)
+
+
 def _say(*lines: str) -> None:
     """``print`` each line (``""`` = blank line); one call per banner block."""
     print("\n".join(lines))
@@ -159,7 +166,7 @@ def _pick_model_or_prompt(model_list, prompt: str, **kwargs):
 
 def _login_retry_context(args) -> tuple[str, str]:
     """(retry_command, service_host) for a login helper's failure copy, from the ``ProviderConfig``
-    among its positional args. Anxious keeps ``pulse portal``; every other OAuth provider is retried
+    among its positional args. Nous keeps ``pulse portal``; every other OAuth provider is retried
     with ``pulse auth add <provider>`` and named by its own portal host (``pulse login`` no longer
     exists). Falls back to ``pulse model`` when no provider config is in play."""
     pconfig = next((a for a in args if hasattr(a, "id") and hasattr(a, "portal_base_url")), None)
@@ -167,7 +174,7 @@ def _login_retry_context(args) -> tuple[str, str]:
         return "pulse model", "the sign-in service"
     provider_id = str(getattr(pconfig, "id", "") or "")
     host = urlparse(str(getattr(pconfig, "portal_base_url", "") or "")).hostname or "the sign-in service"
-    if provider_id == "anxious":
+    if provider_id == "nous":
         return "pulse portal", host
     return (f"pulse auth add {provider_id}" if provider_id else "pulse model"), host
 
@@ -176,7 +183,7 @@ def _run_login(login_fn, *args, **kwargs) -> bool:
     """Run an OAuth login helper; print plain failure copy (what happened + retry command) and
     return False on SystemExit / any exception. The retry command and service host come from the
     provider config passed to the helper, so a MiniMax failure never says ``pulse portal`` /
-    ``portal.anxiousresearchlab.com``. Helpers that print their own copy raise ``SystemExit(1)`` with no
+    ``portal.anxious-research.com``. Helpers that print their own copy raise ``SystemExit(1)`` with no
     message, which stays silent; a SystemExit that carries a message (or a non-cancel code from a
     helper that printed nothing) gets a one-line explanation so the user is never left with no
     output."""

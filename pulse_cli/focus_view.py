@@ -10,7 +10,7 @@ from typing import Optional
 FOCUS_CONFIG_KEY = "display.focus_view"  # plain boolean under ``display``, like /battery /timestamps /footer
 FOCUS_TOOL_PROGRESS_MODE = "off"  # the SAME value ``/verbose off`` uses so both features share one suppression path
 # Modes in which the CLI commits a per-tool scrollback line. Mirrors the gate in
-# ``PulseCLI._on_tool_progress`` so the hidden-line counter and the renderer never drift apart.
+# ``PULSECLI._on_tool_progress`` so the hidden-line counter and the renderer never drift apart.
 TOOL_PROGRESS_VISIBLE_MODES = frozenset({"new", "all", "verbose"})
 TOOL_PROGRESS_MODES = ("off", "new", "all", "verbose")  # ``log`` is a gateway-only extra step
 FOCUS_STATUSBAR_LABEL = "◉ focus"  # short on purpose — the bar is width-constrained
@@ -80,25 +80,3 @@ def format_focus_toggle_message(enabled: bool, configured_mode: object) -> str:
     if enabled:
         return "Focus view enabled — just your prompt and the final response"
     return f"Focus view disabled — tool progress: {normalize_tool_progress_mode(configured_mode).upper()}"
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-FOCUS_USAGE = "Usage: /focus [on|off|status]"
-
-def effective_tool_progress_mode(focus_enabled: bool, configured_mode: object) -> str:
-    """Return the tool-progress mode that should actually be in force.
-
-    Focus view wins while it is on (it *is* "tool progress off" plus reporting).
-    When focus is off the user's configured mode is returned untouched — this is
-    what makes ``/focus off`` restore ``/verbose verbose`` rather than clobbering
-    it to ``all``.
-    """
-    normalized = normalize_tool_progress_mode(configured_mode)
-    if focus_enabled:
-        return FOCUS_TOOL_PROGRESS_MODE
-    return normalized
-# ---- END PLUGIN-COMPAT ----

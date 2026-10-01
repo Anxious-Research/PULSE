@@ -19,10 +19,10 @@ def _get_pulse_version() -> str:
 
 
 def build_user_agent() -> str:
-    """``QQBotAdapter/<qqbot_version> (Python/<py_version>; <os>; Pulse/<pulse_version>)``."""
+    """``QQBotAdapter/<qqbot_version> (Python/<py_version>; <os>; PULSE/<pulse_version>)``."""
     v = sys.version_info
     return (f"QQBotAdapter/{QQBOT_VERSION} (Python/{v.major}.{v.minor}.{v.micro}; "
-            f"{platform.system().lower()}; Pulse/{_get_pulse_version()})")
+            f"{platform.system().lower()}; PULSE/{_get_pulse_version()})")
 
 
 def get_api_headers() -> Dict[str, str]:

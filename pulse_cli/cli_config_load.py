@@ -69,16 +69,13 @@ def _parse_reasoning_config(effort) -> dict | None:
 
 
 def _parse_service_tier_config(raw: str) -> str | None:
-    """Parse a persisted fast-mode preference: None, "priority", "auto", or "cold"."""
-    value = str(raw or "").strip().lower()
-    if not value or value in {"normal", "default", "standard", "off", "none"}:
-        return None
-    if value in {"fast", "priority", "on"}:
-        return "priority"
-    if value in {"auto", "cold"}:
-        return value
-    logger.warning("Unknown service_tier '%s', ignoring", raw)
-    return None
+    """Parse a persisted fast-mode preference: None, "priority", "ultrafast", "auto", or "cold"."""
+    from agent.fast_mode import NORMAL_TIER_WORDS, parse_service_tier
+
+    tier = parse_service_tier(raw)
+    if tier is None and str(raw or "").strip().lower() not in NORMAL_TIER_WORDS:
+        logger.warning("Unknown service_tier '%s', ignoring", raw)
+    return tier
 
 
 # terminal.<key> -> TERMINAL_<KEY> env var. Container-resource keys apply to docker,
@@ -87,7 +84,7 @@ _TERMINAL_ENV_MAPPINGS = {
     key: f"TERMINAL_{key.upper()}"
     for key in (
         "degraded_mode", "cwd", "timeout", "home_mode", "lifetime_seconds", "docker_image",
-        "docker_forward_env", "singularity_image", "modal_image", "daytona_image", "vercel_runtime",
+        "docker_forward_env", "singularity_image", "modal_image", "daytona_image", "vercel_runtime", "vercel_image",
         "ssh_host", "ssh_user", "ssh_port", "ssh_key", "container_cpu", "container_memory",
         "container_disk", "container_persistent", "docker_volumes", "docker_env", "docker_extra_args",
         "docker_shm_size", "docker_mount_cwd_to_workspace", "docker_network", "docker_run_as_host_user",
@@ -233,7 +230,7 @@ def _merge_file_config(defaults: Dict[str, Any], file_config: Dict[str, Any]) ->
             defaults["model"]["default"] = file_config["model"]
         elif isinstance(file_config["model"], dict):
             defaults["model"].update(file_config["model"])
-            # Promote model.model -> model.default (PulseCLI checks "default" first).
+            # Promote model.model -> model.default (PULSECLI checks "default" first).
             if "model" in file_config["model"] and "default" not in file_config["model"]:
                 defaults["model"]["default"] = file_config["model"]["model"]
 

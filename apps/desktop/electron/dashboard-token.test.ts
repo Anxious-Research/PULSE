@@ -14,6 +14,7 @@ import {
   dashboardIndexUrl,
   extractInjectedDashboardToken,
   fetchPublicText,
+  isAttachedBackendTokenDrifted,
   isForeignBackendToken,
   resolveServedDashboardToken
 } from './dashboard-token'
@@ -78,7 +79,7 @@ test('resolveServedDashboardToken propagates fetch errors so callers can fall ba
 })
 
 test('fetchPublicText rejects unsupported protocols', async () => {
-  await assert.rejects(() => fetchPublicText('file:///tmp/index.html'), /Unsupported Pulse backend URL protocol/)
+  await assert.rejects(() => fetchPublicText('file:///tmp/index.html'), /Unsupported PULSE backend URL protocol/)
 })
 
 test('isForeignBackendToken only flags a mismatched token from a dead child', () => {
@@ -112,10 +113,23 @@ test('adoptServedDashboardToken refuses a foreign token when our child is dead',
       adoptServedDashboardToken('http://127.0.0.1:9120', 'spawn-token', {
         childAlive: () => false,
         fetchText: async () => '<script>window.__PULSE_SESSION_TOKEN__="squatter-token";</script>',
-        label: 'Pulse backend for profile "work"'
+        label: 'PULSE backend for profile "work"'
       }),
     /profile "work".*process we did not spawn/
   )
+})
+
+test('isAttachedBackendTokenDrifted flags a live backend serving a different token', () => {
+  const cases = [
+    [{ servedToken: 'new-token', adoptedToken: 'old-token' }, true],
+    [{ servedToken: 'old-token', adoptedToken: 'old-token' }, false],
+    [{ servedToken: null, adoptedToken: 'old-token' }, false],
+    [{ servedToken: '', adoptedToken: 'old-token' }, false]
+  ]
+
+  for (const [input, expected] of cases) {
+    assert.equal(isAttachedBackendTokenDrifted(input as any), expected, JSON.stringify(input))
+  }
 })
 
 test('adoptServedDashboardToken falls back to the spawn token when the fetch fails', async () => {
@@ -131,5 +145,5 @@ test('adoptServedDashboardToken falls back to the spawn token when the fetch fai
 
   assert.equal(token, 'spawn-token')
   assert.equal(logs.length, 1)
-  assert.match(logs[0], /could not read served dashboard token \(Pulse backend\): boom/)
+  assert.match(logs[0], /could not read served dashboard token \(PULSE backend\): boom/)
 })

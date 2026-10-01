@@ -1166,7 +1166,7 @@ def _configured_home_channels() -> list[dict]:
 
 
 def _active_profile_name() -> str:
-    """Current Pulse profile name for notify-sub ownership."""
+    """Current PULSE profile name for notify-sub ownership."""
     try:
         from pulse_cli.profiles import get_active_profile_name
         return get_active_profile_name() or "default"
@@ -1268,7 +1268,7 @@ def dispatch(dry_run: bool = Query(False), max_n: int = Query(8, alias="max"), b
 @router.get("/model-options")
 def model_options():
     """Providers + curated models for the override dropdown via ``inventory.build_models_payload``
-    (same substrate as the Models page) so it can't offer a pair Pulse rejects. Skips pricing
+    (same substrate as the Models page) so it can't offer a pair PULSE rejects. Skips pricing
     and custom-provider probes: a slow/offline local endpoint must not hang the drawer."""
     try:
         from pulse_cli.inventory import build_models_payload, load_picker_context

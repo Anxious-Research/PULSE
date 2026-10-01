@@ -18,7 +18,7 @@
  * dispatch at all for a row whose connection is gone.
  */
 
-import type * as PulseSdk from '@pulse/plugin-sdk'
+import type * as PULSESdk from '@pulse/plugin-sdk'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -38,7 +38,7 @@ const { hostMock } = vi.hoisted(() => ({
 
 vi.mock('@pulse/plugin-sdk', async () => {
   const { useQuery } = await import('@tanstack/react-query')
-  const { catalogProviderMatches, useI18n } = await vi.importActual<typeof PulseSdk>('@pulse/plugin-sdk')
+  const { catalogProviderMatches, useI18n } = await vi.importActual<typeof PULSESdk>('@pulse/plugin-sdk')
 
   return {
     Button: (props: React.ComponentProps<'button'>) => <button {...props} />,

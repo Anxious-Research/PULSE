@@ -24,6 +24,7 @@ from pathlib import Path as _Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
+from agent.i18n import t
 from agent.secret_scope import is_multiplex_active
 from gateway.platforms._shared import (
     get_scoped_secret as _get_scoped_secret, seed_extra_from_env as _seed_extra_from_env, send_error
@@ -202,7 +203,7 @@ def ensure_google_chat_deps() -> bool:
         return True
     from pm import InstallError, ensure_import
     # Request BOTH extras before surfacing a failure: a successful install raises
-    # InstallError("restart Pulse to activate…") for the first extra, and aborting
+    # InstallError("restart PULSE to activate…") for the first extra, and aborting
     # there would leave the second uninstalled — the restart would land back here.
     failures: list[InstallError] = []
     for extra in ("google", "google-chat"):
@@ -1124,10 +1125,11 @@ class GoogleChatAdapter(BasePlatformAdapter):
             choice_text = str(choice).strip()
             if choice_text:
                 buttons.append(_button(choice_text if len(choice_text) <= 80 else choice_text[:77] + "...", choice_text))
-        buttons.append(_button("Other / type answer", "__other__"))
+        buttons.append(_button(t("platform.google_chat.clarify.other_button"), "__other__"))
         card = card_spec_to_cards_v2({
-            "card_id": f"clarify-{clarify_id}", "header": {"title": "Question"},
-            "sections": [{"widgets": [{"type": "text", "text": f"❓ {question}"}, {"type": "buttons", "buttons": buttons}]}],
+            "card_id": f"clarify-{clarify_id}", "header": {"title": t("platform.google_chat.clarify.header")},
+            "sections": [{"widgets": [{"type": "text", "text": t("platform.google_chat.clarify.question", question=question)},
+                                      {"type": "buttons", "buttons": buttons}]}],
         })
         result = await self.send_card(chat_id, card, metadata=metadata)
         if result.success:
@@ -1266,7 +1268,7 @@ class GoogleChatAdapter(BasePlatformAdapter):
         return SendResult(success=True, message_id=resp.get("name"))
 
     async def send_typing(self, chat_id: str, metadata: Any = None) -> None:
-        """Post a visible 'Pulse is thinking…' marker (Chat has no typing API); ``send()``
+        """Post a visible 'PULSE is thinking…' marker (Chat has no typing API); ``send()``
         PATCHes it with the reply, ``on_processing_complete`` reaps it otherwise. Created in
         the user's thread (patch cannot move it). ``_keep_typing`` wraps this in
         ``wait_for(timeout=1.5)``: a cancelled create would still land an unrecorded card and
@@ -1281,7 +1283,7 @@ class GoogleChatAdapter(BasePlatformAdapter):
                 await asyncio.wait_for(self._typing_card_inflight[chat_id].wait(), timeout=5.0)
             return
         thread_id = self._resolve_thread_id(reply_to=None, metadata=metadata, chat_id=chat_id)
-        body = _thread_body(getattr(self.config, "typing_status_text", None) or "Pulse is thinking…", thread_id)
+        body = _thread_body(getattr(self.config, "typing_status_text", None) or t("platform.google_chat.typing.thinking"), thread_id)
         self._typing_card_inflight[chat_id] = completed = asyncio.Event()
 
         async def _create_and_record() -> None:
@@ -1326,7 +1328,8 @@ class GoogleChatAdapter(BasePlatformAdapter):
         try:
             current = self._typing_messages.pop(chat_id, None)
             if current and current != _TYPING_CONSUMED_SENTINEL:
-                label = "(interrupted)" if outcome == ProcessingOutcome.CANCELLED else "(no reply)"
+                label = t("platform.google_chat.typing.interrupted" if outcome == ProcessingOutcome.CANCELLED
+                          else "platform.google_chat.typing.no_reply")
                 await self._patch_quietly(current, label, "[GoogleChat] on_processing_complete patch fallback failed")
             for orphan_id in self._orphan_typing_messages.pop(chat_id, []):
                 await self._patch_quietly(orphan_id, "·", "[GoogleChat] orphan typing-card patch failed: %s", orphan_id)
@@ -1521,11 +1524,10 @@ class GoogleChatAdapter(BasePlatformAdapter):
         """Post the ``/setup-files`` notice (plus host path) when native delivery is
         unavailable. Always returns ``success=False``."""
         notice = "\n".join([
-            f"⚠️ No he podido adjuntar **{filename}**.",
-            "Google Chat sólo permite adjuntar archivos cuando el bot tiene permiso explícito tuyo (OAuth de usuario). "
-            "Es un consentimiento único que se hace desde este chat.",
-            "**Para activarlo:** envía `/setup-files` y sigue las instrucciones.",
-            f"Mientras tanto el archivo está en el host: `{path}`",
+            t("platform.google_chat.attachment_fallback.header", filename=filename),
+            t("platform.google_chat.attachment_fallback.explain"),
+            t("platform.google_chat.attachment_fallback.activate"),
+            t("platform.google_chat.attachment_fallback.host_path", path=path),
         ])
         body = self.warning_text(f"{caption}\n{notice}" if caption else notice, caption or "")
         try:
@@ -1775,7 +1777,7 @@ def register(ctx) -> None:
             "in your response. Native file attachments require the user to run /setup-files once in their own DM — "
             "until they do, file requests fall back to a text notice with the host path. Do NOT generate interactive "
             "Card v2 buttons — Google Chat interactivity is not yet supported by this gateway; ask for typed "
-            "confirmations instead. While you are generating a response, a 'Pulse is thinking…' marker message "
+            "confirmations instead. While you are generating a response, a 'PULSE is thinking…' marker message "
             "appears in the space and is deleted once your response is ready. You do NOT have access to Google "
             "Chat-specific APIs — you cannot search space history, list space members, or manage spaces. Do not "
             "promise to perform these actions; explain that you can only read messages sent directly to you and "

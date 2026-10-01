@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import shutil
 import threading
 from contextlib import ExitStack, contextmanager, nullcontext
@@ -66,6 +67,19 @@ def _store() -> Store:
     return Store(paths.store_root())
 
 
+def _heal_exec_bit(binary: Path) -> bool:
+    """agent-browser entries staged before stage() set the exec bit sit at 0644 and fail every
+    launch with PermissionError. Modes are not part of the pinned digest, so restore it in place;
+    an entry we cannot chmod (sealed store) is treated as not installed."""
+    if os.name == "nt" or os.access(binary, os.X_OK):
+        return True
+    try:
+        binary.chmod(binary.stat().st_mode | 0o111)
+    except OSError:
+        return False
+    return os.access(binary, os.X_OK)
+
+
 def _installed_location(package: Package, lockfile: Lockfile, target: str, *,
                         verify: bool = False, allow_outdated: bool = False,
                         roots: tuple[Path, ...] | None = None):
@@ -80,6 +94,8 @@ def _installed_location(package: Package, lockfile: Lockfile, target: str, *,
             continue
         binary = package.binary(store.entry(fact["entry"]), target)
         if binary is not None and not binary.is_file():
+            continue
+        if binary is not None and target == current_target() and not _heal_exec_bit(binary):
             continue
         if verify and not _entry_verified(package, fact, store, target):
             continue
@@ -116,7 +132,7 @@ def installed_package(name: str, *, allow_outdated: bool = False) -> InstalledPa
 
 def uv_launcher(name: str) -> Path | None:
     """PM's installed ``uv``/``uvx`` for a user-declared MCP stdio ``command:``, so a bare
-    ``uvx`` server runs the packaged uv, never the user's. Read-only; Pulse's own Python
+    ``uvx`` server runs the packaged uv, never the user's. Read-only; PULSE's own Python
     work still goes through PM operations, not this executable."""
     if name not in ("uv", "uvx"):
         raise ValueError(f"{name!r} is not a uv launcher")
@@ -645,7 +661,7 @@ def _venv_install_lock(*, patient: bool):
         if not held:
             error = InstallError(
                 "venv",
-                f"another Pulse process is installing dependencies (waited {INSTALL_LOCK_TIMEOUT_SECONDS:.0f}s)",
+                f"another PULSE process is installing dependencies (waited {INSTALL_LOCK_TIMEOUT_SECONDS:.0f}s)",
                 "retry in a moment, or run `pulse pm install` to install explicitly",
             )
             receipt.record_refusal("install-busy", str(error))
@@ -913,7 +929,7 @@ def activate(*, allow_incomplete: bool = False) -> list[str]:
 
 def store_first_path(path: str) -> str:
     """``path`` with the installed store's tool dirs moved to the front, for
-    Pulse's own children whose PATH gets other dirs prepended after activate."""
+    PULSE's own children whose PATH gets other dirs prepended after activate."""
     import os
 
     dirs = _store_path_dirs()

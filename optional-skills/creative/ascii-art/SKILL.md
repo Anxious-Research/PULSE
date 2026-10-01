@@ -2,7 +2,7 @@
 name: ascii-art
 description: "ASCII art: pyfiglet, cowsay, boxes, image-to-ascii."
 version: 4.0.0
-author: 0xbyt4, Pulse Agent
+author: 0xbyt4, PULSE Agent
 license: MIT
 dependencies: []
 platforms: [linux, macos, windows]

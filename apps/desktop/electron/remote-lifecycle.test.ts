@@ -14,19 +14,21 @@ import {
   classifySshReuseProof,
   cleanupStale,
   connect,
+  DEFAULT_READY_TIMEOUT_MS,
   disconnect,
   expandRemotePath,
   fingerprintToken,
   isForwardBindCollision,
   isLockfileSkew,
-  listRemotePulseProfiles,
-  locatePulse,
+  listRemotePULSEProfiles,
+  locatePULSE,
   LOCKFILE_SCHEMA_VERSION,
   lockfilePath,
+  MIN_READY_TIMEOUT_MS,
   openForward,
   ownershipDirectory,
   pidIsOurDashboard,
-  probePulseVersion,
+  probePULSEVersion,
   probeRemotePlatform,
   PROTOCOL_VERSION,
   readLockfile,
@@ -34,6 +36,7 @@ import {
   READY_RE,
   remotePidAlive,
   remoteSupportsSshOwnership,
+  resolveReadyTimeoutMs,
   scrapeReadyPort,
   spawnLogPath,
   spawnRemoteDashboard,
@@ -134,7 +137,7 @@ function fakeSsh(rules: any[] = []) {
   }
 }
 
-test('POSIX relaunch gate refuses live and uncertain install markers without executing Pulse', async () => {
+test('POSIX relaunch gate refuses live and uncertain install markers without executing PULSE', async () => {
   for (const observation of ['LIVE:4242', 'UNCERTAIN']) {
     const calls: string[] = []
 
@@ -184,6 +187,8 @@ test('POSIX relaunch gate permits absent/dead markers and normalizes named-profi
   assert.match(commands[0], /home\.parent\.name/)
   assert.match(commands[0], /profiles/)
   assert.match(commands[0], /\.pulse-update-in-progress/)
+  assert.match(commands[0], /marker\.unlink/)
+  assert.match(commands[0], /\/proc\/%d\/cmdline/)
 })
 
 test('POSIX relaunch gate rechecks after token upload immediately before process creation', async () => {
@@ -285,24 +290,24 @@ test('readRemoteInstallId reports no id rather than a bad one', async () => {
   }
 })
 
-test('listRemotePulseProfiles inventories Mini-style profile dirs without spawning a dashboard', async () => {
+test('listRemotePULSEProfiles inventories Mini-style profile dirs without spawning a dashboard', async () => {
   const ssh = fakeSsh([
     [/PULSE_HOME/, '/Users/zillajr/.pulse\n'],
     [/ls -1/, 'bob\ndixie\ngoose\nrambo\nbob.rollback-old\n']
   ])
 
-  assert.deepEqual(await listRemotePulseProfiles(ssh), ['default', 'bob', 'dixie', 'goose', 'rambo'])
+  assert.deepEqual(await listRemotePULSEProfiles(ssh), ['default', 'bob', 'dixie', 'goose', 'rambo'])
   assert.equal(
     ssh.calls.some(cmd => cmd.includes('serve') || cmd.includes('dashboard')),
     false
   )
 })
 
-test('listRemotePulseProfiles rejects a hostile PULSE_HOME', async () => {
+test('listRemotePULSEProfiles rejects a hostile PULSE_HOME', async () => {
   const ssh = fakeSsh([[/PULSE_HOME/, '/tmp/x; echo pwned\n']])
 
   await assert.rejects(
-    () => listRemotePulseProfiles(ssh),
+    () => listRemotePULSEProfiles(ssh),
     (err: any) => {
       assert.equal(err.kind, 'unsafe-path')
 
@@ -315,12 +320,12 @@ test('listRemotePulseProfiles rejects a hostile PULSE_HOME', async () => {
   )
 })
 
-test('locatePulse prefers the explicit profile path when executable', async () => {
+test('locatePULSE prefers the explicit profile path when executable', async () => {
   const ssh = fakeSsh([[/\[ -x .*\/opt\/pulse/, 'OK']])
-  assert.equal(await locatePulse(ssh, '/opt/pulse'), '/opt/pulse')
+  assert.equal(await locatePULSE(ssh, '/opt/pulse'), '/opt/pulse')
 })
 
-test('locatePulse throws (no silent fallback) when an EXPLICIT path is not executable', async () => {
+test('locatePULSE throws (no silent fallback) when an EXPLICIT path is not executable', async () => {
   // command -v WOULD find a different install, but an explicit path must not
   // silently fall back to it — that is the "connected to the wrong pulse" bug.
   const ssh = fakeSsh([
@@ -329,7 +334,7 @@ test('locatePulse throws (no silent fallback) when an EXPLICIT path is not execu
   ])
 
   await assert.rejects(
-    () => locatePulse(ssh, '/bad/path/pulse'),
+    () => locatePULSE(ssh, '/bad/path/pulse'),
     (err: any) => {
       assert.equal(err.kind, 'pulse-not-found')
       assert.match(err.message, /\/bad\/path\/pulse/)
@@ -339,16 +344,16 @@ test('locatePulse throws (no silent fallback) when an EXPLICIT path is not execu
   )
 })
 
-test('locatePulse falls back to the login-shell command -v probe', async () => {
+test('locatePULSE falls back to the login-shell command -v probe', async () => {
   const ssh = fakeSsh([
     [/command -v pulse/, '/home/u/.local/bin/pulse\n'],
     [/\[ -x .*\.local\/bin\/pulse/, 'OK']
   ])
 
-  assert.equal(await locatePulse(ssh, ''), '/home/u/.local/bin/pulse')
+  assert.equal(await locatePULSE(ssh, ''), '/home/u/.local/bin/pulse')
 })
 
-test('locatePulse preserves an installer wrapper instead of resolving its interpreter', async () => {
+test('locatePULSE preserves an installer wrapper instead of resolving its interpreter', async () => {
   // install.sh venv mode writes: exec "$PULSE_BIN" "$PULSE_ENTRYPOINT" "$@",
   // where $PULSE_BIN is the venv python. The old canonicalization returned
   // that interpreter, so `<python> --version` printed "Python x.y.z" and
@@ -362,15 +367,15 @@ test('locatePulse preserves an installer wrapper instead of resolving its interp
     [/python3 -c/, '/home/u/.pulse/pulse-agent/venv/bin/python\n']
   ])
 
-  assert.equal(await locatePulse(ssh, ''), '/home/u/.local/bin/pulse')
+  assert.equal(await locatePULSE(ssh, ''), '/home/u/.local/bin/pulse')
   assert.ok(
     !ssh.calls.some(cmd => cmd.includes('python3 -c')),
-    'locatePulse must not shell out to a python3 parser to rewrite the launcher'
+    'locatePULSE must not shell out to a python3 parser to rewrite the launcher'
   )
 })
 
-test('locatePulse returns an explicit remotePulsePath unchanged', async () => {
-  // The override half of #74411: an explicit remotePulsePath pointing at a
+test('locatePULSE returns an explicit remotePULSEPath unchanged', async () => {
+  // The override half of #74411: an explicit remotePULSEPath pointing at a
   // wrapper was also canonicalized to its interpreter, so overriding to
   // ~/.local/bin/pulse changed nothing for affected users.
   const ssh = fakeSsh([
@@ -378,29 +383,29 @@ test('locatePulse returns an explicit remotePulsePath unchanged', async () => {
     [/python3 -c/, '/home/u/.pulse/pulse-agent/venv/bin/python\n']
   ])
 
-  assert.equal(await locatePulse(ssh, '~/.local/bin/pulse'), '~/.local/bin/pulse')
-  assert.ok(!ssh.calls.some(cmd => cmd.includes('python3 -c')), 'an explicit remotePulsePath must never be rewritten')
+  assert.equal(await locatePULSE(ssh, '~/.local/bin/pulse'), '~/.local/bin/pulse')
+  assert.ok(!ssh.calls.some(cmd => cmd.includes('python3 -c')), 'an explicit remotePULSEPath must never be rewritten')
 })
 
-test('locatePulse falls back to ~/.local/bin/pulse when the login-shell probe misses', async () => {
+test('locatePULSE falls back to ~/.local/bin/pulse when the login-shell probe misses', async () => {
   // ~/.local/bin is the non-root installer's command location (scripts/install.sh).
   const ssh = fakeSsh([
     [/command -v pulse/, ''],
     [/\[ -x .*\.local\/bin\/pulse/, 'OK']
   ])
 
-  assert.equal(await locatePulse(ssh, ''), '~/.local/bin/pulse')
+  assert.equal(await locatePULSE(ssh, ''), '~/.local/bin/pulse')
 })
 
-test('locatePulse tries the conventional venv path last', async () => {
+test('locatePULSE tries the conventional venv path last', async () => {
   const ssh = fakeSsh([[/\[ -x .*venv\/bin\/pulse/, 'OK']])
-  assert.equal(await locatePulse(ssh, ''), '~/.pulse/pulse-agent/venv/bin/pulse')
+  assert.equal(await locatePULSE(ssh, ''), '~/.pulse/pulse-agent/venv/bin/pulse')
 })
 
-test('locatePulse throws a pulse-not-found error with an install hint', async () => {
+test('locatePULSE throws a pulse-not-found error with an install hint', async () => {
   const ssh = fakeSsh([]) // nothing is executable
   await assert.rejects(
-    () => locatePulse(ssh, ''),
+    () => locatePULSE(ssh, ''),
     (err: any) => {
       assert.equal(err.kind, 'pulse-not-found')
       assert.match(err.message, /install/i)
@@ -410,13 +415,13 @@ test('locatePulse throws a pulse-not-found error with an install hint', async ()
   )
 })
 
-test('locatePulse uses a login shell for the command -v probe', async () => {
+test('locatePULSE uses a login shell for the command -v probe', async () => {
   const ssh = fakeSsh([
     [/command -v pulse/, '/x/pulse'],
     [/\[ -x/, 'OK']
   ])
 
-  await locatePulse(ssh, '')
+  await locatePULSE(ssh, '')
   assert.ok(
     ssh.calls.some(c => /bash -lc/.test(c)),
     'must probe in a login shell (PATH pitfall)'
@@ -955,6 +960,26 @@ test('buildSpawnCommand is headless serve, detached, token not in argv', () => {
   assert.ok(!cmd.includes('PULSE_DASHBOARD_SESSION_TOKEN'), 'token env var must not appear')
 })
 
+test('buildSpawnCommand never pins a non-slug profile into the remote argv', () => {
+  // The roster/SSH bridge hands the profile verbatim; a numeric id or display
+  // label must never cross into the remote serve argv, where the CLI used to
+  // str()-coerce it into a phantom profiles/0/ directory (#88842).
+  const bad = buildSpawnCommand('/x/pulse', 0 as unknown as string, {
+    logPath: spawnLogPath(OWNERSHIP_ID, SPAWN_NONCE)
+  })
+  assert.ok(!bad.includes('--profile'), 'a non-string profile must not be pinned')
+
+  const empty = buildSpawnCommand('/x/pulse', '', { logPath: spawnLogPath(OWNERSHIP_ID, SPAWN_NONCE) })
+  assert.ok(!empty.includes('--profile'), 'an empty profile must not be pinned')
+
+  const label = buildSpawnCommand('/x/pulse', 'My Profile!', { logPath: spawnLogPath(OWNERSHIP_ID, SPAWN_NONCE) })
+  assert.ok(!label.includes('--profile'), 'a non-slug label must not be pinned')
+
+  const good = buildSpawnCommand('/x/pulse', 'Work', { logPath: spawnLogPath(OWNERSHIP_ID, SPAWN_NONCE) })
+  assert.ok(good.includes('--profile'), 'a valid profile stays pinned')
+  assert.ok(good.includes("'work'"), 'the profile is normalized like the CLI would')
+})
+
 test.skipIf(process.platform === 'win32')(
   'detached backend does not inherit the update mutex descriptor',
   async (): Promise<void> => {
@@ -1097,7 +1122,7 @@ function connectDeps(ssh, over: any = {}) {
     forward: async () => {},
     cancelForward: async () => {},
     pickLocalPort: async () => 50001,
-    waitForPulse: async () => {},
+    waitForPULSE: async () => {},
     probeReuseProof: async () => 'authenticated-ok',
     adoptServedToken: async (_baseUrl, spawn) => spawn || 'served-token',
     rememberLog: () => {},
@@ -1213,7 +1238,7 @@ test('connect() respawns when the requested remote profile differs from the lock
     [/print\("OWNED"/, 'OWNED\n'],
     [cmd => /pidfd_open/.test(cmd), 'TERMINATED\n'],
     [/kill 333/, ''],
-    [/--version/, 'Pulse Agent v0.18.2\n'],
+    [/--version/, 'PULSE Agent v0.18.2\n'],
     [/grep -q ssh-session-token-file/, 'YES\n'],
     [/python3 -c/, ''],
     [/setsid/, '890\n'],
@@ -1242,7 +1267,7 @@ test('connect() respawns when the lockfile pulsePath differs from the resolved p
     [/cat .*lock\.json/, JSON.stringify(lock)],
     [/kill -0/, 'ALIVE'],
     [/print\("OWNED"/, 'FOREIGN\n'],
-    [/--version/, 'Pulse Agent v0.18.2\n'],
+    [/--version/, 'PULSE Agent v0.18.2\n'],
     [/grep -q ssh-session-token-file/, 'YES\n'],
     [/python3 -c/, ''],
     [/setsid/, '890\n'],
@@ -1250,7 +1275,7 @@ test('connect() respawns when the lockfile pulsePath differs from the resolved p
   ])
 
   const result = await connect(
-    connectDeps(ssh, { reuseToken, remotePulsePath: '/new/pulse', adoptServedToken: async () => 'fresh' })
+    connectDeps(ssh, { reuseToken, remotePULSEPath: '/new/pulse', adoptServedToken: async () => 'fresh' })
   )
 
   assert.equal(result.reused, false, 'must respawn, not reuse the old-path dashboard')
@@ -1411,6 +1436,54 @@ test('managed update drain never falls back to a bare kill when the identity-bou
     'the final signal must stay inside the identity-checking helper'
   )
 })
+
+test.skipIf(process.platform === 'win32')(
+  'managed update drain reports the real POSIX refusal, not a generic transport error',
+  async () => {
+    // Regression for #124617: the termination probe prints REFUSED (and, on
+    // Darwin, DARWIN_UNAVAILABLE) but used to exit non-zero for it. ssh.exec()
+    // throws on any non-zero remote exit, so the specific message built below
+    // from the probe's stdout was dead code in production — every refusal
+    // collapsed into the generic "Could not terminate the Desktop-owned
+    // remote serve for update." Run the real probe (not a canned string)
+    // against a live-but-foreign local process so its actual exit code
+    // decides the outcome, the same way the real SSH transport does.
+    const dummy = spawn('sleep', ['5'], { stdio: 'ignore' })
+
+    try {
+      const lock = ownedLock({ pid: dummy.pid })
+      const rawLock = JSON.stringify(lock)
+
+      const ssh: Pick<SshConnection, 'exec'> = {
+        async exec(cmd: string): Promise<string> {
+          if (/cat .*lock\.json/.test(cmd)) {
+            return rawLock
+          }
+
+          if (/kill -0 /.test(cmd)) {
+            return 'ALIVE'
+          }
+
+          if (/fields\[19\]/.test(cmd)) {
+            return lock.creationTime
+          }
+
+          if (/print\("OWNED" if ok else "FOREIGN"\)/.test(cmd)) {
+            return 'OWNED'
+          }
+
+          // The real termination probe: execute it for real so its actual
+          // exit code — not a canned string — is what drives the caller.
+          return (await exec(cmd)).stdout
+        }
+      }
+
+      await assert.rejects(terminateOwnedDashboardForUpdate(ssh, lock), /identity changed at the signal boundary/)
+    } finally {
+      dummy.kill('SIGKILL')
+    }
+  }
+)
 
 test('connect() respawns when the dashboard is wedged (alive pid, probe fails)', async () => {
   const reuseToken = 'stored'
@@ -1905,12 +1978,12 @@ test('probes run under the remote watchdog so a hung CLI cannot orphan (#110478)
       (cmd: string) => {
         versionProbe = cmd
 
-        return 'Pulse Agent v0.18.2 (abc123)\n'
+        return 'PULSE Agent v0.18.2 (abc123)\n'
       }
     ]
   ])
 
-  assert.equal(await probePulseVersion(versionSsh, '/x/pulse'), 'Pulse Agent v0.18.2 (abc123)')
+  assert.equal(await probePULSEVersion(versionSsh, '/x/pulse'), 'PULSE Agent v0.18.2 (abc123)')
   assert.ok(versionProbe.includes('kill -9'), 'version probe wrapped in the remote watchdog')
 
   let helpProbe = ''
@@ -1951,7 +2024,6 @@ test('cleanupStale escalates to SIGKILL when the backend survives the graceful w
     pulsePath: '/x/pulse',
     logPath: spawnLogPath(OWNERSHIP_ID, SPAWN_NONCE)
   })
-
   assert.ok(
     ssh.calls.some(c => /kill -9 9\b/.test(c)),
     'must escalate to SIGKILL after the graceful wait fails'
@@ -1961,7 +2033,6 @@ test('cleanupStale escalates to SIGKILL when the backend survives the graceful w
     'lockfile must still be dropped after the forced kill'
   )
 })
-
 test('cleanupStale keeps the lockfile when even SIGKILL cannot confirm the pid died', async () => {
   const ssh = fakeSsh([
     [/print\("OWNED"/, 'OWNED\n'],
@@ -1978,7 +2049,6 @@ test('cleanupStale keeps the lockfile when even SIGKILL cannot confirm the pid d
     }),
     /Could not terminate/
   )
-
   // The record must survive so the next connect's reap pass retries.
   assert.ok(!ssh.calls.some(c => /rm -f .*backend\.lock\.json/.test(c)))
 })
@@ -2132,7 +2202,7 @@ test('connect() post-spawn cleanup that cannot prove ownership keeps the origina
     connect(
       connectDeps(ssh, {
         platform: { os: 'Linux', arch: 'x86_64' },
-        waitForPulse: async () => {
+        waitForPULSE: async () => {
           throw boot
         }
       })
@@ -2144,4 +2214,30 @@ test('connect() post-spawn cleanup that cannot prove ownership keeps the origina
     !ssh.calls.some(c => /rm -f .*backend\.lock\.json/.test(c)),
     'record must survive for the next connect to reap'
   )
+})
+
+// ---------------------------------------------------------------------------
+// resolveReadyTimeoutMs (issue #94642): cold-start-tolerant remote budgets
+// ---------------------------------------------------------------------------
+test('honors a valid PULSE_DESKTOP_REMOTE_READY_TIMEOUT_MS override', () => {
+  const env = { PULSE_DESKTOP_REMOTE_READY_TIMEOUT_MS: '180000' }
+  assert.equal(resolveReadyTimeoutMs(env), 180_000)
+})
+test('clamps an override below the floor up to the 45s minimum', () => {
+  const env = { PULSE_DESKTOP_REMOTE_READY_TIMEOUT_MS: '1000' }
+  assert.equal(resolveReadyTimeoutMs(env), MIN_READY_TIMEOUT_MS)
+})
+test('rounds a fractional override', () => {
+  const env = { PULSE_DESKTOP_REMOTE_READY_TIMEOUT_MS: '60000.7' }
+  assert.equal(resolveReadyTimeoutMs(env), 60_001)
+})
+test('falls back to the default for malformed / non-positive overrides', () => {
+  for (const bad of ['', 'abc', '0', '-5', 'NaN', undefined]) {
+    const env = bad === undefined ? {} : { PULSE_DESKTOP_REMOTE_READY_TIMEOUT_MS: bad }
+    assert.equal(
+      resolveReadyTimeoutMs(env),
+      DEFAULT_READY_TIMEOUT_MS,
+      `override ${JSON.stringify(bad)} should fall through to the default`
+    )
+  }
 })

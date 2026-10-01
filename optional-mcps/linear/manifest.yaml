@@ -1,4 +1,4 @@
-# Anxious-approved MCP catalog entry.
+# Nous-approved MCP catalog entry.
 # Presence in this directory = approval. Merged via PR review.
 manifest_version: 1
 
@@ -8,7 +8,7 @@ description: Find, create, and update Linear issues, projects, and comments.
 source: https://linear.app/docs/mcp
 
 # Linear ships a remote MCP server with native OAuth 2.1 + Dynamic Client
-# Registration over Streamable HTTP. Pulse's MCP client + mcp_oauth_manager
+# Registration over Streamable HTTP. PULSE's MCP client + mcp_oauth_manager
 # handle discovery, PKCE, token exchange, and refresh — nothing to install
 # locally.
 transport:
@@ -39,8 +39,8 @@ suggest:
     - linear.app
 
 post_install: |
-  On first connection, Pulse will open a browser to authenticate with Linear.
-  After auth, restart your Pulse session so the Linear tools are loaded.
+  On first connection, PULSE will open a browser to authenticate with Linear.
+  After auth, restart your PULSE session so the Linear tools are loaded.
 
   You can re-run the tool checklist any time with:
     pulse mcp configure linear

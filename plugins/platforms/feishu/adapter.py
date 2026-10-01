@@ -84,7 +84,7 @@ FEISHU_WEBSOCKET_AVAILABLE = websockets is not None
 FEISHU_WEBHOOK_AVAILABLE = aiohttp is not None
 
 from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base_exec_approval import EA_HEADER_TEXT, EA_REASON_LABEL_TEXT
+from agent.i18n import t
 from gateway.platforms.base import (
     BasePlatformAdapter, ExecApprovalPrompt, SendResult,
     SUPPORTED_DOCUMENT_TYPES, cache_document_from_bytes_async, cache_image_from_url,
@@ -167,8 +167,10 @@ _FEISHU_CARD_ACTION_DEDUP_TTL_SECONDS = 15 * 60    # card action token dedup win
 _APPROVAL_CHOICE_MAP: Dict[str, str] = {
     "approve_once": "once", "approve_session": "session", "approve_always": "always", "deny": "deny",
 }
-_APPROVAL_LABEL_MAP: Dict[str, str] = {
-    "once": "Approved once", "session": "Approved for session", "always": "Approved permanently", "deny": "Denied",
+# choice → catalog key of the resolved-card title; looked up through ``t()`` at resolve time.
+_APPROVAL_LABEL_KEYS: Dict[str, str] = {
+    "once": "platform.feishu.approval.resolved_once", "session": "platform.feishu.approval.resolved_session",
+    "always": "platform.feishu.approval.resolved_always", "deny": "platform.feishu.approval.resolved_deny",
 }
 
 
@@ -999,7 +1001,7 @@ def _strip_edge_self_mentions(text: str, mentions: Sequence[FeishuMentionRef]) -
 # --- Multiplex isolation for the lark_oapi WebSocket client ---
 #
 # ``lark_oapi.ws.client`` keeps the asyncio loop in a *module-level global* (``loop``), and
-# Pulse monkey-patches ``websockets.connect`` on the shared module to inject ping settings.
+# PULSE monkey-patches ``websockets.connect`` on the shared module to inject ping settings.
 # In multiplex mode N profiles each run a WS client on their own thread, so they overwrite
 # each other's globals (last-write-wins): tasks land on a sibling's loop ("Future attached
 # to a different loop") or a client binds the wrong loop and goes deaf. Fix: install
@@ -1014,7 +1016,7 @@ def _strip_edge_self_mentions(text: str, mentions: Sequence[FeishuMentionRef]) -
 # lark_oapi WebSocket client (#73779)
 # --------------------------------------------------------------------------- ``lark_oapi.ws.client`` keeps
 # the asyncio loop used by ``Client.start()`` and every coroutine it spawns in a *module-level global*
-# (``loop``), and Pulse also monkey-patches ``websockets.connect`` on the shared ``websockets`` module to
+# (``loop``), and PULSE also monkey-patches ``websockets.connect`` on the shared ``websockets`` module to
 # inject per-adapter ping settings. In multiplex mode every profile runs its own WS client on a dedicated
 # thread, so the N threads overwrite each other's module globals (last-write-wins): a client ends up
 # scheduling tasks on a sibling profile's loop ("Future attached to a different loop" crashes) or binds to
@@ -1515,7 +1517,7 @@ class FeishuAdapter(BasePlatformAdapter):
             if not acquired:
                 owner_pid = existing.get("pid") if isinstance(existing, dict) else None
                 message = (
-                    "Another local Pulse gateway is already using this Feishu app_id"
+                    "Another local PULSE gateway is already using this Feishu app_id"
                     + (f" (PID {owner_pid})." if owner_pid else ".")
                     + " Stop the other gateway before starting a second Feishu websocket client."
                 )
@@ -1748,11 +1750,25 @@ class FeishuAdapter(BasePlatformAdapter):
     # Template attrs for the shared _format_exec_approval core. The card
     # header carries the title, so the text core starts at the code fence.
     _EA_HEADER = ""
-    _EA_REASON_LABEL = f"**{EA_REASON_LABEL_TEXT}:** "
-    _EA_SMART_DENY_LINE = "\n\n**Smart DENY:** owner override applies to this one operation only."
     _EA_CMD_BUDGET = 3000
 
-    _EA_ACTION_LABELS = {"once": "✅ Allow Once", "session": "✅ Session", "always": "✅ Always", "deny": "❌ Deny"}
+    # Resolved per call (not at class-body time) so the active language applies.
+    @property
+    def _EA_REASON_LABEL(self) -> str:  # noqa: N802 — base class attr name
+        return f"**{t('gateway.exec_approval.reason_label')}:** "
+
+    @property
+    def _EA_SMART_DENY_LINE(self) -> str:  # noqa: N802
+        line = t("gateway.exec_approval.smart_deny_line")
+        label, sep, rest = line.partition(":")
+        return "\n\n" + (f"**{label}{sep}**{rest}" if sep else line)
+
+    @property
+    def _EA_ACTION_LABELS(self) -> Dict[str, str]:  # noqa: N802
+        return {"once": "✅ " + t("gateway.exec_approval.action_once"),
+                "session": "✅ " + t("platform.feishu.approval.action_session"),
+                "always": "✅ " + t("platform.feishu.approval.action_always"),
+                "deny": "❌ " + t("gateway.exec_approval.action_deny")}
     _EA_CARD_ACTIONS = {"once": "approve_once", "session": "approve_session", "always": "approve_always", "deny": "deny"}
 
     async def _send_exec_approval_prompt(self, prompt: ExecApprovalPrompt) -> SendResult:
@@ -1766,7 +1782,7 @@ class FeishuAdapter(BasePlatformAdapter):
                 _card_button(label, style or "default",
                              {"pulse_action": self._EA_CARD_ACTIONS[choice], "approval_id": approval_id})
                 for label, choice, style in prompt.actions]
-            card = _card(f"⚠️ {EA_HEADER_TEXT}", "orange", prompt.text, actions=actions)
+            card = _card(f"⚠️ {t('gateway.exec_approval.header')}", "orange", prompt.text, actions=actions)
             return await self._send_interactive_card(
                 prompt.chat_id, card, prompt.metadata, "send_exec_approval failed",
                 state_map=self._approval_state, state_id=approval_id, session_key=prompt.session_key,
@@ -1795,13 +1811,14 @@ class FeishuAdapter(BasePlatformAdapter):
 
     @staticmethod
     def _build_update_prompt_card(*, prompt: str, default: str, prompt_id: int) -> Dict[str, Any]:
-        default_hint = f"\n\nDefault: `{default}`" if default else ""
+        default_hint = t("platform.feishu.update_prompt.default_hint", default=default) if default else ""
 
         def _btn(label: str, answer: str, btn_type: str) -> dict:
             return _card_button(label, btn_type, {"pulse_update_prompt_action": answer, "update_prompt_id": prompt_id})
 
-        actions = [_btn("✓ Yes", "y", "primary"), _btn("✗ No", "n", "danger")]
-        return _card("☤ Update Needs Your Input", "orange", f"{prompt}{default_hint}", actions=actions)
+        actions = [_btn(t("platform.feishu.update_prompt.answer_yes"), "y", "primary"),
+                   _btn(t("platform.feishu.update_prompt.answer_no"), "n", "danger")]
+        return _card(t("platform.feishu.update_prompt.title"), "orange", f"{prompt}{default_hint}", actions=actions)
 
     async def send_update_prompt(
         self, chat_id: str, prompt: str, default: str = "", session_key: str = "",
@@ -1825,14 +1842,17 @@ class FeishuAdapter(BasePlatformAdapter):
     def _build_resolved_approval_card(*, choice: str, user_name: str) -> Dict[str, Any]:
         """Raw card JSON shown in place of the buttons once an approval is resolved."""
         icon = "❌" if choice == "deny" else "✅"
-        label = _APPROVAL_LABEL_MAP.get(choice, "Resolved")
-        return _card(f"{icon} {label}", "red" if choice == "deny" else "green", f"{icon} **{label}** by {user_name}")
+        key = _APPROVAL_LABEL_KEYS.get(choice, "platform.feishu.approval.resolved_fallback")
+        label = t(key)
+        return _card(f"{icon} {label}", "red" if choice == "deny" else "green",
+                     t("platform.feishu.approval.resolved_by_user", icon=icon, label=label, user=user_name))
 
     @staticmethod
     def _build_resolved_update_prompt_card(*, answer: str, user_name: str) -> Dict[str, Any]:
         yes = answer == "y"
-        title = f"{'✅' if yes else '❌'} Update prompt answered: {'Yes' if yes else 'No'}"
-        return _card(title, "green" if yes else "red", f"Answered by **{user_name}**")
+        title = t("platform.feishu.update_prompt.answered_title", icon="✅" if yes else "❌",
+                  answer=t("platform.feishu.update_prompt.word_yes" if yes else "platform.feishu.update_prompt.word_no"))
+        return _card(title, "green" if yes else "red", t("platform.feishu.update_prompt.answered_by", user=user_name))
 
     @staticmethod
     def _write_update_prompt_response(answer: str) -> None:
@@ -1954,7 +1974,8 @@ class FeishuAdapter(BasePlatformAdapter):
                 chat_id=chat_id, animation_url=animation_url, caption=caption, reply_to=reply_to, metadata=metadata,
             )
         degraded_caption = self.warning_text(
-            f"[GIF downgraded to file]\n{caption}" if caption else "[GIF downgraded to file]", caption)
+            t("platform.feishu.media.gif_downgraded_caption", caption=caption) if caption
+            else t("platform.feishu.media.gif_downgraded"), caption)
         return await self.send_document(
             chat_id=chat_id, file_path=file_path, file_name=file_name, caption=degraded_caption,
             reply_to=reply_to, metadata=metadata,
@@ -2106,7 +2127,7 @@ class FeishuAdapter(BasePlatformAdapter):
         )
 
     def _on_message_read_event(self, data: P2ImMessageMessageReadV1) -> None:
-        """Ignore read-receipt events that Pulse does not act on."""
+        """Ignore read-receipt events that PULSE does not act on."""
         message = getattr(getattr(data, "event", None), "message", None)
         logger.debug("[Feishu] Ignoring message_read event: %s", getattr(message, "message_id", None) or "")
 
@@ -2344,8 +2365,7 @@ class FeishuAdapter(BasePlatformAdapter):
                     try:
                         await self.send(
                             _chat,
-                            "⌛ That approval had already expired — the command "
-                            "was not run (it timed out or was resolved elsewhere).",
+                            t("platform.shared.approval_expired"),
                         )
                     except Exception:
                         logger.debug("[Feishu] expired-approval notice failed", exc_info=True)
@@ -2737,7 +2757,7 @@ class FeishuAdapter(BasePlatformAdapter):
             timeout=30.0, follow_redirects=True, event_hooks={"response": [_ssrf_redirect_guard]},
         ) as client:
             response = await client.get(
-                file_url, headers={"User-Agent": "Mozilla/5.0 (compatible; PulseAgent/1.0)", "Accept": "*/*"},
+                file_url, headers={"User-Agent": "Mozilla/5.0 (compatible; PULSEAgent/1.0)", "Accept": "*/*"},
             )
             response.raise_for_status()
             # Snapshot headers + body inside the context so pooled connections fully release.
@@ -2838,7 +2858,7 @@ class FeishuAdapter(BasePlatformAdapter):
             return self._webhook_reject(remote_ip, "401-sig", 401, "Invalid signature")
 
         if payload.get("encrypt"):
-            logger.error("[Feishu] Encrypted webhook payloads are not supported by Pulse webhook mode")
+            logger.error("[Feishu] Encrypted webhook payloads are not supported by PULSE webhook mode")
             return self._webhook_reject(
                 remote_ip, "400-encrypted", 400, json_msg="encrypted webhook payloads are not supported",
             )
@@ -4259,7 +4279,7 @@ def _qr_register_inner(*, initial_domain: str, timeout_seconds: int) -> Optional
         print(f"\n  Scan the QR code above, or open this URL directly:\n  {qr_url}")
     else:
         print(f"  Open this URL in Feishu / Lark on your phone:\n\n  {qr_url}\n")
-        print("  Tip: from the Pulse environment, run: "
+        print("  Tip: from the PULSE environment, run: "
               f"{install_hint('messaging')} "
               "to display a scannable QR code here next time")
     print()
@@ -4460,7 +4480,7 @@ def _is_connected(config) -> bool:
 
 
 def register(ctx) -> None:
-    """Plugin entry point — called by the Pulse plugin system."""
+    """Plugin entry point — called by the PULSE plugin system."""
     ctx.register_platform(
         name="feishu", label="Feishu / Lark", adapter_factory=FeishuAdapter,
         check_fn=feishu_deps_present, ensure_deps_fn=check_feishu_requirements,

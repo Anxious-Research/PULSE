@@ -1,6 +1,6 @@
-# Pulse TUI
+# PULSE TUI
 
-React + Ink terminal UI for Pulse. TypeScript owns the screen. Python owns sessions, tools, model calls, and most command logic.
+React + Ink terminal UI for PULSE. TypeScript owns the screen. Python owns sessions, tools, model calls, and most command logic.
 
 ```bash
 pulse --tui
@@ -119,7 +119,7 @@ No model tool schema or prompt-caching behavior changes.
 - `types.ts` — `SlashCommand` interface and `SlashRunCtx` execution context (gateway rpc, transcript helpers, session refs, stale-guard)
 - `registry.ts` — assembles `SLASH_COMMANDS` from all command files in registration order (core → billing → credits → session → ops → setup → debug) and exposes `findSlashCommand(name)` for case-insensitive lookup
 - `commands/core.ts` — general TUI commands
-- `commands/billing.ts` — `/billing`: manage Anxious remote spending — buy credits, auto-reload, limits
+- `commands/billing.ts` — `/billing`: manage Nous remote spending — buy credits, auto-reload, limits
 - `commands/credits.ts` — `/credits`
 - `commands/session.ts` — session and agent commands
 - `commands/ops.ts` — operations commands
@@ -190,10 +190,12 @@ Notes:
 | approval prompt             | `Up/Down`, `Enter`  | Move and confirm the selected approval choice     |
 | approval prompt             | `o`, `s`, `a`, `d`  | Quick-pick `once`, `session`, `always`, `deny`    |
 | approval prompt             | `Esc`, `Ctrl+C`     | Deny                                              |
-| clarify prompt with choices | `Up/Down`, `Enter`  | Move and confirm the selected choice              |
+| clarify prompt with choices | `Up/Down`, `Enter`  | Move and lock the selected choice                 |
 | clarify prompt with choices | single-digit number | Quick-pick the matching numbered choice           |
 | clarify prompt with choices | `Enter` on "Other"  | Switch into free-text entry                       |
-| clarify free-text mode      | `Enter`             | Submit typed answer                               |
+| clarify free-text mode      | `Enter`             | Lock typed answer (empty skips the question)      |
+| clarify prompt              | `Tab`, `Shift+Tab`  | Switch question                                   |
+| clarify prompt              | `Esc`, `Ctrl+C`     | Cancel the remaining questions                    |
 | sudo / secret prompt        | `Enter`             | Submit typed value                                |
 | sudo / secret prompt        | `Ctrl+C`            | Cancel by sending an empty response               |
 | resume picker               | `Up/Down`, `Enter`  | Move and resume the selected session              |
@@ -204,7 +206,7 @@ Notes:
 
 - Clarify free-text mode and masked prompts use `ink-text-input`, so text editing there follows the library's default bindings rather than `components/textInput.tsx`.
 - When a blocking prompt is open, the main chat input hotkeys are suspended.
-- Clarify mode has no dedicated cancel shortcut in the current client. Sudo and secret prompts only expose `Ctrl+C` cancellation from the app-level blocked handler.
+- Sudo and secret prompts only expose `Ctrl+C` cancellation from the app-level blocked handler.
 
 ### Interaction rules
 
@@ -237,7 +239,7 @@ The Python gateway can pause the main loop and ask the client a question. These 
 `createServerRequestHandler.ts`), not events:
 
 - `approval`: allow once, allow for session, allow always, or deny → `{ choice }`
-- `clarify`: pick from choices or type a custom answer → `{ answer }` (batch: `{ answers }`)
+- `clarify`: one or more questions; each answer is locked with the `clarify.lock` RPC, cancel → `{}`
 - `sudo`: masked password entry → `{ value }`
 - `secret`: masked value entry for a named env var → `{ value }`
 - `session.list`: used by `SessionPicker` for `/resume`
@@ -258,7 +260,7 @@ The following commands are handled directly by the TUI client. Unrecognized comm
 `/status`, `/title`, `/fortune`, `/redraw`, `/terminal-setup`
 
 ### Billing (`billing.ts`)
-`/billing` — manage Anxious remote spending — buy credits, auto-reload, limits
+`/billing` — manage Nous remote spending — buy credits, auto-reload, limits
 
 ### Session (`session.ts`)
 `/model`, `/sessions` (aliases `/switch`, `/session`, `/resume`),
@@ -272,7 +274,7 @@ The following commands are handled directly by the TUI client. Unrecognized comm
 `/skills`, `/reload-skills` (alias `/reload_skills`), `/plugins`, `/tools`
 
 ### Credits (`credits.ts`)
-`/credits` — Anxious credit balance and browser top-up
+`/credits` — Nous credit balance and browser top-up
 
 ### Setup (`setup.ts`)
 `/setup` — launches external `pulse setup` wizard, suspends Ink while it runs
@@ -388,7 +390,7 @@ ui-tui/
         types.ts                    SlashCommand interface and SlashRunCtx execution context
         registry.ts                 SLASH_COMMANDS assembly and findSlashCommand lookup
         commands/
-          billing.ts                /billing — manage Anxious remote spending
+          billing.ts                /billing — manage Nous remote spending
           core.ts                   general TUI commands
           credits.ts                /credits
           debug.ts                  /heapdump, /mem
@@ -509,5 +511,5 @@ tui_gateway/
   entry.py               stdio entrypoint
   server.py              RPC handlers and session logic
   render.py              optional rich/ANSI bridge
-  slash_worker.py        persistent PulseCLI subprocess for slash commands
+  slash_worker.py        persistent PULSECLI subprocess for slash commands
 ```

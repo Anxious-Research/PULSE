@@ -7,14 +7,14 @@ import type {
   ToolsetInfo,
   ToolsetProvider,
 } from "@/lib/api";
-import { useToast } from "@anxious-research/ui/hooks/use-toast";
-import { Button } from "@anxious-research/ui/ui/components/button";
-import { Input } from "@anxious-research/ui/ui/components/input";
-import { Label } from "@anxious-research/ui/ui/components/label";
-import { Badge } from "@anxious-research/ui/ui/components/badge";
-import { Switch } from "@anxious-research/ui/ui/components/switch";
-import { Spinner } from "@anxious-research/ui/ui/components/spinner";
-import { Toast } from "@anxious-research/ui/ui/components/toast";
+import { useToast } from "@nous-research/ui/hooks/use-toast";
+import { Button } from "@nous-research/ui/ui/components/button";
+import { Input } from "@nous-research/ui/ui/components/input";
+import { Label } from "@nous-research/ui/ui/components/label";
+import { Badge } from "@nous-research/ui/ui/components/badge";
+import { Switch } from "@nous-research/ui/ui/components/switch";
+import { Spinner } from "@nous-research/ui/ui/components/spinner";
+import { Toast } from "@nous-research/ui/ui/components/toast";
 import { cn, themedBody } from "@/lib/utils";
 
 interface Props {
@@ -300,9 +300,9 @@ export function ToolsetConfigDrawer({ toolset, profile, onClose, onChanged }: Pr
                           {provider.badge}
                         </Badge>
                       )}
-                      {provider.requires_anxious_auth && (
+                      {provider.requires_nous_auth && (
                         <Badge tone="outline" className="text-xs">
-                          Anxious Portal
+                          Nous Portal
                         </Badge>
                       )}
                     </div>

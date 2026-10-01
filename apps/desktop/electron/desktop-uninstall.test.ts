@@ -72,8 +72,8 @@ test('nativeRemovalInstructions names the steward per kind and OS', () => {
   assert.match(nativeRemovalInstructions('bundled', 'win32'), /Installed apps/)
   assert.match(nativeRemovalInstructions('bundled', 'darwin'), /Trash/)
   assert.match(
-    nativeRemovalInstructions('bundled', 'linux', '/home/x/Apps/Pulse.AppImage'),
-    /\/home\/x\/Apps\/Pulse\.AppImage/
+    nativeRemovalInstructions('bundled', 'linux', '/home/x/Apps/PULSE.AppImage'),
+    /\/home\/x\/Apps\/PULSE\.AppImage/
   )
   assert.match(
     nativeRemovalInstructions('bundled', 'linux', '/opt/pulse/linux-unpacked'),
@@ -100,12 +100,12 @@ test('mode predicates classify what each mode removes', () => {
 
 test('resolveRemovableAppPath finds the .app bundle on macOS', () => {
   assert.equal(
-    resolveRemovableAppPath('/Applications/Pulse.app/Contents/MacOS/Pulse', 'darwin'),
-    '/Applications/Pulse.app'
+    resolveRemovableAppPath('/Applications/PULSE.app/Contents/MacOS/PULSE', 'darwin'),
+    '/Applications/PULSE.app'
   )
   assert.equal(
-    resolveRemovableAppPath('/Users/x/Applications/Pulse.app/Contents/MacOS/Pulse', 'darwin'),
-    '/Users/x/Applications/Pulse.app'
+    resolveRemovableAppPath('/Users/x/Applications/PULSE.app/Contents/MacOS/PULSE', 'darwin'),
+    '/Users/x/Applications/PULSE.app'
   )
 })
 
@@ -124,23 +124,23 @@ test('resolveRemovableAppPath: dev-run .app resolves (safety is shouldRemoveAppB
 
 test('resolveRemovableAppPath finds the install dir on Windows', () => {
   assert.equal(
-    resolveRemovableAppPath('C:\\Users\\x\\AppData\\Local\\Programs\\Pulse\\Pulse.exe', 'win32'),
-    'C:\\Users\\x\\AppData\\Local\\Programs\\Pulse'
+    resolveRemovableAppPath('C:\\Users\\x\\AppData\\Local\\Programs\\PULSE\\PULSE.exe', 'win32'),
+    'C:\\Users\\x\\AppData\\Local\\Programs\\PULSE'
   )
   assert.equal(
-    resolveRemovableAppPath('C:\\Users\\x\\AppData\\Local\\pulse-desktop\\Pulse.exe', 'win32'),
+    resolveRemovableAppPath('C:\\Users\\x\\AppData\\Local\\pulse-desktop\\PULSE.exe', 'win32'),
     'C:\\Users\\x\\AppData\\Local\\pulse-desktop'
   )
 })
 
 test('resolveRemovableAppPath returns null for an unrecognized Windows dir', () => {
-  assert.equal(resolveRemovableAppPath('C:\\Temp\\foo\\Pulse.exe', 'win32'), null)
+  assert.equal(resolveRemovableAppPath('C:\\Temp\\foo\\PULSE.exe', 'win32'), null)
 })
 
 test('resolveRemovableAppPath uses APPIMAGE on Linux when set', () => {
   assert.equal(
-    resolveRemovableAppPath('/tmp/.mount_PulseXXXX/pulse', 'linux', { APPIMAGE: '/home/x/Apps/Pulse.AppImage' }),
-    '/home/x/Apps/Pulse.AppImage'
+    resolveRemovableAppPath('/tmp/.mount_PULSEXXXX/pulse', 'linux', { APPIMAGE: '/home/x/Apps/PULSE.AppImage' }),
+    '/home/x/Apps/PULSE.AppImage'
   )
 })
 
@@ -158,8 +158,8 @@ test('resolveRemovableAppPath returns null for an empty exe path', () => {
 // --- shouldRemoveAppBundle ---
 
 test('shouldRemoveAppBundle requires packaged AND a resolved path', () => {
-  assert.equal(shouldRemoveAppBundle(true, '/Applications/Pulse.app'), true)
-  assert.equal(shouldRemoveAppBundle(false, '/Applications/Pulse.app'), false)
+  assert.equal(shouldRemoveAppBundle(true, '/Applications/PULSE.app'), true)
+  assert.equal(shouldRemoveAppBundle(false, '/Applications/PULSE.app'), false)
   assert.equal(shouldRemoveAppBundle(true, null), false)
   assert.equal(shouldRemoveAppBundle(false, null), false)
 })
@@ -248,7 +248,7 @@ test('buildWindowsCleanupScript waits (bounded) for PID, runs uninstall, rmdir b
     pythonPath: 'C:\\pulse',
     agentRoot: 'C:\\pulse',
     uninstallArgs: ['-m', 'pulse_cli.uninstall', '--mode', 'full'],
-    appPath: 'C:\\Users\\x\\AppData\\Local\\Programs\\Pulse',
+    appPath: 'C:\\Users\\x\\AppData\\Local\\Programs\\PULSE',
     pulseHome: 'C:\\Users\\x\\AppData\\Local\\pulse'
   })
 
@@ -262,7 +262,7 @@ test('buildWindowsCleanupScript waits (bounded) for PID, runs uninstall, rmdir b
   assert.match(script, /findstr \/r \/c:" %PID% "/)
   // Removal is a retry loop (Windows releases dir handles lazily).
   assert.match(script, /:rmloop/)
-  assert.match(script, /rmdir \/s \/q "C:\\Users\\x\\AppData\\Local\\Programs\\Pulse" >nul 2>&1/)
+  assert.match(script, /rmdir \/s \/q "C:\\Users\\x\\AppData\\Local\\Programs\\PULSE" >nul 2>&1/)
   assert.match(script, /if %tries% geq 10 goto rmdone/)
   assert.match(script, /del "%~f0"/)
 })

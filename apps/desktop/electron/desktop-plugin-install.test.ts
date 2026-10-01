@@ -25,8 +25,8 @@ function mkdtemp(prefix: string) {
 
 describe('resolvePluginGitUrl', () => {
   it('maps owner/repo shorthand to github git url', () => {
-    expect(resolvePluginGitUrl('Anxious-Research/pulse-example-plugins')).toEqual({
-      gitUrl: 'https://github.com/Anxious-Research/pulse-example-plugins.git',
+    expect(resolvePluginGitUrl('NousResearch/pulse-example-plugins')).toEqual({
+      gitUrl: 'https://github.com/NousResearch/pulse-example-plugins.git',
       subdir: null
     })
   })

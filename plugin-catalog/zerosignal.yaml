@@ -12,7 +12,7 @@ capabilities:
   provides_tools: []
   provides_hooks: []
   provides_middleware: []
-  # ZEROSIGNAL_API_KEY is a placeholder: Pulse needs a non-empty value, the
+  # ZEROSIGNAL_API_KEY is a placeholder: PULSE needs a non-empty value, the
   # proxy ignores it (the wallet is the credential). Any string works.
   requires_env:
     - ZEROSIGNAL_API_KEY

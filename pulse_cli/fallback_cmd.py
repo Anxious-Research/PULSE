@@ -135,7 +135,7 @@ def cmd_fallback_list(args) -> None:  # noqa: ARG001
         print(f"  Primary:   {primary}\n")
     _print_chain("Fallback chain", chain)
     print("  Tried in order when the primary fails (rate-limit, 5xx, connection errors).")
-    print("  Docs: https://pulse-agent.anxiousresearchlab.com/docs/user-guide/features/fallback-providers\n")
+    print("  Docs: https://pulse-agent.anxious-research.com/docs/user-guide/features/fallback-providers\n")
 
 
 def cmd_fallback_add(args) -> None:

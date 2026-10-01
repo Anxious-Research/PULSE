@@ -22,8 +22,8 @@ import { WebLinksAddon } from "@xterm/addon-web-links";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
-import { Button } from "@anxious-research/ui/ui/components/button";
-import { Typography } from "@anxious-research/ui/ui/components/typography/index";
+import { Button } from "@nous-research/ui/ui/components/button";
+import { Typography } from "@nous-research/ui/ui/components/typography/index";
 import { cn } from "@/lib/utils";
 import { Copy, PanelRight, RotateCcw, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -591,7 +591,7 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
       fontWeightBold: "700",
       macOptionIsMeta: true,
       // Hold Option (Alt on Linux/Windows) to force native text selection
-      // even when the inner Pulse TUI has enabled xterm mouse-events
+      // even when the inner PULSE TUI has enabled xterm mouse-events
       // mode (CSI ?1000h family). Without this, click-and-drag in the
       // chat canvas selects nothing and Cmd+C falls back to copying the
       // entire visible buffer, which is rarely what the user wants.
@@ -1491,10 +1491,17 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
         setPtyState("closed");
         return;
       }
-      if (!ev.wasClean || ev.code === 1001 || ev.code === 1006) {
-        // Transient transport drop (refresh, sleep/wake, signal loss).
-        // Reconnect with backoff; the same ?attach= token reattaches to
-        // the still-living PTY, so the conversation continues in place.
+      if (
+        !ev.wasClean ||
+        ev.code === 1001 ||
+        ev.code === 1006 ||
+        ev.code === 1012 ||
+        ev.code === 1013
+      ) {
+        // Transient transport drop (refresh, sleep/wake, signal loss), or a
+        // clean server-side restart signal: 1012 Service Restart / 1013 Try
+        // Again Later mean the server is coming back, so redial instead of
+        // stranding the pane on "[session ended]" (#95951).
         scheduleReconnect(ev.code);
         return;
       }
@@ -1519,7 +1526,7 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
     //
     // For the browser embed we prefer input stability over terminal-style
     // mouse reporting, so we drop SGR mouse reports entirely instead of
-    // forwarding them into Pulse. Keyboard input, paste, and resize still
+    // forwarding them into PULSE. Keyboard input, paste, and resize still
     // behave normally.
       // eslint-disable-next-line no-control-regex -- intentional ESC byte in xterm SGR mouse report parser
       const SGR_MOUSE_RE = /^\x1b\[<(\d+);(\d+);(\d+)([Mm])$/;

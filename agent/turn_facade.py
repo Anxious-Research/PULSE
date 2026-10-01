@@ -28,6 +28,7 @@ class TurnFacadeMixin:
         persist_user_platform_id: Optional[str]=None, moa_config: Optional[dict[str, Any]]=None,
         turn_author: Optional[Dict[str, Any]] = None,
         relay_metadata: Optional[Dict[str, Any]] = None,
+        title_user_message: Optional[str]=None,
     ) -> Dict[str, Any]:
         """Forwarder — see ``agent.conversation_loop.run_conversation``."""
         # A review shares this session_id for cache parity: fence review startup or interrupt
@@ -125,7 +126,7 @@ class TurnFacadeMixin:
                     parent_session_id=getattr(self, "_parent_session_id", None) or "",
                 )
                 task_started = True
-            # Ambient Anxious Portal tagging: every LLM call in this turn (loop, compression,
+            # Ambient Nous Portal tagging: every LLM call in this turn (loop, compression,
             # vision, MoA, review forks) inherits `conversation=<root>`; host-declared
             # affinity scope falls back to it; accounting handles route aux usage to the session.
             token = set_conversation_context(self._conversation_root_id())
@@ -138,7 +139,7 @@ class TurnFacadeMixin:
             )
 
             # Keep the ContextVar scope local (agent tokens may be observed from another thread).
-            # A host that owns this thread (Pulse Console) may cancel the turn cross-thread.
+            # A host that owns this thread (PULSE Console) may cancel the turn cross-thread.
             with bind_subagent_parent(self), scoped_runtime_main({}), track_in_interrupt_scope(self):
                 try:
                     if lease is not None:
@@ -151,6 +152,7 @@ class TurnFacadeMixin:
                         persist_user_display_metadata=persist_user_display_metadata,
                         persist_user_platform_id=persist_user_platform_id, moa_config=moa_config,
                         turn_author=turn_author,
+                        title_user_message=title_user_message,
                     )
                 finally:
                     # Post-loop relay/task finalization must not receive a late refresh interrupt;

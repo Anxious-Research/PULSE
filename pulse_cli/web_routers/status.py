@@ -74,7 +74,7 @@ def _safe_call(mod, fn_name: str, default):
 
 def _count_status_active_sessions() -> int:
     """Best-effort status garnish. Opens read-only (via the shared stale-schema heal) so
-    /api/status never routinely writes to state.db while another Pulse process uses it."""
+    /api/status never routinely writes to state.db while another PULSE process uses it."""
     from pulse_state import _default_db_path
     # The heal helper bootstraps a missing store; this garnish must not — on a fresh install
     # /api/status polls would otherwise create state.db before the user's first session.
@@ -308,7 +308,9 @@ async def _resolve_gateway_status(profile_dir: Optional[Path], health_url) -> Di
         # Served by the multiplexer: its record is this profile's runtime, with the profile's own
         # adapters under ``<profile>:<platform>`` re-keyed to the standalone shape. Unscoped, the
         # profile is the process's own home (a pooled ``pulse --profile X serve``).
-        served_name = profile_dir.name if profile_dir is not None else profile_name_for_home(get_process_pulse_home())
+        # Fold on the profile NAME, never ``profile_dir.name``: ``?profile=default`` resolves the
+        # root itself, whose basename (``.pulse``) matched nothing and read as a named id (#123088).
+        served_name = profile_name_for_home(profile_dir or get_process_pulse_home())
         runtime = {**liveness.runtime,
                    "platforms": profile_platforms_from_multiplexer(liveness.runtime, served_name or "")}
 
@@ -381,14 +383,14 @@ def _auth_gate_status() -> Dict[str, Any]:
             "auth_flows": auth_flows}
 
 
-def _anxious_session_validity() -> str:
-    """Anxious bootstrap-session validity for the NAS health sweep: a hosted agent whose Anxious
+def _nous_session_validity() -> str:
+    """Nous bootstrap-session validity for the NAS health sweep: a hosted agent whose Nous
     auth dies terminally looks HEALTHY to every liveness probe yet every inference turn
     fails, and this is the ONLY signal that surfaces it (local auth-store state, no token
     needed). Best-effort: never let auth classification break the probe."""
     try:
-        from pulse_cli.auth import get_anxious_session_validity
-        return get_anxious_session_validity()
+        from pulse_cli.auth import get_nous_session_validity
+        return get_nous_session_validity()
     except Exception:
         return "unknown"
 
@@ -517,7 +519,7 @@ async def get_status(profile: Optional[str] = None):
             "gateway_drainable": derive_gateway_drainable(
                 gateway_running=gateway_running, gateway_state=gateway_state),
             "restart_drain_timeout": restart_drain_timeout, "active_sessions": active_sessions,
-            **auth, "anxious_session_valid": _anxious_session_validity()}
+            **auth, "nous_session_valid": _nous_session_validity()}
 
         # Stable per-install identity (first call may touch disk). Omitted (not null) when
         # unpersistable so older-client behavior and the no-identity fallback stay identical.
@@ -535,7 +537,7 @@ async def get_status(profile: Optional[str] = None):
                              else "degraded")
         await _advisory_pressure(status, profile_dir if profile_dir else get_pulse_home())
 
-        # Profile NAMES and ``gateway_mode`` are low-sensitivity product surface (Pulse Cloud
+        # Profile NAMES and ``gateway_mode`` are low-sensitivity product surface (PULSE Cloud
         # renders the profile list over a gated bind) so they survive the auth gate; the
         # per-gateway ``gateways[]`` carries host ports and stays gated below.
         status["profiles"] = topology["profiles"]
@@ -677,6 +679,8 @@ async def get_learning_graph(profile: Optional[str] = None):
         # _profile_scope takes _SKILLS_PROFILE_LOCK and the graph build reads skills/memories
         # from disk — keep it off the event loop.
         return await scoped_to_thread(profile, _run)
+    except HTTPException:
+        raise  # an unknown ?profile= is the scope's 404, not a graph failure
     except Exception:
         _log.exception("GET /api/learning/graph failed")
         raise HTTPException(status_code=500, detail="Failed to build learning graph")
@@ -714,7 +718,7 @@ async def update_learning_node(body: LearningNodeEdit):
         body.profile, lambda: edit_node(body.id, body.content), 400, "edit failed")
 
 
-# Portal — Anxious Portal auth + Tool Gateway routing status (read-only).
+# Portal — Nous Portal auth + Tool Gateway routing status (read-only).
 
 
 @router.get("/api/portal")
@@ -725,8 +729,8 @@ async def get_portal_status(profile: Optional[str] = None):
 
 
 def _feature_state(feat) -> str:
-    if getattr(feat, "managed_by_anxious", False):
-        return "via Anxious Portal"
+    if getattr(feat, "managed_by_nous", False):
+        return "via Nous Portal"
     if getattr(feat, "active", False):
         return getattr(feat, "current_provider", None) or "active"
     return "not configured"
@@ -736,16 +740,16 @@ def _get_portal_status_sync():
     cfg = load_config() or {}
     auth: Dict[str, Any] = {}
     try:
-        from pulse_cli.auth import get_anxious_auth_status_local
+        from pulse_cli.auth import get_nous_auth_status_local
         # Refresh-free snapshot so polling never performs an OAuth refresh.
-        auth = get_anxious_auth_status_local() or {}
+        auth = get_nous_auth_status_local() or {}
     except Exception:
         auth = {}
 
     features = []
     try:
-        from pulse_cli.anxious_subscription import get_anxious_subscription_features
-        feats = get_anxious_subscription_features(cfg)
+        from pulse_cli.nous_subscription import get_nous_subscription_features
+        feats = get_nous_subscription_features(cfg)
         if feats is not None:
             features = [{"label": getattr(feat, "label", ""), "state": _feature_state(feat)}
                         for feat in feats.items()]
@@ -760,7 +764,7 @@ def _get_portal_status_sync():
         # Free tier: a token exists, so logged_in stays true for callers that only ask "is there a
         # credential"; surfaces that render an account must branch on free_tier first.
         "free_tier": bool(auth.get("free_tier")), "account_tier": auth.get("account_tier"),
-        "subscription_url": "https://portal.anxiousresearchlab.com/manage-subscription",
+        "subscription_url": "https://portal.anxious-research.com/manage-subscription",
         "features": features}
 
 
@@ -793,6 +797,8 @@ async def run_debug_share_endpoint(body: DebugShareRequest | None = None,
     try:
         result = await config_scoped_to_thread(profile, lambda: build_debug_share(
             log_lines=max(1, min(int(req.lines), 5000)), redact=bool(req.redact)))
+    except HTTPException:
+        raise  # an unknown ?profile= is the scope's 404, not a failed share
     except RuntimeError as exc:
         # Required summary-report upload failed (offline / paste service down).
         raise HTTPException(status_code=502, detail=f"Upload failed: {exc}")

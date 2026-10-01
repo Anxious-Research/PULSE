@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# MIT License. Part of the Pulse docx skill.
+# MIT License. Part of the PULSE docx skill.
 """Health-check a .docx package and report issues as JSON.
 
 Usage: docx_validate.py file.docx

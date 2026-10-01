@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest'
 
-import type { PulseConnection } from '@/global'
+import type { PULSEConnection } from '@/global'
 import { $connection } from '@/store/session'
 
 import {
@@ -18,7 +18,7 @@ it('reads a remote-owned image through its gateway, never the local file reader'
   const api = vi.fn(async () => ({ dataUrl: 'data:remote' }))
   vi.stubGlobal('pulseDesktop', { readFileDataUrl, api })
   // A local foreground must not pull a remote tile's path off this disk.
-  $connection.set({ connectionId: 'local', mode: 'local', profile: 'default' } as PulseConnection)
+  $connection.set({ connectionId: 'local', mode: 'local', profile: 'default' } as PULSEConnection)
 
   try {
     await expect(resolveMediaDisplaySrc('/srv/out.png', { connectionId: 'remote-1' })).resolves.toBe('data:remote')
@@ -31,7 +31,7 @@ it('reads a remote-owned image through its gateway, never the local file reader'
 })
 
 it('shares proven path aliases only within an owner and bounds regenerated metadata by LRU', () => {
-  const a = { connectionId: 'a', profile: 'work', mode: 'remote' } as PulseConnection
+  const a = { connectionId: 'a', profile: 'work', mode: 'remote' } as PULSEConnection
   const b = { ...a, connectionId: 'b' }
   const key = mediaImageKey('/images/a b.png', a)
   const dimensions = { width: 900, height: 600 }
@@ -68,7 +68,7 @@ it('shares proven path aliases only within an owner and bounds regenerated metad
 })
 
 it('keeps multi-megabyte inline sources to a small, distinct key', () => {
-  const a = { connectionId: 'a', profile: 'work', mode: 'local' } as PulseConnection
+  const a = { connectionId: 'a', profile: 'work', mode: 'local' } as PULSEConnection
   const inline = (tail: string) => `data:image/png;base64,${'A'.repeat(4_000_000)}${tail}`
 
   expect(mediaImageKey(inline('x'), a).length).toBeLessThan(1024)

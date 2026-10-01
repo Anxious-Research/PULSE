@@ -472,7 +472,7 @@ it.each(rebuiltRuntimeCases)(
           finalizeInterimAssistantMessage: vi.fn(),
           hydrateFromStoredSession: vi.fn(async () => undefined),
           queryClient: new QueryClient(),
-          refreshPulseConfig: vi.fn(async () => undefined),
+          refreshPULSEConfig: vi.fn(async () => undefined),
           scheduleSessionsRefresh: vi.fn(),
           sessionInterrupted: () => false,
           upsertToolCall: vi.fn()

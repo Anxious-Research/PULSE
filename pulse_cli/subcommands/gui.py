@@ -9,7 +9,7 @@ def build_gui_parser(subparsers, *, cmd_gui: Callable) -> None:
     """Attach the ``gui`` subcommand to ``subparsers``."""
     gui_parser = subparsers.add_parser(
         "desktop", aliases=["gui"], help="Build and launch the native desktop app",
-        description="Launch the Pulse Electron desktop app. By default this installs "
+        description="Launch the PULSE Electron desktop app. By default this installs "
             "workspace Node dependencies, builds the current OS's unpacked "
             "Electron app, then launches that packaged artifact.")
     gui_parser.add_argument(
@@ -23,12 +23,12 @@ def build_gui_parser(subparsers, *, cmd_gui: Callable) -> None:
         help="Enable deterministic desktop boot delays for validating startup UI")
     gui_parser.add_argument(
         "--ignore-existing", action="store_true",
-        help="Skip the installed Pulse runtime (~/.pulse/pulse-agent) so no local "
+        help="Skip the installed PULSE runtime (~/.pulse/pulse-agent) so no local "
              "backend starts and Desktop offers connect or install instead. --pulse-root "
              "and the bundled runtime still win; a runtime installed during this launch is used.")
     gui_parser.add_argument(
         "--pulse-root",
-        help="Override the Pulse source root used by Desktop (sets PULSE_DESKTOP_PULSE_ROOT)")
+        help="Override the PULSE source root used by Desktop (sets PULSE_DESKTOP_PULSE_ROOT)")
     gui_parser.add_argument(
         "--cwd",
         help="Initial project directory for Desktop chat sessions (sets PULSE_DESKTOP_CWD)")
@@ -51,7 +51,12 @@ def build_gui_parser(subparsers, *, cmd_gui: Callable) -> None:
             "rebuilds with a certificate-anchored identity. Idempotent — safe "
             "to re-run after updates.")
     gui_parser.add_argument(
-        "--identity", default="Pulse Local Signing",
-        help="Certificate name to create/use for --setup-tcc-identity (default: Pulse Local Signing)",
+        "--identity", default="PULSE Local Signing",
+        help="Certificate name to create/use for --setup-tcc-identity (default: PULSE Local Signing)",
+    )
+    gui_parser.add_argument(
+        "--close-preview",
+        action="store_true",
+        help="Close the preview pane and exit its fullscreen (out-of-band escape hatch when the pane captured all input)",
     )
     gui_parser.set_defaults(func=cmd_gui)

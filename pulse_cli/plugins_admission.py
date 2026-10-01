@@ -21,7 +21,7 @@ class DependencyConflict(AdmissionRefused):
         self.plugin = plugin
         who = f"Plugin '{plugin}'" if plugin else "The plugin selection"
         super().__init__(
-            f"{who} conflicts with the dependencies pinned by Pulse core or an enabled plugin, "
+            f"{who} conflicts with the dependencies pinned by PULSE core or an enabled plugin, "
             f"so it was not admitted. Resolver: {cause}")
 
 

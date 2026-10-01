@@ -14,9 +14,9 @@ import type { ConfigSettings as ConfigSettingsType } from './config-settings'
 // writable one; narrow the import back so tests can drive it.
 const scopeProfileMock = $settingsRequestProfile as unknown as { set: (value: string) => void }
 
-const getPulseConfigRecord = vi.fn()
-const getPulseConfigSchema = vi.fn()
-const savePulseConfig = vi.fn()
+const getPULSEConfigRecord = vi.fn()
+const getPULSEConfigSchema = vi.fn()
+const savePULSEConfig = vi.fn()
 const getElevenLabsVoices = vi.fn()
 
 // Keep the real read-origin helpers (WeakMap peek/bind) live: the shared
@@ -27,9 +27,9 @@ vi.mock('@/pulse', async () => ({
   // real one is a pure string fold, mirrored here for the string scopes this
   // suite passes.
   profileScopeKey: (scope?: unknown) => (typeof scope === 'string' && scope.trim()) || 'default',
-  getPulseConfigRecord: (profile?: string) => getPulseConfigRecord(profile),
-  getPulseConfigSchema: () => getPulseConfigSchema(),
-  savePulseConfig: (config: unknown, profile?: string) => savePulseConfig(config, profile),
+  getPULSEConfigRecord: (profile?: string) => getPULSEConfigRecord(profile),
+  getPULSEConfigSchema: () => getPULSEConfigSchema(),
+  savePULSEConfig: (config: unknown, profile?: string) => savePULSEConfig(config, profile),
   getElevenLabsVoices: () => getElevenLabsVoices(),
   setApiRequestProfile: () => {}
 }))
@@ -71,8 +71,8 @@ beforeAll(async () => {
 beforeEach(() => {
   scopeProfileMock.set('default')
   getElevenLabsVoices.mockResolvedValue({ available: false })
-  getPulseConfigSchema.mockResolvedValue({ fields: {} })
-  savePulseConfig.mockResolvedValue({ ok: true })
+  getPULSEConfigSchema.mockResolvedValue({ fields: {} })
+  savePULSEConfig.mockResolvedValue({ ok: true })
 })
 
 afterEach(() => {
@@ -97,7 +97,7 @@ function renderConfigSettings(activeSectionId = 'safety') {
 
 describe('ConfigSettings autosave', () => {
   it('sends a later revert instead of diffing it away against the stale page-load baseline', async () => {
-    getPulseConfigRecord.mockResolvedValue({ checkpoints: { enabled: false }, other: 'untouched' })
+    getPULSEConfigRecord.mockResolvedValue({ checkpoints: { enabled: false }, other: 'untouched' })
 
     vi.useFakeTimers({ shouldAdvanceTime: true })
 
@@ -110,19 +110,19 @@ describe('ConfigSettings autosave', () => {
       toggle.click()
       await vi.advanceTimersByTimeAsync(700)
 
-      await vi.waitFor(() => expect(savePulseConfig).toHaveBeenCalledTimes(1))
-      expect(savePulseConfig.mock.calls[0][0]).toEqual({ checkpoints: { enabled: true } })
+      await vi.waitFor(() => expect(savePULSEConfig).toHaveBeenCalledTimes(1))
+      expect(savePULSEConfig.mock.calls[0][0]).toEqual({ checkpoints: { enabled: true } })
 
       // Revert: flip it back to its original value and let autosave fire again.
       toggle.click()
       await vi.advanceTimersByTimeAsync(700)
 
-      await vi.waitFor(() => expect(savePulseConfig).toHaveBeenCalledTimes(2))
+      await vi.waitFor(() => expect(savePULSEConfig).toHaveBeenCalledTimes(2))
       // Must still explicitly send the reverted value — diffing against the
       // never-advanced page-load baseline would produce an empty patch here
       // (the field is back to its original value) and leave disk stuck at
       // `enabled: true` from the first save.
-      expect(savePulseConfig.mock.calls[1][0]).toEqual({ checkpoints: { enabled: false } })
+      expect(savePULSEConfig.mock.calls[1][0]).toEqual({ checkpoints: { enabled: false } })
     } finally {
       vi.useRealTimers()
     }
@@ -134,19 +134,19 @@ describe('ConfigSettings autosave', () => {
     // the write — a read scoped to B with a write that falls back to the
     // ambient (launch) profile is exactly the silent cross-profile write.
     scopeProfileMock.set('nash')
-    getPulseConfigRecord.mockResolvedValue({ checkpoints: { enabled: false } })
+    getPULSEConfigRecord.mockResolvedValue({ checkpoints: { enabled: false } })
 
     vi.useFakeTimers({ shouldAdvanceTime: true })
 
     try {
       renderConfigSettings()
 
-      await vi.waitFor(() => expect(getPulseConfigRecord).toHaveBeenCalledWith('nash'))
+      await vi.waitFor(() => expect(getPULSEConfigRecord).toHaveBeenCalledWith('nash'))
 
       ;(await screen.findByRole('switch')).click()
       await vi.advanceTimersByTimeAsync(700)
 
-      await vi.waitFor(() => expect(savePulseConfig).toHaveBeenCalledWith({ checkpoints: { enabled: true } }, 'nash'))
+      await vi.waitFor(() => expect(savePULSEConfig).toHaveBeenCalledWith({ checkpoints: { enabled: true } }, 'nash'))
     } finally {
       vi.useRealTimers()
     }

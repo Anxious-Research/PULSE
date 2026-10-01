@@ -1,6 +1,7 @@
 /**
  * PULSE_DESKTOP_IGNORE_EXISTING=1 (`pulse desktop --ignore-existing`) keeps
- * Desktop off the installed runtime at ACTIVE_PULSE_ROOT. Backend resolution
+ * Desktop off installed runtimes (ACTIVE_PULSE_ROOT, or the install a
+ * published user-bin launcher reports). Backend resolution
  * then falls through to bootstrap-needed, which shows the first-run choice
  * (connect a remote, or install) instead of starting a local serve.
  *

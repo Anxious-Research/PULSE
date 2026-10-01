@@ -6,7 +6,7 @@ description: >-
   README and metadata, keep recent lookups on Desktop. Disclosure — HTTPS to registry.npmjs.org,
   pypi.org and cdn.jsdelivr.net (npm READMEs) only; package name and version leave the machine;
   recent lookups are stored under $PULSE_HOME/plugin-data/lib-docs; the Desktop pane inserts text
-  through Pulse Desktop's internal pulse:composer-insert event (not a public SDK API).
+  through PULSE Desktop's internal pulse:composer-insert event (not a public SDK API).
 maintainer: aydnOktay
 tier: community
 category: tools

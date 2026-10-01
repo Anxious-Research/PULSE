@@ -12,7 +12,7 @@ description: >-
   acted in every result. Talks only to https://api.github.com or the operator-configured
   GITHUB_API_URL / settings.api_url (HTTPS, no redirects; no tool argument can change the host).
   Issue/comment/review/merge writes stay disabled until settings.allow_write_actions is true and each
-  one additionally goes through Pulse's human-approval prompt via its pre_tool_call hook (an 'always'
+  one additionally goes through PULSE's human-approval prompt via its pre_tool_call hook (an 'always'
   answer does not persist).
 maintainer: himanusia
 tier: community

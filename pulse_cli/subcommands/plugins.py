@@ -11,7 +11,7 @@ def build_plugins_parser(subparsers, *, cmd_plugins: Callable) -> None:
     """Attach the ``plugins`` subcommand to ``subparsers``."""
     plugins_parser = subparsers.add_parser(
         "plugins", help="Manage and validate plugins",
-        description="Install, update, remove, list, or validate native Pulse plugins "
+        description="Install, update, remove, list, or validate native PULSE plugins "
             "and portable Agent Plugins v1 packages. Portable packages install disabled.")
     plugins_subparsers = plugins_parser.add_subparsers(dest="plugins_action")
 
@@ -42,7 +42,7 @@ def build_plugins_parser(subparsers, *, cmd_plugins: Callable) -> None:
     )
 
     plugins_search = plugins_subparsers.add_parser(
-        "search", help="Search the curated Pulse plugin catalog")
+        "search", help="Search the curated PULSE plugin catalog")
     plugins_search.add_argument(
         "term", nargs="?", default="",
         help="Query matched against entry names, descriptions and declared tools (omit to list the whole catalog)")
@@ -151,17 +151,6 @@ def build_plugins_parser(subparsers, *, cmd_plugins: Callable) -> None:
         help="Plugin path or installed plugin id (default: current directory)")
     plugins_doctor.add_argument(
         "--ci", action="store_true", help="Exit non-zero when validation reports an error")
-
-    plugins_compat = plugins_subparsers.add_parser(
-        "compat",
-        help="Show installed plugins that import paths removed by the Sep 2026 decomposition",
-        description="Statically scans every enabled external plugin for imports of pre-decomposition "
-            "module paths (see COMPAT_MANIFEST.md) and prints file:line, old path -> new path. "
-            "Exits 1 when any plugin is affected. Plugins still affected on the removal date are "
-            "not loaded (override: plugins.allow_deprecated_imports: true).")
-    plugins_compat.add_argument("--json", action="store_true", help="Machine-readable output")
-    plugins_compat.add_argument(
-        "path", nargs="?", help="Scan one plugin directory instead of the installed set (for plugin authors)")
 
     plugins_pack = plugins_subparsers.add_parser(
         "pack", help="Declarative, shareable plugin sets (pulse-pack.yaml)",

@@ -1,4 +1,4 @@
-"""Interactive setup wizard for Pulse Agent (config lives in ~/.pulse/).
+"""Interactive setup wizard for PULSE Agent (config lives in ~/.pulse/).
 
 Independently-runnable sections: Model & Provider, Terminal Backend, Agent Settings, Messaging
 Platforms, Tools. Section bodies live in sibling setup_* modules and are re-exported here; they
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 
-_DOCS_BASE = "https://pulse-agent.anxiousresearchlab.com/docs"
+_DOCS_BASE = "https://pulse-agent.anxious-research.com/docs"
 _BRACKETED_PASTE_PATTERN = re.compile(r"\x1b\[\s*200~|\x1b\[\s*201~")
 
 
@@ -85,12 +85,12 @@ def is_interactive_stdin() -> bool:
 def print_noninteractive_setup_guidance(reason: str | None = None) -> None:
     """Print guidance for headless/non-interactive setup flows."""
     print()
-    print(color("☤ Pulse Setup — Non-interactive mode", Colors.CYAN, Colors.BOLD))
+    print(color("☤ PULSE Setup — Non-interactive mode", Colors.CYAN, Colors.BOLD))
     print()
     if reason:
         print_info(reason)
     _info("The interactive wizard cannot be used here.", None,
-          "Configure Pulse using environment variables or config commands:",
+          "Configure PULSE using environment variables or config commands:",
           "  pulse config set model.provider custom",
           "  pulse config set model.base_url http://localhost:8080/v1",
           "  pulse config set model.default your-model-name", None,
@@ -381,8 +381,10 @@ def setup_model_provider(config: dict, *, quick: bool = False):
     _info("Choose how to connect to your main chat model.",
           f"   Guide: {_DOCS_BASE}/integrations/providers", None)
     from pulse_cli.main import select_provider_and_model
+    from pulse_cli.observability.shared_metrics_setup import provider_setup_surface
     try:
-        select_provider_and_model()
+        with provider_setup_surface("cli_setup"):
+            select_provider_and_model()
     except (SystemExit, KeyboardInterrupt):
         _info(None, "Provider setup skipped.")
     except Exception as exc:
@@ -399,15 +401,6 @@ def setup_model_provider(config: dict, *, quick: bool = False):
     config.clear()
     config.update(load_config())
     save_config(config)
-
-
-# =============================================================================
-# Section 1b: TTS Provider Configuration
-
-
-def _check_espeak_ng() -> bool:
-    """Check if espeak-ng is installed."""
-    return shutil.which("espeak-ng") is not None or shutil.which("espeak") is not None
 
 
 # =============================================================================
@@ -518,7 +511,7 @@ def setup_tools(config: dict, first_install: bool = False):
 
 
 _SEND_CONSENT_EXPLAINER = (
-    "", "Sending uploads each daily package to the Anxious telemetry",
+    "", "Sending uploads each daily package to the Nous telemetry",
     "service. Packages carry your profile-scoped install ID, a",
     "stable random UUID that identifies this profile across days",
     "(it contains no personal information and is reset by deleting",
@@ -532,25 +525,31 @@ _SEND_CONSENT_EXPLAINER = (
 def setup_telemetry(config: dict):
     """Configure the local shared-metrics subscriber and optional sending."""
     print_header("Shared Metrics")
-    _info("Shared metrics contain only bounded counters and histograms.",
-          "Collection is local. Sending them to Anxious is a separate opt-in.")
+    _info("Shared metrics contain only bounded counters: activity, session length,",
+          "outcomes, error classes, model routes and token totals, built-in tool, command",
+          "and catalog names, bucketed setup counts, update results and timing, crashes,",
+          "startup and reply speed, messaging-platform health, how PULSE gets used",
+          "(agent accuracy and efficiency, active time per surface, which features and",
+          "settings are used or switched off, provider setup outcomes), and coarse",
+          "machine facts (RAM range, GPU type, version age and channel, updates behind,",
+          "local model server yes/no). Never prompts, files, paths, setting values or",
+          "error text.",
+          "Collection is local. Sending them to Nous is a separate opt-in.")
+    # The answer is written to config.yaml here, not by the caller's later save: that save strips
+    # values equal to the defaults, so a "no" would vanish and every surface would ask again.
+    from pulse_cli.observability.shared_metrics_consent import save_consent
+
     shared_metrics = _sub_dict(_sub_dict(config, "telemetry"), "shared_metrics")
-    current = shared_metrics.get("enabled") is True
-    shared_metrics["enabled"] = prompt_yes_no("Enable local shared metrics?", default=current)
-    if not shared_metrics["enabled"]:
+    if not prompt_yes_no("Enable local shared metrics?", default=shared_metrics.get("enabled") is True):
         print_info("Local shared metrics disabled.")
-        # Sending cannot outlive collection (send=true would log an error every run, never send).
+        # Sending cannot outlive collection; turning collection off withdraws send consent too.
         if shared_metrics.get("send") is True:
-            shared_metrics["send"] = False
             print_info("Sending shared metrics disabled as well.")
-        # Turning collection off withdraws send consent too. Recorded unconditionally: the send
-        # key may already be false while the consent window is still open, and it must close.
-        _record_send_consent_change(enabled=False)
+        save_consent(False, False, config)
         return
     print_success("Local shared metrics enabled.")
     _info(*_SEND_CONSENT_EXPLAINER)
-    shared_metrics["send"] = prompt_yes_no("Send shared metrics to Anxious?", default=shared_metrics.get("send") is True)
-    _record_send_consent_change(enabled=shared_metrics["send"])
+    save_consent(True, prompt_yes_no("Send shared metrics to Nous?", default=shared_metrics.get("send") is True), config)
     if shared_metrics["send"]:
         print_success("Sending shared metrics enabled.")
     else:
@@ -613,7 +612,7 @@ def _run_setup_section(config: dict, section: str) -> None:
         print_info(f"Available sections: {', '.join(k for k, _, _ in SETUP_SECTIONS)}")
         return
     label, func = entry
-    _print_banner(f"│     ☤ Pulse Setup — {label:<34s} │")
+    _print_banner(f"│     ☤ PULSE Setup — {label:<34s} │")
     _run_setup_steps([(label, lambda: func(config))])
     save_config(config)
     print()
@@ -659,7 +658,7 @@ def _run_full_setup(config: dict, pulse_home, *, is_existing: bool, migration_ra
 
 # First-time mode picker: (menu label, setup_quick runner name) — None falls through to Full Setup.
 _FIRST_TIME_MODES = (
-    ("Quick Setup (Anxious Portal) — free OAuth login, no API keys, model + tools (recommended)",
+    ("Quick Setup (Nous Portal) — free OAuth login, no API keys, model + tools (recommended)",
      "_run_first_time_quick_setup"),
     ("Full setup — configure every provider, tool & option yourself (bring your own keys)", None),
     ("Blank Slate — everything off except the bare minimum; opt in to each capability", "_run_blank_slate_setup"),
@@ -692,7 +691,7 @@ def _run_setup_wizard_impl(args):
     if getattr(args, 'non_interactive', False) or not is_interactive_stdin():
         print_noninteractive_setup_guidance("Running in a non-interactive environment (no TTY detected).")
         return
-    if getattr(args, "portal", False):  # one-shot Anxious Portal setup; skips the rest
+    if getattr(args, "portal", False):  # one-shot Nous Portal setup; skips the rest
         _run_portal_one_shot(config)
         return
     section = getattr(args, "section", None)
@@ -704,9 +703,9 @@ def _run_setup_wizard_impl(args):
     from pulse_cli.auth import get_active_provider
     is_existing = bool(get_env_value("OPENROUTER_API_KEY") or get_env_value("OPENAI_BASE_URL")
                        or get_active_provider() is not None)
-    _print_banner("│             ☤ Pulse Agent Setup Wizard                │",
+    _print_banner("│             ☤ PULSE Agent Setup Wizard                │",
                   "├─────────────────────────────────────────────────────────┤",
-                  "│  Let's configure your Pulse Agent installation.       │",
+                  "│  Let's configure your PULSE Agent installation.       │",
                   "│  Press Ctrl+C at any time to exit.                     │")
     migration_ran = False
     if is_existing:
@@ -715,9 +714,10 @@ def _run_setup_wizard_impl(args):
         # backwards-compatible no-op here.
         if quick_requested:
             _run_setup_steps([("Quick Setup", lambda: _run_quick_setup(config, pulse_home))])
+            _record_setup_completed(config)
             return
         print_header("Reconfigure", gap=True)
-        print_success("You already have Pulse configured.")
+        print_success("You already have PULSE configured.")
         _info("Running the full wizard — each prompt shows your current value.",
               "Press Enter to keep it, or type a new value to change it.", "",
               "Tip: jump straight to a section with 'pulse setup model|terminal|",
@@ -730,11 +730,12 @@ def _run_setup_wizard_impl(args):
         migration_ran = _offer_openclaw_migration(pulse_home)  # before configuration begins
         if migration_ran:
             config = load_config()
-        setup_mode = prompt_choice("How would you like to set up Pulse?", [label for label, _ in _FIRST_TIME_MODES], 0)
+        setup_mode = prompt_choice("How would you like to set up PULSE?", [label for label, _ in _FIRST_TIME_MODES], 0)
         label, runner = _FIRST_TIME_MODES[setup_mode]
         if runner is not None:
             from pulse_cli import setup_quick
             _run_setup_steps([(label, lambda: getattr(setup_quick, runner)(config, pulse_home, is_existing))])
+            _record_setup_completed(config)
             return
     _run_full_setup(config, pulse_home, is_existing=is_existing, migration_ran=migration_ran)
 
@@ -745,32 +746,15 @@ def _run_setup_wizard_impl(args):
               "If setup changed a value you customized, restore it with:",
               f"  cp {_backup_path} {config_path}")
     _print_setup_summary(config, pulse_home)
+    _record_setup_completed(config)
 
 
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from typing import Any  # noqa: F401,E402
-from typing import Dict  # noqa: F401,E402
-from typing import Optional  # noqa: F401,E402
-import json  # noqa: F401,E402
-import shutil  # noqa: F401,E402
+def _record_setup_completed(config: dict) -> None:
+    """Count a wizard run that finished. Every setup flow ends here, so the one-time
+    shared-metrics offer runs first: a user who opts in now is counted; the API checks enablement."""
+    from pulse_cli.observability.shared_metrics_consent import offer_consent_if_undecided
 
-
-_PLUGIN_COMPAT_LAZY = {
-    'get_anxious_subscription_features': ('pulse_cli.anxious_subscription', 'get_anxious_subscription_features'),
-    'get_optional_skills_dir': ('pulse_constants', 'get_optional_skills_dir'),
-    'managed_anxious_tools_enabled': ('tools.tool_backend_helpers', 'managed_anxious_tools_enabled'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----
+    offer_consent_if_undecided(config)
+    from pulse_cli.observability.shared_metrics_events import record_setup_completed
+    model = config.get("model")
+    record_setup_completed(surface="cli", provider=model.get("provider") if isinstance(model, dict) else None)

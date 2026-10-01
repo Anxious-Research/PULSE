@@ -43,7 +43,7 @@ def _ensure_browser_plugins_loaded() -> None:
 
 
 def _get_cloud_provider() -> Optional[CloudBrowserProvider]:
-    """Return the provider cached for the active Pulse profile."""
+    """Return the provider cached for the active PULSE profile."""
     _bt = _origin()
     scope = pulse_home_key()
     with _bt._cloud_provider_cache_lock:
@@ -133,8 +133,8 @@ def _resolve_cloud_provider_uncached() -> Optional[CloudBrowserProvider]:
                 _bt._cached_cloud_provider = None
                 _bt._cloud_provider_resolved = True
                 return None
-            if provider_key == "anxious":
-                # Managed "Anxious Subscription" is serviced by the Browser Use provider.
+            if provider_key == "nous":
+                # Managed "Nous Subscription" is serviced by the Browser Use provider.
                 provider_key = "browser-use"
         if provider_key:
             resolved = _instantiate_explicit_cloud_provider(provider_key)
@@ -181,6 +181,20 @@ def _is_local_backend() -> bool:
     # treat as non-local. See #68559.
     from tools.terminal_scope import terminal_env
     return terminal_env("TERMINAL_ENV", "local").strip().lower() in ("local", "")
+
+
+def browser_backend_name() -> str:
+    """Shared-metrics label for the backend legacy browser calls use in the active profile, in session-creation
+    precedence (CDP override > Camofox > cloud provider > local engine). Config reads only, no network I/O."""
+    _bt = _origin()
+    if _cdp._get_cdp_override_raw():
+        return "cdp"
+    if _bt._is_camofox_mode():
+        return "camofox"
+    provider = _get_cloud_provider()
+    if provider is not None:
+        return str(getattr(provider, "name", "") or "other")
+    return "lightpanda" if _get_browser_engine() == "lightpanda" else "local"
 
 
 def _get_browser_engine() -> str:

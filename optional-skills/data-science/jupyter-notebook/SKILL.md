@@ -2,7 +2,7 @@
 name: jupyter-notebook
 description: "Iterative Python via live Jupyter kernel (hamelnb)."
 version: 1.0.0
-author: Pulse Agent
+author: PULSE Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

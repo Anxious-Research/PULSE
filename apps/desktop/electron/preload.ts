@@ -23,13 +23,15 @@ const launchFlags: { localModels?: boolean; guestOnboarding?: boolean } | undefi
 // the built-in palette over the skin configured on this machine.
 const localSkin = ipcRenderer.sendSync('pulse:skin:local')
 
+import { unwrapExpectedNotFound } from './api-expected-404'
+
 contextBridge.exposeInMainWorld('pulseDesktop', {
   glassSupported: translucencySupport?.glass === true,
   translucencySupported: translucencySupport?.translucency === true,
   // Launch-flag fact: the app was started with --local, so the renderer may
   // show the local-models surfaces. Static for the window's lifetime.
   localModelsEnabled: launchFlags?.localModels === true,
-  // Launch-flag fact: the Pulse free tier is on for this launch
+  // Launch-flag fact: the Nous free tier is on for this launch
   // (PULSE_GUEST_ONBOARDING=1 or --guest-onboarding). Read-only; the same
   // decision is stamped onto every backend the app spawns.
   guestOnboardingEnabled: launchFlags?.guestOnboarding === true,
@@ -52,6 +54,15 @@ contextBridge.exposeInMainWorld('pulseDesktop', {
   openSessionInTerminal: (sessionId, opts) => ipcRenderer.invoke('pulse:window:openInTerminal', sessionId, opts),
   openWindow: (options?: DesktopProfileRoute) => ipcRenderer.invoke('pulse:window:openInstance', options),
   openBrowserWindow: tabId => ipcRenderer.invoke('pulse:window:openBrowser', tabId),
+  windowRelay: {
+    send: payload => ipcRenderer.send('pulse:window:relay', payload),
+    onMessage: callback => {
+      const listener = (_event, payload) => callback(payload)
+      ipcRenderer.on('pulse:window:relay', listener)
+
+      return () => ipcRenderer.removeListener('pulse:window:relay', listener)
+    }
+  },
   onBrowserPopoutClosed: callback => {
     const listener = (_event, tabId) => callback(tabId)
     ipcRenderer.on('pulse:browser-popout:closed', listener)
@@ -219,7 +230,10 @@ contextBridge.exposeInMainWorld('pulseDesktop', {
   quickEntry: {
     getSettings: () => ipcRenderer.invoke('pulse:quick-entry:settings:get'),
     setSettings: patch => ipcRenderer.invoke('pulse:quick-entry:settings:set', patch),
-    submit: payload => ipcRenderer.send('pulse:quick-entry:submit', payload),
+    // Invoke returns the delivery result so the draft is not lost (#85590).
+    submit: payload => ipcRenderer.invoke('pulse:quick-entry:submit', payload),
+    // Main cannot invoke the primary renderer, so it receives this ack (#85590).
+    ackSubmit: (correlationId, result) => ipcRenderer.send('pulse:quick-entry:ack', { correlationId, result }),
     dismiss: () => ipcRenderer.send('pulse:quick-entry:dismiss'),
     // Primary renderer → main → quick window: gateway connection state + the
     // recent-session options the target picker offers. Main caches the latest
@@ -245,6 +259,15 @@ contextBridge.exposeInMainWorld('pulseDesktop', {
       ipcRenderer.on('pulse:quick-entry:shown', listener)
 
       return () => ipcRenderer.removeListener('pulse:quick-entry:shown', listener)
+    },
+    // Main → quick window: the outcome of a submit whose relay already timed
+    // out. Delivery is now KNOWN — reconcile the unknown state instead of
+    // leaving the user to resend a prompt that may already be delivered.
+    onLateResult: callback => {
+      const listener = (_event, payload) => callback(payload)
+      ipcRenderer.on('pulse:quick-entry:late-result', listener)
+
+      return () => ipcRenderer.removeListener('pulse:quick-entry:late-result', listener)
     }
   },
   getBootProgress: () => ipcRenderer.invoke('pulse:boot-progress:get'),
@@ -289,7 +312,7 @@ contextBridge.exposeInMainWorld('pulseDesktop', {
   oauthLoginConnectionConfig: (remoteUrl, options) =>
     ipcRenderer.invoke('pulse:connection-config:oauth-login', remoteUrl, options),
   oauthLogoutConnectionConfig: remoteUrl => ipcRenderer.invoke('pulse:connection-config:oauth-logout', remoteUrl),
-  // Pulse Cloud: one portal login powers discovery + silent per-agent sign-in
+  // PULSE Cloud: one portal login powers discovery + silent per-agent sign-in
   // (cloud-auto-discovery Phase 3).
   cloud: {
     status: () => ipcRenderer.invoke('pulse:cloud:status'),
@@ -311,7 +334,10 @@ contextBridge.exposeInMainWorld('pulseDesktop', {
     remember: name => ipcRenderer.invoke('pulse:profile:remember', name),
     set: name => ipcRenderer.invoke('pulse:profile:set', name)
   },
-  api: request => ipcRenderer.invoke('pulse:api', request),
+  // The handler resolves an expected 404 with a sentinel instead of rejecting
+  // (Electron logs a stack for every rejected invoke). Turn it back into the
+  // rejection the renderer expects — see electron/api-expected-404.ts.
+  api: request => ipcRenderer.invoke('pulse:api', request).then(unwrapExpectedNotFound),
   notify: payload => ipcRenderer.invoke('pulse:notify', payload),
   claimStartupLatency: () => ipcRenderer.invoke('pulse:startup-latency:claim'),
   requestMicrophoneAccess: () => ipcRenderer.invoke('pulse:requestMicrophoneAccess'),

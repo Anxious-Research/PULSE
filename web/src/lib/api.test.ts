@@ -19,7 +19,7 @@ vi.mock("./dashboard-auth-reload", () => ({
   clearDashboardTokenReloadAttempt: reloadMocks.clearDashboardTokenReloadAttempt,
 }));
 
-const SESSION_HEADER = "X-Pulse-Session-Token";
+const SESSION_HEADER = "X-PULSE-Session-Token";
 
 beforeEach(() => {
   reloadMocks.attemptDashboardTokenReloadOnce.mockReset();

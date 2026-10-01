@@ -1,7 +1,7 @@
 # Configuration, Toolsets & Voice
 
 Edit with `pulse config edit` or `pulse config set section.key value`.
-Full reference: https://github.com/Anxious-Research/PULSE/user-guide/configuration
+Full reference: https://pulse-agent.anxious-research.com/docs/user-guide/configuration
 
 ### Config Sections (most-used keys)
 

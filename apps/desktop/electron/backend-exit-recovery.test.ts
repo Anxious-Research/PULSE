@@ -7,7 +7,7 @@ import { createBackendExitRecoveryLatch } from './backend-exit-recovery'
 
 type Child = { pid: number }
 
-// Mirrors main.ts::runPulseStart's exit handler: the slot state the handler
+// Mirrors main.ts::runPULSEStart's exit handler: the slot state the handler
 // reads when the child's exit is classified as stale (#112344).
 function slotState(state: ReturnType<typeof createBackendConnectionState<Child, unknown>>, extra = {}) {
   return {
@@ -122,6 +122,39 @@ test('a failed recovery does not release its claim while another owner/start or 
   assert.equal(latch.claim(empty), true)
   assert.equal(latch.retryAfterFailedStart({ ...empty, intentionalTeardown: true }), false)
   assert.equal(latch.claim(empty), false, 'intentional teardown does not re-arm recovery')
+})
+
+test('an attached backend torn down as unexpected (dead or drifted token) is claimed and a respawn is scheduled (#121988)', () => {
+  const state = createBackendConnectionState<Child, unknown>()
+  const latch = createBackendExitRecoveryLatch()
+  const attempt = state.startAttempt()
+  // An attached backend spawns no child (main.ts: "Nothing was spawned, so
+  // there is no child to own"); the slot holds only the resolved connection.
+  state.setPromise(attempt, Promise.resolve({ mode: 'local', attached: true }))
+
+  // Mirrors startAttachedBackendMonitor's catch handler: invalidate the slot,
+  // then immediately try to claim the respawn in the same tick.
+  state.invalidate()
+  assert.equal(
+    latch.claim(slotState(state)),
+    true,
+    'an unexpected attach teardown must not read as intentional, or the respawn is silently dropped'
+  )
+
+  // The bug this guards: invalidating through a path that also marks the
+  // teardown intentional (as `invalidatePrimaryConnection()` does, for the
+  // deliberate re-home/quit/config-apply cases) makes the very next claim()
+  // above refuse the respawn, leaving the app with no backend.
+  const otherState = createBackendConnectionState<Child, unknown>()
+  const otherLatch = createBackendExitRecoveryLatch()
+  const otherAttempt = otherState.startAttempt()
+  otherState.setPromise(otherAttempt, Promise.resolve({ mode: 'local', attached: true }))
+  otherState.invalidate()
+  assert.equal(
+    otherLatch.claim(slotState(otherState, { intentionalTeardown: true })),
+    false,
+    'marking an unexpected attach teardown intentional would silently drop the respawn'
+  )
 })
 
 test('a failed start that owns no recovery claim is not re-armed and spends no budget', () => {

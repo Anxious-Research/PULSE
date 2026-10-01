@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/context-menu'
 import { DiffCount } from '@/components/ui/diff-count'
 import { Tip } from '@/components/ui/tooltip'
-import type { PulseReviewFile } from '@/global'
+import type { PULSEReviewFile } from '@/global'
 import { useI18n } from '@/i18n'
 import { isDesktopFsRemoteMode } from '@/lib/desktop-fs'
 import { displayPath } from '@/lib/display-path'
@@ -479,7 +479,7 @@ function ReviewFileContextMenu({
   children: ReactNode
   cwd: null | string
   dragPath: string
-  file: PulseReviewFile
+  file: PULSEReviewFile
   onOpenChanges: () => void
   onOpenFile: () => void
 }) {

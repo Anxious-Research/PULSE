@@ -1,5 +1,5 @@
 {
-  description = "Pulse Agent - AI agent framework by Anxious Research Lab";
+  description = "PULSE Agent - AI agent framework by Nous Research";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";

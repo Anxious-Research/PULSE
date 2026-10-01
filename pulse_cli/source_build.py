@@ -81,13 +81,6 @@ def prepare_launch_dependencies(project_root: Path, *, env: dict) -> None:
 
 
 def build_source_tui(project_root: Path, *, env: dict) -> None:
-    # The TUI's widget SDK (ui-tui/sdk) is not vendored; building without it
-    # fails on unresolvable imports. Skip with a loud warning instead of
-    # aborting the install — same policy as missing apps/shared above.
-    if not (project_root / "ui-tui" / "sdk").is_dir():
-        print("  ⚠ Skipping the TUI build: ui-tui/sdk/ is absent "
-              "(prebuilt ui-tui/dist, if present, keeps working)")
-        return
     run_source_script(project_root, "scripts/build/tui.mjs", env=env, label="Building the TUI")
 
 
@@ -103,25 +96,7 @@ def source_frontends(project_root: Path) -> tuple[str, ...]:
     """The frontend workspaces this checkout carries. A source slice without them
     (python-only installs, the installer's acceptance fixture) has no products
     to build; it still publishes commands and runs the maintenance tail."""
-    # Frontends require apps/shared to build; skip them if it's missing
-    has_shared = (project_root / "apps/shared").is_dir()
-    if not has_shared:
-        return ()
     return tuple(name for name in ("ui-tui", "web") if (project_root / name / "package.json").is_file())
-
-
-def _sync_desktop_release_channel(project_root: Path) -> None:
-    """Fetch the prebuilt desktop UI when it cannot be built from source.
-
-    No-op (silent) without a bundled app install; best-effort otherwise —
-    desktop_release_sync never raises.
-    """
-    from pulse_cli import desktop_release_sync as _drs
-    if _drs.bundled_app_path() is None:
-        return
-    from pulse_cli.update_stage import publish_stage
-    publish_stage("Checking the desktop UI release channel")
-    print("  " + _drs.sync_bundled_desktop_ui(project_root))
 
 
 def build_update_products(project_root: Path, *, desktop: bool) -> None:
@@ -133,11 +108,6 @@ def build_update_products(project_root: Path, *, desktop: bool) -> None:
 
     _install_configured_features_missing_deps(project_root)
     frontends = source_frontends(project_root)
-    if not frontends and not desktop:
-        # No source-buildable products — but a bundled desktop app may still
-        # track the UI release channel (built UI, no local source to rebuild).
-        _sync_desktop_release_channel(project_root)
-        return
     if not frontends:
         return
     env = source_build_env(explicit=True)
@@ -154,15 +124,25 @@ def build_update_products(project_root: Path, *, desktop: bool) -> None:
         from pulse_cli.main_desktop import _refresh_installed_desktop_apps, build_prepared_desktop
 
         publish_stage("Building the desktop app")
-        build_prepared_desktop(
-            project_root / "apps/desktop", source_mode=False,
-            npm=shutil.which("npm", path=env["PATH"]), env=env, icons=project_root,
-        )
+        # The desktop build mutates checkout-scoped node_modules and
+        # apps/desktop/release; serialize it against a concurrent manual
+        # `pulse desktop` (#93940). The update path waits rather than exits:
+        # the in-flight build it queues behind produces the same fresh tree
+        # this update needs.
+        from pulse_cli.desktop_build_lock import DesktopBuildLock
+
+        build_lock = DesktopBuildLock(project_root)
+        build_lock.acquire(wait=True)
+        try:
+            build_prepared_desktop(
+                project_root / "apps/desktop", source_mode=False,
+                npm=shutil.which("npm", path=env["PATH"]), env=env, icons=project_root,
+            )
+        finally:
+            build_lock.release()
         # A current release/ can still sit beside a stale installed copy (an earlier
         # update rebuilt but never installed); healing must not wait for the next build.
         _refresh_installed_desktop_apps(project_root / "apps/desktop")
-    else:
-        _sync_desktop_release_channel(project_root)
     # A configured memory provider that no longer ships in core is installed from the
     # catalog for every profile home sharing this venv (config, data and tool names
     # unchanged). The update must finish even if the migration blows up.

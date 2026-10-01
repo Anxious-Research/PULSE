@@ -1,6 +1,6 @@
-# Pulse Agent bootstrap: git checkout + venv + pulse command on PATH.
+# PULSE Agent bootstrap: git checkout + venv + pulse command on PATH.
 # Heavy dependencies (tool binaries, browsers, node) are pm's job after
-# this: `pulse pm install`. Stage protocol kept for Pulse-Setup:
+# this: `pulse pm install`. Stage protocol kept for PULSE-Setup:
 #   -Manifest             print the stage list as JSON
 #   -Stage NAME [-Json]   run one stage
 #   -NonInteractive       skip stages that need input
@@ -20,7 +20,7 @@
 param(
     [string]$Branch = "main",
     [string]$Commit = "",
-    [string]$PulseHome = $(if ($env:PULSE_HOME) { $env:PULSE_HOME } else { "$env:LOCALAPPDATA\pulse" }),
+    [string]$PULSEHome = $(if ($env:PULSE_HOME) { $env:PULSE_HOME } else { "$env:LOCALAPPDATA\pulse" }),
     [string]$InstallDir = $(if ($env:PULSE_HOME) { "$env:PULSE_HOME\pulse-agent" } else { "$env:LOCALAPPDATA\pulse\pulse-agent" }),
     [switch]$Manifest,
     [string]$Stage,
@@ -80,12 +80,12 @@ $script:UvPinVersion = "0.12.3"
 $script:UvPinFiles = @{
     "win32-x64" = @{
         Url    = "https://github.com/astral-sh/uv/releases/download/0.12.3/uv-x86_64-pc-windows-msvc.zip"
-        MirrorUrl = "https://pulse-assets.anxiousresearchlab.com/upstream/sha256/b23350c79e8ad0192b8124af13a0f17e8d4e4549524785e1aef389ae5a06990e"
+        MirrorUrl = "https://pulse-assets.anxious-research.com/upstream/sha256/b23350c79e8ad0192b8124af13a0f17e8d4e4549524785e1aef389ae5a06990e"
         Sha256 = "b23350c79e8ad0192b8124af13a0f17e8d4e4549524785e1aef389ae5a06990e"
     }
     "win32-arm64" = @{
         Url    = "https://github.com/astral-sh/uv/releases/download/0.12.3/uv-aarch64-pc-windows-msvc.zip"
-        MirrorUrl = "https://pulse-assets.anxiousresearchlab.com/upstream/sha256/4343217d668727b8a8eb5cad92389a1d2eeead93c89940d1b955ba1bb15462eb"
+        MirrorUrl = "https://pulse-assets.anxious-research.com/upstream/sha256/4343217d668727b8a8eb5cad92389a1d2eeead93c89940d1b955ba1bb15462eb"
         Sha256 = "4343217d668727b8a8eb5cad92389a1d2eeead93c89940d1b955ba1bb15462eb"
     }
 }
@@ -94,12 +94,12 @@ $script:GitPinVersion = "2.53.0+3"
 $script:GitPinFiles = @{
     "win32-x64" = @{
         Url    = "https://github.com/git-for-windows/git/releases/download/v2.53.0.windows.3/PortableGit-2.53.0.3-64-bit.7z.exe"
-        MirrorUrl = "https://pulse-assets.anxiousresearchlab.com/upstream/sha256/b365da794b1d2225eb24d5f5e09ef7792cfd5fa26c3a3586210280c80dff3a2a"
+        MirrorUrl = "https://pulse-assets.anxious-research.com/upstream/sha256/b365da794b1d2225eb24d5f5e09ef7792cfd5fa26c3a3586210280c80dff3a2a"
         Sha256 = "b365da794b1d2225eb24d5f5e09ef7792cfd5fa26c3a3586210280c80dff3a2a"
     }
     "win32-arm64" = @{
         Url    = "https://github.com/git-for-windows/git/releases/download/v2.53.0.windows.3/PortableGit-2.53.0.3-arm64.7z.exe"
-        MirrorUrl = "https://pulse-assets.anxiousresearchlab.com/upstream/sha256/0db54010054c01f35501cf69e1e32d3710138ecb934d188bd77093afed24300e"
+        MirrorUrl = "https://pulse-assets.anxious-research.com/upstream/sha256/0db54010054c01f35501cf69e1e32d3710138ecb934d188bd77093afed24300e"
         Sha256 = "0db54010054c01f35501cf69e1e32d3710138ecb934d188bd77093afed24300e"
     }
 }
@@ -232,17 +232,17 @@ function ConvertTo-LongPath {
     # 1. kernel32. Compiled on first use only, so a normal profile never pays
     #    the Add-Type cost (this file is re-entered once per install stage).
     try {
-        if (-not ([System.Management.Automation.PSTypeName]'PulseInstall.LongPath').Type) {
-            Add-Type -Namespace 'PulseInstall' -Name 'LongPath' -MemberDefinition @'
+        if (-not ([System.Management.Automation.PSTypeName]'PULSEInstall.LongPath').Type) {
+            Add-Type -Namespace 'PULSEInstall' -Name 'LongPath' -MemberDefinition @'
 [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
 public static extern int GetLongPathNameW(string lpszShortPath, System.Text.StringBuilder lpszLongPath, int cchBuffer);
 '@
         }
         $buffer = New-Object System.Text.StringBuilder 4096
-        $length = [PulseInstall.LongPath]::GetLongPathNameW($Path, $buffer, $buffer.Capacity)
+        $length = [PULSEInstall.LongPath]::GetLongPathNameW($Path, $buffer, $buffer.Capacity)
         if ($length -gt $buffer.Capacity) {
             $buffer = New-Object System.Text.StringBuilder $length
-            $length = [PulseInstall.LongPath]::GetLongPathNameW($Path, $buffer, $buffer.Capacity)
+            $length = [PULSEInstall.LongPath]::GetLongPathNameW($Path, $buffer, $buffer.Capacity)
         }
         if ($length -gt 0) {
             $expanded = $buffer.ToString()
@@ -313,13 +313,13 @@ function Initialize-ResolvedPaths {
     $script:NormalizedProfilePaths = Set-LongProfileEnvVars
 
     # Re-derive the install paths now that the env vars behind their defaults
-    # are long. An explicitly passed -PulseHome / -InstallDir is normalized
+    # are long. An explicitly passed -PULSEHome / -InstallDir is normalized
     # in place rather than replaced, so a caller's choice is never
     # overwritten by a default. The script's own $PSBoundParameters was
     # captured at script scope ($script:BoundParams) because a function body
     # sees its own binding, not the script's.
-    $resolvedHome = if ($script:BoundParams.ContainsKey('PulseHome')) {
-        ConvertTo-LongPath $PulseHome
+    $resolvedHome = if ($script:BoundParams.ContainsKey('PULSEHome')) {
+        ConvertTo-LongPath $PULSEHome
     } else {
         ConvertTo-LongPath $(
             if ($env:PULSE_HOME) { $env:PULSE_HOME } else { "$env:LOCALAPPDATA\pulse" }
@@ -334,10 +334,10 @@ function Initialize-ResolvedPaths {
     # scope only under -File. Under the documented
     # `& ([scriptblock]::Create((irm ...)))` install they live in the
     # scriptblock's scope and `$script:` names the caller's session instead,
-    # so `$script:PulseHome` read '' and every stage's bare $PulseHome kept
+    # so `$script:PULSEHome` read '' and every stage's bare $PULSEHome kept
     # the un-normalized value. Scope 1 is where param() bound in every mode
     # (-File, scriptblock, dot-source).
-    Set-Variable -Scope 1 -Name PulseHome -Value $resolvedHome
+    Set-Variable -Scope 1 -Name PULSEHome -Value $resolvedHome
     Set-Variable -Scope 1 -Name InstallDir -Value $resolvedDir
     $env:PULSE_HOME = $resolvedHome
 
@@ -357,10 +357,10 @@ function Initialize-ResolvedPaths {
 }
 
 # Resolve the pm store root (same resolution as pm's store_root()):
-# $env:PULSE_RUNTIME_DIR wins, else <PulseHome>\tools.
+# $env:PULSE_RUNTIME_DIR wins, else <PULSEHome>\tools.
 function Get-PmStoreRoot {
     if ($env:PULSE_RUNTIME_DIR) { return $env:PULSE_RUNTIME_DIR }
-    return (Join-Path $PulseHome "tools")
+    return (Join-Path $PULSEHome "tools")
 }
 
 # The MACHINE's architecture (registry PROCESSOR_ARCHITECTURE), not the
@@ -496,12 +496,12 @@ function Invoke-DownloadWithProgress {
 # (<store>\uv-<version>-<target>\), sha256-verified, so pm adopts the same
 # bytes — no astral-latest, no irm|iex. Returns the uv.exe path.
 function Get-Uv {
-    # Always the pinned artifact, never a uv already on PATH: Pulse runs only
+    # Always the pinned artifact, never a uv already on PATH: PULSE runs only
     # its own packaged toolchain.
     $target = "win32-$(Get-WindowsArch)"
     $pin = $script:UvPinFiles[$target]
     if (-not $pin) {
-        Fail "no pinned uv artifact for $target; Pulse does not support this host"
+        Fail "no pinned uv artifact for $target; PULSE does not support this host"
     }
     $entry = Join-Path (Get-PmStoreRoot) "uv-$($script:UvPinVersion)-$target"
     $uvExe = Join-Path $entry "uv.exe"
@@ -600,9 +600,9 @@ function Write-Err([string]$msg) { Write-Host "[X] $msg" -ForegroundColor Red }
 function Write-Banner {
     Write-Host ""
     Write-Host "+---------------------------------------------------------+" -ForegroundColor Magenta
-    Write-Host "|             * Pulse Agent Installer                    |" -ForegroundColor Magenta
+    Write-Host "|             * PULSE Agent Installer                    |" -ForegroundColor Magenta
     Write-Host "+---------------------------------------------------------+" -ForegroundColor Magenta
-    Write-Host "|  An open source AI agent by Anxious Research Lab.              |" -ForegroundColor Magenta
+    Write-Host "|  An open source AI agent by Nous Research.              |" -ForegroundColor Magenta
     Write-Host "+---------------------------------------------------------+" -ForegroundColor Magenta
     Write-Host ""
 }
@@ -621,7 +621,7 @@ function Invoke-Native([scriptblock]$Command) {
 
 # Interactive runs collapse child-process output (git, uv, pm, the builds)
 # into one status line. CI, -Verbose and redirected output -- the
-# Pulse-Setup -Json driver, E2E transcripts -- keep the full stream those
+# PULSE-Setup -Json driver, E2E transcripts -- keep the full stream those
 # readers parse.
 function Test-QuietOutput {
     if ($env:CI -or $env:GITHUB_ACTIONS -or $env:PULSE_INSTALL_VERBOSE) { return $false }
@@ -647,7 +647,7 @@ function Invoke-Logged {
     param([string]$StatusLabel, [scriptblock]$NativeBlock, [switch]$MayFail)
     $logWriter = $null
     if (Test-QuietOutput) {
-        $logPath = Join-Path (Join-Path $PulseHome 'logs') 'install.log'
+        $logPath = Join-Path (Join-Path $PULSEHome 'logs') 'install.log'
         try {
             New-Item -ItemType Directory -Force -Path (Split-Path -Parent $logPath) | Out-Null
             $logWriter = New-Object System.IO.StreamWriter($logPath, $true, (New-Object System.Text.UTF8Encoding($false)))
@@ -714,7 +714,7 @@ function Emit-Frame([bool]$ok, [string]$name, [bool]$skipped, [string]$reason = 
 $ProductTitle = if ($IncludeDesktop) { "Install command and app + desktop" } else { "Install command and app" }
 $Stages = @(
     @{ name = "prerequisites"; title = "System prerequisites"; category = "runtime"; needs_user_input = $false },
-    @{ name = "repository"; title = "Download Pulse Agent"; category = "runtime"; needs_user_input = $false },
+    @{ name = "repository"; title = "Download PULSE Agent"; category = "runtime"; needs_user_input = $false },
     @{ name = "venv"; title = "Create Python environment"; category = "runtime"; needs_user_input = $false },
     @{ name = "python-deps"; title = "Install Python dependencies"; category = "runtime"; needs_user_input = $false },
     @{ name = "config"; title = "Prepare config and skills"; category = "configuration"; needs_user_input = $false },
@@ -740,7 +740,7 @@ function Stage-Repository {
         $item = Get-Item -LiteralPath $InstallDir -Force
         $empty = $item.PSIsContainer -and -not $item.LinkType -and -not (Get-ChildItem -LiteralPath $InstallDir -Force | Select-Object -First 1)
         if (-not $empty) {
-            Fail "$InstallDir exists and is not a Pulse git checkout. Move it aside, or install elsewhere with -InstallDir <path>."
+            Fail "$InstallDir exists and is not a PULSE git checkout. Move it aside, or install elsewhere with -InstallDir <path>."
         }
     }
     if (-not (Ensure-Git)) { Fail "no pinned Git artifact for this Windows architecture" }
@@ -766,6 +766,20 @@ function Stage-Repository {
         }
         # Explicit refspec: a tag-pinned --single-branch checkout from an older installer maps only
         # the tag, so a by-name fetch never writes the origin/$Branch used below (#125112).
+        # git 2.53+ aborts fetches into a partial clone whose packs lack a .promisor marker
+        # (#124272), and an install stuck there never fetches the updater that heals it.
+        # Marking is idempotent and never rewrites objects.
+        $promisor = Invoke-Native { git -C $InstallDir config --bool --get remote.origin.promisor }
+        $packDir = Join-Path $InstallDir '.git\objects\pack'
+        if ("$promisor".Trim() -eq 'true' -and (Test-Path -LiteralPath $packDir)) {
+            Get-ChildItem -LiteralPath $packDir -Filter 'pack-*.pack' | ForEach-Object {
+                $marker = [IO.Path]::ChangeExtension($_.FullName, '.promisor')
+                if (-not (Test-Path -LiteralPath $marker)) {
+                    try { New-Item -ItemType File -Path $marker | Out-Null }
+                    catch { Write-Warn "could not mark $marker as a partial-clone pack" }
+                }
+            }
+        }
         Invoke-Logged "Fetching origin/$Branch" { git -C $InstallDir fetch origin "+refs/heads/${Branch}:refs/remotes/origin/${Branch}" }
         if ($LASTEXITCODE) { Fail "git fetch failed" }
         $stamp = (Get-Date -Format 'yyyyMMdd-HHmmss')
@@ -796,7 +810,7 @@ function Stage-Repository {
         }
         if ($LASTEXITCODE) { Fail "git checkout failed" }
         # --no-stat: across a large gap (v2026.7.1 -> today is ~27k lines) the
-        # diffstat arrives as one burst. Pulse-Setup.exe forwards every line
+        # diffstat arrives as one burst. PULSE-Setup.exe forwards every line
         # to its window as a separate event; the burst overflows the Windows
         # posted-message queue (10k), events drop, and the installer's Launch
         # button can then hang on "Launching" forever.
@@ -874,7 +888,7 @@ function Stage-Repository {
             }
             if (-not $cloned) { Fail "git clone failed; no checkout published" }
             Move-Item -LiteralPath $tree -Destination $InstallDir
-            Write-Ok "Pulse Agent cloned"
+            Write-Ok "PULSE Agent cloned"
         } finally {
             Remove-Item -LiteralPath $staged -Recurse -Force -ErrorAction SilentlyContinue
         }
@@ -974,7 +988,7 @@ function Publish-UserCommand {
     # "windows-installer-owned" rather than creating the user-facing command,
     # so the install-scoped launchers the completion publishes are not the ones
     # the user's PATH points at.
-    $binDir = Join-Path $PulseHome "bin"
+    $binDir = Join-Path $PULSEHome "bin"
     $bootPy = Get-BootstrapPython
     Push-Location $InstallDir
     try {
@@ -1040,20 +1054,20 @@ function Write-PathReloadHint {
 
 function Stage-Config {
     foreach ($d in @("cron","sessions","logs","pairing","hooks","image_cache","audio_cache","memories","skills")) {
-        New-Item -ItemType Directory -Force -Path (Join-Path $PulseHome $d) | Out-Null
+        New-Item -ItemType Directory -Force -Path (Join-Path $PULSEHome $d) | Out-Null
     }
-    $envFile = Join-Path $PulseHome ".env"
+    $envFile = Join-Path $PULSEHome ".env"
     if (-not (Test-Path $envFile)) {
         $example = Join-Path $InstallDir ".env.example"
         if (Test-Path $example) { Copy-Item $example $envFile } else { New-Item -ItemType File -Path $envFile | Out-Null }
     }
-    $cfg = Join-Path $PulseHome "config.yaml"
+    $cfg = Join-Path $PULSEHome "config.yaml"
     $cfgExample = Join-Path $InstallDir "cli-config.yaml.example"
     if (-not (Test-Path $cfg) -and (Test-Path $cfgExample)) { Copy-Item $cfgExample $cfg }
-    Write-Ok "config prepared in $PulseHome"
+    Write-Ok "config prepared in $PULSEHome"
 }
 
-function Invoke-InstalledPulse([string[]]$CommandArgs) {
+function Invoke-InstalledPULSE([string[]]$CommandArgs) {
     # Load the helper from its text, not its path. Under `irm | iex` this
     # installer runs as a string that execution policy never checks, but
     # dot-sourcing a .ps1 from disk is a file load. The default Restricted
@@ -1062,7 +1076,7 @@ function Invoke-InstalledPulse([string[]]$CommandArgs) {
     . ([ScriptBlock]::Create([IO.File]::ReadAllText($runtimeHelper)))
     # Not `$command`: Invoke-Native's `$Command` parameter shadows it
     # (names are case-insensitive) and the block would invoke itself.
-    $runtimeCommand = @(Get-PulseRuntimeCommand -InstallRoot $InstallDir)
+    $runtimeCommand = @(Get-PULSERuntimeCommand -InstallRoot $InstallDir)
     $runtimeArgs = @($runtimeCommand | Select-Object -Skip 1) + $CommandArgs
     Invoke-Native { & $runtimeCommand[0] @runtimeArgs }
     if ($LASTEXITCODE) { Fail "pulse $($CommandArgs -join ' ') failed (exit $LASTEXITCODE)" }
@@ -1070,13 +1084,13 @@ function Invoke-InstalledPulse([string[]]$CommandArgs) {
 
 function Stage-Setup {
     if ($NonInteractive) { return }
-    Invoke-InstalledPulse @('setup')
+    Invoke-InstalledPULSE @('setup')
 }
 
 function Stage-Gateway {
     if ($NonInteractive) { return }
     # Setup installs the service when it handles the gateway; ask only if it did not.
-    Invoke-InstalledPulse @('gateway', 'install', '--if-missing')
+    Invoke-InstalledPULSE @('gateway', 'install', '--if-missing')
 }
 
 function Stage-Desktop {
@@ -1096,16 +1110,16 @@ function Confirm-DesktopArtifact {
     try {
         $desktopDir = Join-Path $InstallDir "apps\desktop"
         $candidates = @(
-            (Join-Path $desktopDir "release\win-unpacked\Pulse.exe"),
-            (Join-Path $desktopDir "release\win-ia32-unpacked\Pulse.exe"),
-            (Join-Path $desktopDir "release\win-arm64-unpacked\Pulse.exe")
+            (Join-Path $desktopDir "release\win-unpacked\PULSE.exe"),
+            (Join-Path $desktopDir "release\win-ia32-unpacked\PULSE.exe"),
+            (Join-Path $desktopDir "release\win-arm64-unpacked\PULSE.exe")
         )
         $desktopExe = $null
         foreach ($cand in $candidates) {
             if (Test-Path $cand) { $desktopExe = $cand; break }
         }
         if (-not $desktopExe) {
-            Fail "desktop build produced no Pulse.exe under $desktopDir\release\*-unpacked"
+            Fail "desktop build produced no PULSE.exe under $desktopDir\release\*-unpacked"
         }
         Write-Ok "Desktop ready: $desktopExe"
 
@@ -1145,7 +1159,7 @@ function Stage-Complete {
             completedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
         }
         $marker | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $InstallDir ".pulse-bootstrap-complete") -Encoding UTF8
-        Write-Ok "Pulse Agent install complete (pinned $commit). Run: pulse"
+        Write-Ok "PULSE Agent install complete (pinned $commit). Run: pulse"
     }
 }
 
@@ -1172,8 +1186,8 @@ function New-DesktopShortcuts {
         }
 
         $targets = @(
-            (Join-Path ([Environment]::GetFolderPath('Programs')) 'Pulse.lnk'),
-            (Join-Path ([Environment]::GetFolderPath('Desktop')) 'Pulse.lnk')
+            (Join-Path ([Environment]::GetFolderPath('Programs')) 'PULSE.lnk'),
+            (Join-Path ([Environment]::GetFolderPath('Desktop')) 'PULSE.lnk')
         )
 
         foreach ($lnkPath in $targets) {
@@ -1186,7 +1200,7 @@ function New-DesktopShortcuts {
                 $sc.TargetPath = $TargetExe
                 $sc.WorkingDirectory = $workDir
                 $sc.IconLocation = $iconLocation
-                $sc.Description = 'Pulse Agent'
+                $sc.Description = 'PULSE Agent'
                 $sc.Save()
                 Write-Ok "Shortcut created: $lnkPath"
             } catch {
@@ -1197,7 +1211,7 @@ function New-DesktopShortcuts {
         # Bust the Windows shell icon cache so the desktop/Start-Menu shortcut
         # repaints with the (possibly newly-stamped) icon instead of a stale
         # cached bitmap. Critical on the --update path: the exe was re-stamped
-        # with the Pulse icon, but without this the shortcut can keep drawing
+        # with the PULSE icon, but without this the shortcut can keep drawing
         # the old Electron icon until the user manually refreshes / reboots.
         # Best-effort and silent -- never fail the install over a cosmetic cache.
         try {

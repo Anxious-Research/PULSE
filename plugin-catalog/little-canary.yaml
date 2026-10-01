@@ -4,7 +4,7 @@ sha: 6abccc1aa9f325305dc7f3767bc9dda71fbac56a
 subdir: integrations/pulse-agent
 version: "0.3.10"
 description: Screens user turns and blocks downstream tools on a BLOCK verdict; the original prompt still reaches the model.
-maintainer: roli-lpci (Pulse Labs; independent of Anxious Research Lab)
+maintainer: roli-lpci (PULSE Labs; independent of Nous Research)
 tier: community
 category: general
 requires_pulse: ">=0.21.3"

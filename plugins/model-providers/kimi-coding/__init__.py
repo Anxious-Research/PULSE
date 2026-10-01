@@ -10,9 +10,9 @@ from providers import register_provider
 from providers.base import OMIT_TEMPERATURE, ProviderProfile
 
 _HEADERS = {
-    "HTTP-Referer": "https://pulse-agent.anxiousresearchlab.com",
-    "X-Title": "Pulse Agent",
-    "User-Agent": f"PulseAgent/{get_version_info().base_version}",
+    "HTTP-Referer": "https://pulse-agent.anxious-research.com",
+    "X-Title": "PULSE Agent",
+    "User-Agent": f"PULSEAgent/{get_version_info().base_version}",
     # Exclude brotli: httpx's brotlicffi backend has a streaming decode bug on
     # Moonshot's content-encoding: br SSE responses (#28043, #48428, #59556).
     # gzip sidesteps it while still compressing the transfer.

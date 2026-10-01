@@ -19,23 +19,23 @@ import React, {
 } from "react";
 import { api, fetchJSON, authedFetch, buildWsUrl, buildWsAuthParam } from "@/lib/api";
 import { cn, timeAgo, isoTimeAgo } from "@/lib/utils";
-import { Badge } from "@anxious-research/ui/ui/components/badge";
-import { Button } from "@anxious-research/ui/ui/components/button";
-import { Checkbox } from "@anxious-research/ui/ui/components/checkbox";
-import { ConfirmDialog } from "@anxious-research/ui/ui/components/confirm-dialog";
+import { Badge } from "@nous-research/ui/ui/components/badge";
+import { Button } from "@nous-research/ui/ui/components/button";
+import { Checkbox } from "@nous-research/ui/ui/components/checkbox";
+import { ConfirmDialog } from "@nous-research/ui/ui/components/confirm-dialog";
 import {
   Dialog, DialogClose, DialogContent, DialogDescription,
   DialogFooter, DialogHeader, DialogTitle,
-} from "@anxious-research/ui/ui/components/dialog";
-import { Toast } from "@anxious-research/ui/ui/components/toast";
-import { useConfirmDelete } from "@anxious-research/ui/hooks/use-confirm-delete";
-import { useToast } from "@anxious-research/ui/hooks/use-toast";
-import { Select, SelectOption } from "@anxious-research/ui/ui/components/select";
-import { Card, CardHeader, CardTitle, CardContent } from "@anxious-research/ui/ui/components/card";
-import { Input } from "@anxious-research/ui/ui/components/input";
-import { Label } from "@anxious-research/ui/ui/components/label";
-import { Separator } from "@anxious-research/ui/ui/components/separator";
-import { Tabs, TabsList, TabsTrigger } from "@anxious-research/ui/ui/components/tabs";
+} from "@nous-research/ui/ui/components/dialog";
+import { Toast } from "@nous-research/ui/ui/components/toast";
+import { useConfirmDelete } from "@nous-research/ui/hooks/use-confirm-delete";
+import { useToast } from "@nous-research/ui/hooks/use-toast";
+import { Select, SelectOption } from "@nous-research/ui/ui/components/select";
+import { Card, CardHeader, CardTitle, CardContent } from "@nous-research/ui/ui/components/card";
+import { Input } from "@nous-research/ui/ui/components/input";
+import { Label } from "@nous-research/ui/ui/components/label";
+import { Separator } from "@nous-research/ui/ui/components/separator";
+import { Tabs, TabsList, TabsTrigger } from "@nous-research/ui/ui/components/tabs";
 import { useI18n } from "@/i18n";
 import { registerSlot, PluginSlot } from "./slots";
 
@@ -138,7 +138,7 @@ export function exposePluginSDK() {
       useConfirmDelete,
     },
 
-    // Pulse API client
+    // PULSE API client
     api,
     // Raw fetchJSON for plugin-specific JSON endpoints
     fetchJSON,
@@ -154,7 +154,7 @@ export function exposePluginSDK() {
     // plugins that need to build the WS URL themselves.
     buildWsAuthParam,
 
-    // UI components — Anxious DS where available, shadcn/ui primitives elsewhere.
+    // UI components — Nous DS where available, shadcn/ui primitives elsewhere.
     components: {
       Card,
       CardHeader,

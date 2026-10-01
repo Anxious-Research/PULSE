@@ -50,12 +50,12 @@ export const it: Translations = {
   },
 
   app: {
-    brand: "Pulse Agent",
+    brand: "PULSE Agent",
     brandShort: "HA",
     closeNavigation: "Chiudi navigazione",
     closeModelTools: "Chiudi modello e strumenti",
     footer: {
-      org: "Anxious Research Lab",
+      org: "Nous Research",
     },
     activeSessionsLabel: "Sessioni attive:",
     gatewayStatusLabel: "Stato gateway:",
@@ -120,8 +120,8 @@ export const it: Translations = {
     starting: "Avvio in corso",
     startedInBackground: "Avviato in background — controlla i log per i progressi",
     stopped: "Arrestato",
-    updatePulse: "Aggiorna Pulse",
-    updatingPulse: "Aggiornamento di Pulse…",
+    updatePULSE: "Aggiorna PULSE",
+    updatingPULSE: "Aggiornamento di PULSE…",
     waitingForOutput: "In attesa di output…",
   },
 
@@ -333,7 +333,7 @@ export const it: Translations = {
       "Salvato: riavvia il gateway per applicare la modifica.",
     forceReinstall: "Forza reinstallazione (elimina prima la cartella esistente)",
     headline:
-      "Scopri, installa, abilita e aggiorna i plugin Pulse (parità con `pulse plugins`).",
+      "Scopri, installa, abilita e aggiorna i plugin PULSE (parità con `pulse plugins`).",
     identifierLabel: "URL Git o owner/repo",
     inactive: "inattivo",
     installBtn: "Installa",
@@ -447,7 +447,7 @@ export const it: Translations = {
     showValue: "Mostra valore reale",
     hideValue: "Nascondi valore",
     customTitle: "Chiavi personalizzate",
-    customHint: "Variabili d'ambiente arbitrarie salvate nel tuo .env che Pulse non riconosce. Usale per iniettare variabili d'ambiente per skill, server MCP o i tuoi strumenti.",
+    customHint: "Variabili d'ambiente arbitrarie salvate nel tuo .env che PULSE non riconosce. Usale per iniettare variabili d'ambiente per skill, server MCP o i tuoi strumenti.",
     customConfigured: "{count} chiave/i personalizzata/e impostata/e",
     addCustomKey: "Aggiungi una chiave personalizzata",
     customKeyName: "Nome della variabile",
@@ -511,11 +511,11 @@ export const it: Translations = {
   achievements: {
     hero: {
       kicker: "Agentic Gamerscore",
-      title: "Pulse Achievements",
+      title: "PULSE Achievements",
       subtitle:
-        "Badge Pulse da collezione, ottenuti dalla cronologia reale delle sessioni. Gli achievement noti non completati vengono mostrati come Scoperti; gli achievement segreti restano nascosti finché non compare il primo comportamento corrispondente.",
+        "Badge PULSE da collezione, ottenuti dalla cronologia reale delle sessioni. Gli achievement noti non completati vengono mostrati come Scoperti; gli achievement segreti restano nascosti finché non compare il primo comportamento corrispondente.",
       scan_subtitle:
-        "Scansione della cronologia delle sessioni Pulse in corso. La prima scansione può richiedere 5–10 secondi su cronologie ampie.",
+        "Scansione della cronologia delle sessioni PULSE in corso. La prima scansione può richiedere 5–10 secondi su cronologie ampie.",
     },
     actions: {
       rescan: "Riscansiona",
@@ -530,7 +530,7 @@ export const it: Translations = {
       highest_tier: "Livello più alto",
       highest_tier_hint: "Copper → Silver → Gold → Diamond → Olympian",
       latest: "Più recente",
-      latest_hint_empty: "usa Pulse di più",
+      latest_hint_empty: "usa PULSE di più",
       none_yet: "Nessuno ancora",
     },
     state: {
@@ -561,10 +561,10 @@ export const it: Translations = {
       tiers_header: "Livelli",
       secret_header: "Achievement segreti",
       secret_body:
-        "I segreti nascondono il loro trigger esatto. Quando Pulse rileva un segnale correlato, la carta passa a Scoperto e mostra il requisito.",
+        "I segreti nascondono il loro trigger esatto. Quando PULSE rileva un segnale correlato, la carta passa a Scoperto e mostra il requisito.",
       scan_status_header: "Stato della scansione",
       scan_status_body:
-        "Pulse sta scansionando la cronologia locale una sola volta, poi le carte appariranno automaticamente. Non è bloccato nulla se richiede qualche secondo.",
+        "PULSE sta scansionando la cronologia locale una sola volta, poi le carte appariranno automaticamente. Non è bloccato nulla se richiede qualche secondo.",
       what_scanned_header: "Cosa viene scansionato",
       what_scanned_body:
         "Sessioni, chiamate agli strumenti, metadati del modello, errori, achievement e stato di sblocco locale.",
@@ -611,7 +611,7 @@ export const it: Translations = {
         "Condividi su X apre un post precompilato in una nuova scheda. Clicca prima su Copia immagine se vuoi allegare il badge 1200×630 — X ti permette di incollarlo direttamente nell'editor del tweet. Scarica PNG salva il file per l'uso ovunque.",
       clipboard_unsupported:
         "La copia delle immagini negli appunti non è supportata in questo browser — usa Scarica invece.",
-      tweet_text: "Just unlocked {tier_part}\"{name}\" in Pulse Agent ☤",
+      tweet_text: "Just unlocked {tier_part}\"{name}\" in PULSE Agent ☤",
     },
   },
   kanban: {

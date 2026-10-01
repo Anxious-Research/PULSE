@@ -12,7 +12,7 @@ const windowControls = {
 }
 
 const desktopWindow = window as unknown as { pulseDesktop?: Window['pulseDesktop'] }
-const originalPulseDesktop = desktopWindow.pulseDesktop
+const originalPULSEDesktop = desktopWindow.pulseDesktop
 
 function renderControls(isMaximized = false, path = '/', isFullscreen = false) {
   return render(
@@ -26,8 +26,8 @@ afterEach(() => {
   cleanup()
   vi.clearAllMocks()
 
-  if (originalPulseDesktop) {
-    desktopWindow.pulseDesktop = originalPulseDesktop
+  if (originalPULSEDesktop) {
+    desktopWindow.pulseDesktop = originalPULSEDesktop
   } else {
     delete desktopWindow.pulseDesktop
   }

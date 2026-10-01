@@ -92,8 +92,8 @@ test('nonstable runtime pins userData before the app name can change', async ():
   const canary: ProductIdentity = await identityForVariant('bundled')
   const runtime: { applyDesktopIdentity: typeof applyDesktopIdentity } = await import('./product-identity')
   const root: string = fs.mkdtempSync(path.join(os.tmpdir(), 'identity-userdata-'))
-  const paths: Record<string, string> = { appData: root, userData: path.join(root, 'Pulse') }
-  let name: string = 'Pulse'
+  const paths: Record<string, string> = { appData: root, userData: path.join(root, 'PULSE') }
+  let name: string = 'PULSE'
 
   const app: Parameters<typeof applyDesktopIdentity>[0] = {
     getPath: (key: string): string => paths[key],
@@ -108,7 +108,7 @@ test('nonstable runtime pins userData before the app name can change', async ():
 
   try {
     assert.equal(runtime.applyDesktopIdentity(app, stable), null)
-    assert.equal(paths.userData, path.join(root, 'Pulse'))
+    assert.equal(paths.userData, path.join(root, 'PULSE'))
     assert.equal(runtime.applyDesktopIdentity(app, canary), canary.displayName)
     assert.equal(paths.userData, path.join(paths.appData, canary.appNamePascal))
     assert.equal(name, canary.displayName)
@@ -118,9 +118,9 @@ test('nonstable runtime pins userData before the app name can change', async ():
 })
 
 test.each([
-  [undefined, 'Pulse', 'pulse', 'latest', 'canary'],
-  ['bundled', 'Pulse Agent', 'pulse', 'latest', 'canary'],
-  ['light', 'Pulse Light', 'pulse-light', 'light', 'light-canary']
+  [undefined, 'PULSE', 'pulse', 'latest', 'canary'],
+  ['bundled', 'PULSE Agent', 'pulse', 'latest', 'canary'],
+  ['light', 'PULSE Light', 'pulse-light', 'light', 'light-canary']
 ] as const)(
   '%s separates stable, canary and independent commits',
   async (
@@ -290,9 +290,9 @@ test('nonstable builds cannot claim the official Store package', async (): Promi
 test('store carries the Partner Center MSIX identity and no other variant does', async (): Promise<void> => {
   const store: ProductIdentity = await identityForVariant('store')
   assert.deepEqual(store.storeMsix, {
-    identityName: 'Anxious-ResearchInc.PulseAgent',
+    identityName: 'NousResearchInc.PULSEAgent',
     publisher: 'CN=EE6D86E4-606F-4E38-B940-AD7248C9D519',
-    publisherDisplayName: 'Anxious Research Inc.'
+    publisherDisplayName: 'Nous Research Inc.'
   })
 
   for (const v of [undefined, 'bundled', 'light'] as const) {

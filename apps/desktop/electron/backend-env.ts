@@ -2,11 +2,11 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { resolveDesktopPulseHome } from './data-paths'
+import { resolveDesktopPULSEHome } from './data-paths'
 
 // macOS apps launched from Finder/Dock inherit only /usr/bin:/bin:/usr/sbin:/sbin,
 // which misses Homebrew and user-installed CLI tools (codex, git credential
-// helpers). Pulse' own managed tools need no PATH help — the backend composes
+// helpers). PULSE' own managed tools need no PATH help — the backend composes
 // their environment in-process via pm — but user tools on PATH do.
 const POSIX_SANE_PATH_ENTRIES = Object.freeze([
   '/opt/homebrew/bin',
@@ -59,7 +59,7 @@ function appendUniquePathEntries(entries, { delimiter = path.delimiter } = {}) {
   return ordered.join(delimiter)
 }
 
-function resolvePulseHomePath(pulseHome, { pathModule, homedir = os.homedir() }: any) {
+function resolvePULSEHomePath(pulseHome, { pathModule, homedir = os.homedir() }: any) {
   // fish (and any shell when the value is quoted) hands a literal `~` through; path.resolve()
   // would pin it under cwd and the Python backend inherits that absolute path via PULSE_HOME.
   let raw = String(pulseHome)
@@ -75,7 +75,7 @@ function isProfileHome(resolved, pathModule) {
   return pathModule.basename(pathModule.dirname(resolved)).toLowerCase() === 'profiles'
 }
 
-function normalizePulseHomeRoot(
+function normalizePULSEHomeRoot(
   pulseHome,
   { pathModule = pathModuleForPlatform(process.platform), homedir = os.homedir() }: any = {}
 ) {
@@ -83,7 +83,7 @@ function normalizePulseHomeRoot(
     return pulseHome
   }
 
-  const resolved = resolvePulseHomePath(pulseHome, { pathModule, homedir })
+  const resolved = resolvePULSEHomePath(pulseHome, { pathModule, homedir })
 
   return isProfileHome(resolved, pathModule) ? pathModule.dirname(pathModule.dirname(resolved)) : resolved
 }
@@ -158,7 +158,7 @@ function profileBackendParentEnv({
   }
 
   const fold = platform === 'win32' ? (value: string) => value.toUpperCase() : (value: string) => value
-  const inheritedHome = currentEnv?.PULSE_HOME ? resolvePulseHomePath(currentEnv.PULSE_HOME, { pathModule }) : null
+  const inheritedHome = currentEnv?.PULSE_HOME ? resolvePULSEHomePath(currentEnv.PULSE_HOME, { pathModule }) : null
   const launchHome = inheritedHome && isProfileHome(inheritedHome, pathModule) ? inheritedHome : pulseHome
   const name = profile || readTextOrEmpty(fsModule, pathModule.join(pulseHome, 'active_profile')).trim()
   const targetHome = !name || name === 'default' ? pulseHome : pathModule.join(pulseHome, 'profiles', name)
@@ -186,7 +186,7 @@ function profileBackendParentEnv({
 /**
  * PATH with the entries under the PM store (PULSE_RUNTIME_DIR, else
  * <pulse home>/tools, as pm.environments.store_root resolves it) moved to the
- * front, every other entry kept in order. Pulse's own children must run the
+ * front, every other entry kept in order. PULSE's own children must run the
  * store's uv/node/npm, but shell-path.ts puts the user's login-shell entries
  * (nvm, Homebrew, ~/.local/bin) ahead of the inherited PATH, which is where
  * `pulse desktop` put the store dirs.
@@ -197,7 +197,7 @@ function storeFirstPath(
 ) {
   const pathModule = pathModuleForPlatform(platform)
   const delimiter = delimiterForPlatform(platform)
-  const pulseHome = resolveDesktopPulseHome({ home: homedir, env: currentEnv, platform })
+  const pulseHome = resolveDesktopPULSEHome({ home: homedir, env: currentEnv, platform })
   const roots = [currentEnv?.PULSE_RUNTIME_DIR, pathModule.join(pulseHome, 'tools')].filter(Boolean)
 
   const owned = (entry: string) =>
@@ -248,7 +248,7 @@ export {
   appendUniquePathEntries,
   buildDesktopBackendEnv,
   delimiterForPlatform,
-  normalizePulseHomeRoot,
+  normalizePULSEHomeRoot,
   pathEnvKey,
   POSIX_SANE_PATH_ENTRIES,
   profileBackendParentEnv,

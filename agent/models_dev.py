@@ -106,7 +106,7 @@ class ModelCapabilities:
     model_family: str = ""
 
 
-# Pulse provider names → models.dev provider IDs
+# PULSE provider names → models.dev provider IDs
 PROVIDER_TO_MODELS_DEV: Dict[str, str] = {
     "openrouter": "openrouter", "novita": "novita-ai", "anthropic": "anthropic",
     "openai": "openai", "openai-api": "openai", "openai-codex": "openai", "zai": "zai",
@@ -123,18 +123,18 @@ PROVIDER_TO_MODELS_DEV: Dict[str, str] = {
     "xai-oauth": "xai",  # OAuth is a transport path for the same xAI catalog
     "xiaomi": "xiaomi", "nvidia": "nvidia",
     # Meta Model API (Muse Spark, api.meta.ai): models.dev keys it "meta", the
-    # Pulse provider is "meta-ai"; both aliases are needed or muse-spark-*
+    # PULSE provider is "meta-ai"; both aliases are needed or muse-spark-*
     # falls back to the generic 256K default instead of its true 1M window.
     "meta-ai": "meta", "meta": "meta", "groq": "groq", "mistral": "mistral",
     "togetherai": "togetherai", "perplexity": "perplexity", "cohere": "cohere",
     "ollama-cloud": "ollama-cloud",
 }
-# Reverse mapping: models.dev id → Pulse ids (built lazily; many-to-one).
+# Reverse mapping: models.dev id → PULSE ids (built lazily; many-to-one).
 _MODELS_DEV_TO_PROVIDER: Optional[Dict[str, List[str]]] = None
 
 
 def _models_dev_to_pulse_ids(mdev_id: str) -> List[str]:
-    """Return the Pulse provider ids that map to *mdev_id* (may be [])."""
+    """Return the PULSE provider ids that map to *mdev_id* (may be [])."""
     global _MODELS_DEV_TO_PROVIDER
     if _MODELS_DEV_TO_PROVIDER is None:
         _MODELS_DEV_TO_PROVIDER = {}
@@ -178,7 +178,7 @@ def _configured_catalog_provider(
 def _models_dev_id(
     provider: str, *, config: Optional[Dict[str, Any]] = None,
 ) -> Optional[str]:
-    """models.dev provider id for a Pulse provider id, or None. A custom provider reaches the
+    """models.dev provider id for a PULSE provider id, or None. A custom provider reaches the
     catalog only through its configured ``catalog_provider`` alias (#112649)."""
     key = (provider or "").strip()
     mdev_id = PROVIDER_TO_MODELS_DEV.get(key)
@@ -190,7 +190,7 @@ def _models_dev_id(
             # A mistyped alias must not leak into ModelInfo.provider_id; the row stays on its own slug.
             if (key, alias) not in _UNKNOWN_CATALOG_PROVIDER_WARNED:
                 _UNKNOWN_CATALOG_PROVIDER_WARNED.add((key, alias))
-                logger.warning("providers.%s: catalog_provider %r is neither a Pulse provider id nor a "
+                logger.warning("providers.%s: catalog_provider %r is neither a PULSE provider id nor a "
                                "models.dev id; ignoring", key, alias)
             mdev_id = None
     return mdev_id
@@ -511,7 +511,7 @@ def _registry_models(mdev_id: str, *, allow_network: bool) -> Optional[Dict[str,
 def _get_provider_models(
     provider: str, *, allow_network: bool = False, config: Optional[Dict[str, Any]] = None,
 ) -> Optional[Dict[str, Any]]:
-    """Resolve a Pulse provider ID to its models dict, or None if unknown.
+    """Resolve a PULSE provider ID to its models dict, or None if unknown.
     ``allow_network`` defaults to False — hot-path callers must never block."""
     mdev_id = _models_dev_id(provider, config=config)
     return _registry_models(mdev_id, allow_network=allow_network) if mdev_id else None
@@ -615,7 +615,7 @@ def lookup_models_dev_context(provider: str, model: str, *, allow_network: bool 
 # accept): context_window, supports_tools, supports_vision, supports_reasoning,
 # model_family. ``<provider>.<model_id>`` is an explicit partial patch that always wins over the
 # catalog. ``<provider>._default`` / top-level ``_default`` are FILL-GAP defaults: they apply ONLY to
-# models the catalog does not know and never displace catalog data. Provider keys accept the Pulse
+# models the catalog does not know and never displace catalog data. Provider keys accept the PULSE
 # or models.dev id; model ids match exactly, then case-insensitively (mirroring catalog lookup).
 # Resolution semantics: 1. 2. See #84482, #8731.
 _OVERRIDE_WARNED_KEYS: set = set()
@@ -666,7 +666,7 @@ def _load_model_overrides(*, config: Optional[Dict[str, Any]] = None) -> Dict[st
 
 
 def _provider_override_section(provider: str, *, config: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
-    """Override section for *provider* (keyed by Pulse OR models.dev id), or None."""
+    """Override section for *provider* (keyed by PULSE OR models.dev id), or None."""
     overrides = (
         _load_model_overrides(config=config)
         if config is not None
@@ -675,7 +675,7 @@ def _provider_override_section(provider: str, *, config: Optional[Dict[str, Any]
     provider_key = (provider or "").strip()
     if not overrides or not provider_key:
         return None
-    # Forward (Pulse → models.dev id) and reverse (caller passed a models.dev id, config keyed by Pulse id) aliases.
+    # Forward (PULSE → models.dev id) and reverse (caller passed a models.dev id, config keyed by PULSE id) aliases.
     candidates = [provider_key, PROVIDER_TO_MODELS_DEV.get(provider_key), *_models_dev_to_pulse_ids(provider_key)]
     return next((section for section in (overrides.get(key) if key else None for key in candidates) if isinstance(section, dict)), None)
 
@@ -792,7 +792,7 @@ def _merge_catalog_entry_with_override(raw: Dict[str, Any], override: Dict[str, 
 def _builtin_model_metadata(
     provider: str, model: str, *, config: Optional[Dict[str, Any]] = None,
 ) -> Optional[Dict[str, Any]]:
-    """Built-in metadata for a provider/model pair, if Pulse has a vendor-specific entry."""
+    """Built-in metadata for a provider/model pair, if PULSE has a vendor-specific entry."""
     provider_key = _models_dev_id(provider, config=config) or (provider or "").strip()
     return _BUILTIN_MODEL_METADATA.get((provider_key, (model or "").strip().lower()))
 
@@ -952,7 +952,7 @@ def _parse_provider_info(provider_id: str, raw: Dict[str, Any]) -> ProviderInfo:
 def get_provider_info(
     provider_id: str, *, allow_network: bool = True, config: Optional[Dict[str, Any]] = None,
 ) -> Optional[ProviderInfo]:
-    """Provider metadata by Pulse or models.dev ID, or None if not cataloged. ``allow_network`` defaults to True (interactive setup)."""
+    """Provider metadata by PULSE or models.dev ID, or None if not cataloged. ``allow_network`` defaults to True (interactive setup)."""
     mdev_id = _models_dev_id(provider_id, config=config) or provider_id
     raw = _registry_provider(mdev_id, allow_network)
     return _parse_provider_info(mdev_id, raw) if raw is not None else None
@@ -961,7 +961,7 @@ def get_provider_info(
 def get_model_info(
     provider_id: str, model_id: str, *, allow_network: bool = False, config: Optional[Dict[str, Any]] = None,
 ) -> Optional[ModelInfo]:
-    """Full model metadata by Pulse or models.dev provider ID (exact match, then case-insensitive), or
+    """Full model metadata by PULSE or models.dev provider ID (exact match, then case-insensitive), or
     None if not found. EXPLICIT ``model_overrides`` patch known catalog models; ``_default`` fills the gap
     only for unknown ones. ``allow_network`` defaults to False — cost guard and inventory are hot paths.
 

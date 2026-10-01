@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import List, Tuple
 
 
-SCANNER_VERSION = "skills-guard-v6"
+SCANNER_VERSION = "skills-guard-v7"
 
 # NVIDIA-verified skills each ship a signed `skill.oms.sig` + governance `skill-card.md`.
 TRUSTED_REPOS = {"openai/skills", "anthropics/skills", "huggingface/skills", "NVIDIA/skills"}
@@ -157,7 +157,7 @@ THREAT_PATTERNS = [
     (r'\$HOME/\.docker|\~/\.docker',
      "docker_dir_access", "high", "exfiltration", "references Docker config (may contain registry creds)"),
     (r'\$HOME/\.pulse/\.env|\~/\.pulse/\.env',
-     "pulse_env_access", "critical", "exfiltration", "directly references Pulse secrets file"),
+     "pulse_env_access", "critical", "exfiltration", "directly references PULSE secrets file"),
     # `cat <secrets-file>` reads credentials; `cat >`/`cat >>` WRITES one (setup heredocs) — not exfil.
     (r'cat\s+(?!>)[^\n]*(\.env|credentials|\.netrc|\.pgpass|\.npmrc|\.pypirc)',
      "read_secrets_file", "critical", "exfiltration", "reads known secrets file"),
@@ -236,8 +236,8 @@ THREAT_PATTERNS = [
      r'(?!tmp(?:\b|/)|var/tmp(?:\b|/)|dev/shm(?:\b|/)|run(?:\b|/))'
      r'|(?:tmp|var/tmp|dev/shm|run)/(?:[^/\s]*/)*\.\.(?=/|[\s;&|]|$))',
      "destructive_root_rm", "critical", "destructive", "recursive delete from root"),
-    (r'rm\s+(-[^\s]*)?r.*\$HOME|\brmdir\s+.*\$HOME',
-     "destructive_home_rm", "critical", "destructive", "recursive delete targeting home directory"),
+    (r'rm\s+(-[^\s]*)?r.*(?:\$HOME|~[/\s*]|~$)|\brmdir\s+.*(?:\$HOME|~[/\s*]|~$)',
+     "destructive_home_rm", "critical", "destructive", "recursive delete targeting home directory ($HOME or ~)"),
     (r'chmod\s+777', "insecure_perms", "medium", "destructive", "sets world-writable permissions"),
     (r'>\s*/etc/', "system_overwrite", "critical", "destructive", "overwrites system configuration file"),
     (r'\bmkfs\b', "format_filesystem", "critical", "destructive", "formats a filesystem"),
@@ -313,6 +313,14 @@ THREAT_PATTERNS = [
     (r'child_process\.(exec|spawn|fork)\s*\(', "node_child_process", "high", "execution", "Node.js child_process execution"),
     (r'Runtime\.getRuntime\(\)\.exec\(', "java_runtime_exec", "high", "execution", "Java Runtime.exec() — shell execution"),
     (r'`[^`]*\$\([^)]+\)[^`]*`', "backtick_subshell", "medium", "execution", "backtick string with command substitution"),
+    # Inline-shell auto-exec DSL: `` !`cmd` `` snippets in SKILL.md bodies are expanded via
+    # `bash -c` on skill view/load when `skills.inline_shell` is enabled (#63307). Flag the
+    # vector so reviewers inspect the command before trusting an opt-in that arms every
+    # installed skill at once. Requires a non-space payload so an empty `` !` ` `` marker
+    # (a skill explaining the DSL itself) is not flagged.
+    (r'!`[^`\s][^`\n]*`',
+     "inline_shell_exec", "high", "execution",
+     "inline-shell auto-exec snippet (expands via bash -c on skill view/load)"),
     # ── Path traversal ──
     (r'\.\./\.\./\.\.', "path_traversal_deep", "high", "traversal", "deep relative path traversal (3+ levels up)"),
     (r'\.\./\.\.', "path_traversal", "medium", "traversal", "relative path traversal (2+ levels up)"),
@@ -344,7 +352,7 @@ THREAT_PATTERNS = [
     (r'^allowed-tools\s*:',
      "allowed_tools_field", "low", "privilege_escalation", "skill declares allowed-tools (standard frontmatter; informational)"),
     # `sudo.request` / `sudo.respond` are gateway wire events (the masked sudo-password prompt), not an
-    # invocation: any client plugin that relays Pulse' secure prompts has to name them, and a bare
+    # invocation: any client plugin that relays PULSE' secure prompts has to name them, and a bare
     # `\bsudo\b` made every such plugin `caution`. A dotted event name is never a shell `sudo`.
     (r'\bsudo\b(?!\.(?:request|respond)\b)',
      "sudo_usage", "high", "privilege_escalation", "uses sudo (privilege escalation)"),
@@ -357,7 +365,7 @@ THREAT_PATTERNS = [
     # Bare mentions of config files are not threats (authoring guides, setup docs) — flagging them blocked
     # popular community skills. Tiers: mechanical shell writes = critical; prose modification intent =
     # critical for AGENT config files (exactly how persistence attacks instruct the agent; project-skill
-    # quarantine only acts on "dangerous") but high for Pulse/other config (setup docs routinely say
+    # quarantine only acts on "dangerous") but high for PULSE/other config (setup docs routinely say
     # "edit config.yaml"); bare references = low.
     # Flagging any mention as critical produced permanent false-positive blocks for popular community skills
     # (#92021). * Mechanical persistence (shell redirection, sed -i, tee, cp/mv into the file) is critical —
@@ -372,11 +380,11 @@ THREAT_PATTERNS = [
     (r'AGENTS\.md|CLAUDE\.md|\.cursorrules|\.clinerules',
      "agent_config_ref", "low", "persistence", "references agent config files (informational; only modification intent is scored)"),
     (_prose_modify_re(_PULSE_CONFIG_FILES),
-     "pulse_config_mod", "high", "persistence", "modification language aimed at Pulse configuration files (verify intent)"),
+     "pulse_config_mod", "high", "persistence", "modification language aimed at PULSE configuration files (verify intent)"),
     (_shell_write_re(_PULSE_CONFIG_FILES),
-     "pulse_config_mod_shell", "critical", "persistence", "shell write (redirect/sed -i/tee/cp/mv) targeting Pulse configuration files"),
+     "pulse_config_mod_shell", "critical", "persistence", "shell write (redirect/sed -i/tee/cp/mv) targeting PULSE configuration files"),
     (r'\.pulse/config\.yaml|\.pulse/SOUL\.md',
-     "pulse_config_ref", "low", "persistence", "references Pulse configuration files (informational; only modification intent is scored)"),
+     "pulse_config_ref", "low", "persistence", "references PULSE configuration files (informational; only modification intent is scored)"),
     (_prose_modify_re(_OTHER_AGENT_CONFIG_FILES),
      "other_agent_config_mod", "high", "persistence", "modifies other agents' configuration files"),
     (_shell_write_re(_OTHER_AGENT_CONFIG_FILES),
@@ -773,7 +781,7 @@ def _check_structure(skill_dir: Path, ignore=None) -> List[Finding]:
     return findings
 
 
-# `.skillignore` is Pulse-native; `.clawhubignore` is honored for skills published through ClawHub.
+# `.skillignore` is PULSE-native; `.clawhubignore` is honored for skills published through ClawHub.
 _SKILL_IGNORE_FILENAMES = (".skillignore", ".clawhubignore")
 
 
@@ -839,14 +847,3 @@ def _build_summary(name: str, source: str, trust: str, verdict: str, findings: L
     if not findings:
         return f"{name}: clean scan, no threats detected"
     return f"{name}: {verdict} — {len(findings)} finding(s) in {', '.join(sorted({f.category for f in findings}))}"
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-def full_content_hash(skill_path: Path) -> str:
-    """Full canonical digest used to bind scanner attestations."""
-    return f"sha256:{_content_digest(skill_path)}"
-# ---- END PLUGIN-COMPAT ----

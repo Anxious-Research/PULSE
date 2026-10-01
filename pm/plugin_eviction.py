@@ -201,7 +201,7 @@ def sync_evicting(package, facts, fact: dict, *, extras, shipped, frozen, explic
             notices.append(f"Disabled plugin '{name}' in {plugins_dir.parent}: {reasons[key]}")
         elif key in waiting:
             notices.append(f"Left plugin '{name}' in {plugins_dir.parent} out of this update: {waiting[key]}; "
-                           "it stays enabled and rejoins once Pulse reports a version it accepts")
+                           "it stays enabled and rejoins once PULSE reports a version it accepts")
     for message in notices:
         print(f"⚠ {message}", file=sys.stderr, flush=True)
         receipt.record_warning(message)

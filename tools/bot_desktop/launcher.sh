@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pulse Bot Desktop — one headless Xfce desktop per Pulse profile, served over RFB.
+# PULSE Bot Desktop — one headless Xfce desktop per PULSE profile, served over RFB.
 #
 # Spawned by tools/bot_desktop/runtime.py with PULSE_BD_* variables set. Runs TigerVNC's Xvnc
 # (X server + RFB server in one process; damage-driven, resizable via SetDesktopSize) listening on a
@@ -55,7 +55,7 @@ xauth -q -f "$XAUTHORITY" source - <<COOKIE
 add $DISPLAY MIT-MAGIC-COOKIE-1 $(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')
 COOKIE
 
-# ---- look: dark theme from whatever the host ships (first match wins), Pulse wallpaper ----
+# ---- look: dark theme from whatever the host ships (first match wins), PULSE wallpaper ----
 pick_theme() { local d t; for t in "$@"; do for d in /usr/share/themes "$HOME/.themes"; do [[ -d "$d/$t" ]] && { echo "$t"; return; }; done; done; echo "$1"; }
 pick_icons() { local d t; for t in "$@"; do for d in /usr/share/icons "$HOME/.icons"; do [[ -d "$d/$t" ]] && { echo "$t"; return; }; done; done; echo "$1"; }
 GTK_THEME_NAME=$(pick_theme Adwaita-dark Breeze-Dark Greybird-dark Arc-Dark Adwaita)

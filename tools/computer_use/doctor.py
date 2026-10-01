@@ -82,7 +82,7 @@ def _cli_doctor_snippet(binary: str, timeout: float = 8.0) -> Optional[str]:
     return None if isinstance(cp, BaseException) else (_combined_output(cp) or None)
 
 def _build_identity(binary: str, report: Report) -> Report:
-    """Pulse-side identity block comparing resolved binary vs health_report."""
+    """PULSE-side identity block comparing resolved binary vs health_report."""
     def token(text: str) -> str:  # dotted version-ish token out of a free-form string
         m = text and re.search(r"(\d+\.\d+(?:\.\d+)?(?:[-+][\w.]+)?)", text)
         return m.group(1) if m else text.strip().lower()
@@ -446,7 +446,7 @@ def run_doctor(driver_cmd: Optional[str] = None, *, include: Sequence[str] = (),
         # The spawn itself failed (Windows: a venv interpreter denied `CreateProcess` on a binary under
         # `C:\Program Files\WindowsApps`, WinError 5). A traceback here hides the one fact the user needs.
         print(f"cua-driver could not be started from {binary!r}: {e}\n"
-              "  The Pulse runtime interpreter cannot execute this binary; the tool may still work because the\n"
+              "  The PULSE runtime interpreter cannot execute this binary; the tool may still work because the\n"
               "  shell resolves a different copy on PATH. Fix: install cua-driver outside the protected directory\n"
               "  (e.g. the upstream installer's default under your user profile) or point PULSE_CUA_DRIVER_CMD at\n"
               "  a copy the runtime can execute, then re-run `pulse computer-use doctor`.", file=sys.stderr)

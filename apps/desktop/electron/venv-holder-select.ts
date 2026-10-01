@@ -3,7 +3,7 @@
  *
  * Pure Windows venv-holder selection logic (testable without Electron).
  *
- * The pre-update handoff kills Pulse-OWNED venv daemons (the memory plugin's
+ * The pre-update handoff kills PULSE-OWNED venv daemons (the memory plugin's
  * hindsight daemon) so the updater never races a mapped shim. External
  * holders (a user terminal running `pulse`, unrelated scripts) must NOT be
  * killed — current design reports them via scanVenvBlockers and ABORTS the
@@ -18,12 +18,12 @@ export function hasWindowsPathPrefix(exePath: string, venvScriptsDir: string): b
 }
 
 /**
- * True when a process is a Pulse-owned venv daemon: its exe lives under
+ * True when a process is a PULSE-owned venv daemon: its exe lives under
  * `<venv>\Scripts\` (ordinal case-insensitive prefix) AND its cmdline
  * references `hindsight_api.main` (the memory daemon the memory plugin
- * spawns DETACHED — it outlives Pulse and holds venv shims mapped).
+ * spawns DETACHED — it outlives PULSE and holds venv shims mapped).
  */
-export function isPulseOwnedVenvDaemon(
+export function isPULSEOwnedVenvDaemon(
   exePath: string | null | undefined,
   cmdline: string | null | undefined,
   venvScriptsDir: string
@@ -36,9 +36,9 @@ export function isPulseOwnedVenvDaemon(
 }
 
 /**
- * True when a process is an external Pulse process holding this install's venv
+ * True when a process is an external PULSE process holding this install's venv
  * (#62311): its exe lives under `<venv>\Scripts\` AND it is unambiguously a
- * Pulse program — the `pulse.exe` shim, `python -m pulse_cli...`, or
+ * PULSE program — the `pulse.exe` shim, `python -m pulse_cli...`, or
  * `python -m pulse ...`. These are the autostart holders (the gateway Startup
  * item, the dashboard Scheduled Task) that neither the desktop's backend
  * teardown nor the hindsight-daemon sweep reach, and that keep the venv shim
@@ -47,7 +47,7 @@ export function isPulseOwnedVenvDaemon(
  * Deliberately NARROWER than a bare path/cmdline substring against the install
  * root (the approach that sank #62445): an unrelated process that merely
  * mentions the install root or borrows the venv interpreter for its own script
- * must NOT be tree-killed. Non-Pulse venv users still abort the hand-off via
+ * must NOT be tree-killed. Non-PULSE venv users still abort the hand-off via
  * the shim-lock probe instead.
  */
 export function isExternalVenvHolder(

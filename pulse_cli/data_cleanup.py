@@ -74,7 +74,7 @@ def plan_data_removal(home: Path, project: Path, userdata: Path | None = None) -
         userdata = None  # Desktop preferences belong to the app, not a named profile.
     if userdata is not None and not userdata.resolve().is_relative_to(home):
         if userdata.resolve() == Path.home().resolve() or home.is_relative_to(userdata.resolve()):
-            raise ValueError(f"desktop data directory must not contain the Pulse or user home: {userdata}")
+            raise ValueError(f"desktop data directory must not contain the PULSE or user home: {userdata}")
         visit(userdata.parent.resolve() / userdata.name)
     return DataRemovalPlan(home, tuple(remove), tuple(sorted(keep)))
 

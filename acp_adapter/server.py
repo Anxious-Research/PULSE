@@ -1,4 +1,4 @@
-"""ACP agent server — exposes Pulse Agent via the Agent Client Protocol."""
+"""ACP agent server — exposes PULSE Agent via the Agent Client Protocol."""
 
 from __future__ import annotations
 
@@ -230,8 +230,8 @@ class _TurnCallbacks:
     tool_call_meta: Any = None
 
 
-class PulseACPAgent(SlashCommandsMixin, acp.Agent):
-    """ACP Agent implementation wrapping Pulse AIAgent."""
+class PULSEACPAgent(SlashCommandsMixin, acp.Agent):
+    """ACP Agent implementation wrapping PULSE AIAgent."""
 
     _EDIT_APPROVAL_POLICY_CONFIG_ID = "edit_approval_policy"
     _EDIT_APPROVAL_POLICY_DEFAULT = "ask"
@@ -296,7 +296,7 @@ class PulseACPAgent(SlashCommandsMixin, acp.Agent):
         return policy, state.cwd
 
     def _build_model_state(self, state: SessionState) -> SessionModelState | None:
-        """Authenticated providers + models, from the shared Pulse inventory (same substrate
+        """Authenticated providers + models, from the shared PULSE inventory (same substrate
         as ``pulse model``/TUI/dashboard) so the selector isn't just the current curated list."""
         model = str(state.model or getattr(state.agent, "model", "") or "").strip()
         provider = getattr(state.agent, "provider", None) or detect_provider() or "openrouter"
@@ -326,12 +326,12 @@ class PulseACPAgent(SlashCommandsMixin, acp.Agent):
         from pulse_cli.model_switch import switch_model
         from pulse_cli.models import parse_model_input
 
-        current_provider = getattr(state.agent, "provider", None)
+        current_provider, current_model = getattr(state.agent, "provider", None), str(state.model or "")
         explicit_provider, model_input = parse_model_input(raw_model, "")
         cfg = load_config()
         result = switch_model(
             raw_input=model_input, explicit_provider=explicit_provider,
-            current_provider=current_provider or "openrouter", current_model=str(state.model or ""),
+            current_provider=current_provider or "openrouter", current_model=current_model,
             current_base_url=str(getattr(state.agent, "base_url", "") or ""),
             current_api_key=str(getattr(state.agent, "api_key", "") or ""),
             user_providers=cfg.get("providers") if isinstance(cfg.get("providers"), dict) else {},
@@ -356,6 +356,11 @@ class PulseACPAgent(SlashCommandsMixin, acp.Agent):
         # working model instead of a model/agent mismatch that persists via save_session.
         state.agent, state.model = agent, new_model
         self.session_manager.save_session(state.session_id)
+        from pulse_cli.observability.shared_metrics_events import record_model_switch
+
+        record_model_switch(
+            from_provider=current_provider, to_provider=target_provider, surface="acp", from_model=current_model,
+            session_id=state.session_id)
         return current_provider, target_provider, new_model
 
     @staticmethod
@@ -761,7 +766,7 @@ class PulseACPAgent(SlashCommandsMixin, acp.Agent):
         with contextlib.ExitStack() as stack:
             # PULSE_SESSION_KEY scopes per-session caches (interactive sudo password) to this
             # session, not the reused thread. ``cwd`` pins what the system prompt reports as the
-            # working directory — otherwise it advertises the Pulse workspace while tools are
+            # working directory — otherwise it advertises the PULSE workspace while tools are
             # rooted at the client's project and edits land outside it. ``cron_session=""`` masks
             # any leaked process-global PULSE_CRON_SESSION.
             def _session_context() -> Callable[[], None]:
@@ -811,7 +816,7 @@ class PulseACPAgent(SlashCommandsMixin, acp.Agent):
                 return {"final_response": f"Error: {e}", "messages": state.history}
 
     async def prompt(self, prompt: list[PromptBlock], session_id: str, **kwargs: Any) -> PromptResponse:
-        """Run Pulse on the user's prompt and stream events back to the editor."""
+        """Run PULSE on the user's prompt and stream events back to the editor."""
         state = await asyncio.to_thread(self.session_manager.get_session, session_id)
         if state is None:
             logger.error("prompt: session %s not found", session_id)
@@ -1035,7 +1040,7 @@ class PulseACPAgent(SlashCommandsMixin, acp.Agent):
                     self._switch_model, state, model_id, keep_endpoint=True)
             except ModelRejected as exc:
                 # A model no provider can serve is a bad ``modelId`` param (-32602), not an agent
-                # internal error (-32603): the client attributes it to the request, not to Pulse (#72439).
+                # internal error (-32603): the client attributes it to the request, not to PULSE (#72439).
                 # Only the switch_model rejection maps here; a ValueError from the rebuild itself
                 # (disabled provider, context window below the floor) stays on the -32603 path.
                 from acp.exceptions import RequestError
@@ -1069,7 +1074,7 @@ class PulseACPAgent(SlashCommandsMixin, acp.Agent):
     async def set_config_option(
         self, config_id: str, session_id: str, value: str, **kwargs: Any
     ) -> SetSessionConfigOptionResponse | None:
-        """Accept ACP config option updates even when Pulse has no typed ACP config surface yet."""
+        """Accept ACP config option updates even when PULSE has no typed ACP config surface yet."""
         state = await asyncio.to_thread(self.session_manager.get_session, session_id)
         if state is None:
             logger.warning("Session %s: config update requested for missing session", session_id)
@@ -1086,40 +1091,3 @@ class PulseACPAgent(SlashCommandsMixin, acp.Agent):
         self.session_manager.save_session(session_id)
         logger.info("Session %s: config option %s updated", session_id, config_id)
         return SetSessionConfigOptionResponse(config_options=[])
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from acp.schema import AgentThoughtChunk  # noqa: F401,E402
-from acp.schema import AudioContentBlock  # noqa: F401,E402
-from acp.schema import AvailableCommand  # noqa: F401,E402
-from acp.schema import AvailableCommandsUpdate  # noqa: F401,E402
-from acp.schema import BlobResourceContents  # noqa: F401,E402
-from acp.schema import EmbeddedResourceContentBlock  # noqa: F401,E402
-from acp.schema import ImageContentBlock  # noqa: F401,E402
-from pathlib import Path  # noqa: F401,E402
-from acp.schema import ResourceContentBlock  # noqa: F401,E402
-from acp.schema import TextResourceContents  # noqa: F401,E402
-from acp.schema import UnstructuredCommandInput  # noqa: F401,E402
-import base64  # noqa: F401,E402
-import json  # noqa: F401,E402
-from urllib.parse import unquote  # noqa: F401,E402
-from urllib.parse import urlparse  # noqa: F401,E402
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'ACP_MAX_MODELS_PER_PROVIDER': ('acp_adapter.model_catalog', 'ACP_MAX_MODELS_PER_PROVIDER'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

@@ -247,7 +247,7 @@ class AggregateMetrics:
 
 # Ordered (hostname, provider) table for _detect_provider (codex is matched separately).
 _PROVIDER_HOSTS: Tuple[Tuple[str, str], ...] = (
-    ("openrouter.ai", "openrouter"), ("anxiousresearchlab.com", "anxious"), ("z.ai", "zai"), ("moonshot.ai", "kimi-coding"),
+    ("openrouter.ai", "openrouter"), ("anxious-research.com", "nous"), ("z.ai", "zai"), ("moonshot.ai", "kimi-coding"),
     ("moonshot.cn", "kimi-coding"), ("api.kimi.com", "kimi-coding"), ("arcee.ai", "arcee"), ("minimaxi.com", "minimax-cn"),
     ("minimax.io", "minimax"),
 )

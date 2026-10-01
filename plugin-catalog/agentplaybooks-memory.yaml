@@ -2,7 +2,7 @@ name: agentplaybooks-memory
 repo: https://github.com/matebenyovszky/agentplaybooks
 sha: 819c3491d83c0371b678e2ccd7e95679b8a7d288
 subdir: packages/pulse-memory/agentplaybooks
-description: "Private AgentPlaybooks memory for Pulse: native recall, explicit memory-write mirroring, archive and history. Disclosure — each turn's query is sent to agentplaybooks.ai for recall; explicit built-in memory writes are mirrored there. HTTPS endpoints only."
+description: "Private AgentPlaybooks memory for PULSE: native recall, explicit memory-write mirroring, archive and history. Disclosure — each turn's query is sent to agentplaybooks.ai for recall; explicit built-in memory writes are mirrored there. HTTPS endpoints only."
 maintainer: matebenyovszky
 tier: community
 category: memory

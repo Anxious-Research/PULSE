@@ -75,7 +75,7 @@ def build_models_payload(
     ctx: ConfigContext, *, explicit_only: bool = False, include_unconfigured: bool = False,
     picker_hints: bool = False, canonical_order: bool = False, pricing: bool = False,
     pricing_cache_only: bool = False,
-    capabilities: bool = False, featured: bool = False, force_fresh_anxious_tier: bool = False,
+    capabilities: bool = False, featured: bool = False, force_fresh_nous_tier: bool = False,
     refresh: bool = False, probe_custom_providers: bool = True, probe_current_custom_provider: bool = False,
     for_picker: bool = False, max_models: int | None = None, non_blocking_catalogs: bool = False,
 ) -> dict:
@@ -90,7 +90,7 @@ def build_models_payload(
     rows = list_authenticated_providers(
         current_provider=ctx.current_provider, current_base_url=ctx.current_base_url,
         current_model=ctx.current_model, user_providers=ctx.user_providers,
-        custom_providers=ctx.custom_providers, force_fresh_anxious_tier=force_fresh_anxious_tier,
+        custom_providers=ctx.custom_providers, force_fresh_nous_tier=force_fresh_nous_tier,
         max_models=max_models, refresh=refresh, probe_custom_providers=probe_custom_providers,
         probe_current_custom_provider=probe_current_custom_provider, for_picker=for_picker,
         excluded_providers=ctx.excluded_providers or [],
@@ -141,7 +141,7 @@ def build_models_payload(
     if canonical_order:
         rows = _reorder_canonical(rows)
     if pricing:
-        _apply_pricing(rows, force_fresh_anxious_tier=force_fresh_anxious_tier, cached_only=pricing_cache_only)
+        _apply_pricing(rows, force_fresh_nous_tier=force_fresh_nous_tier, cached_only=pricing_cache_only)
     # Both metadata decorators consult ``model_overrides``.  Snapshot the
     # read-only config once for this payload rather than letting each model
     # lookup reopen config.yaml through models_dev._cfg_get().
@@ -295,16 +295,16 @@ def _reasoning_catalog_reader(slug: str):
     must never block on HTTP; a cold cache warms in the background and reports no restriction until then."""
     try:
         from pulse_cli.models_reasoning_caps import (
-            anxious_model_reasoning_capabilities,
+            nous_model_reasoning_capabilities,
             openrouter_model_reasoning_capabilities,
-            warm_anxious_reasoning_caps_async,
+            warm_nous_reasoning_caps_async,
             warm_openrouter_reasoning_caps_async,
         )
     except Exception:
         return None
 
     readers = {
-        "anxious": (warm_anxious_reasoning_caps_async, anxious_model_reasoning_capabilities),
+        "nous": (warm_nous_reasoning_caps_async, nous_model_reasoning_capabilities),
         "openrouter": (warm_openrouter_reasoning_caps_async, openrouter_model_reasoning_capabilities),
     }
     if slug not in readers:
@@ -487,7 +487,7 @@ def _append_unconfigured_rows(
 
 
 def _anthropic_oauth_credentials_present() -> bool:
-    """True when the user explicitly authenticated Anthropic via OAuth (Pulse device flow or Claude Code
+    """True when the user explicitly authenticated Anthropic via OAuth (PULSE device flow or Claude Code
     login) — those leave no trace in active_provider / model.provider / API-key env vars."""
     try:
         from agent.anthropic_credentials import read_claude_code_credentials, read_pulse_oauth_credentials
@@ -608,10 +608,10 @@ def _reorder_canonical(rows: list[dict]) -> list[dict]:
     return canon + extras
 
 
-def _apply_pricing(rows: list[dict], *, force_fresh_anxious_tier: bool = False, cached_only: bool = False) -> None:
-    """Set ``row["pricing"] = {model_id: {input, output, cache | None, free}}``; for Anxious also
+def _apply_pricing(rows: list[dict], *, force_fresh_nous_tier: bool = False, cached_only: bool = False) -> None:
+    """Set ``row["pricing"] = {model_id: {input, output, cache | None, free}}``; for Nous also
     ``free_tier`` (account is free-tier) and ``unavailable_models`` (paid models a free user can't pick).
-    ``cached_only`` never hits the network: unknown Anxious entitlement fails closed (``free_tier_pending``,
+    ``cached_only`` never hits the network: unknown Nous entitlement fails closed (``free_tier_pending``,
     all models locked) and missing pricing is marked ``pricing_pending``."""
     from pulse_cli.models_pricing import (
         _format_price_per_mtok,
@@ -619,12 +619,12 @@ def _apply_pricing(rows: list[dict], *, force_fresh_anxious_tier: bool = False, 
         get_pricing_for_provider,
     )
     from pulse_cli.models import (
-        check_anxious_free_tier,
-        get_cached_anxious_free_tier,
-        partition_anxious_models_by_tier,
+        check_nous_free_tier,
+        get_cached_nous_free_tier,
+        partition_nous_models_by_tier,
     )
 
-    anxious_free_tier: Optional[bool] = None  # resolved once (cached in models.py for the TTL window)
+    nous_free_tier: Optional[bool] = None  # resolved once (cached in models.py for the TTL window)
 
     for row in rows:
         slug = str(row.get("slug", "")).lower()
@@ -640,23 +640,23 @@ def _apply_pricing(rows: list[dict], *, force_fresh_anxious_tier: bool = False, 
             raw_pricing = get_pricing_for_provider(slug, **pricing_kwargs) or {}
         except Exception:
             raw_pricing = {}
-        cached_anxious_tier: Optional[bool] = None
-        if slug == "anxious" and cached_only:
-            cached_anxious_tier = get_cached_anxious_free_tier()
-            if cached_anxious_tier is None:
+        cached_nous_tier: Optional[bool] = None
+        if slug == "nous" and cached_only:
+            cached_nous_tier = get_cached_nous_free_tier()
+            if cached_nous_tier is None:
                 # Entitlement unknown: stay nonblocking but fail closed until the prewarm has populated
                 # both caches, else a free account could briefly select paid models on first open.
                 row["free_tier_pending"] = True
                 row["unavailable_models"] = list(models)
                 if not row.get("warning"):  # say why every model renders locked
-                    row["warning"] = ("Checking Anxious plan entitlement… models unlock on the "
+                    row["warning"] = ("Checking Nous plan entitlement… models unlock on the "
                                       "next picker open or refresh.")
                 continue
         if not raw_pricing:
-            if slug == "anxious":
-                row["free_tier"] = bool(cached_anxious_tier)
+            if slug == "nous":
+                row["free_tier"] = bool(cached_nous_tier)
                 row["pricing_pending"] = True
-                row["unavailable_models"] = list(models) if cached_anxious_tier else []
+                row["unavailable_models"] = list(models) if cached_nous_tier else []
             continue
 
         formatted: dict[str, dict] = {}
@@ -673,9 +673,9 @@ def _apply_pricing(rows: list[dict], *, force_fresh_anxious_tier: bool = False, 
                 "cache": _format_price_per_mtok(cache_raw) if cache_raw else None,
                 "free": inp == "free" and out in ("free", ""),  # both input and output cost nothing
             }
-            # Sale chrome is Anxious Portal-only (other catalogs' nested pricing.original is ignored); free
+            # Sale chrome is Nous Portal-only (other catalogs' nested pricing.original is ignored); free
             # models get flat -100% chrome, was_* only when the gateway served an original.
-            if slug == "anxious":
+            if slug == "nous":
                 sale = compute_sale_discount(inp_raw, out_raw, p.get("original"))
                 if sale is not None:
                     discount_percent, was_prompt_raw, was_out_raw = sale
@@ -688,15 +688,15 @@ def _apply_pricing(rows: list[dict], *, force_fresh_anxious_tier: bool = False, 
         if formatted:
             row["pricing"] = formatted
 
-        if slug == "anxious":
+        if slug == "nous":
             try:
-                if anxious_free_tier is None:
-                    anxious_free_tier = (cached_anxious_tier if cached_only
-                                      else check_anxious_free_tier(force_fresh=force_fresh_anxious_tier))
-                row["free_tier"] = bool(anxious_free_tier)
+                if nous_free_tier is None:
+                    nous_free_tier = (cached_nous_tier if cached_only
+                                      else check_nous_free_tier(force_fresh=force_fresh_nous_tier))
+                row["free_tier"] = bool(nous_free_tier)
                 row["unavailable_models"] = (
-                    partition_anxious_models_by_tier(list(models), raw_pricing, free_tier=True)[1]
-                    if anxious_free_tier else [])
+                    partition_nous_models_by_tier(list(models), raw_pricing, free_tier=True)[1]
+                    if nous_free_tier else [])
             except Exception:  # tier detection failed — fail open (no gating)
                 row["free_tier"] = False
                 row["unavailable_models"] = []
@@ -770,7 +770,15 @@ def _prewarm_pricing_async(
 
 
 def _moa_provider_row(current_provider: str = "") -> dict | None:
-    """The virtual ``moa`` row shared by the CLI inventory and gateway picker; ``None`` without presets."""
+    """The virtual ``moa`` row shared by the CLI inventory and gateway picker; ``None`` without presets.
+
+    Strictly opt-in (#63353): the row only appears when the user's raw config.yaml explicitly
+    enables at least one MoA preset. The synthesized ``default`` preset from
+    ``normalize_moa_config({})`` — which every user gets via DEFAULT_CONFIG defaults — must not
+    be treated as a user choice."""
+    if not _raw_config_has_enabled_moa_preset():
+        return None
+
     try:
         from pulse_cli.config import load_config
         from pulse_cli.moa_config import normalize_moa_config

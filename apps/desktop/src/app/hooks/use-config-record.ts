@@ -2,7 +2,7 @@ import { useStore } from '@nanostores/react'
 import { replaceEqualDeep, useQuery } from '@tanstack/react-query'
 
 import {
-  getPulseConfigRecord,
+  getPULSEConfigRecord,
   peekConfigReadOrigin,
   type ProfileScope,
   profileScopeKey,
@@ -10,7 +10,7 @@ import {
 } from '@/pulse'
 import { queryClient } from '@/lib/query-client'
 import { $activeConnectionId } from '@/store/connections'
-import type { PulseConfigRecord } from '@/types/pulse'
+import type { PULSEConfigRecord } from '@/types/pulse'
 
 // One shared cache for the whole profile config record (`GET /api/config`).
 // Every settings surface (MCP, model, config) reads and writes through this key
@@ -63,7 +63,7 @@ export const pulseConfigKey = (
 // `profile` scopes both the query key and the fetch. Omitting it still targets
 // the app-wide active profile (`profileScoped(undefined)` fallback), but the
 // cache slot is the active gateway's — not the bare root key.
-export const usePulseConfigRecord = (profile?: ProfileScope) => {
+export const usePULSEConfigRecord = (profile?: ProfileScope) => {
   // Reactive read, not a store getter: under the React Compiler a value with
   // no reactive inputs is computed once per component instance, so a
   // getter-based key would freeze on the first gateway and keep serving its
@@ -81,26 +81,26 @@ export const usePulseConfigRecord = (profile?: ProfileScope) => {
       // key. A refetch of the slot we are leaving must not store the new
       // gateway's record there — that is the other machine's config.yaml.
       if (connectionId && $activeConnectionId.get() !== connectionId) {
-        const cached = queryClient.getQueryData<PulseConfigRecord>(pulseConfigKey(profile, connectionId))
+        const cached = queryClient.getQueryData<PULSEConfigRecord>(pulseConfigKey(profile, connectionId))
 
         if (cached !== undefined) {
           return cached
         }
       }
 
-      return getPulseConfigRecord(profile ?? undefined)
+      return getPULSEConfigRecord(profile ?? undefined)
     },
     staleTime: 0,
     // Keep structural sharing so an unchanged refetch (every consumer mount at
     // staleTime 0, every invalidate) yields the SAME object and consumers'
     // memos/autosave effects don't re-arm. The read origin lives in a WeakMap
     // keyed by the record, so re-stamp whatever object survives the merge with
-    // the origin of the NEW fetch (`next`, bound by getPulseConfigRecord) —
+    // the origin of the NEW fetch (`next`, bound by getPULSEConfigRecord) —
     // otherwise a retained object would keep routing writes to the gateway
     // that served the previous GET.
     structuralSharing: (previous: unknown, next: unknown) =>
       retainConfigReadOrigin(
-        replaceEqualDeep(previous as PulseConfigRecord | undefined, next as PulseConfigRecord),
+        replaceEqualDeep(previous as PULSEConfigRecord | undefined, next as PULSEConfigRecord),
         next as object
       )
   })
@@ -110,7 +110,7 @@ export const usePulseConfigRecord = (profile?: ProfileScope) => {
   // subscribes each consumer to fetchStatus/dataUpdatedAt/… churn. The getter
   // reads `query.data` through the proxy, so only `data` is tracked.
   //
-  // `undefined`, never `null`: callers hand this straight to savePulseConfig
+  // `undefined`, never `null`: callers hand this straight to savePULSEConfig
   // with sparse `setNested({}, …)` patches, so the WeakMap misses and the
   // fallback is capabilityScoped(writeScope) → profileScoped(writeScope).
   // profileScoped(undefined) keeps the app-wide `_apiProfile`; profileScoped
@@ -125,17 +125,17 @@ export const usePulseConfigRecord = (profile?: ProfileScope) => {
   return query as typeof query & { writeScope: ReturnType<typeof peekConfigReadOrigin> }
 }
 
-// setPulseConfigCache writes the active gateway's record. The key is resolved
+// setPULSEConfigCache writes the active gateway's record. The key is resolved
 // at WRITE time, not when the writer is created, so a writer memoized by a
 // long-lived settings panel (keyed only on the profile name) lands on whichever
 // gateway is active when the save happens — the same row its query reads.
-const writePulseConfigCache =
+const writePULSEConfigCache =
   (keyFor: () => ReturnType<typeof pulseConfigKey>) =>
   (
     next:
-      PulseConfigRecord | undefined | ((previous: PulseConfigRecord | undefined) => PulseConfigRecord | undefined)
+      PULSEConfigRecord | undefined | ((previous: PULSEConfigRecord | undefined) => PULSEConfigRecord | undefined)
   ) =>
-    void queryClient.setQueryData<PulseConfigRecord>(keyFor(), previous => {
+    void queryClient.setQueryData<PULSEConfigRecord>(keyFor(), previous => {
       const record = typeof next === 'function' ? next(previous) : next
 
       // setQueryData also runs the hook's structuralSharing (query.setData →
@@ -146,9 +146,9 @@ const writePulseConfigCache =
       return record ? retainConfigReadOrigin(record, previous) : record
     })
 
-export const setPulseConfigCache = writePulseConfigCache(() => pulseConfigKey())
+export const setPULSEConfigCache = writePULSEConfigCache(() => pulseConfigKey())
 export const pulseConfigCacheWriter = (profile?: ProfileScope) =>
-  writePulseConfigCache(() => pulseConfigKey(profile))
+  writePULSEConfigCache(() => pulseConfigKey(profile))
 
-export const invalidatePulseConfig = (profile?: ProfileScope) =>
+export const invalidatePULSEConfig = (profile?: ProfileScope) =>
   queryClient.invalidateQueries({ queryKey: pulseConfigKey(profile) })

@@ -18,7 +18,7 @@ from pulse_cli.model_setup_flows_common import (
     _ensure_dict_section, _ensure_flow_api_key, _finish_model,
     _load_config_model_section, _models_dev_merged, _oauth_gate, _persist_model, _pick_model_or_prompt,
     _print_numbered, _prompt_auth_credentials_choice,
-    _run_login, _say, _show_curated)
+    _note_setup_failure, _run_login, _say, _show_curated)
 from pulse_cli.model_setup_flows_custom import _model_flow_custom, _model_flow_named_custom
 from pulse_cli.model_setup_flows_azure import _model_flow_azure_foundry
 from pulse_cli.model_setup_flows_bedrock import _model_flow_bedrock
@@ -165,7 +165,7 @@ def _model_flow_moa(config, current_model=""):
     )
 
 
-def _anxious_login_args(args) -> argparse.Namespace:
+def _nous_login_args(args) -> argparse.Namespace:
     return argparse.Namespace(
         portal_url=getattr(args, "portal_url", None), inference_url=getattr(args, "inference_url", None),
         client_id=getattr(args, "client_id", None), scope=getattr(args, "scope", None),
@@ -173,12 +173,12 @@ def _anxious_login_args(args) -> argparse.Namespace:
         ca_bundle=getattr(args, "ca_bundle", None), insecure=bool(getattr(args, "insecure", False)))
 
 
-def _anxious_model_catalog(free_tier: bool, portal_url: str, model_ids: list, pricing: dict):
-    """Free/paid-tier catalog for the Anxious picker: ``(model_ids, pricing, unavailable_models,
+def _nous_model_catalog(free_tier: bool, portal_url: str, model_ids: list, pricing: dict):
+    """Free/paid-tier catalog for the Nous picker: ``(model_ids, pricing, unavailable_models,
     unavailable_message, policy_narrowed)`` or None (message already printed) when nothing is selectable."""
-    from pulse_cli.models_pricing import anxious_policy_allowed_ids, restrict_to_anxious_policy
+    from pulse_cli.models_pricing import nous_policy_allowed_ids, restrict_to_nous_policy
     from pulse_cli.models import (
-        partition_anxious_models_by_tier,
+        partition_nous_models_by_tier,
         union_with_portal_free_recommendations,
         union_with_portal_paid_recommendations,
     )
@@ -189,67 +189,70 @@ def _anxious_model_catalog(free_tier: bool, portal_url: str, model_ids: list, pr
     # rescued id still has to pass the free/paid predicate.
     unavailable_models: list[str] = []
     unavailable_message = ""
-    _policy_allowed = anxious_policy_allowed_ids()
+    _policy_allowed = nous_policy_allowed_ids()
     if free_tier:
         try:
-            from pulse_cli.anxious_account import format_anxious_portal_entitlement_message, get_anxious_portal_account_info
-            _account_info = get_anxious_portal_account_info(force_fresh=True)
-            unavailable_message = format_anxious_portal_entitlement_message(_account_info, capability="paid Anxious models") or ""
+            from pulse_cli.nous_account import format_nous_portal_entitlement_message, get_nous_portal_account_info
+            _account_info = get_nous_portal_account_info(force_fresh=True)
+            unavailable_message = format_nous_portal_entitlement_message(_account_info, capability="paid Nous models") or ""
         except Exception:
             unavailable_message = ""
         model_ids, pricing = union_with_portal_free_recommendations(model_ids, pricing, portal_url)
     else:
         model_ids, pricing = union_with_portal_paid_recommendations(model_ids, pricing, portal_url)
     _before_policy = model_ids
-    model_ids = restrict_to_anxious_policy(model_ids, _policy_allowed, rescue_empty=True)
+    model_ids = restrict_to_nous_policy(model_ids, _policy_allowed, rescue_empty=True)
     _policy_narrowed = model_ids != _before_policy
     if free_tier:
-        model_ids, unavailable_models = partition_anxious_models_by_tier(model_ids, pricing, free_tier=True)
+        model_ids, unavailable_models = partition_nous_models_by_tier(model_ids, pricing, free_tier=True)
 
     if not model_ids and not unavailable_models:
-        print("No models available for Anxious Portal after filtering.")
+        print("No models available for Nous Portal after filtering.")
+        _note_setup_failure("no_models")
         return None
     if free_tier and not model_ids:
         print("No free models currently available.")
         if unavailable_models:
-            from pulse_cli.auth import DEFAULT_ANXIOUS_PORTAL_URL
-            _url = (portal_url or DEFAULT_ANXIOUS_PORTAL_URL).rstrip("/")
+            from pulse_cli.auth import DEFAULT_NOUS_PORTAL_URL
+            _url = (portal_url or DEFAULT_NOUS_PORTAL_URL).rstrip("/")
             print(unavailable_message or f"Upgrade at {_url} to access paid models.")
         return None
     return model_ids, pricing, unavailable_models, unavailable_message, _policy_narrowed
 
 
-def _anxious_verified_credentials(creds_or_none=None):
-    """Resolve Anxious runtime credentials; on failure print the diagnosis (re-login when the
+def _nous_verified_credentials(creds_or_none=None):
+    """Resolve Nous runtime credentials; on failure print the diagnosis (re-login when the
     session expired) and return None."""
     from pulse_cli.auth import (
-        AuthError, PROVIDER_REGISTRY, _login_anxious, format_auth_error, resolve_anxious_runtime_credentials)
+        AuthError, PROVIDER_REGISTRY, _login_nous, format_auth_error, resolve_nous_runtime_credentials)
 
     try:
-        return resolve_anxious_runtime_credentials()
+        return resolve_nous_runtime_credentials()
     except Exception as exc:
         relogin = isinstance(exc, AuthError) and exc.relogin_required
         msg = format_auth_error(exc) if isinstance(exc, AuthError) else str(exc)
         if relogin:
-            _say(f"Session expired: {msg}", "Re-authenticating with Anxious Portal...\n")
+            _say(f"Session expired: {msg}", "Re-authenticating with Nous Portal...\n")
             try:
-                _login_anxious(_anxious_login_args(None), PROVIDER_REGISTRY["anxious"])
+                _login_nous(_nous_login_args(None), PROVIDER_REGISTRY["nous"])
             except Exception as login_exc:
                 print(f"Re-login failed: {login_exc}")
+            _note_setup_failure("auth")
             return None
         print(f"Could not verify credentials: {msg}")
+        _note_setup_failure("auth")
         return None
 
 
-def _anxious_persist_selection(selected: str, creds: dict) -> dict:
-    """Anxious persist step: model choice + provider state, then rewrite ``model`` on a fresh
+def _nous_persist_selection(selected: str, creds: dict) -> dict:
+    """Nous persist step: model choice + provider state, then rewrite ``model`` on a fresh
     config (the caller's may carry stale custom-provider fields) and clear a conflicting
     OPENAI_BASE_URL / OPENAI_API_KEY. Returns the saved config."""
     from pulse_cli.auth import _save_model_choice, _update_config_for_provider
     from pulse_cli.config import get_env_value, load_config, save_config, save_env_value
     _save_model_choice(selected)
     inference_url = creds.get("base_url", "")
-    _update_config_for_provider("anxious", inference_url)
+    _update_config_for_provider("nous", inference_url)
     config = load_config()
     current_model_cfg = config.get("model")
     if isinstance(current_model_cfg, dict):
@@ -258,7 +261,7 @@ def _anxious_persist_selection(selected: str, creds: dict) -> dict:
         model_cfg = {"default": current_model_cfg.strip()}
     else:
         model_cfg = {}
-    model_cfg["provider"] = "anxious"
+    model_cfg["provider"] = "nous"
     model_cfg["default"] = selected
     if inference_url and inference_url.strip():
         model_cfg["base_url"] = inference_url.rstrip("/")
@@ -273,90 +276,90 @@ def _anxious_persist_selection(selected: str, creds: dict) -> dict:
     return config
 
 
-def _model_flow_anxious(config, current_model="", args=None):
-    """Anxious Portal provider: ensure logged in, then pick model."""
-    from pulse_cli.auth import get_provider_auth_state, _prompt_model_selection, _login_anxious, PROVIDER_REGISTRY
+def _model_flow_nous(config, current_model="", args=None):
+    """Nous Portal provider: ensure logged in, then pick model."""
+    from pulse_cli.auth import get_provider_auth_state, _prompt_model_selection, _login_nous, PROVIDER_REGISTRY
     from pulse_cli.config import load_config
-    from pulse_cli.anxious_subscription import prompt_enable_tool_gateway
-    state = get_provider_auth_state("anxious")
+    from pulse_cli.nous_subscription import prompt_enable_tool_gateway
+    state = get_provider_auth_state("nous")
     if not state or not state.get("access_token"):
-        _say("Not logged into Anxious Portal. Starting login...", "")
+        _say("Not logged into Nous Portal. Starting login...", "")
 
         def _login_then_offer_gateway(login_args, pconfig):
-            _login_anxious(login_args, pconfig)
+            _login_nous(login_args, pconfig)
             # Offer Tool Gateway enablement for paid subscribers
             with contextlib.suppress(Exception):
                 prompt_enable_tool_gateway(load_config() or {})
 
-        # login_anxious already handles model selection + config update
-        _run_login(_login_then_offer_gateway, _anxious_login_args(args), PROVIDER_REGISTRY["anxious"])
+        # login_nous already handles model selection + config update
+        _run_login(_login_then_offer_gateway, _nous_login_args(args), PROVIDER_REGISTRY["nous"])
         return
 
     # Already logged in — the curated list (agentic models users know from OpenRouter)
     # instead of the hundreds returned by the live /models endpoint.
-    from pulse_cli.models import check_anxious_free_tier, get_curated_anxious_model_ids
+    from pulse_cli.models import check_nous_free_tier, get_curated_nous_model_ids
     from pulse_cli.models_pricing import get_pricing_for_provider
-    from pulse_cli.model_switch_providers import _free_tier_anxious_row
-    tier_row = _free_tier_anxious_row({"name": "Anxious Portal", "models": []})
+    from pulse_cli.model_switch_providers import _free_tier_nous_row
+    tier_row = _free_tier_nous_row({"name": "Nous Portal", "models": []})
     if tier_row is None:
-        print("The Anxious free tier is off for this install; sign in with `pulse auth upgrade` to use Anxious models.")
+        print("The Nous free tier is off for this install; sign in with `pulse auth upgrade` to use Nous models.")
         return
     if tier_row["models"]:
         # Free-tier identity: the welcome host serves the single pinned model; no Portal catalog,
         # pricing, or account lookups apply.
-        creds = _anxious_verified_credentials()
+        creds = _nous_verified_credentials()
         if creds is None:
             return
         selected = tier_row["models"][0]
-        _anxious_persist_selection(selected, creds)
+        _nous_persist_selection(selected, creds)
         print(f"Default model set to: {selected} (via {tier_row['name']})")
         return
-    model_ids = get_curated_anxious_model_ids()
+    model_ids = get_curated_nous_model_ids()
     if not model_ids:
-        print("No curated models available for Anxious Portal.")
+        print("No curated models available for Nous Portal.")
         return
 
     # Verify credentials are still valid (catches expired sessions early)
-    creds = _anxious_verified_credentials()
+    creds = _nous_verified_credentials()
     if creds is None:
         return
 
-    pricing = get_pricing_for_provider("anxious")
+    pricing = get_pricing_for_provider("nous")
     # Force fresh account data so recent credit purchases are reflected immediately.
-    free_tier = check_anxious_free_tier(force_fresh=True)
+    free_tier = check_nous_free_tier(force_fresh=True)
     if not free_tier:
-        from pulse_cli.auth import resolve_anxious_runtime_credentials
+        from pulse_cli.auth import resolve_nous_runtime_credentials
         try:
-            creds = resolve_anxious_runtime_credentials(force_refresh=True) or creds
+            creds = resolve_nous_runtime_credentials(force_refresh=True) or creds
         except Exception:
             # Runtime inference has its own paid-entitlement recovery; don't block.
             pass
 
     # Portal URL is needed for upgrade links and the recommendations endpoints.
-    _anxious_portal_url = ""
+    _nous_portal_url = ""
     with contextlib.suppress(Exception):
-        _anxious_portal_url = (get_provider_auth_state("anxious") or {}).get("portal_base_url", "")
+        _nous_portal_url = (get_provider_auth_state("nous") or {}).get("portal_base_url", "")
 
-    catalog = _anxious_model_catalog(free_tier, _anxious_portal_url, model_ids, pricing)
+    catalog = _nous_model_catalog(free_tier, _nous_portal_url, model_ids, pricing)
     if catalog is None:
         return
     model_ids, pricing, unavailable_models, unavailable_message, _policy_narrowed = catalog
 
-    from pulse_cli.anxious_account import anxious_policy_notice
-    _policy_notice = anxious_policy_notice(removed=_policy_narrowed)
+    from pulse_cli.nous_account import nous_policy_notice
+    _policy_notice = nous_policy_notice(removed=_policy_narrowed)
     if _policy_notice:
         print(_policy_notice)
     print(f'Showing {len(model_ids)} curated models — use "Enter custom model name" for others.')
 
     selected = _prompt_model_selection(
         model_ids, current_model=current_model, pricing=pricing, unavailable_models=unavailable_models,
-        portal_url=_anxious_portal_url, unavailable_message=unavailable_message, confirm_provider="anxious",
+        portal_url=_nous_portal_url, unavailable_message=unavailable_message, confirm_provider="nous",
         confirm_base_url=creds.get("base_url", ""), confirm_api_key=creds.get("api_key", ""))
     if not selected:
         print("No change.")
         return
-    config = _anxious_persist_selection(selected, creds)
-    print(f"Default model set to: {selected} (via Anxious Portal)")
+    config = _nous_persist_selection(selected, creds)
+    print(f"Default model set to: {selected} (via Nous Portal)")
     # Offer Tool Gateway enablement for paid subscribers
     prompt_enable_tool_gateway(config)
 
@@ -466,6 +469,7 @@ def _model_flow_minimax_oauth(config, current_model="", args=None):
         creds = resolve_minimax_oauth_runtime_credentials()
     except AuthError as exc:
         print(format_auth_error(exc))
+        _note_setup_failure("auth")
         return
 
     from pulse_cli.models import _PROVIDER_MODELS
@@ -524,6 +528,7 @@ def _copilot_obtain_token() -> bool:
             _say("  Copilot token saved.", "")
         except Exception as exc:
             print(f"  Login failed: {exc}")
+            _note_setup_failure("auth")
             return False
         return True
     if choice == "2":
@@ -600,9 +605,9 @@ def _model_flow_copilot_acp(config, current_model=""):
     resolved_command = status.get("resolved_command") or status.get("command") or "copilot"
     effective_base = status.get("base_url") or pconfig.inference_base_url
 
-    _say("  GitHub Copilot ACP delegates Pulse turns to `copilot --acp`.",
-         "  Pulse currently starts its own ACP subprocess for each request.",
-         "  Pulse uses your selected model as a hint for the Copilot ACP session.",
+    _say("  GitHub Copilot ACP delegates PULSE turns to `copilot --acp`.",
+         "  PULSE currently starts its own ACP subprocess for each request.",
+         "  PULSE uses your selected model as a hint for the Copilot ACP session.",
          f"  Command: {resolved_command}", f"  Backend marker: {effective_base}", "")
     try:
         creds = resolve_external_process_provider_credentials(provider_id)
@@ -797,12 +802,12 @@ def _select_zai_endpoint(current_base: str) -> str:
 
 _GEMINI_FREE_TIER_NOTICE = (
     "", "❌ This Google API key is on the free tier (<= 250 requests/day for gemini-2.5-flash).",
-    "   Pulse typically makes 3-10 API calls per user turn (tool iterations + auxiliary tasks),",
+    "   PULSE typically makes 3-10 API calls per user turn (tool iterations + auxiliary tasks),",
     "   so the free tier is exhausted after a handful of messages and cannot sustain",
     "   an agent session.", "",
-    "   To use Gemini with Pulse, enable billing on your Google Cloud project and regenerate",
+    "   To use Gemini with PULSE, enable billing on your Google Cloud project and regenerate",
     "   the key in a billing-enabled project: https://aistudio.google.com/apikey", "",
-    "   Alternatives with workable free usage: DeepSeek, OpenRouter (free models), Groq, Anxious.", "",
+    "   Alternatives with workable free usage: DeepSeek, OpenRouter (free models), Groq, Nous.", "",
     "Not saving Gemini as the default provider.")
 
 
@@ -1093,6 +1098,7 @@ def _external_process_login_gate(profile, status) -> bool:
         return False
     if not profile.setup_status()["logged_in"]:
         print("Login failed.")
+        _note_setup_failure("auth")
         return False
     _say("", f"  {profile.display_name} credentials: ✓", "")
     return True
@@ -1101,7 +1107,7 @@ def _external_process_login_gate(profile, status) -> bool:
 def _plugin_flow_external_process(provider_id: str, profile) -> tuple[str, str] | None:
     from pulse_cli.auth import get_external_process_provider_status, resolve_external_process_provider_credentials
     status = get_external_process_provider_status(provider_id)
-    _say(f"  {profile.display_name or provider_id} delegates Pulse turns to a local `{status.get('command') or profile.process_command}` process.",
+    _say(f"  {profile.display_name or provider_id} delegates PULSE turns to a local `{status.get('command') or profile.process_command}` process.",
          f"  Command: {status.get('resolved_command') or status.get('command') or '(not found)'}",
          f"  Backend marker: {status.get('base_url') or profile.base_url}", "")
     try:
@@ -1181,31 +1187,3 @@ def _model_flow_plugin_provider(config, provider_id, current_model=""):
         confirm_base_url=base_url, confirm_api_key=api_key, notes=notes)
     _finish_model(selected, provider_id, f"Default model set to: {selected} (via {profile.display_name or provider_id})",
                   base_url=base_url or None, api_mode=profile.api_mode or None)
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-import subprocess  # noqa: F401,E402
-import urllib.parse  # noqa: F401,E402
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'BEDROCK_GEO_PREFIXES': ('pulse_cli.model_setup_flows_bedrock', 'BEDROCK_GEO_PREFIXES'),
-    'bedrock_model_routable_from_region': ('pulse_cli.model_setup_flows_bedrock', 'bedrock_model_routable_from_region'),
-    'bedrock_region_geo_prefix': ('pulse_cli.model_setup_flows_bedrock', 'bedrock_region_geo_prefix'),
-    'custom_provider_slug': ('pulse_cli.providers', 'custom_provider_slug'),
-    'line_input': ('pulse_cli.cli_output', 'line_input'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

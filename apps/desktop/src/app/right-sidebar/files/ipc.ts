@@ -1,13 +1,13 @@
 import ignore from 'ignore'
 
-import type { PulseReadDirEntry, PulseReadDirResult } from '@/global'
+import type { PULSEReadDirEntry, PULSEReadDirResult } from '@/global'
 import { desktopFsCacheKey, desktopGitRoot, readDesktopDir, readDesktopFileDataUrl } from '@/lib/desktop-fs'
 import { ALWAYS_EXCLUDED, SHOW_IGNORED_EXCLUDED } from '@/lib/excluded-paths'
 import { cleanPath, comparisonPath, isUnderPath } from '@/lib/path-compare'
 
 import { showsIgnoredFiles } from './prefs'
 
-export type ProjectTreeEntry = PulseReadDirEntry
+export type ProjectTreeEntry = PULSEReadDirEntry
 
 interface GitignoreRule {
   base: string
@@ -119,7 +119,7 @@ async function gitignoreFor(dir: string) {
  * any directory, ignored or not: a nested repo resolves to itself, an ordinary ignored
  * directory resolves to the parent's root.
  */
-async function isNestedRepoRoot(entry: PulseReadDirEntry): Promise<boolean> {
+async function isNestedRepoRoot(entry: PULSEReadDirEntry): Promise<boolean> {
   if (!entry.isDirectory) {
     return false
   }
@@ -143,7 +143,7 @@ async function isNestedRepoRoot(entry: PulseReadDirEntry): Promise<boolean> {
   return cached
 }
 
-function ignoredBy(rules: GitignoreRule[], entry: PulseReadDirEntry) {
+function ignoredBy(rules: GitignoreRule[], entry: PULSEReadDirEntry) {
   return rules.some(rule => {
     const rel = relativeTo(rule.base, entry.path)
 
@@ -155,7 +155,7 @@ function ignoredBy(rules: GitignoreRule[], entry: PulseReadDirEntry) {
   })
 }
 
-async function filterIgnored(entries: PulseReadDirEntry[], rootPath: string, dirPath: string) {
+async function filterIgnored(entries: PULSEReadDirEntry[], rootPath: string, dirPath: string) {
   // Opting a project into its ignored files skips the gitignore pass entirely —
   // no git-root probe, no .gitignore reads. ALWAYS_EXCLUDED still applies: `.git`
   // internals and dependency/build dirs are never worth browsing, in any repo.
@@ -195,10 +195,10 @@ async function filterIgnored(entries: PulseReadDirEntry[], rootPath: string, dir
     })
   )
 
-  return visible.filter((entry): entry is PulseReadDirEntry => entry !== null)
+  return visible.filter((entry): entry is PULSEReadDirEntry => entry !== null)
 }
 
-export async function readProjectDir(dirPath: string, rootPath = dirPath): Promise<PulseReadDirResult> {
+export async function readProjectDir(dirPath: string, rootPath = dirPath): Promise<PULSEReadDirResult> {
   if (!window.pulseDesktop) {
     return { entries: [], error: 'no-bridge' }
   }

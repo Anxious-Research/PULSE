@@ -110,7 +110,7 @@ def liveness_for(server_name: str) -> Liveness:
 def _action(state: LivenessState, app_name: str) -> tuple[str, Retry]:
     actions: dict[LivenessState, tuple[str, Retry]] = {
         "app_not_running": (f"Start {app_name}, then try again.", "after_user_action"),
-        "pulse_not_connected": (f"Reconnect {app_name} in Pulse, then try again.", "after_user_action"),
+        "pulse_not_connected": (f"Reconnect {app_name} in PULSE, then try again.", "after_user_action"),
         "endpoint_unavailable": (f"Open {app_name} and enable its local connection, then try again.", "after_user_action"),
         "no_interactive_session": (f"Open an interactive desktop session and start {app_name}, then try again.", "never_here"),
         "version_too_old": (f"Update {app_name}, then try again.", "after_user_action"),
@@ -145,13 +145,13 @@ def status(server_name: str) -> Status | None:
             elif probe.endpoint.state is not CheckState.PRESENT:
                 state = "endpoint_unavailable"
             else:
-                # The app runs and its endpoint answers: the only thing missing is Pulse' own
+                # The app runs and its endpoint answers: the only thing missing is PULSE' own
                 # MCP connection to it. Telling the user to "start" an app that IS running is
                 # the wrong instruction (#119975).
                 state = "pulse_not_connected"
     else:
         # static / unknown liveness kinds cannot observe the app, so they cannot conclude it
-        # is not running; the honest answer is that Pulse is not connected (#119975).
+        # is not running; the honest answer is that PULSE is not connected (#119975).
         state = "pulse_not_connected"
     action, retry = _action(state, decl.name)
     return Status(state, available, live, action, retry)

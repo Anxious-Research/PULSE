@@ -49,17 +49,17 @@ import type {
 import { timeAgo } from "@/lib/utils";
 import { Markdown } from "@/components/Markdown";
 import { PlatformsCard } from "@/components/PlatformsCard";
-import { Toast } from "@anxious-research/ui/ui/components/toast";
-import { Button } from "@anxious-research/ui/ui/components/button";
-import { Checkbox } from "@anxious-research/ui/ui/components/checkbox";
-import { ListItem } from "@anxious-research/ui/ui/components/list-item";
-import { Segmented } from "@anxious-research/ui/ui/components/segmented";
-import { Spinner } from "@anxious-research/ui/ui/components/spinner";
-import { Badge } from "@anxious-research/ui/ui/components/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@anxious-research/ui/ui/components/card";
+import { Toast } from "@nous-research/ui/ui/components/toast";
+import { Button } from "@nous-research/ui/ui/components/button";
+import { Checkbox } from "@nous-research/ui/ui/components/checkbox";
+import { ListItem } from "@nous-research/ui/ui/components/list-item";
+import { Segmented } from "@nous-research/ui/ui/components/segmented";
+import { Spinner } from "@nous-research/ui/ui/components/spinner";
+import { Badge } from "@nous-research/ui/ui/components/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@nous-research/ui/ui/components/card";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
-import { useConfirmDelete } from "@anxious-research/ui/hooks/use-confirm-delete";
-import { Input } from "@anxious-research/ui/ui/components/input";
+import { useConfirmDelete } from "@nous-research/ui/hooks/use-confirm-delete";
+import { Input } from "@nous-research/ui/ui/components/input";
 import {
   Dialog,
   DialogContent,
@@ -67,9 +67,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@anxious-research/ui/ui/components/dialog";
+} from "@nous-research/ui/ui/components/dialog";
 import { useSystemActions } from "@/contexts/useSystemActions";
-import { useToast } from "@anxious-research/ui/hooks/use-toast";
+import { useToast } from "@nous-research/ui/hooks/use-toast";
 import { useI18n } from "@/i18n";
 import { usePageHeader } from "@/contexts/usePageHeader";
 import { PluginSlot } from "@/plugins";
@@ -155,7 +155,7 @@ function sourceLabel(source: string): string {
     case "tool":
       return "Tool";
     case "pulse_flow":
-      return "Pulse Flow";
+      return "PULSE Flow";
     case "vulcan_delegate":
       return "Vulcan delegate";
     case "webhook":
@@ -517,7 +517,7 @@ function SessionRow({
     }
     setRenameSaving(true);
     try {
-      await onRename(session.id, value);
+      await onRename(session.id, value, session.profile);
       setRenaming(false);
     } finally {
       setRenameSaving(false);
@@ -1482,9 +1482,10 @@ export default function SessionsPage() {
   ]);
 
   const handleRename = useCallback(
-    async (id: string, title: string) => {
+    async (id: string, title: string, profile?: string) => {
+      const targetProfile = profile ?? rowProfile(id);
       try {
-        await api.renameSession(id, title, rowProfile(id));
+        await api.renameSession(id, title, targetProfile);
         setSessions((prev) =>
           prev.map((s) => (s.id === id ? { ...s, title } : s)),
         );
@@ -1506,7 +1507,7 @@ export default function SessionsPage() {
         const res = await fetch(api.exportSessionUrl(id, rowProfile(id)), {
           credentials: "include",
           headers: {
-            "X-Pulse-Session-Token":
+            "X-PULSE-Session-Token":
               (window as unknown as { __PULSE_SESSION_TOKEN__?: string })
                 .__PULSE_SESSION_TOKEN__ ?? "",
           },
@@ -1790,7 +1791,7 @@ export default function SessionsPage() {
               <span className="text-xs font-mondwest tracking-[0.12em] truncate">
                 {activeAction === "restart"
                   ? t.status.restartGateway
-                  : t.status.updatePulse}
+                  : t.status.updatePULSE}
               </span>
 
               <Badge
@@ -2217,7 +2218,7 @@ interface SessionRowProps {
   isSelected: boolean;
   onDelete: () => void;
   onExport: (id: string) => void;
-  onRename: (id: string, title: string) => Promise<void>;
+  onRename: (id: string, title: string, profile?: string) => Promise<void>;
   onSelectClick: (event: React.MouseEvent) => void;
   onToggle: () => void;
   resumeInChatEnabled: boolean;

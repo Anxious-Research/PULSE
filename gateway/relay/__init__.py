@@ -1,4 +1,4 @@
-"""Relay/connector support package for the Pulse gateway.
+"""Relay/connector support package for the PULSE gateway.
 
 EXPERIMENTAL gateway side of the "Gateway Gateway" relay design: a generic
 ``RelayAdapter`` plus the wire-serializable ``CapabilityDescriptor`` the connector
@@ -221,10 +221,10 @@ def relay_display_name() -> Optional[str]:
         except Exception:  # noqa: BLE001 - branding absence must never crash boot
             value = ""
         # The stock brand is identical on every default install: forwarding it would
-        # prefix every reply "**Pulse Agent:**" and shadow the connector's
+        # prefix every reply "**PULSE Agent:**" and shadow the connector's
         # linked-owner fallback, which actually disambiguates. Only a customized
         # name is forwarded.
-        if value == "Pulse Agent":
+        if value == "PULSE Agent":
             value = ""
     # Mirror the connector's ingest sanitization (trim + 64-char cap).
     return value[:64] or None
@@ -409,7 +409,7 @@ def _resolve_relay_identity_token() -> str:
           ``$DOMINO_API_PROXY/access-token``): a plain GET whose body IS the token,
           raw JWT or a JSON envelope with ``access_token``. Possession of the
           (typically loopback) endpoint is the credential.
-      2.  Anxious Portal (default): ``resolve_anxious_access_token()``.
+      2.  Nous Portal (default): ``resolve_nous_access_token()``.
 
     Raises on failure; callers decide whether that's fatal (enroll CLI) or a graceful
     boot no-op (self-provision).
@@ -425,9 +425,9 @@ def _resolve_relay_identity_token() -> str:
     token_url, client_id, client_secret, scope = (env[k] for k in _IDP_KEYS)
 
     if not token_url:
-        from pulse_cli.auth import resolve_anxious_access_token
+        from pulse_cli.auth import resolve_nous_access_token
 
-        return resolve_anxious_access_token()
+        return resolve_nous_access_token()
 
     if not client_id and not client_secret:
         # Mode 1b — plain GET; the body is the token, raw or JSON-enveloped.
@@ -737,22 +737,3 @@ def register_relay_adapter(force: bool = False, url: Optional[str] = None) -> bo
         )
     )
     return True
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-def relay_bot_username(platform: str) -> Optional[str]:
-    """The bot's deep-link username/handle for a platform (e.g. Telegram's
-    ``@handle`` for ``t.me/<handle>``), read from the per-platform entry in
-    ``GATEWAY_RELAY_BOT_IDS``. None when absent (most platforms don't need one).
-    """
-    entry = _relay_bot_ids_map().get(platform)
-    if isinstance(entry, dict):
-        username = entry.get("username")
-        if username:
-            return str(username).lstrip("@")
-    return None
-# ---- END PLUGIN-COMPAT ----

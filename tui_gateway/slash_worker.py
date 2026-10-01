@@ -1,9 +1,9 @@
-"""Persistent slash-command worker — one PulseCLI per TUI session.
+"""Persistent slash-command worker — one PULSECLI per TUI session.
 
 Protocol: reads JSON lines from stdin {id, command}, writes {id, ok, output|error} to stdout.
 """
 
-# Stop a ``utils/`` (or ``proxy/``, ``ui/``) package in the launch directory from shadowing Pulse's own
+# Stop a ``utils/`` (or ``proxy/``, ``ui/``) package in the launch directory from shadowing PULSE's own
 # top-level modules: this worker is spawned as ``-m tui_gateway.slash_worker`` with the user's CWD, so
 # ``import cli`` would otherwise resolve ``utils`` to a colliding local package and crash the child in a
 # retry loop. ``pulse_bootstrap`` lives at the repo root (no collision risk), so importing it first is safe.
@@ -25,7 +25,7 @@ import threading
 import time
 
 import cli as cli_mod
-from cli import PulseCLI
+from cli import PULSECLI
 from tui_gateway._env import env_float
 from tui_gateway._stdin_recovery import handle_spurious_eof
 from rich.console import Console
@@ -43,7 +43,7 @@ def _is_orphaned(original_ppid, getppid=os.getppid) -> bool:
 
 
 def _prepare_slash_worker_runtime() -> None:
-    """Start bounded MCP discovery before PulseCLI snapshots tools: each slash_worker child is its
+    """Start bounded MCP discovery before PULSECLI snapshots tools: each slash_worker child is its
     own process — the parent ``pulse serve`` discovery thread does not populate this registry.
 
     See #61891.
@@ -97,7 +97,15 @@ def _refuse_skill_slash(command: str) -> None:
         raise SkillSlashRefused(base)
 
 
-def _run(cli: PulseCLI, command: str) -> str:
+def _run(cli: PULSECLI, command: str) -> str:
+    """Run one command; return its captured, ANSI-stripped output.
+
+    A command like /prompt or /blueprint parks the composed text on the one-shot
+    ``_pending_agent_seed`` for the interactive REPL loop (cli.py) — but this
+    worker has no REPL, so the seed is harvested here onto ``cli._harvested_seed``
+    and routed back to the gateway, which sends it as the next turn (#107800).
+    """
+    cli._harvested_seed = ""  # one-shot: a fresh run never re-sends a stale seed
     cmd = (command or "").strip()
     if not cmd:
         return ""
@@ -118,7 +126,9 @@ def _run(cli: PulseCLI, command: str) -> str:
     # Desktop chat bubbles render plain text, not ANSI. A command that emits Rich color (e.g. /journey
     # under the gateway's inherited COLORTERM) would leak raw escapes; strip at this single choke point.
     from tools.ansi_strip import strip_ansi
-    return strip_ansi(buf.getvalue().rstrip())
+    output = strip_ansi(buf.getvalue().rstrip())
+    cli._harvested_seed, cli._pending_agent_seed = getattr(cli, "_pending_agent_seed", None) or "", None
+    return output
 
 
 def _sw_log(reason: str) -> None:
@@ -138,16 +148,18 @@ def main():
     args = p.parse_args()
     os.environ["PULSE_SESSION_KEY"] = args.session_key
     os.environ["PULSE_INTERACTIVE"] = "1"
-    # Start before the (hundreds-of-ms) PulseCLI build — that window is itself an orphan risk if the
+    # Start before the (hundreds-of-ms) PULSECLI build — that window is itself an orphan risk if the
     # gateway dies mid-spawn.
     _start_parent_death_watchdog(os.getppid())
     _prepare_slash_worker_runtime()
     with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
         # --provider pins the CLI to the parent agent's resolved provider (a MoA session's virtual
-        # "moa" provider included). Without it PulseCLI re-resolves from config and dispatches the
+        # "moa" provider included). Without it PULSECLI re-resolves from config and dispatches the
         # MoA preset NAME to the configured real provider (#57283).
-        cli = PulseCLI(model=args.model or None, provider=args.provider or None,
+        cli = PULSECLI(model=args.model or None, provider=args.provider or None,
                         compact=True, resume=args.session_key, verbose=False)
+    cli._slash_metrics_surface = None  # the TUI/Desktop client already counted the typed command
+    cli.is_slash_worker = True
     # Spurious stdin-EOF recovery (same shared-file-description O_NONBLOCK issue as the gateway entry
     # point — any child inheriting fd 0 can flip the flag).
     _sw_recovery_times: list[float] = []
@@ -165,7 +177,8 @@ def main():
         try:
             req = json.loads(line)
             rid = req.get("id")
-            _reply(id=rid, ok=True, output=_run(cli, req.get("command", "")))
+            output = _run(cli, req.get("command", ""))
+            _reply(id=rid, ok=True, output=output, seed=getattr(cli, "_harvested_seed", "") or "")
         except Exception as e:
             _reply(id=rid, ok=False, error=str(e))
         finally:

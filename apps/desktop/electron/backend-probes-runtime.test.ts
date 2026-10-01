@@ -6,7 +6,7 @@ import path from 'node:path'
 
 import { test } from 'vitest'
 
-import { canImportPulseCli } from './backend-probes'
+import { canImportPULSECli } from './backend-probes'
 
 const REPO: string = path.resolve(import.meta.dirname, '../../..')
 
@@ -75,9 +75,9 @@ print(json.dumps({'python': str(python), 'site': str(site), 'dependencies': str(
       })
     ) as RuntimeFixture
 
-    assert.equal(await canImportPulseCli(fixture.python, { cwd: REPO, env }), true)
+    assert.equal(await canImportPULSECli(fixture.python, { cwd: REPO, env }), true)
     assert.equal(
-      await canImportPulseCli(fixture.python, {
+      await canImportPULSECli(fixture.python, {
         cwd: REPO,
         env: { ...env, PYTHONHOME: path.join(temp, 'foreign-home') }
       }),
@@ -89,7 +89,7 @@ print(json.dumps({'python': str(python), 'site': str(site), 'dependencies': str(
     const foreign: string = path.join(temp, 'foreign-packages')
     fs.symlinkSync(fixture.dependencies, foreign, process.platform === 'win32' ? 'junction' : 'dir')
     assert.equal(
-      await canImportPulseCli(fixture.python, {
+      await canImportPULSECli(fixture.python, {
         cwd: REPO,
         env: { ...env, PYTHONPATH: foreign }
       }),
@@ -97,7 +97,7 @@ print(json.dumps({'python': str(python), 'site': str(site), 'dependencies': str(
       'foreign dependencies must not conceal an empty selected environment'
     )
     assert.equal(
-      await canImportPulseCli(fixture.python, {
+      await canImportPULSECli(fixture.python, {
         cwd: REPO,
         env: { ...env, PYTHONHOME: path.join(temp, 'foreign-home') }
       }),

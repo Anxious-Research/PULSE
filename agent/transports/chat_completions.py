@@ -13,6 +13,7 @@ from agent.reasoning_effort import (
     KIMI_K3_EFFORTS, KIMI_K3_OVERRIDES, OPENAI_COMPAT_WIRE_EFFORTS, TOKENHUB_EFFORTS, clamp_effort,
     clamp_reasoning_config, kimi_supported_efforts, requested_effort,
 )
+from agent.message_metadata import MESSAGE_UID
 from agent.message_sanitization import normalize_finish_reason as _normalize_finish_reason
 from agent.moonshot_schema import is_moonshot_model, sanitize_moonshot_tools
 from agent.prompt_builder import DEVELOPER_ROLE_MODELS
@@ -35,7 +36,7 @@ _XAI_TOOL_SEARCH_ALIAS = "pulse_tool_search"
 # providers reject with HTTP 400 ("Extra inputs are not permitted").
 _STRIP_MSG_KEYS = (
     "codex_reasoning_items", "codex_message_items", "tool_name", "effect_disposition", "timestamp",
-    "platform_message_id", "api_content", "anthropic_content_blocks", "bedrock_content_blocks",
+    "platform_message_id", "api_content", "anthropic_content_blocks", "bedrock_content_blocks", MESSAGE_UID,
 )
 _STRIP_TC_KEYS = ("call_id", "response_item_id")
 _HIGH_EFFORTS = {"high", "xhigh", "max", "ultra"}
@@ -150,9 +151,9 @@ def is_router_timeout_shim(response: Any) -> bool:
 
 
 def _reasoning_config_for_model(model: str, reasoning_config: dict | None) -> dict | None:
-    """Clamp Pulse' extended effort set (``ultra``) to the OpenAI-compat wire vocabulary.
+    """Clamp PULSE' extended effort set (``ultra``) to the OpenAI-compat wire vocabulary.
 
-    Pulse' internal effort set extends the wire vocabulary with ``ultra`` (the /reasoning command documents
+    PULSE' internal effort set extends the wire vocabulary with ``ultra`` (the /reasoning command documents
     none..xhigh|max|ultra). OpenAI- compatible wires — OpenRouter chief among them — accept exactly
     max|xhigh|high|medium|low|minimal|none and reject the extension with HTTP 400 (#89503). Clamp against
     the declared wire vocabulary via the shared policy in ``agent.reasoning_effort``; provider profiles with
@@ -162,7 +163,7 @@ def _reasoning_config_for_model(model: str, reasoning_config: dict | None) -> di
 
 
 def _build_gemini_thinking_config(model: str, reasoning_config: dict | None) -> dict | None:
-    """Translate Pulse/OpenRouter-style reasoning config to Gemini thinkingConfig."""
+    """Translate PULSE/OpenRouter-style reasoning config to Gemini thinkingConfig."""
     if not isinstance(reasoning_config, dict):
         return None
     normalized_model = (model or "").strip().lower().removeprefix("google/")
@@ -193,7 +194,7 @@ def _build_gemini_thinking_config(model: str, reasoning_config: dict | None) -> 
     if effort not in {"minimal", "low", "medium", "high", "xhigh", "max", "ultra"}:
         effort = "medium"
     # Gemini 3 Flash documents low/medium/high thinking levels; Gemini 3 Pro
-    # is stricter (low/high). Clamp Pulse' wider effort set to what each
+    # is stricter (low/high). Clamp PULSE' wider effort set to what each
     # family accepts so we never forward an undocumented level verbatim.
     if normalized_model.startswith("gemini-3"):
         if "flash" in normalized_model:
@@ -257,7 +258,7 @@ def _model_consumes_thought_signature(model: Any) -> bool:
 
 def _route_replays_reasoning_details(base_url: Any) -> bool:
     """True when the target route reads replayed ``reasoning_details`` (OpenRouter's unified
-    reasoning array, also consumed by the Anxious Portal).
+    reasoning array, also consumed by the Nous Portal).
 
     Every other chat-completions endpoint either ignores the field or, when its schema is
     strict (Groq, Mistral, Cerebras, opencode relays: ``property 'reasoning_details' is
@@ -268,7 +269,7 @@ def _route_replays_reasoning_details(base_url: Any) -> bool:
     """
     from utils import base_url_host_matches
 
-    return base_url_host_matches(base_url, "openrouter.ai") or base_url_host_matches(base_url, "anxiousresearchlab.com")
+    return base_url_host_matches(base_url, "openrouter.ai") or base_url_host_matches(base_url, "anxious-research.com")
 
 
 def _has_replayable_thought_signature(extra_content: Any) -> bool:
@@ -656,10 +657,13 @@ class ChatCompletionsTransport(ProviderTransport):
             name = alias_map.get(name, name)
         arguments = getattr(tc_function, "arguments", None)
         extra = _attr_or_model_extra(tc, "extra_content")
-        return ToolCall(
+        call = ToolCall(
             id=getattr(tc, "id", None), name=name, arguments="{}" if arguments is None else arguments,
             provider_data=None if extra is None else {"extra_content": _dump_extra_content(extra)},
         )
+        if getattr(tc_function, "args_repaired", False) is True:
+            call.args_repaired = True  # stream assembly fixed the JSON; read by tool-call quality metrics
+        return call
 
     def validate_response(self, response: Any) -> bool:
         """Check that response has valid choices and is not a router failure shim."""
@@ -682,11 +686,3 @@ class ChatCompletionsTransport(ProviderTransport):
 from agent.transports import register_transport  # noqa: E402
 
 register_transport("chat_completions", ChatCompletionsTransport)
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from typing import Dict  # noqa: F401,E402
-# ---- END PLUGIN-COMPAT ----

@@ -22,8 +22,8 @@ from agent.credential_pool import (  # custom_provider_pool_key_candidates is re
 from agent.secret_scope import get_secret_str
 from pulse_cli.auth import (  # resolve_external_process_provider_credentials is read via origin by runtime_provider_backends
     ACTUAL_LOCAL_NOAUTH_PLACEHOLDER, AuthError, DEFAULT_CODEX_BASE_URL, DEFAULT_QWEN_BASE_URL, DEFAULT_XAI_OAUTH_BASE_URL,
-    PROVIDER_REGISTRY, _agent_key_is_usable, _anxious_inference_env_override, format_auth_error, resolve_provider,
-    resolve_anxious_runtime_credentials, resolve_codex_runtime_credentials, resolve_xai_oauth_runtime_credentials,
+    PROVIDER_REGISTRY, _agent_key_is_usable, _nous_inference_env_override, format_auth_error, resolve_provider,
+    resolve_nous_runtime_credentials, resolve_codex_runtime_credentials, resolve_xai_oauth_runtime_credentials,
     resolve_qwen_runtime_credentials, resolve_api_key_provider_credentials,
     resolve_external_process_provider_credentials,  # noqa: F401
     has_usable_secret, is_actual_local_base_url, looks_like_openrouter_key, normalize_actual_base_url,
@@ -31,7 +31,7 @@ from pulse_cli.auth import (  # resolve_external_process_provider_credentials is
 from pulse_cli import config as _config_mod
 from pulse_cli import models as _models  # attribute access keeps ``pulse_cli.models.<name>`` patches effective
 from pulse_constants import OPENROUTER_BASE_URL
-from pulse_cli.providers import determine_api_mode, get_provider, is_actual_route, is_official_openai_host, anxious_api_mode
+from pulse_cli.providers import determine_api_mode, get_provider, is_actual_route, is_official_openai_host, nous_api_mode
 from utils import base_url_host_matches, base_url_hostname, base_url_path, env_int
 
 
@@ -321,7 +321,7 @@ def is_foreign_provider_endpoint(provider: Optional[str], base_url: Optional[str
     """True when ``base_url`` is another built-in provider's canonical endpoint, not ``provider``'s.
 
     A persisted session route that pairs one provider with another's endpoint is left over from a
-    switch that kept the old URL (openai-codex + the Anxious Portal URL sent the Codex slug to the Portal).
+    switch that kept the old URL (openai-codex + the Nous Portal URL sent the Codex slug to the Portal).
     Only registered providers are judged: a custom or proxy URL is never another provider's canonical one.
     """
     pconfig = PROVIDER_REGISTRY.get(str(provider or "").strip().lower())
@@ -402,16 +402,16 @@ def _pool_entry_base_url(entry: Any) -> str:
     return getattr(entry, "runtime_base_url", None) or getattr(entry, "base_url", None) or ""
 
 
-def _anxious_entry_key_usable(entry: Any, min_ttl: int) -> bool:
+def _nous_entry_key_usable(entry: Any, min_ttl: int) -> bool:
     return _agent_key_is_usable({k: getattr(entry, k, None) for k in ("agent_key", "agent_key_expires_at", "scope")}, min_ttl)
 
 
-def _anxious_min_key_ttl() -> int:
-    return max(60, env_int("PULSE_ANXIOUS_MIN_KEY_TTL_SECONDS", 1800))
+def _nous_min_key_ttl() -> int:
+    return max(60, env_int("PULSE_NOUS_MIN_KEY_TTL_SECONDS", 1800))
 
 
-def _resolve_anxious_creds() -> Dict[str, Any]:
-    return resolve_anxious_runtime_credentials(timeout_seconds=float(get_secret_str("PULSE_ANXIOUS_TIMEOUT_SECONDS", "15")))
+def _resolve_nous_creds() -> Dict[str, Any]:
+    return resolve_nous_runtime_credentials(timeout_seconds=float(get_secret_str("PULSE_NOUS_TIMEOUT_SECONDS", "15")))
 
 
 def _finalize_base_url(provider: str, api_mode: str, base_url: str) -> str:
@@ -544,8 +544,8 @@ def _pool_entry_mode_and_url(provider, entry, model_cfg, effective_model, base_u
         return api_mode, base_url or (default_url() if callable(default_url) else default_url)
     if provider == "anthropic":
         return "anthropic_messages", _anthropic_cfg_base_url(model_cfg) or base_url or _ANTHROPIC_DEFAULT_BASE_URL
-    if provider == "anxious":
-        return anxious_api_mode(effective_model), (_anxious_inference_env_override() or "") or base_url
+    if provider == "nous":
+        return nous_api_mode(effective_model), (_nous_inference_env_override() or "") or base_url
     if provider == "copilot":
         api_mode = _copilot_runtime_api_mode(model_cfg, getattr(entry, "runtime_api_key", ""), target_model=effective_model)
         return api_mode, base_url or PROVIDER_REGISTRY["copilot"].inference_base_url
@@ -590,23 +590,23 @@ def _openrouter_should_use_pool(requested_provider, model_cfg, explicit_api_key,
     return requested_provider in {"openrouter", "auto"} and not has_custom_endpoint and not bool(explicit_api_key or explicit_base_url)
 
 
-def _refresh_anxious_pool_entry(pool: CredentialPool, entry: Any, pool_api_key: str):
-    """Anxious pool entries carry the agent_key (an invoke JWT) which the pool does not refresh on
+def _refresh_nous_pool_entry(pool: CredentialPool, entry: Any, pool_api_key: str):
+    """Nous pool entries carry the agent_key (an invoke JWT) which the pool does not refresh on
     selection (avoids network calls in `pulse auth list`); refresh here before falling back to
     singleton auth resolution. Returns (entry, pool_api_key) — key "" when still unusable."""
-    min_ttl = _anxious_min_key_ttl()
-    if _anxious_entry_key_usable(entry, min_ttl):
+    min_ttl = _nous_min_key_ttl()
+    if _nous_entry_key_usable(entry, min_ttl):
         return entry, pool_api_key
-    logger.debug("Anxious pool entry agent_key expired/missing, refreshing selected pool entry")
+    logger.debug("Nous pool entry agent_key expired/missing, refreshing selected pool entry")
     try:
         refreshed = pool.try_refresh_current()
     except Exception as exc:
-        logger.debug("Anxious pool entry refresh failed: %s", exc)
+        logger.debug("Nous pool entry refresh failed: %s", exc)
         refreshed = None
     if refreshed is not None:
         entry, pool_api_key = refreshed, _pool_entry_api_key(refreshed)
-    if not pool_api_key or not _anxious_entry_key_usable(entry, min_ttl):
-        logger.debug("Anxious pool entry agent_key still unavailable, falling through to runtime resolution")
+    if not pool_api_key or not _nous_entry_key_usable(entry, min_ttl):
+        logger.debug("Nous pool entry agent_key still unavailable, falling through to runtime resolution")
         pool_api_key = ""
     return entry, pool_api_key
 
@@ -647,8 +647,8 @@ def _resolve_from_pool(provider: str, requested_provider: str, model_cfg: Dict[s
     if entry is None:
         return None
     pool_api_key = _pool_entry_api_key(entry)
-    if provider == "anxious":
-        entry, pool_api_key = _refresh_anxious_pool_entry(pool, entry, pool_api_key)
+    if provider == "nous":
+        entry, pool_api_key = _refresh_nous_pool_entry(pool, entry, pool_api_key)
     elif provider == "copilot":
         pool_api_key = _exchange_copilot_pool_entry(entry, pool_api_key)
     if not has_usable_secret(pool_api_key):
@@ -684,17 +684,17 @@ def _explicit_codex(requested_provider, model_cfg, api_key, explicit_base_url, t
                     requested_provider=requested_provider)
 
 
-def _explicit_anxious(requested_provider, model_cfg, api_key, explicit_base_url, target_model):
-    state = auth_mod.get_provider_auth_state("anxious") or {}
-    base_url = (explicit_base_url or _anxious_inference_env_override()
-                or str(state.get("inference_base_url") or auth_mod.DEFAULT_ANXIOUS_INFERENCE_URL).strip().rstrip("/"))
+def _explicit_nous(requested_provider, model_cfg, api_key, explicit_base_url, target_model):
+    state = auth_mod.get_provider_auth_state("nous") or {}
+    base_url = (explicit_base_url or _nous_inference_env_override()
+                or str(state.get("inference_base_url") or auth_mod.DEFAULT_NOUS_INFERENCE_URL).strip().rstrip("/"))
     # The agent_key compatibility field is used for inference only when it holds a NAS invoke JWT;
-    # raw OAuth access_token fallback is handled by resolve_anxious_runtime_credentials().
-    api_key = api_key or (str(state.get("agent_key") or "").strip() if _agent_key_is_usable(state, _anxious_min_key_ttl()) else "")
+    # raw OAuth access_token fallback is handled by resolve_nous_runtime_credentials().
+    api_key = api_key or (str(state.get("agent_key") or "").strip() if _agent_key_is_usable(state, _nous_min_key_ttl()) else "")
     api_key, base_url, expires_at = _creds_fallback(api_key, explicit_base_url, base_url,
                                                     state.get("agent_key_expires_at") or state.get("expires_at"), "expires_at",
-                                                    _resolve_anxious_creds)
-    return _runtime("anxious", anxious_api_mode(_effective_model(model_cfg, target_model)), base_url, api_key, source="explicit",
+                                                    _resolve_nous_creds)
+    return _runtime("nous", nous_api_mode(_effective_model(model_cfg, target_model)), base_url, api_key, source="explicit",
                     expires_at=expires_at, requested_provider=requested_provider)
 
 
@@ -733,7 +733,7 @@ def _explicit_api_key_provider(provider, pconfig, requested_provider, model_cfg,
 # Providers with a dedicated explicit-credential builder; everything else goes through the
 # registry ``api_key`` path (or None when the provider takes no explicit creds).
 _EXPLICIT_RESOLVERS: Dict[str, Callable[..., Dict[str, Any]]] = {
-    "anthropic": _explicit_anthropic, "openai-codex": _explicit_codex, "anxious": _explicit_anxious,
+    "anthropic": _explicit_anthropic, "openai-codex": _explicit_codex, "nous": _explicit_nous,
     "azure-foundry": lambda rq, mc, key, url, tm: _resolve_azure_foundry_runtime(requested_provider=rq, model_cfg=mc,
                                                                                  explicit_api_key=key, explicit_base_url=url),
 }
@@ -773,8 +773,8 @@ class _OAuthRuntimeSpec:
 # ``resolve`` entries are late-bound lambdas so tests can monkeypatch the module-level
 # ``resolve_*_runtime_credentials`` names.
 _OAUTH_RUNTIME_PROVIDERS: Dict[str, _OAuthRuntimeSpec] = {
-    "anxious": _OAuthRuntimeSpec(_resolve_anxious_creds, anxious_api_mode, "portal", "expires_at",
-                              "Auto-detected Anxious provider but credentials failed"),
+    "nous": _OAuthRuntimeSpec(_resolve_nous_creds, nous_api_mode, "portal", "expires_at",
+                              "Auto-detected Nous provider but credentials failed"),
     "openai-codex": _OAuthRuntimeSpec(lambda: resolve_codex_runtime_credentials(), "codex_responses", "pulse-auth-store",
                                       "last_refresh", "Auto-detected Codex provider but credentials failed"),
     "xai-oauth": _OAuthRuntimeSpec(lambda: resolve_xai_oauth_runtime_credentials(), "codex_responses", "pulse-auth-store",
@@ -989,7 +989,7 @@ def resolve_runtime_provider(*, requested: Optional[str] = None, explicit_api_ke
       4. local-endpoint bypass (no explicit creds, config base_url at a non-cloud host)
       5. ``auth.resolve_provider`` → explicit --api-key/--base-url path
       6. credential pool (OpenRouter pool only without custom endpoint/override)
-      7. OAuth specs (anxious/codex/xai/qwen; "auto" swallows AuthError, logs, and stamps it on a
+      7. OAuth specs (nous/codex/xai/qwen; "auto" swallows AuthError, logs, and stamps it on a
          keyless fallback as ``auth_error``) → minimax-oauth
          → external-process → anthropic env → bedrock → registry api_key providers
       8. OpenRouter / bare-custom fallback
@@ -1088,30 +1088,6 @@ def _ladder_rungs(requested_provider, explicit_api_key, explicit_base_url, targe
 
 def format_runtime_provider_error(error: Exception) -> str:
     return format_auth_error(error) if isinstance(error, AuthError) else str(error)
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-import os  # noqa: F401,E402
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'custom_provider_aliases': ('pulse_cli.providers', 'custom_provider_aliases'),
-    'custom_provider_slug': ('pulse_cli.providers', 'custom_provider_slug'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----
 
 
 def resolve_runtime_with_fallback(config: Optional[Dict[str, Any]], *, requested: Optional[str] = None,

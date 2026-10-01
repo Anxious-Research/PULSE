@@ -17,7 +17,7 @@ import pulse_yaml as yaml
 
 from pulse_constants import get_pulse_home
 
-# Pulse UI surfaces, not app/vendor buckets.  Long-running-only: regular tool/thinking/interim
+# PULSE UI surfaces, not app/vendor buckets.  Long-running-only: regular tool/thinking/interim
 # chatter is deliberately not rewritten (too noisy in chat).
 _STATUS_SURFACES = ("status", "generic")
 _MAX_CUSTOM_PHRASES_PER_SURFACE = 80
@@ -131,7 +131,7 @@ def resolve_status_phrase_catalog(user_config: Mapping[str, Any] | None,
 
 def classify_status_context(kind: str, *, tool_name: str | None = None, preview: str | None = None,
                             args: Any = None) -> str:
-    """Classify an internal gateway event into a Pulse UI-surface bucket."""
+    """Classify an internal gateway event into a PULSE UI-surface bucket."""
     if str(kind or "").strip().lower() in {"heartbeat", "waiting", "long_running", "status"}:
         return "status"
     return "generic"

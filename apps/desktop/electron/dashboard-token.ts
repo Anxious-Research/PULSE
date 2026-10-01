@@ -13,14 +13,14 @@ async function fetchPublicText(url, options: any = {}) {
   const { protocol } = new URL(url)
 
   if (protocol !== 'http:' && protocol !== 'https:') {
-    throw new Error(`Unsupported Pulse backend URL protocol: ${protocol}`)
+    throw new Error(`Unsupported PULSE backend URL protocol: ${protocol}`)
   }
 
   const timeoutMs = options.timeoutMs ?? DEFAULT_TOKEN_FETCH_TIMEOUT_MS
 
   const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) }).catch(error => {
     if (error.name === 'TimeoutError') {
-      throw new Error(`Timed out connecting to Pulse backend after ${timeoutMs}ms`)
+      throw new Error(`Timed out connecting to PULSE backend after ${timeoutMs}ms`)
     }
 
     throw error
@@ -85,7 +85,7 @@ function isForeignBackendToken({ servedToken, spawnToken, childAlive }) {
  * failing loudly on a foreign backend. `childAlive` is a thunk so liveness is
  * sampled after the fetch, not before.
  */
-async function adoptServedDashboardToken(baseUrl, spawnToken, { childAlive, label = 'Pulse backend', ...options }) {
+async function adoptServedDashboardToken(baseUrl, spawnToken, { childAlive, label = 'PULSE backend', ...options }) {
   const servedToken = await resolveServedDashboardToken(baseUrl, spawnToken, options).catch(error => {
     options.rememberLog?.(`[boot] could not read served dashboard token (${label}): ${error.message}`)
 
@@ -101,12 +101,25 @@ async function adoptServedDashboardToken(baseUrl, spawnToken, { childAlive, labe
   return servedToken
 }
 
+/**
+ * True when a *live* attached backend is now serving a session token
+ * different from the one we adopted at attach time — a backend recycled by an
+ * external supervisor (e.g. launchd `KeepAlive`) into a new process on the
+ * same port. `/api/health` (and other liveness probes) are public routes that
+ * a recycled backend still answers 200 to, so a plain readiness probe cannot
+ * see this; only re-reading the served token can.
+ */
+function isAttachedBackendTokenDrifted({ servedToken, adoptedToken }) {
+  return Boolean(servedToken) && servedToken !== adoptedToken
+}
+
 export {
   adoptServedDashboardToken,
   dashboardIndexUrl,
   DEFAULT_TOKEN_FETCH_TIMEOUT_MS,
   extractInjectedDashboardToken,
   fetchPublicText,
+  isAttachedBackendTokenDrifted,
   isForeignBackendToken,
   resolveServedDashboardToken
 }

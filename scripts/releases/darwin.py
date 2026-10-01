@@ -97,7 +97,7 @@ def merge_mac_feeds(legs: dict[str, str], tag: str, light: bool = False,
         leg = parse_mac_feed(legs[name])
         if str(leg.get("version")) != version:
             raise ValueError(f"Feed version does not match {tag}")
-        prefix = f"{'PulseLight' if light else 'PulseBundled'}-{version}-mac-{ARCHES[index]}"
+        prefix = f"{'PULSELight' if light else 'PULSEBundled'}-{version}-mac-{ARCHES[index]}"
         if not any(f.get("url") == f"{prefix}.zip" for f in leg["files"]):
             raise ValueError(f"Missing native ZIP for {ARCHES[index]}")
         for file_entry in leg["files"]:

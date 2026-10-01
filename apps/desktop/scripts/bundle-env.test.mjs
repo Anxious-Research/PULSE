@@ -15,10 +15,10 @@ test('explicit clears beat inherited homes and prevent Windows registry fallback
   try {
     const entry = join(root, 'entry.mjs')
     writeFileSync(entry, `
-      import {resolveDesktopPulseHome} from ${JSON.stringify(paths)};
+      import {resolveDesktopPULSEHome} from ${JSON.stringify(paths)};
       import {execFileSync} from 'node:child_process';
       let registryReads = 0;
-      const home = resolveDesktopPulseHome({
+      const home = resolveDesktopPULSEHome({
         home: 'C:/Users/test', platform: 'win32', env: process.env,
         readWindowsHome: () => { registryReads++; return 'C:/old-pulse'; }
       });

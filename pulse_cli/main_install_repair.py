@@ -146,7 +146,7 @@ def _filter_pending_shim_renames(entries: list[str], shims: list[Path]) -> tuple
 
 
 def _cleanup_pending_shim_renames(scripts_dir: Path) -> int:
-    """Drop reboot renames older Pulse versions queued for our shims: ``MOVEFILE_DELAY_UNTIL_REBOOT``
+    """Drop reboot renames older PULSE versions queued for our shims: ``MOVEFILE_DELAY_UNTIL_REBOOT``
     fallbacks outlive the update that queued them and move away whatever sits at the shim path
     at next boot — even a shim a later repair just wrote. Needs elevation; a no-op otherwise."""
     if not _is_windows():
@@ -315,7 +315,7 @@ def _is_windows_npm_path(npm_path: str) -> bool:
 def _resolve_node_runtime_npm() -> str | None:
     """PM's npm, refused on a POSIX host when it is a Windows shim (EISDIR over WSL UNC paths, #30271).
 
-    Never re-scans the user's PATH for another npm: Pulse runs only its PM-managed toolchain.
+    Never re-scans the user's PATH for another npm: PULSE runs only its PM-managed toolchain.
     """
     from pulse_constants import find_node_executable
     npm = find_node_executable("npm")

@@ -341,7 +341,7 @@ export interface Translations {
       turnOffLocal: string
       providedByPlugin: (plugin: string) => string
       openPlugins: string
-      pulseLine: string
+      nousLine: string
       rulesReadOnly: string
       rulesAppOff: (name: string) => string
       rulesSignIn: string
@@ -528,13 +528,13 @@ export interface Translations {
       loadingSessions: string
       retryingRemoteBackend: string
       startingDesktopConnection: string
-      startingPulseDesktop: string
+      startingPULSEDesktop: string
     }
     errors: {
       backgroundExited: string
       backgroundExitedDuringStartup: string
       backendStopped: string
-      restartPulse: string
+      restartPULSE: string
       openLogs: string
       desktopBootFailed: string
       gatewayConnectionLost: string
@@ -608,7 +608,7 @@ export interface Translations {
     desktopOutOfDateMessage: string
     updateDesktopApp: string
     installMethodUnsupportedTitle: string
-    updatePulse: string
+    updatePULSE: string
     updateReadyTitle: string
     updateReadyMessage: (count: number) => string
     updateReadyMessageUnknown: string
@@ -637,10 +637,10 @@ export interface Translations {
       openaiTtsNeedsKey: string
       codeSkewRestartRequired: string
       rpcOutOfSync: string
-      restartPulseFailed: string
+      restartPULSEFailed: string
     }
     actions: {
-      restartPulse: string
+      restartPULSE: string
       openKeys: string
       openGateways: string
       openMaintenance: string
@@ -695,7 +695,7 @@ export interface Translations {
   }
 
   billingBlock: {
-    titlePulse: string
+    titleNous: string
     titleProvider: (provider: string) => string
     fallbackMessage: string
     openBilling: string
@@ -974,6 +974,8 @@ export interface Translations {
       hideThreadTimelineDesc: string
       reasoningCollapsedTitle: string
       reasoningCollapsedDesc: string
+      chatTextScaleTitle: string
+      chatTextScaleDesc: string
       uiScaleTitle: string
       uiScaleDesc: (percent: number) => string
       sessionDensityTitle: string
@@ -1110,7 +1112,7 @@ export interface Translations {
     uninstallSection: {
       dangerZone: string
       checkingInstalled: string
-      uninstallPulse: string
+      uninstallPULSE: string
       chooseHowMuch: string
       confirmUninstall: string
       confirmBody: (what: string) => string
@@ -1460,9 +1462,9 @@ export interface Translations {
       sshPortDesc: string
       sshKeyTitle: string
       sshKeyDesc: string
-      sshPulsePathTitle: string
-      sshPulsePathDesc: string
-      sshPulsePathPlaceholder: string
+      sshPULSEPathTitle: string
+      sshPULSEPathDesc: string
+      sshPULSEPathPlaceholder: string
       sshTestConnection: string
       sshConnect: string
       sshButtonsHint: string
@@ -1994,15 +1996,15 @@ export interface Translations {
       activeBackend: string
       activeBackendHint: string
       useBackend: string
-      pulseIncluded: string
-      pulseAuthNeededTitle: string
-      pulseAuthNeededMessage: (provider: string) => string
-      pulseAuthSignIn: string
-      pulseAuthDoneTitle: string
-      pulseAuthDoneMessage: string
-      pulseAuthFailed: string
-      pulseAuthFailedMessage: string
-      pulseAuthTryAgain: string
+      nousIncluded: string
+      nousAuthNeededTitle: string
+      nousAuthNeededMessage: (provider: string) => string
+      nousAuthSignIn: string
+      nousAuthDoneTitle: string
+      nousAuthDoneMessage: string
+      nousAuthFailed: string
+      nousAuthFailedMessage: string
+      nousAuthTryAgain: string
       noApiKeyRequired: string
       postSetupHint: (step: string) => string
       postSetupInstalledHint: string
@@ -2436,7 +2438,7 @@ export interface Translations {
     sharedGatewayRestartDescription: (bots: string) => string
     sharedGatewayRestartConfirm: string
     sharedGatewayRestarted: (count: number) => string
-    updatePulse: string
+    updatePULSE: string
     reloadWindow: string
     actionRunning: string
     actionDone: string
@@ -3277,6 +3279,9 @@ export interface Translations {
     queueStuckBody: string
     queueDroppedTitle: string
     queueDroppedBody: string
+    terminalSelectionMissingTitle: string
+    terminalSelectionMissingBody: string
+    queuedTerminalSelectionExpiredBody: string
     previewUnavailable: string
     previewLabel: (label: string) => string
     couldNotPreview: (label: string) => string
@@ -3476,6 +3481,7 @@ export interface Translations {
       scopeUncommitted: string
       scopeBranch: string
       scopeLastTurn: string
+      readOnlyScope: string
       commit: string
       commitAndPush: string
       commitPlaceholder: (shortcut: string) => string
@@ -3781,7 +3787,7 @@ export interface Translations {
   }
 
   freeTier: {
-    /** Settings › Providers row title while the Pulse identity is the free tier. */
+    /** Settings › Providers row title while the Nous identity is the free tier. */
     providerRowTitle: string
     /** The featured row's pitch while the identity is the free tier: what signing in adds. */
     providerRowPitch: string
@@ -3834,7 +3840,7 @@ export interface Translations {
     alreadySignedInBody: string
     // First-launch set-up failure notice: the free tier could not be created at boot.
     // One sentence per backend code (`pulse_cli/anon_auth.py::ANON_*`); the copy never says
-    // the free MODEL is off — what is unavailable is using Pulse without signing in.
+    // the free MODEL is off — what is unavailable is using PULSE without signing in.
     setupFailed: {
       gateClosed: string
       paused: string
@@ -3844,7 +3850,7 @@ export interface Translations {
       powRequired: string
       locked: string
       generic: string
-      /** The sign-in door, when the account service is reachable: the Pulse row sits right below. */
+      /** The sign-in door, when the account service is reachable: the Nous row sits right below. */
       signInBelow: string
       tryAgain: string
       retrying: string
@@ -3897,6 +3903,10 @@ export interface Translations {
       editModels: string
       followDefault: string
       refreshModels: string
+      favorites: string
+      addFavorite: string
+      removeFavorite: string
+      favoriteShortcut: string
       fast: string
       free: string
       cacheRead: string
@@ -4089,6 +4099,9 @@ export interface Translations {
     terminalHide: string
     terminalsAria: string
     terminalNew: string
+    terminalReadOnly: string
+    terminalReadOnlyHelp: string
+    terminalOpenInteractive: string
     terminalCloseOthers: string
     terminalCloseAll: string
     addToChat: string
@@ -4096,9 +4109,14 @@ export interface Translations {
 
   preview: {
     tab: string
+    pin: string
+    unpin: string
     closePane: string
     loading: string
     unavailable: string
+    missingTarget: string
+    missingTitle: string
+    missingBody: (label: string) => string
     opening: string
     hide: string
     openPreview: string
@@ -4303,6 +4321,7 @@ export interface Translations {
       branchNewChat: string
       react: string
       dismissError: string
+      responseStopped: string
       /** Layer titles for the structured error card (agent/error_surface.py).
        *  `generic` is the fallback when the backend sent no descriptor. */
       errorLayers: {
@@ -4355,8 +4374,8 @@ export interface Translations {
       errorChooseModel: string
       errorCompressConversation: string
       errorCompressFailed: string
-      errorOpenPulseFolder: string
-      errorOpenPulseFolderFailed: string
+      errorOpenPULSEFolder: string
+      errorOpenPULSEFolderFailed: string
       errorUpdateApiKey: string
       /** One-click recovery for an expired/revoked OAuth grant: re-runs that
        *  provider's sign-in flow (auth layer, authKind 'oauth'). */
@@ -4423,6 +4442,8 @@ export interface Translations {
       skipped: string
       noAnswer: string
       confirmAndContinueLabel: string
+      singleSelectHint: string
+      multiSelectHint: string
       questionProgress: (answered: number, total: number) => string
       notDelivered: string
     }
@@ -4580,6 +4601,8 @@ export interface Translations {
     staleSessionBody: string
     providerCredentialRequired: string
     emptySlashCommand: string
+    slashCommandIgnoredTitle: string
+    slashCommandIgnoredBody: string
     desktopCommands: string
     skillCommandsAvailable: (count: number) => string
     warningLine: (message: string) => string
@@ -4640,6 +4663,9 @@ export interface Translations {
     openImage: string
     downloadImage: string
     savingImage: string
+    zoomIn: string
+    zoomOut: string
+    resetZoom: string
     imagePreviewFailed: string
     imageAttach: string
     imageWriteFailed: string

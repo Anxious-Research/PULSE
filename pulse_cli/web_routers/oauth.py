@@ -36,8 +36,8 @@ _OAUTH_PROVIDER_CATALOG = LateState("_OAUTH_PROVIDER_CATALOG", "pulse_cli.web_se
 # test's monkeypatch on web_server_oauth must win at spawn time, not router-import time.
 # A direct import here made those mocks no-ops — the real poller then hit the network
 # from the leaked thread and segfaulted a later test's collection (CI flake, 2026-09-09).
-_anxious_plain_poller = late("_anxious_plain_poller", "pulse_cli.web_server_oauth")
-_anxious_promotion_poller = late("_anxious_promotion_poller", "pulse_cli.web_server_oauth")
+_nous_plain_poller = late("_nous_plain_poller", "pulse_cli.web_server_oauth")
+_nous_promotion_poller = late("_nous_promotion_poller", "pulse_cli.web_server_oauth")
 _minimax_poller = late("_minimax_poller", "pulse_cli.web_server_oauth")
 _xai_device_poller = late("_xai_device_poller", "pulse_cli.web_server_oauth")
 
@@ -74,7 +74,7 @@ def _codex_device_code_start_error(resp: Any) -> str:
     if "device" in lower and ("authori" in lower or "enable" in lower):
         message = (
             "OpenAI rejected the device-code login request. Your OpenAI "
-            "account may need device-code authorization enabled before Pulse "
+            "account may need device-code authorization enabled before PULSE "
             "can start this dashboard login. Enable device-code authorization "
             "in OpenAI, then return here and click Login again."
         )
@@ -107,7 +107,31 @@ def _drop_oauth_session(sid: str) -> None:
 
 
 def _start_poller(target, sid: str, prefix: str = "oauth-poll") -> None:
-    threading.Thread(target=target, args=(sid,), daemon=True, name=f"{prefix}-{sid[:6]}").start()
+    with _oauth_sessions_lock:
+        sess = _oauth_sessions.get(sid)
+
+    def run() -> None:
+        try:
+            target(sid)
+        finally:  # the session's status is final once its poller returns
+            from pulse_cli.observability.shared_metrics_setup import settle_oauth_setup
+            settle_oauth_setup(sess)
+
+    threading.Thread(target=run, daemon=True, name=f"{prefix}-{sid[:6]}").start()
+
+
+def _track_oauth_setup(flow, session_id: str) -> None:
+    """Hand the setup flow to its session; settle it now if the poller already ended."""
+    from pulse_cli.observability.shared_metrics_setup import (
+        attach_oauth_setup, finish_provider_setup, settle_oauth_setup,
+    )
+    with _oauth_sessions_lock:
+        sess = _oauth_sessions.get(session_id)
+    if sess is None:  # cancelled before the start response even returned
+        finish_provider_setup(flow, "failed", "cancelled")
+        return
+    attach_oauth_setup(sess, flow)
+    settle_oauth_setup(sess)
 
 
 def _device_session_started(
@@ -297,12 +321,13 @@ def _codex_full_login_worker(session_id: str) -> None:
         # The cancellation check and the save are one atomic critical section
         # under the lock cancel_oauth_session() uses; otherwise DELETE could
         # flip "cancelled" between the check and the save and tokens would be
-        # persisted after the user believed the login was aborted.
-        with _oauth_sessions_lock:
+        # persisted after the user believed the login was aborted. The profile scope
+        # (which holds _SKILLS_PROFILE_LOCK) is entered first, as in every other saver:
+        # the reverse order deadlocks against a Nous/xAI/MiniMax save finishing at once.
+        with _profile_scope(session_profile), _oauth_sessions_lock:
             if _codex_cancelled(sess, session_id, " before token save"):
                 return
-            with _profile_scope(session_profile):
-                _save_codex_tokens(tokens)
+            _save_codex_tokens(tokens)
             sess["status"] = "approved"
         _log.info("oauth/device: openai-codex login completed (session=%s)", session_id)
     except Exception as e:
@@ -336,12 +361,12 @@ def _epoch_ms_to_iso(value: Any) -> Optional[str]:
 
 # Hand-written status cards per provider id: (hauth getter name, raw -> card).
 # Providers absent here fall through to the slug-driven ``get_auth_status``.
-# anxious: refresh-free local snapshot so listing providers never performs an OAuth
+# nous: refresh-free local snapshot so listing providers never performs an OAuth
 # refresh. xai: source_label is a human-readable origin (auth-store path /
 # credential source), not the internal auth_mode string ("oauth_pkce").
 _PROVIDER_STATUS: Dict[str, tuple[str, Callable[[dict], dict]]] = {
-    "anxious": ("get_anxious_auth_status_local", lambda r: {**_status_card(
-        r, "anxious_portal", r.get("portal_base_url") or "Anxious Portal",
+    "nous": ("get_nous_auth_status_local", lambda r: {**_status_card(
+        r, "nous_portal", r.get("portal_base_url") or "Nous Portal",
         _truncate_token(r.get("access_token")), r.get("access_expires_at"), bool(r.get("has_refresh_token")),
     ), "free_tier": bool(r.get("free_tier")), "account_tier": r.get("account_tier")}),
     "openai-codex": ("get_codex_auth_status", lambda r: _status_card(
@@ -391,20 +416,20 @@ def _resolve_provider_status(provider_id: str, status_fn) -> Dict[str, Any]:
     return {"logged_in": False}
 
 
-async def _start_anxious_device_code(profile: Optional[str]) -> Dict[str, Any]:
-    """Start a Anxious sign-in. Over a free-tier identity (``anxious.guest`` on) the whole sign-in is the
+async def _start_nous_device_code(profile: Optional[str]) -> Dict[str, Any]:
+    """Start a Nous sign-in. Over a free-tier identity (``nous.guest`` on) the whole sign-in is the
     shared ``anon_auth.run_sign_in`` flow: this route creates the generator, pulls its first state
     (the transfer's consent link and code) and hands that to the UI, then the poller drains the rest.
     Without a free-tier identity it is the plain device-code flow."""
     from pulse_cli import anon_auth
     from pulse_cli.auth import PROVIDER_REGISTRY, _request_device_code
     from pulse_cli.web_server_profiles import _config_profile_scope, _profile_scope
-    pconfig = PROVIDER_REGISTRY["anxious"]
+    pconfig = PROVIDER_REGISTRY["nous"]
     portal_base_url = (
-        os.getenv("PULSE_PORTAL_BASE_URL") or os.getenv("ANXIOUS_PORTAL_BASE_URL") or pconfig.portal_base_url
+        os.getenv("PULSE_PORTAL_BASE_URL") or os.getenv("NOUS_PORTAL_BASE_URL") or pconfig.portal_base_url
     ).rstrip("/")
     with _profile_scope(_oauth_profile_name(profile)):
-        guest = anon_auth.current_anxious_state() if anon_auth.guest_enabled() else None
+        guest = anon_auth.current_nous_state() if anon_auth.guest_enabled() else None
 
     if not anon_auth.is_guest_state(guest):
         device_data = await _httpx_call(lambda client: _request_device_code(
@@ -416,12 +441,12 @@ async def _start_anxious_device_code(profile: Optional[str]) -> Dict[str, Any]:
             client_id=pconfig.client_id, scope=pconfig.scope,
             interval=interval, expires_at=time.time() + expires_in)
         return _device_session_started(
-            "anxious", profile, _anxious_plain_poller, fields, str(device_data["user_code"]),
+            "nous", profile, _nous_plain_poller, fields, str(device_data["user_code"]),
             str(device_data["verification_uri_complete"]), expires_in, interval)
 
     # The session is registered BEFORE the generator exists, so a cancel landing in the start
     # window is already visible to the flow's own cancel check and persist guard.
-    sid, sess = _new_oauth_session("anxious", "device_code", profile=profile)
+    sid, sess = _new_oauth_session("nous", "device_code", profile=profile)
 
     def _cancelled() -> bool:
         with _oauth_sessions_lock:
@@ -466,7 +491,7 @@ async def _start_anxious_device_code(profile: Optional[str]) -> Dict[str, Any]:
             portal_base_url=portal_base_url, client_id=pconfig.client_id, scope=pconfig.scope,
             device_code="", claim_code=first.code, interval=first.interval,
             expires_at=time.time() + first.expires_in, _sign_in=gen))
-    _start_poller(_anxious_promotion_poller, sid)   # last: nothing observes `sess` before it is complete
+    _start_poller(_nous_promotion_poller, sid)   # last: nothing observes `sess` before it is complete
     return {
         "session_id": sid, "flow": "device_code", "user_code": first.code,
         "verification_url": first.link, "expires_in": first.expires_in,
@@ -552,7 +577,7 @@ async def _start_xai_device_code(profile: Optional[str]) -> Dict[str, Any]:
 
 
 _DEVICE_CODE_STARTERS = {
-    "anxious": _start_anxious_device_code, "openai-codex": _start_codex_device_code,
+    "nous": _start_nous_device_code, "openai-codex": _start_codex_device_code,
     "minimax-oauth": _start_minimax_device_code, "xai-oauth": _start_xai_device_code,
 }
 
@@ -602,14 +627,14 @@ def _oauth_provider_disconnect_command(
 
 def _oauth_provider_disconnect_hint(provider: Dict[str, Any], status: Dict[str, Any]) -> Optional[str]:
     """Return the manual disconnect path when the API cannot clear this provider."""
-    # "anthropic" is flow == "external" (no in-dashboard login) but Pulse still
+    # "anthropic" is flow == "external" (no in-dashboard login) but PULSE still
     # OWNS its credential (the PKCE file ~/.pulse/.anthropic_oauth.json and its
     # credential-pool entry, written by `pulse auth add anthropic`), so it is
     # excluded from the "external providers can't be auto-disconnected" rule.
     if provider.get("flow") == "external" and provider.get("id") != "anthropic":
         if _oauth_provider_disconnect_command(provider):
             # Fallback wording for surfaces without the one-click "run in terminal" path.
-            return "Managed outside Pulse — run the disconnect command to remove it."
+            return "Managed outside PULSE — run the disconnect command to remove it."
         return "Managed by that provider's CLI; remove it there."
     if status.get("source") == "env_var":
         return "Remove the API key from Settings → Keys instead."
@@ -669,7 +694,7 @@ def _reject_if_not_disconnectable(provider: Dict[str, Any], status: Dict[str, An
 
 
 def _clear_anthropic_auth() -> bool:
-    """Clear only the Pulse-managed PKCE file and auth-store entry (never ~/.claude/*)."""
+    """Clear only the PULSE-managed PKCE file and auth-store entry (never ~/.claude/*)."""
     cleared = False
     try:
         from agent.anthropic_credentials import _get_pulse_oauth_file
@@ -724,10 +749,10 @@ async def disconnect_oauth_provider(provider_id: str, request: Request, profile:
             _log.info("oauth/disconnect: %s", provider_id)
             return {"ok": True, "provider": provider_id}
         try:
-            from pulse_cli.auth import clear_provider_auth, invalidate_anxious_auth_status_cache
+            from pulse_cli.auth import clear_provider_auth, invalidate_nous_auth_status_cache
             cleared = clear_provider_auth(provider_id)
-            if provider_id == "anxious":
-                invalidate_anxious_auth_status_cache()
+            if provider_id == "nous":
+                invalidate_nous_auth_status_cache()
             if not cleared:
                 raise _disconnect_http_error(409, provider["name"])
             _log.info("oauth/disconnect: %s (cleared=%s)", provider_id, cleared)
@@ -775,15 +800,45 @@ async def start_oauth_login(provider_id: str, request: Request, profile: Optiona
         raise HTTPException(status_code=400, detail=f"Unknown provider {provider_id}")
     if catalog_entry["flow"] == "external":
         raise HTTPException(400, f"{provider_id} uses an external CLI; run `{catalog_entry['cli_command']}` manually")
+    if catalog_entry["flow"] != "device_code":
+        raise HTTPException(status_code=400, detail="Unsupported flow")
+    flow = await _begin_oauth_setup_metric(provider_id, profile)
     try:
-        if catalog_entry["flow"] == "device_code":
-            return await _start_device_code_flow(provider_id, profile=profile)
-    except HTTPException:
-        raise
+        body = await _start_device_code_flow(provider_id, profile=profile)
     except Exception as e:
+        await _end_oauth_setup_metric(flow, e)
+        if isinstance(e, HTTPException):
+            raise
         _log.exception("oauth/start %s failed", provider_id)
         raise HTTPException(status_code=500, detail=str(e))
-    raise HTTPException(status_code=400, detail="Unsupported flow")
+    if flow is not None:
+        await asyncio.get_running_loop().run_in_executor(None, _track_oauth_setup, flow, body["session_id"])
+    return body
+
+
+async def _begin_oauth_setup_metric(provider_id: str, profile: Optional[str]):
+    """Start the provider-setup metric off the event loop (a cold metrics runtime blocks); None when the
+    owning profile does not collect. Never raises: the start route's own validation owns errors."""
+    from pulse_cli.observability.shared_metrics_setup import begin_oauth_setup, collection_enabled
+    try:
+        profile_name = _oauth_profile_name(profile)
+        home = _resolve_profile_dir(profile_name) if profile_name else None
+        if not collection_enabled(home):
+            return None
+        return await asyncio.get_running_loop().run_in_executor(None, begin_oauth_setup, provider_id, home)
+    except Exception:
+        return None
+
+
+async def _end_oauth_setup_metric(flow, exc: Exception) -> None:
+    if flow is None:
+        return
+    from pulse_cli.observability.shared_metrics_setup import finish_provider_setup, setup_failure_class
+    with contextlib.suppress(Exception):
+        # A 401/403 from the start route is the provider refusing this account/client.
+        refused = isinstance(exc, HTTPException) and exc.status_code in {401, 403}
+        failure = "auth" if refused else setup_failure_class(exc)
+        await asyncio.get_running_loop().run_in_executor(None, finish_provider_setup, flow, "failed", failure)
 
 
 @router.post("/api/providers/oauth/{provider_id}/submit")
@@ -811,7 +866,7 @@ async def poll_oauth_session(provider_id: str, session_id: str, profile: Optiona
     return {
         "session_id": session_id, "status": sess["status"],
         "error_message": sess.get("error_message"), "expires_at": sess.get("expires_at"),
-        # Anxious over a free-tier identity: why a transfer ended, who signed in, and the default model
+        # Nous over a free-tier identity: why a transfer ended, who signed in, and the default model
         # the completion settled on (None when the config was on the user's own model).
         "reason": sess.get("reason"), "account_email": sess.get("account_email"), "model": sess.get("model"),
         # Failed sign-ins over a free-tier identity: can a later attempt succeed, and after how long.

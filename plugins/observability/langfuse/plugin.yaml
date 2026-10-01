@@ -1,7 +1,7 @@
 name: langfuse
 version: "1.0.0"
-description: "Optional Langfuse observability for Pulse — traces conversations, LLM calls, and tool usage. Opt-in via `pulse plugins enable observability/langfuse` or `pulse tools → Langfuse Observability`."
-author: AnxiousResearchLab
+description: "Optional Langfuse observability for PULSE — traces conversations, LLM calls, and tool usage. Opt-in via `pulse plugins enable observability/langfuse` or `pulse tools → Langfuse Observability`."
+author: NousResearch
 requires_env:
   - PULSE_LANGFUSE_PUBLIC_KEY
   - PULSE_LANGFUSE_SECRET_KEY

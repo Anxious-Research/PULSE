@@ -15,6 +15,8 @@ import uuid
 from contextlib import suppress
 from typing import Any, Dict, List, Optional
 
+from agent.i18n import t
+
 try:
     from aiohttp import web
 except ImportError:  # pragma: no cover - mirrors api_server's optional import
@@ -82,7 +84,8 @@ def _pulse_extras(completed, is_partial, is_failed, err_msg, finish_reason: str)
         "error_code": "output_truncated" if finish_reason == "length" else "agent_error"}
 
 
-_TRANSFORMED_NOTICE = "\n\n[Response transformed after streaming]\n"
+def _transformed_notice() -> str:
+    return t("platform.api_server.transformed_notice")
 
 
 def _post_stream_transform(result: Any) -> tuple:
@@ -673,18 +676,18 @@ class OpenAICompatRoutesMixin:
         if not _content_has_visible_payload(user_message):
             return _invalid_request("No user message found in messages")
 
-        # X-Pulse-Session-Key scopes long-term memory per channel; independent of
-        # X-Pulse-Session-Id (the key persists across transcripts, the id rotates on /new).
+        # X-PULSE-Session-Key scopes long-term memory per channel; independent of
+        # X-PULSE-Session-Id (the key persists across transcripts, the id rotates on /new).
         gateway_session_key, key_err = self._parse_session_key_header(request)
         if key_err is not None:
             return key_err
-        # X-Pulse-Session-Id continues an existing session (history from state.db, not the body);
+        # X-PULSE-Session-Id continues an existing session (history from state.db, not the body);
         # requires a configured API key or any client could read history by guessing ids.
-        provided_session_id = request.headers.get("X-Pulse-Session-Id", "").strip()
+        provided_session_id = request.headers.get("X-PULSE-Session-Id", "").strip()
         if provided_session_id:
             if not self._api_key:
                 logger.warning(
-                    "Session continuation via X-Pulse-Session-Id rejected: "
+                    "Session continuation via X-PULSE-Session-Id rejected: "
                     "no API key configured.  Set API_SERVER_KEY to enable "
                     "session continuity.")
                 return _error_response("Session continuation requires API key authentication. "
@@ -712,7 +715,7 @@ class OpenAICompatRoutesMixin:
                 history = []
         else:
             # Stable id from the conversation fingerprint so Open WebUI-style clients map onto
-            # one Pulse session; namespaced by the routed profile (#123989).
+            # one PULSE session; namespaced by the routed profile (#123989).
             first_user = next(
                 (cm.get("content", "") for cm in conversation_messages if cm.get("role") == "user"), "")
             session_id = _derive_chat_session_id(system_prompt, first_user, _api_request_profile.get())
@@ -729,7 +732,7 @@ class OpenAICompatRoutesMixin:
             ephemeral_system_prompt=system_prompt, session_id=session_id,
             gateway_session_key=gateway_session_key, **agent_overrides, route=route,
             relay_metadata=relay_metadata,
-            # #98619: only an explicitly provided X-Pulse-Session-Id is wake-capable (the
+            # #98619: only an explicitly provided X-PULSE-Session-Id is wake-capable (the
             # header is 403-gated on API_SERVER_KEY, so the wake self-post can authenticate
             # and the client can resume the session by sending it again). A fingerprint-derived
             # id from a header-less client is NOT: delegate_task keeps its forced-sync fallback
@@ -803,9 +806,9 @@ class OpenAICompatRoutesMixin:
         # Same #13437 identity contract as the SSE path: an explicit-header client is echoed
         # the stable id it sent; a fingerprint-derived (header-less) turn keeps reporting the
         # id the agent actually resolved, so headerless clients still learn where the turn went.
-        response_headers = {"X-Pulse-Session-Id": (provided_session_id or result.get("session_id", session_id))}
+        response_headers = {"X-PULSE-Session-Id": (provided_session_id or result.get("session_id", session_id))}
         if gateway_session_key:
-            response_headers["X-Pulse-Session-Key"] = gateway_session_key
+            response_headers["X-PULSE-Session-Key"] = gateway_session_key
         # Hard fail (no usable text AND a real failure) -> 502 OpenAI error envelope so SDK
         # clients raise instead of rendering the failure string as message.content.
         if not final_response and (is_failed or is_partial):
@@ -814,10 +817,10 @@ class OpenAICompatRoutesMixin:
                 code="agent_incomplete")
             err_body["error"]["pulse"] = {
                 "completed": completed, "partial": is_partial, "failed": is_failed}
-            response_headers["X-Pulse-Completed"] = "false"
-            response_headers["X-Pulse-Partial"] = "true" if is_partial else "false"
+            response_headers["X-PULSE-Completed"] = "false"
+            response_headers["X-PULSE-Partial"] = "true" if is_partial else "false"
             return web.json_response(err_body, status=502, headers=response_headers)
-        # Soft partial (some text, run incomplete): 200 + finish_reason="length"/Pulse extras.
+        # Soft partial (some text, run incomplete): 200 + finish_reason="length"/PULSE extras.
         response_data = {
             "id": completion_id, "object": "chat.completion", "created": created,
             "model": model_name,
@@ -831,10 +834,10 @@ class OpenAICompatRoutesMixin:
         if is_partial or is_failed or not completed:
             response_data["pulse"] = _pulse_extras(
                 completed, is_partial, is_failed, "" if presentation_muted else err_msg, finish_reason)
-            response_headers["X-Pulse-Completed"] = "false"
-            response_headers["X-Pulse-Partial"] = "true" if is_partial else "false"
+            response_headers["X-PULSE-Completed"] = "false"
+            response_headers["X-PULSE-Partial"] = "true" if is_partial else "false"
             if err_msg and not presentation_muted:
-                response_headers["X-Pulse-Error"] = _redact_api_error_text(err_msg, limit=200)
+                response_headers["X-PULSE-Error"] = _redact_api_error_text(err_msg, limit=200)
         return web.json_response(response_data, headers=response_headers)
 
     async def _run_idempotent(
@@ -873,9 +876,9 @@ class OpenAICompatRoutesMixin:
         can't inject headers after ``prepare()`` flushes them, so they are resolved here)."""
         sse_headers = self._sse_headers(request)
         if session_id:
-            sse_headers["X-Pulse-Session-Id"] = session_id
+            sse_headers["X-PULSE-Session-Id"] = session_id
         if gateway_session_key:
-            sse_headers["X-Pulse-Session-Key"] = gateway_session_key
+            sse_headers["X-PULSE-Session-Key"] = gateway_session_key
         response = web.StreamResponse(status=200, headers=sse_headers)
         await response.prepare(request)
         return response
@@ -949,7 +952,7 @@ class OpenAICompatRoutesMixin:
                 # Chat chunks can only append: a non-append rewrite follows the streamed text (as in the CLI).
                 tail, appended = _post_stream_transform(result)
                 if tail:
-                    await response.write(_sse_frame(_chunk({"content": tail if appended else _TRANSFORMED_NOTICE + tail})))
+                    await response.write(_sse_frame(_chunk({"content": tail if appended else _transformed_notice() + tail})))
             if finish_reason != "stop":
                 if err_msg and not presentation_muted:
                     finish_chunk["error"] = {
@@ -1114,7 +1117,7 @@ class OpenAICompatRoutesMixin:
         if body.get("truncation") == "auto":
             conversation_history = _auto_truncate_response_history(conversation_history)
 
-        # Session precedence: previous_response_id chain > declared X-Pulse-Session-Key > fresh
+        # Session precedence: previous_response_id chain > declared X-PULSE-Session-Key > fresh
         # id. Binding the declared key follows the same precedence: a chain-selected session must
         # not have its routing key rewritten to this header.
         _declared_selected = not stored_session_id and bool(gateway_session_key)
@@ -1205,9 +1208,9 @@ class OpenAICompatRoutesMixin:
                 "instructions": instructions, "session_id": _effective_session_id})
             if conversation:
                 response_store.set_conversation(conversation, response_id)
-        response_headers = {"X-Pulse-Session-Id": _effective_session_id}
+        response_headers = {"X-PULSE-Session-Id": _effective_session_id}
         if gateway_session_key:
-            response_headers["X-Pulse-Session-Key"] = gateway_session_key
+            response_headers["X-PULSE-Session-Key"] = gateway_session_key
         return web.json_response(response_data, headers=response_headers)
 
     async def _handle_get_response(self, request: "web.Request") -> "web.Response":

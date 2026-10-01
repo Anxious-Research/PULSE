@@ -2,13 +2,14 @@ import { useCallback } from 'react'
 
 import { useTheme } from './context'
 
-// Retired skin names land on the canonical Pulse skin so old muscle memory works.
+// Retired skin names land on a still-shipped theme so old muscle memory works.
+// `default` is intentionally NOT aliased: when the backend registers the classic
+// PULSE gold palette under that name (#76579) it must be selectable.
 const ALIASES: Record<string, string> = {
   ares: 'ember',
-  default: 'pulse',
-  gold: 'pulse',
-  pulse: 'pulse',
-  'pulse-light': 'pulse'
+  gold: 'default',
+  pulse: 'default',
+  'nous-light': 'nous'
 }
 
 export function useSkinCommand() {

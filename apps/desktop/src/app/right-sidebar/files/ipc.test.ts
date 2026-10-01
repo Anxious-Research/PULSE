@@ -4,16 +4,16 @@ import { Buffer } from 'node:buffer'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { PulseReadDirEntry, PulseReadDirResult } from '@/global'
+import type { PULSEReadDirEntry, PULSEReadDirResult } from '@/global'
 
 import { clearProjectDirCache, readProjectDir } from './ipc'
 import { $showIgnoredRoots, setShowIgnoredFiles } from './prefs'
 
-const readDir = vi.fn<(path: string) => Promise<PulseReadDirResult>>()
+const readDir = vi.fn<(path: string) => Promise<PULSEReadDirResult>>()
 const readFileDataUrl = vi.fn<(path: string) => Promise<string>>()
 const gitRoot = vi.fn<(path: string) => Promise<string | null>>()
 
-function ok(entries: PulseReadDirEntry[]): PulseReadDirResult {
+function ok(entries: PULSEReadDirEntry[]): PULSEReadDirResult {
   return { entries }
 }
 

@@ -47,7 +47,7 @@ _DEFAULT_TUNNEL_PORT = 9090
 # Hosts allowed by default for AI inference traffic.  Anything else is 403'd.
 _DEFAULT_ALLOWED_HOSTS: Tuple[str, ...] = (
     "openrouter.ai", "*.openrouter.ai", "api.openai.com", "api.anthropic.com", "generativelanguage.googleapis.com",
-    "api.x.ai", "api.mistral.ai", "api.groq.com", "api.together.xyz", "api.deepseek.com", "inference.anxiousresearchlab.com",
+    "api.x.ai", "api.mistral.ai", "api.groq.com", "api.together.xyz", "api.deepseek.com", "inference.anxious-research.com",
 )
 
 # Provider env-var name -> upstream hosts on which the Authorization Bearer token is swapped.
@@ -55,7 +55,7 @@ _BEARER_PROVIDERS: Dict[str, Tuple[str, ...]] = {
     "OPENROUTER_API_KEY": ("openrouter.ai", "*.openrouter.ai"), "OPENAI_API_KEY": ("api.openai.com",),
     "GROQ_API_KEY": ("api.groq.com",), "TOGETHER_API_KEY": ("api.together.xyz",),
     "DEEPSEEK_API_KEY": ("api.deepseek.com",), "MISTRAL_API_KEY": ("api.mistral.ai",),
-    "XAI_API_KEY": ("api.x.ai",), "ANXIOUS_API_KEY": ("inference.anxiousresearchlab.com",),
+    "XAI_API_KEY": ("api.x.ai",), "NOUS_API_KEY": ("inference.anxious-research.com",),
 }
 
 # Non-Authorization-header providers (v0.39 ``match_headers`` is case-insensitive).  ``aliases``
@@ -67,7 +67,7 @@ _BEARER_PROVIDERS: Dict[str, Tuple[str, ...]] = {
 # ``secrets.replace.match_headers`` targets arbitrary header names (case-insensitive; confirmed by the
 # iron-proxy author on PR #30179 and verified in the pinned v0.39.0 source — ``swapHeaders`` +
 # ``parseHeaderMatchers``), so these are first-class swapped providers, not "uncovered". ``aliases`` are
-# interchangeable env-var names for the SAME upstream credential (Pulse' auth.py keys Google on both
+# interchangeable env-var names for the SAME upstream credential (PULSE' auth.py keys Google on both
 # GEMINI_API_KEY and GOOGLE_API_KEY). The sandbox receives the minted token under the canonical name AND
 # every alias so SDKs reading either work.
 _HEADER_AUTH_PROVIDERS: Dict[str, Dict[str, Tuple[str, ...]]] = {
@@ -957,11 +957,3 @@ __all__ = [
     "merge_mappings", "mint_proxy_token", "reload_proxy", "start_proxy", "stop_proxy",
     "write_mappings", "write_proxy_config",
 ]
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-import stat  # noqa: F401,E402
-# ---- END PLUGIN-COMPAT ----

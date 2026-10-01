@@ -1,6 +1,6 @@
 """Browser Use cloud browser provider — the only backend with dual auth: direct
-``BROWSER_USE_API_KEY`` (https://browser-use.com) or the managed Anxious tool gateway (bills to a
-Anxious subscription). Direct first, managed second, unless ``tool_gateway.browser: gateway`` flips
+``BROWSER_USE_API_KEY`` (https://browser-use.com) or the managed Nous tool gateway (bills to a
+Nous subscription). Direct first, managed second, unless ``tool_gateway.browser: gateway`` flips
 it. Config: ``browser.cloud_provider: "browser-use"``."""
 
 from __future__ import annotations
@@ -65,25 +65,25 @@ class BrowserUseBrowserProvider(CloudBrowserProvider):
     release_method = "patch"
     release_path = "/browsers/{session_id}"
     # Hidden from the picker (its "Browser Use" row activates tools/browser_use_cli.py); stays
-    # registered for the Anxious gateway path and legacy cloud_provider configs.
+    # registered for the Nous gateway path and legacy cloud_provider configs.
     setup_tag = None
 
     def is_available(self) -> bool:
         return self._get_config_or_none(refresh_token=False) is not None
 
     def _get_config_or_none(self, *, refresh_token: bool = True) -> Optional[Dict[str, Any]]:
-        # Lazy: managed_tool_gateway pulls in the Anxious auth stack direct-key users never need.
-        from tools.managed_tool_gateway import peek_anxious_access_token, resolve_managed_tool_gateway
-        from tools.tool_backend_helpers import ANXIOUS_MANAGED_PROVIDER, read_selection
+        # Lazy: managed_tool_gateway pulls in the Nous auth stack direct-key users never need.
+        from tools.managed_tool_gateway import peek_nous_access_token, resolve_managed_tool_gateway
+        from tools.tool_backend_helpers import NOUS_MANAGED_PROVIDER, read_selection
 
         def _managed_config() -> Optional[Dict[str, Any]]:
             # Keep availability scans off the synchronous OAuth refresh path.
             managed = resolve_managed_tool_gateway(
-                "browser-use", token_reader=None if refresh_token else peek_anxious_access_token)
+                "browser-use", token_reader=None if refresh_token else peek_nous_access_token)
             if managed is None:
                 return None
             return {
-                "api_key": managed.anxious_user_token,
+                "api_key": managed.nous_user_token,
                 "base_url": managed.gateway_origin.rstrip("/"),
                 "managed_mode": True,
             }
@@ -92,9 +92,9 @@ class BrowserUseBrowserProvider(CloudBrowserProvider):
         selected = read_selection("browser")
         direct = {"api_key": api_key, "base_url": _BASE_URL, "managed_mode": False}
 
-        # Strict: "anxious" (or legacy use_gateway: true) → managed ONLY; any other stored selection →
+        # Strict: "nous" (or legacy use_gateway: true) → managed ONLY; any other stored selection →
         # direct ONLY (no silent managed fallback); never-configured → direct if present, else managed.
-        if selected == ANXIOUS_MANAGED_PROVIDER:
+        if selected == NOUS_MANAGED_PROVIDER:
             return _managed_config()
         if selected is not None:
             return direct if api_key else None
@@ -102,19 +102,19 @@ class BrowserUseBrowserProvider(CloudBrowserProvider):
 
     def _get_config(self) -> Dict[str, Any]:
         from tools.tool_backend_helpers import (
-            ANXIOUS_MANAGED_PROVIDER, managed_anxious_tools_enabled, read_selection, selection_error)
+            NOUS_MANAGED_PROVIDER, managed_nous_tools_enabled, read_selection, selection_error)
 
         config = self._get_config_or_none()
         if config is not None:
             return config
         selected = read_selection("browser")
-        if selected == ANXIOUS_MANAGED_PROVIDER:
+        if selected == NOUS_MANAGED_PROVIDER:
             raise ValueError(selection_error(
-                "browser", ANXIOUS_MANAGED_PROVIDER,
-                "the Anxious Tool Gateway is not available (not entitled or unreachable)"))
+                "browser", NOUS_MANAGED_PROVIDER,
+                "the Nous Tool Gateway is not available (not entitled or unreachable)"))
         if selected is not None:
             raise ValueError(selection_error("browser", selected, "BROWSER_USE_API_KEY is not set"))
-        if managed_anxious_tools_enabled():
+        if managed_nous_tools_enabled():
             raise ValueError(
                 "Browser Use requires either a direct BROWSER_USE_API_KEY "
                 "credential or a managed Browser Use gateway configuration.")
@@ -158,26 +158,3 @@ class BrowserUseBrowserProvider(CloudBrowserProvider):
             "features": {"browser_use": True},
             "external_call_id": response.headers.get("x-external-call-id") if managed_mode else None,
         }
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-import os  # noqa: F401,E402
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'BrowserProvider': ('agent.browser_provider', 'BrowserProvider'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

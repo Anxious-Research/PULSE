@@ -1,4 +1,4 @@
-"""Core NeMo Relay adapters for physical Pulse provider attempts."""
+"""Core NeMo Relay adapters for physical PULSE provider attempts."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ def _api_mode(metadata: dict[str, Any] | None) -> str:
 
 
 def _relay_operation_name(provider_name: str, metadata: dict[str, Any] | None) -> str:
-    """Return Relay's canonical operation name when Pulse knows the API mode."""
+    """Return Relay's canonical operation name when PULSE knows the API mode."""
     protocol = _RELAY_PROTOCOL_BY_API_MODE.get(_api_mode(metadata))
     return protocol[0] if protocol is not None else provider_name
 
@@ -98,13 +98,13 @@ class _ManagedAttempt:
         )
 
     def run_callback(self, callback: Callable[..., Any], *args: Any) -> Any:
-        """Run a Pulse callback in a fresh copy of the captured context.
+        """Run a PULSE callback in a fresh copy of the captured context.
         Relay can invoke callbacks while another still owns the captured Context (hence the
         copy); nested relay calls run unmanaged — see relay_runtime.managed_callback_guard."""
         def guarded() -> Any:
             # See #77244.
             # See #77244.
-            # Pulse-side callbacks run while the native pipeline drives this stream; nested relay calls
+            # PULSE-side callbacks run while the native pipeline drives this stream; nested relay calls
             # they make must bypass managed execution (#77244).
             with relay_runtime.managed_callback_guard():
                 return callback(*args)
@@ -173,7 +173,7 @@ class _ManagedAttempt:
 
 
 def _current_session_id() -> str | None:
-    """Return the inherited Pulse turn's session id, or None outside a live turn."""
+    """Return the inherited PULSE turn's session id, or None outside a live turn."""
     turn = relay_runtime.active_turn()
     return None if turn is None else turn.lease.session_id
 
@@ -183,7 +183,7 @@ def execute(
     session_id: str | None = None, metadata: dict[str, Any] | None = None, defer_logical_completion: bool = False,
 ) -> Any:
     """Run one non-streaming physical provider attempt through Relay.
-    ``session_id`` defaults to the inherited Pulse turn's session (unmanaged when there is none)."""
+    ``session_id`` defaults to the inherited PULSE turn's session (unmanaged when there is none)."""
     attempt = _ManagedAttempt.resolve(session_id, request, metadata, name=name, model_name=model_name)
     if attempt is None:
         return callback(request)
@@ -211,7 +211,7 @@ async def execute_async(
     return attempt.result(managed, defer_logical_completion)
 
 
-# Run under the inherited Pulse turn when present (callers that do not know a session id).
+# Run under the inherited PULSE turn when present (callers that do not know a session id).
 execute_current = execute
 execute_current_async = execute_async
 
@@ -227,7 +227,7 @@ def stream_current(
     finalizer: Callable[[], Any], metadata: dict[str, Any] | None = None,
     defer_logical_completion: bool = False, completed_response_predicate: Callable[[Any], bool] | None = None,
 ) -> Any:
-    """Run a provider stream under the inherited Pulse turn when present.
+    """Run a provider stream under the inherited PULSE turn when present.
     With ``completed_response_predicate`` set, a factory that ignores ``stream=True`` and returns a
     complete response is unwrapped and returned directly (pre-Relay behavior). Detecting that primes
     the lazy pipeline: a genuine first chunk is buffered, but provider latency and pre-first-yield
@@ -648,7 +648,7 @@ class AnthropicStreamAccumulator:
         return {**self._message, "content": blocks}
 
     def response(self, base: Any = None) -> Any:
-        """Return the attribute-shaped response consumed by Pulse."""
+        """Return the attribute-shaped response consumed by PULSE."""
         assembled = self.finalize()
         content = assembled.pop("content", [])
         merged = {**_jsonable_dict(base), **assembled}
@@ -713,7 +713,7 @@ def _complete_logical(
             )
         except Exception:
             # Provider result is authoritative; retain the handle so turn finalization can retry.
-            logger.warning("Pulse Relay logical LLM finalization failed", exc_info=True)
+            logger.warning("PULSE Relay logical LLM finalization failed", exc_info=True)
             return
         if popped is False:
             logger.debug(
@@ -932,11 +932,3 @@ def _run_awaitable(
     if _has_running_event_loop():
         raise RuntimeError(loop_error)
     return asyncio.run(value)
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from dataclasses import dataclass  # noqa: F401,E402
-# ---- END PLUGIN-COMPAT ----

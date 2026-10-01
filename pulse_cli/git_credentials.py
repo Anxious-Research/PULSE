@@ -1,4 +1,4 @@
-"""Non-interactive HTTPS credentials for Pulse's internal git clones (private plugin/MCP/profile repos).
+"""Non-interactive HTTPS credentials for PULSE's internal git clones (private plugin/MCP/profile repos).
 
 :func:`noninteractive_git_env` deliberately disables credential helpers, askpass and global git
 config so a hostile repo cannot make our plumbing prompt or hang. The cost is that a *private*

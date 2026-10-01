@@ -254,7 +254,7 @@ export function createBackendOwnership(deps: BackendOwnershipDeps) {
         // A backend whose Electron parent is still running is NOT an orphan:
         // reaping it would kill a live instance's session. This is what stops
         // a second launch from SIGTERMing the running instance's backend even
-        // if it reaches reapOrphans (see main.ts startPulse + #87295).
+        // if it reaches reapOrphans (see main.ts startPULSE + #87295).
         let parentAlive: boolean | undefined
 
         try {

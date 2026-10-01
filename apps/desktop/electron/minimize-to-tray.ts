@@ -106,9 +106,18 @@ export function createMinimizeToTray(options: Options) {
     options.restoreMainWindow()
   }
 
-  const destroyTray = () => {
+  const destroyTray = (force = false) => {
     stopWatchingHost?.()
     stopWatchingHost = undefined
+
+    // Linux StatusNotifierItem stays exported after Tray.destroy(), so a later
+    // `new Tray()` in this process cannot re-export and the panel icon dies
+    // (#126353). Park the instance until the app actually quits or the host
+    // disappears.
+    if (process.platform === 'linux' && !quitting && !force) {
+      return
+    }
+
     tray?.destroy()
     tray = null
   }
@@ -117,7 +126,7 @@ export function createMinimizeToTray(options: Options) {
     // Losing the shell/tray must never strand an invisible app.
     hostGeneration += 1
     restoreHidden()
-    destroyTray()
+    destroyTray(true)
     broadcast()
   }
 
@@ -127,6 +136,20 @@ export function createMinimizeToTray(options: Options) {
     if (!on) {
       restoreHidden()
       destroyTray()
+    } else if (!quitting && status().available && process.platform === 'linux' && !stopWatchingHost) {
+      try {
+        const { watchLinuxTrayHost } = await import('./tray-host')
+        const generation = hostGeneration
+        stopWatchingHost = await watchLinuxTrayHost(hostLost)
+
+        if (generation !== hostGeneration) {
+          throw new Error('System tray host disappeared')
+        }
+      } catch (error) {
+        restoreHidden()
+        destroyTray(true)
+        options.log(`[tray] unavailable; ordinary window behavior retained: ${error}`)
+      }
     } else if (!status().available && !quitting) {
       try {
         if (process.platform === 'linux') {
@@ -158,13 +181,13 @@ export function createMinimizeToTray(options: Options) {
             height: process.platform === 'darwin' ? 18 : 24
           })
         )
-        tray.setToolTip('Pulse')
+        tray.setToolTip('PULSE')
         tray.setContextMenu(
           Menu.buildFromTemplate([
-            { label: 'Show Pulse', click: restore },
+            { label: 'Show PULSE', click: restore },
             { type: 'separator' },
             // Do not bypass the ordinary active-work confirmation or teardown.
-            { label: 'Quit Pulse', click: () => app.quit() }
+            { label: 'Quit PULSE', click: () => app.quit() }
           ])
         )
 
@@ -202,6 +225,11 @@ export function createMinimizeToTray(options: Options) {
 
       if (process.platform === 'win32') {
         win.setSkipTaskbar(true)
+        // A hidden Chromium window on Windows neither emits blur nor releases
+        // the UI thread's keyboard focus: keys keep going to the invisible
+        // page, trapping keyboard navigation and screen readers in it. Release
+        // focus before hiding -- once hidden it no longer takes (#126570).
+        win.blur()
       }
 
       win.hide()
@@ -293,7 +321,10 @@ export function createMinimizeToTray(options: Options) {
 
   ipcMain.handle('pulse:minimize-to-tray:get', status)
   ipcMain.handle('pulse:minimize-to-tray:set', (_event, on) => setEnabled(on === true))
-  app.on('will-quit', destroyTray)
+  app.on('will-quit', () => {
+    quitting = true
+    destroyTray()
+  })
 
   return {
     start,

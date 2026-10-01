@@ -1,4 +1,4 @@
-# nix/pulse-agent.nix — Overridable Pulse Agent package
+# nix/pulse-agent.nix — Overridable PULSE Agent package
 #
 # callPackage auto-wires nixpkgs args; flake inputs are passed explicitly.
 # Users override via:
@@ -78,7 +78,7 @@ let
     tag = null;
   });
 
-  mkPulseVenv =
+  mkPULSEVenv =
     extraDependencyGroups:
     callPackage ./python.nix {
       inherit uv2nix pyproject-nix pyproject-build-systems;
@@ -86,7 +86,7 @@ let
       dependency-groups = [ "all" ] ++ extraDependencyGroups;
     };
 
-  pulseVenv = (mkPulseVenv extraDependencyGroups).venv;
+  pulseVenv = (mkPULSEVenv extraDependencyGroups).venv;
 
   pmRuntime = callPackage ./pm-runtime.nix {
     inherit uv2nix pyproject-nix pyproject-build-systems;
@@ -94,7 +94,7 @@ let
 
   # Icons render on the runtime venv: Pillow and resvg-py are core dependencies.
   generatedIcons = callPackage ./icons.nix {
-    inherit (mkPulseVenv [ ]) venv;
+    inherit (mkPULSEVenv [ ]) venv;
   };
 
   pulseNpmLib = callPackage ./lib.nix {
@@ -302,7 +302,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   passthru =
     let
-      devPython = (mkPulseVenv (extraDependencyGroups ++ [ "dev" ])).editableVenv;
+      devPython = (mkPULSEVenv (extraDependencyGroups ++ [ "dev" ])).editableVenv;
     in
     {
       inherit

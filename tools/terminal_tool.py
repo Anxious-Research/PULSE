@@ -7,7 +7,7 @@ plugin-registered backends. Handles background processes, sandbox lifecycle
 (per-task cache, idle reaper, atexit teardown) and sudo password plumbing.
 Cloud-sandbox persistent filesystems preserve working state across sandbox
 recreation but do NOT guarantee the same live sandbox or long-running
-processes survive cleanup, idle reaping, or Pulse exit.
+processes survive cleanup, idle reaping, or PULSE exit.
 
 Companion modules (re-exported here, so ``tools.terminal_tool.<name>`` stays the
 import/patch target): ``terminal_tool_config`` (TERMINAL_* reads, ``_quiet``),
@@ -53,7 +53,7 @@ from tools.terminal_tool_backends import (
     _record_unavailable_reason, terminal_backend_unavailable_reason,  # noqa: F401 — re-exported
 )
 # display_pulse_home imported lazily at call site (stale-module safety during pulse update)
-from tools.tool_backend_helpers import coerce_modal_mode, managed_anxious_tools_enabled
+from tools.tool_backend_helpers import coerce_modal_mode, managed_nous_tools_enabled
 
 
 def _safe_parse_import_env(name: str, default: Any, converter, type_label: str):
@@ -113,7 +113,7 @@ def _current_session_key() -> str:
 
 
 def _current_session_profile() -> str:
-    """Active session's Pulse profile name, or "" (same lookup discipline as
+    """Active session's PULSE profile name, or "" (same lookup discipline as
     :func:`_current_session_key`)."""
     from gateway.session_context import get_session_env
 
@@ -187,11 +187,11 @@ def _maybe_reap_docker_orphans(container_config: Dict[str, Any]) -> None:
     """Run the docker orphan reaper once per process, if enabled.
 
     Sweeps Exited containers labeled ``pulse-agent=1`` for the current
-    profile — leftovers of Pulse processes that died without firing
+    profile — leftovers of PULSE processes that died without firing
     ``atexit`` (SIGKILL, OOM, closed terminal). Conservative: only containers
     older than ``2 × lifetime_seconds``, profile-scoped. Gates:
     ``terminal.docker_orphan_reaper: false`` (operator opt-out, e.g. several
-    Pulse processes sharing a profile) and the once-per-interpreter flag so
+    PULSE processes sharing a profile) and the once-per-interpreter flag so
     parallel subagent / RL-rollout calls don't re-sweep.
     """
     global _docker_orphan_reaper_ran
@@ -749,6 +749,7 @@ def _get_env_config() -> Dict[str, Any]:
         "modal_image": _tenv("TERMINAL_MODAL_IMAGE", default_image),
         "daytona_image": _tenv("TERMINAL_DAYTONA_IMAGE", default_image),
         "vercel_runtime": _tenv("TERMINAL_VERCEL_RUNTIME", "").strip(),
+        "vercel_image": _tenv("TERMINAL_VERCEL_IMAGE", "").strip(),
         "cwd": cwd,
         "host_cwd": host_cwd,
         "docker_mount_cwd_to_workspace": mount_docker_cwd,
@@ -1238,8 +1239,11 @@ def _run_foreground(
     command: str, env: Any, plan: _ExecPlan, *,
     task_id: Optional[str], session_id: Optional[str], session_key: str,
     workdir: Optional[str], approval_note: Optional[str], clear_interrupt: bool,
+    metered: bool = True,
 ) -> str:
-    """Execute in the foreground with retry on transient errors, then finalize."""
+    """Execute in the foreground with retry on transient errors, then finalize. ``metered``
+    is False for PULSE' own control-plane commands (``_host_local``)."""
+    from pulse_cli.observability.shared_metrics_harness import record_terminal_outcome
     max_retries = 3
     env_type, eff, effective_timeout = plan.env_type, plan.effective_task_id, plan.effective_timeout
 
@@ -1269,6 +1273,8 @@ def _run_foreground(
             )
             break
         except Exception as e:
+            # A backend exception (e.g. an SSH connect timeout) never reached an exit status, so it
+            # is not a terminal outcome; PULSE' own deadline arrives as ``pulse_timed_out``.
             if "timeout" in str(e).lower():
                 return _error_json(f"Command timed out after {effective_timeout} seconds", exit_code=124)
             # Retry on transient errors
@@ -1282,12 +1288,14 @@ def _run_foreground(
                          max_retries, _safe_command_preview(command), type(e).__name__, e, eff, env_type)
             return _error_json(_redact_terminal_error_text(f"Command execution failed: {type(e).__name__}: {e}"))
 
-    if result.get("yielded_session_id"):
+    if result.get("yielded_session_id"):  # handed to the background: no exit status yet
         return json.dumps({
             "output": result.get("output", ""), "exit_code": None, "error": None,
             "status": "yielded_to_background", "session_id": result["yielded_session_id"],
             "pid": result.get("pid"), "notify_on_complete": True, "note": _YIELDED_NOTE,
         }, ensure_ascii=False)
+    if metered:
+        record_terminal_outcome(command, env_type, result)
     return finalize_foreground_result(
         command=command, result=result, env=env, env_type=env_type, effective_task_id=eff,
         task_id=task_id, session_id=session_id, session_key=session_key, workdir=workdir,
@@ -1390,9 +1398,11 @@ def terminal_tool(
     process_manage kill (#41225).
     ``_completion_output_chars`` (internal) sizes the completion notification's output for a
     spawner whose output is the payload (a bot DM's reply); 0 keeps the usual tail.
-    ``_host_local`` forces the local backend for Pulse-owned control-plane
+    ``_host_local`` forces the local backend for PULSE-owned control-plane
     children (kept in a separate env cache from the configured backend).
     """
+    from pulse_cli.observability.shared_metrics_loop import record_terminal_backend as _metered
+    plan = None
     try:
         plan = _plan_execution(
             command, task_id=task_id, timeout=timeout, background=background, _host_local=_host_local,
@@ -1461,18 +1471,19 @@ def terminal_tool(
             )
             if plan.promoted_from_foreground_timeout is not None:
                 result = _with_promoted_note(result, plan.promoted_from_foreground_timeout)
-            return result
-        return _run_foreground(
+            return _metered(None if _host_local else plan, result)
+        return _metered(None if _host_local else plan, _run_foreground(
             command, env, plan,
             task_id=task_id, session_id=session_id, session_key=session_key,
             workdir=workdir, approval_note=verdict.note, clear_interrupt=verdict.approved_run,
-        )
+            metered=not _host_local,
+        ))
     except _Rejected as r:
         return r.result_json
     except EnvironmentConnectionError as e:
-        return _degraded_result(e, task_id)
+        return _metered(None if _host_local else plan, _degraded_result(e, task_id), error_class="tool_error")
     except Exception as e:
-        return _fatal_error_json(e)
+        return _metered(None if _host_local else plan, _fatal_error_json(e), error_class="exception")
 
 
 def check_terminal_requirements() -> bool:
@@ -1626,43 +1637,3 @@ registry.register(
     emoji="💻",
     max_result_size_chars=100_000,
 )
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from pathlib import Path  # noqa: F401,E402
-import importlib.util  # noqa: F401,E402
-import platform  # noqa: F401,E402
-import re  # noqa: F401,E402
-import shlex  # noqa: F401,E402
-import shutil  # noqa: F401,E402
-import stat  # noqa: F401,E402
-import subprocess  # noqa: F401,E402
-import sys  # noqa: F401,E402
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'cleanup_vm': ('tools.terminal_tool_lifecycle', 'cleanup_vm'),
-    'env_var_enabled': ('utils', 'env_var_enabled'),
-    'get_active_env': ('tools.terminal_tool_lifecycle', 'get_active_env'),
-    'has_direct_modal_credentials': ('tools.tool_backend_helpers', 'has_direct_modal_credentials'),
-    'is_interrupted': ('tools.interrupt', 'is_interrupted'),
-    'is_managed_tool_gateway_ready': ('tools.managed_tool_gateway', 'is_managed_tool_gateway_ready'),
-    'is_persistent_env': ('tools.terminal_tool_lifecycle', 'is_persistent_env'),
-    'anxious_tool_gateway_unavailable_message': ('tools.tool_backend_helpers', 'anxious_tool_gateway_unavailable_message'),
-    'resolve_modal_backend_state': ('tools.tool_backend_helpers', 'resolve_modal_backend_state'),
-    'strip_inert_heredoc_bodies': ('tools.shell_heredoc', 'strip_inert_heredoc_bodies'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

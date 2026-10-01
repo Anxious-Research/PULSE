@@ -1,6 +1,6 @@
 /**
  * Cold bot switch acknowledges the clicked row before the backend answers
- * .
+ * (pulse-agent#120277).
  *
  * The mark is published only after the fronted-tab check misses, and before
  * prepareBotSource. It is not chat ownership: highlight, routing, drafts, and
@@ -9,6 +9,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type * as CanonicalChat from './canonical-chat'
 import type { RosterRow } from './types'
 
 const { openBotCanonicalChat, prepareBotSource } = vi.hoisted(() => ({
@@ -16,9 +17,10 @@ const { openBotCanonicalChat, prepareBotSource } = vi.hoisted(() => ({
   prepareBotSource: vi.fn()
 }))
 
-vi.mock('./canonical-chat', () => ({
+vi.mock('./canonical-chat', async () => ({
   CANONICAL_CHAT_TITLE: 'Bot Chat',
   ensureBotMetadata: vi.fn(async () => ({})),
+  isStaleBotChatTile: (await vi.importActual<typeof CanonicalChat>('./canonical-chat')).isStaleBotChatTile,
   notifyBotOpenFailure: vi.fn(),
   openBotCanonicalChat,
   prepareBotSource,

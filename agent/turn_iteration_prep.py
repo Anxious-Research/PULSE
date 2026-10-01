@@ -120,10 +120,10 @@ def prepare_iteration(
         _INTERRUPT_SCAFFOLD_MARKER, _maybe_inject_run_budget_wrapup
     )
 
-    # anxious.anthropic_wire=auto: a wire switch decided from the previous response lands here,
+    # nous.anthropic_wire=auto: a wire switch decided from the previous response lands here,
     # before this iteration's request is built and with nothing in flight.
-    if getattr(agent, "_anxious_wire_pending", None):
-        from agent.anxious_wire import apply_pending_wire_switch
+    if getattr(agent, "_nous_wire_pending", None):
+        from agent.nous_wire import apply_pending_wire_switch
         apply_pending_wire_switch(agent)
 
     # Fire step_callback for gateway hooks (agent:step event).
@@ -137,14 +137,14 @@ def prepare_iteration(
     if agent._skill_nudge_interval > 0 and "skill_manage" in agent.valid_tool_names:
         agent._iters_since_skill += 1
 
-    # Anxious agent keys live ~1 h and a single turn can run for hours: adopt the keepalive's fresh
+    # Nous agent keys live ~1 h and a single turn can run for hours: adopt the keepalive's fresh
     # key before the one in hand expires (local JWT exp read; no network unless inside the skew)
     # instead of letting this iteration's request 401. With many agents sharing the hour that
     # 401 was a storm, and the pool benched the sole credential for all of them.
     try:
-        agent._adopt_anxious_key_before_expiry()
+        agent._adopt_nous_key_before_expiry()
     except Exception:
-        logger.debug("Anxious key pre-expiry adoption failed", exc_info=True)
+        logger.debug("Nous key pre-expiry adoption failed", exc_info=True)
 
     # Drain a /steer sent during the last API call so it lands THIS iteration. Delivered as a
     # standalone user row after the newest tool result (never smeared onto the tool row: that

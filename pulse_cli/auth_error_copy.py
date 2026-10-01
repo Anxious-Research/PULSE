@@ -26,7 +26,7 @@ DEVICE_FLOW_ERROR_COPY = {
     "invalid_grant": (
         "The sign-in code was not accepted by the server. Run `{retry}` to get a new code."),
     "invalid_client": (
-        "The server did not recognize this copy of Pulse. Run `pulse update`, then `{retry}` again."),
+        "The server did not recognize this copy of PULSE. Run `pulse update`, then `{retry}` again."),
 }
 
 
@@ -78,15 +78,18 @@ def _classify(exc: BaseException, rules: Sequence[_Rule], other: str) -> str:
 
 
 def sign_in_failure_lines(
-    exc: BaseException, *, service_host: str = "portal.anxiousresearchlab.com", retry_command: str = "pulse portal",
+    exc: BaseException, *, service_host: str = "portal.anxious-research.com", retry_command: str = "pulse portal",
 ) -> list:
     """Lines to print when a device-code / browser sign-in fails for any non-timeout reason."""
+    from pulse_cli.observability.shared_metrics_setup import note_sign_in_failure
+
+    note_sign_in_failure(exc)
     if isinstance(exc, SignInCopyError):
         return str(exc).splitlines()
     rules: Sequence[_Rule] = (
         (is_cancelled, "Sign-in was cancelled. Run `{retry}` when you want to try again."),
         (is_network_error,
-         "Could not sign in: Pulse could not reach {host}. Check your internet connection or proxy, "
+         "Could not sign in: PULSE could not reach {host}. Check your internet connection or proxy, "
          "then run `{retry}` again."),
     )
     lead = _classify(

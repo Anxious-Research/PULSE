@@ -31,7 +31,7 @@ test('the current CLI "Not installed:" tail parses into findings + trust', () =>
   const hardBlock = [
     'Scan: 3 findings. Verdict: DANGEROUS',
     "Not installed: the security scan found 3 high-risk pattern(s) in 'org/skill' (listed above). " +
-      'Pulse never installs unverified skills with high-risk findings, even with --force. ' +
+      'PULSE never installs unverified skills with high-risk findings, even with --force. ' +
       'Review the findings or ask the author to fix them; to read the skill without installing, run `pulse skills inspect org/skill`.'
   ]
 

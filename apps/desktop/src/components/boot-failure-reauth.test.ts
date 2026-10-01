@@ -28,7 +28,7 @@ function config(overrides: Partial<DesktopConnectionConfig> = {}): DesktopConnec
     sshUser: '',
     sshPort: null,
     sshKeyPath: '',
-    sshRemotePulsePath: '',
+    sshRemotePULSEPath: '',
     sshRemoteProfile: '',
     ...overrides
   }
@@ -110,7 +110,7 @@ describe('isRemoteReauthError', () => {
   })
 
   it('ignores non-auth boot errors and nullish', () => {
-    expect(isRemoteReauthError('Pulse background process exited during startup.')).toBe(false)
+    expect(isRemoteReauthError('PULSE background process exited during startup.')).toBe(false)
     expect(isRemoteReauthError(null)).toBe(false)
   })
 })
@@ -120,7 +120,7 @@ describe('shouldApplyPostBootProgressError', () => {
     expect(shouldApplyPostBootProgressError('Your remote gateway session has expired.')).toBe(true)
     expect(
       shouldApplyPostBootProgressError(
-        'Could not reach the remote Pulse gateway while refreshing its WebSocket ticket. Try reconnecting.'
+        'Could not reach the remote PULSE gateway while refreshing its WebSocket ticket. Try reconnecting.'
       )
     ).toBe(false)
     expect(shouldApplyPostBootProgressError('Lost connection to the gateway')).toBe(false)
@@ -151,20 +151,20 @@ describe('deriveProviderShape', () => {
   })
 
   it('OAuth shape when the provider is a redirect IDP', () => {
-    expect(deriveProviderShape([{ name: 'pulse', displayName: 'Anxious Research', supportsPassword: false }])).toEqual({
+    expect(deriveProviderShape([{ name: 'nous', displayName: 'Nous Research', supportsPassword: false }])).toEqual({
       isPassword: false,
-      providerLabel: 'Anxious Research'
+      providerLabel: 'Nous Research'
     })
   })
 
   it('mixed deployment keeps generic OAuth copy (not every provider is password)', () => {
     const shape = deriveProviderShape([
       { name: 'basic', displayName: 'Username & Password', supportsPassword: true },
-      { name: 'pulse', displayName: 'Anxious Research', supportsPassword: false }
+      { name: 'nous', displayName: 'Nous Research', supportsPassword: false }
     ])
 
     expect(shape.isPassword).toBe(false)
-    expect(shape.providerLabel).toBe('Username & Password / Anxious Research')
+    expect(shape.providerLabel).toBe('Username & Password / Nous Research')
   })
 
   it('falls back to name when displayName is empty', () => {

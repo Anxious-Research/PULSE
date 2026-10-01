@@ -1,7 +1,7 @@
 /**
  * Failure class: FIRST RUN on a healthy install.
  *
- * A user who installed Pulse with scripts/install.sh and built the Desktop
+ * A user who installed PULSE with scripts/install.sh and built the Desktop
  * app with `pulse desktop` opens the app. It must find that install and go
  * straight to chat — on the first launch and on every later one — and never
  * show the first-run setup chooser or start the bootstrap installer

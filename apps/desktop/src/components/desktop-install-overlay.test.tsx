@@ -106,15 +106,15 @@ describe('DesktopInstallOverlay first-run setup', () => {
 
     render(<DesktopInstallOverlay />)
 
-    expect(await screen.findByText('Set up Pulse Desktop')).toBeTruthy()
-    expect(screen.getByText('Connect to existing Pulse')).toBeTruthy()
-    expect(screen.getByText('Install Pulse locally')).toBeTruthy()
+    expect(await screen.findByText('Set up PULSE Desktop')).toBeTruthy()
+    expect(screen.getByText('Connect to existing PULSE')).toBeTruthy()
+    expect(screen.getByText('Install PULSE locally')).toBeTruthy()
     expect(screen.getByText(/Will install to/i)).toBeTruthy()
     expect(screen.queryByText(/steps complete/i)).toBeNull()
     expect(screen.queryByText(/Fetching installer manifest/i)).toBeNull()
   })
 
-  it('continues local bootstrap only when Install Pulse locally is selected', async () => {
+  it('continues local bootstrap only when Install PULSE locally is selected', async () => {
     const desktop = installDesktopMock(
       bootstrapState({
         setupChoice: {
@@ -128,16 +128,16 @@ describe('DesktopInstallOverlay first-run setup', () => {
 
     render(<DesktopInstallOverlay />)
 
-    fireEvent.click(await screen.findByText('Install Pulse locally'))
+    fireEvent.click(await screen.findByText('Install PULSE locally'))
 
     expect(desktop.continueBootstrapLocal).toHaveBeenCalledTimes(1)
-    expect(screen.getByText('Set up Pulse Desktop')).toBeTruthy()
+    expect(screen.getByText('Set up PULSE Desktop')).toBeTruthy()
 
     act(() => {
       desktop.emitBootstrapEvent({ type: 'manifest', protocolVersion: 1, stages: [] })
     })
 
-    await waitFor(() => expect(screen.queryByText('Set up Pulse Desktop')).toBeNull())
+    await waitFor(() => expect(screen.queryByText('Set up PULSE Desktop')).toBeNull())
     expect(screen.getByText(/Fetching installer manifest/i)).toBeTruthy()
   })
 
@@ -156,11 +156,11 @@ describe('DesktopInstallOverlay first-run setup', () => {
     desktop.continueBootstrapLocal = undefined as never
     render(<DesktopInstallOverlay />)
 
-    const install = (await screen.findByText('Install Pulse locally')).closest('button') as HTMLButtonElement
+    const install = (await screen.findByText('Install PULSE locally')).closest('button') as HTMLButtonElement
     fireEvent.click(install)
 
     expect(
-      await screen.findByText('Local installation could not start. Restart Pulse Desktop and try again.')
+      await screen.findByText('Local installation could not start. Restart PULSE Desktop and try again.')
     ).toBeTruthy()
     expect(install.disabled).toBe(false)
   })
@@ -183,14 +183,14 @@ describe('DesktopInstallOverlay first-run setup', () => {
     // Click the instant the choice paints, before React drains the passive
     // effect that reacts to the first snapshot. A loaded runner hits this
     // window by accident; observing the DOM directly hits it every time.
-    const install = (await whenPresent('Install Pulse locally')).closest('button') as HTMLButtonElement
+    const install = (await whenPresent('Install PULSE locally')).closest('button') as HTMLButtonElement
     fireEvent.click(install)
 
     await act(async () => {
       await Promise.resolve()
     })
 
-    expect(screen.queryByText('Local installation could not start. Restart Pulse Desktop and try again.')).toBeTruthy()
+    expect(screen.queryByText('Local installation could not start. Restart PULSE Desktop and try again.')).toBeTruthy()
   })
 
   it('clears a stale local-start error when a repair presents a different root', async () => {
@@ -208,9 +208,9 @@ describe('DesktopInstallOverlay first-run setup', () => {
     desktop.continueBootstrapLocal = undefined as never
     render(<DesktopInstallOverlay />)
 
-    fireEvent.click((await screen.findByText('Install Pulse locally')).closest('button') as HTMLButtonElement)
+    fireEvent.click((await screen.findByText('Install PULSE locally')).closest('button') as HTMLButtonElement)
     expect(
-      await screen.findByText('Local installation could not start. Restart Pulse Desktop and try again.')
+      await screen.findByText('Local installation could not start. Restart PULSE Desktop and try again.')
     ).toBeTruthy()
 
     act(() => {
@@ -222,7 +222,7 @@ describe('DesktopInstallOverlay first-run setup', () => {
       })
     })
 
-    expect(screen.queryByText('Local installation could not start. Restart Pulse Desktop and try again.')).toBeNull()
+    expect(screen.queryByText('Local installation could not start. Restart PULSE Desktop and try again.')).toBeNull()
   })
 
   it('opens the remote connection form from the first-run choice', async () => {
@@ -234,7 +234,7 @@ describe('DesktopInstallOverlay first-run setup', () => {
 
     render(<DesktopInstallOverlay />)
 
-    fireEvent.click(await screen.findByText('Connect to existing Pulse'))
+    fireEvent.click(await screen.findByText('Connect to existing PULSE'))
 
     expect(await screen.findByText('Gateway URL')).toBeTruthy()
     expect(screen.getByText('Test connection')).toBeTruthy()
@@ -250,13 +250,13 @@ describe('DesktopInstallOverlay first-run setup', () => {
 
     render(<DesktopInstallOverlay />)
 
-    fireEvent.click(await screen.findByText('Connect to existing Pulse'))
+    fireEvent.click(await screen.findByText('Connect to existing PULSE'))
     expect(await screen.findByText('Gateway URL')).toBeTruthy()
 
     fireEvent.click(screen.getByText('Back'))
 
-    expect(await screen.findByText('Set up Pulse Desktop')).toBeTruthy()
-    expect(screen.getByText('Install Pulse locally')).toBeTruthy()
+    expect(await screen.findByText('Set up PULSE Desktop')).toBeTruthy()
+    expect(screen.getByText('Install PULSE locally')).toBeTruthy()
   })
 
   it('requires a successful token connection test before applying remote config', async () => {
@@ -287,7 +287,7 @@ describe('DesktopInstallOverlay first-run setup', () => {
 
     render(<DesktopInstallOverlay />)
 
-    fireEvent.click(await screen.findByText('Connect to existing Pulse'))
+    fireEvent.click(await screen.findByText('Connect to existing PULSE'))
     fireEvent.change(await screen.findByPlaceholderText('https://gateway.example.com/pulse'), {
       target: { value: 'https://gateway.example.com/pulse' }
     })
@@ -353,7 +353,7 @@ describe('DesktopInstallOverlay first-run setup', () => {
 
     render(<DesktopInstallOverlay />)
 
-    fireEvent.click(await screen.findByText('Connect to existing Pulse'))
+    fireEvent.click(await screen.findByText('Connect to existing PULSE'))
     fireEvent.change(await screen.findByPlaceholderText('https://gateway.example.com/pulse'), {
       target: { value: 'https://gateway.example.com/pulse' }
     })
@@ -405,7 +405,7 @@ describe('DesktopInstallOverlay first-run setup', () => {
 
     render(<DesktopInstallOverlay />)
 
-    fireEvent.click(await screen.findByText('Connect to existing Pulse'))
+    fireEvent.click(await screen.findByText('Connect to existing PULSE'))
     fireEvent.change(await screen.findByPlaceholderText('https://gateway.example.com/pulse'), {
       target: { value: 'https://gateway.example.com/pulse' }
     })
@@ -471,7 +471,7 @@ describe('DesktopInstallOverlay first-run setup', () => {
       })
     )
     render(<DesktopInstallOverlay />)
-    fireEvent.click(await screen.findByText('Connect to existing Pulse'))
+    fireEvent.click(await screen.findByText('Connect to existing PULSE'))
     const url = screen.getByPlaceholderText('https://gateway.example.com/pulse')
     fireEvent.change(url, { target: { value: 'https://a.example' } })
     fireEvent.click(await screen.findByRole('button', { name: /Sign in with/ }))
@@ -484,7 +484,7 @@ describe('DesktopInstallOverlay first-run setup', () => {
     expect(saveConnectionConfig).not.toHaveBeenCalled()
     expect(desktop.applyConnectionConfig).not.toHaveBeenCalled()
     fireEvent.click(screen.getByText('Back'))
-    fireEvent.click(await screen.findByText('Install Pulse locally'))
+    fireEvent.click(await screen.findByText('Install PULSE locally'))
     expect(desktop.continueBootstrapLocal).toHaveBeenCalledTimes(1)
     expect(saveConnectionConfig).not.toHaveBeenCalled()
   })
@@ -503,7 +503,7 @@ describe('DesktopInstallOverlay first-run setup', () => {
 
     render(<DesktopInstallOverlay />)
 
-    expect(await screen.findByText('Pulse needs a one-time install')).toBeTruthy()
+    expect(await screen.findByText('PULSE needs a one-time install')).toBeTruthy()
 
     fireEvent.click(screen.getByText('Connect existing'))
 
@@ -544,7 +544,7 @@ describe('DesktopInstallOverlay first-run setup', () => {
     fireEvent.click(screen.getByText('Apply and reconnect'))
 
     await waitFor(() => expect(screen.queryByText('Gateway URL')).toBeNull())
-    expect(screen.queryByText('Pulse needs a one-time install')).toBeNull()
+    expect(screen.queryByText('PULSE needs a one-time install')).toBeNull()
   })
 
   it('dismisses a cancelled/failed install via the footer Close button, without reloading or resetting bootstrap', async () => {
@@ -574,9 +574,9 @@ describe('DesktopInstallOverlay first-run setup', () => {
 })
 
 it.each([
-  ['installed', false, 'Use Pulse on this computer', /already installed here/i, false],
-  ['bundled', true, 'Use Pulse on this computer', /included with this app/i, false],
-  [undefined, false, 'Install Pulse locally', /Will install to/i, true]
+  ['installed', false, 'Use PULSE on this computer', /already installed here/i, false],
+  ['bundled', true, 'Use PULSE on this computer', /included with this app/i, false],
+  [undefined, false, 'Install PULSE locally', /Will install to/i, true]
 ] as const)(
   'local presentation for %s (including old backends)',
   async (
@@ -587,7 +587,7 @@ it.each([
     footer: boolean
   ): Promise<void> => {
     const state: DesktopBootstrapState = bootstrapState({
-      setupChoice: { platform: 'win32', activeRoot: 'C:\\Pulse', local: local ?? 'none', bundled }
+      setupChoice: { platform: 'win32', activeRoot: 'C:\\PULSE', local: local ?? 'none', bundled }
     })
 
     if (local === undefined && state.setupChoice) {
@@ -601,7 +601,7 @@ it.each([
     expect(screen.queryByText(/Will install to/i) !== null).toBe(footer)
 
     if (!footer) {
-      expect(screen.queryByText('Install Pulse locally')).toBeNull()
+      expect(screen.queryByText('Install PULSE locally')).toBeNull()
     }
   }
 )

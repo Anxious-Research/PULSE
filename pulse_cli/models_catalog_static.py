@@ -25,15 +25,17 @@ _OPENROUTER_DESCRIPTIONS = {
     "openai/gpt-6-astra-pro-fast": "2x price, priority tier",
     "openai/gpt-6-astra-pro-flex": "0.5x price, flex tier",
     "stealth/union-alpha": "free, stealth model",
+    "stealth/space-bunny-alpha": "free, stealth model",
 }
 OPENROUTER_MODELS: list[tuple[str, str]] = [
     (mid, _OPENROUTER_DESCRIPTIONS.get(mid, "free" if mid.endswith(":free") else ""))
     for mid in (
         "anthropic/claude-fable-5.1", "anthropic/claude-fable-5", "anthropic/claude-opus-5.5",
         "anthropic/claude-opus-5", "anthropic/claude-opus-5-fast", "anthropic/claude-opus-4.8", "anthropic/claude-opus-4.8-fast",
-        "anthropic/claude-sonnet-5", "anthropic/claude-haiku-4.5", "openai/gpt-6-astra", "openai/gpt-6-astra-fast",
-        "openai/gpt-6-astra-flex", "openai/gpt-6-astra-pro", "openai/gpt-6-astra-pro-fast", "openai/gpt-6-astra-pro-flex",
-        "openai/gpt-6-sol", "openai/gpt-6-sol-pro",
+        "anthropic/claude-sonnet-5.5", "anthropic/claude-sonnet-5", "anthropic/claude-haiku-4.5", "openai/gpt-6-astra",
+        "openai/gpt-6-astra-fast", "openai/gpt-6-astra-flex", "openai/gpt-6-astra-pro", "openai/gpt-6-astra-pro-fast",
+        "openai/gpt-6-astra-pro-flex",
+        "openai/gpt-6.1-sol", "openai/gpt-6.1-sol-pro", "openai/gpt-6-sol", "openai/gpt-6-sol-pro",
         "openai/gpt-6-luna", "openai/gpt-6-luna-pro",
         "openai/gpt-5.5", "openai/gpt-5.5-pro", "openai/gpt-5.4-mini", "google/gemini-3.1-pro-preview",
         "google/gemini-3.8-flash", "google/gemini-3.7-flash", "x-ai/grok-4.7", "x-ai/grok-4.6",
@@ -48,11 +50,11 @@ OPENROUTER_MODELS: list[tuple[str, str]] = [
         "openrouter/pareto-code", "thinkingmachines/inkling:free", "thinkingmachines/inkling-small:free",
         "minimax/minimax-m3:free", "z-ai/glm-5.2:free", "poolside/laguna-s-2.1:free", "poolside/laguna-xs-2.1:free",
         "nvidia/nemotron-3-super-120b-a12b:free", "nvidia/nemotron-3-ultra-550b-a55b:free",
-        "nvidia/nemotron-3.5-lightning:free", "stealth/union-alpha",
+        "nvidia/nemotron-3.5-lightning:free", "stealth/union-alpha", "stealth/space-bunny-alpha",
     )
 ]
 
-# OpenRouter entries the Anxious Portal does not carry (routing/fast variants, free tier —
+# OpenRouter entries the Nous Portal does not carry (routing/fast variants, free tier —
 # ``stealth/union-alpha`` is a $0 stealth SKU without the ``:free`` suffix).
 _OPENROUTER_ONLY = {
     "anthropic/claude-opus-5-fast", "anthropic/claude-opus-4.8-fast", "meta/muse-spark-1.2",
@@ -104,7 +106,7 @@ def _xai_promote_top(ids: list[str]) -> list[str]:
 
 
 def _xai_merge_curated_extras(ids: list[str]) -> list[str]:
-    """Append Pulse-curated xAI models missing from models.dev, right after the pinned headline."""
+    """Append PULSE-curated xAI models missing from models.dev, right after the pinned headline."""
     out = list(ids)
     for extra in _XAI_CURATED_EXTRAS:
         if extra not in out:
@@ -161,11 +163,11 @@ _XAI_MODELS = _xai_curated_models()
 # Curated per-provider lists. ``-cn`` twins share the international catalog on a domestic endpoint.
 _PROVIDER_MODELS: dict[str, list[str]] = {
     "moa": ["default"],
-    "anxious": [mid for mid, _ in OPENROUTER_MODELS if mid not in _OPENROUTER_ONLY and not mid.endswith(":free")],
+    "nous": [mid for mid, _ in OPENROUTER_MODELS if mid not in _OPENROUTER_ONLY and not mid.endswith(":free")],
     # Used by /model counts and provider_model_ids fallback when /v1/models is unavailable.
     "openai": list(_OPENAI_CHAT_MODELS),
     "openai-api": [
-        "gpt-6-sol", "gpt-6-sol-pro", "gpt-6-luna", "gpt-6-luna-pro",
+        "gpt-6.1-sol", "gpt-6.1-sol-pro", "gpt-6-sol", "gpt-6-sol-pro", "gpt-6-luna", "gpt-6-luna-pro",
         "gpt-5.6-sol", "gpt-5.6-sol-pro", "gpt-5.6-terra", "gpt-5.6-terra-pro", "gpt-5.6-luna",
         "gpt-5.6-luna-pro", "gpt-5.5", "gpt-5.5-pro", "gpt-5.4", "gpt-5.4-mini", "gpt-5.4-nano",
         "gpt-5-mini", "gpt-5.3-codex", "gpt-4.1", "gpt-4o", "gpt-4o-mini",
@@ -314,7 +316,7 @@ class ProviderEntry(NamedTuple):
 
 
 CANONICAL_PROVIDERS: list[ProviderEntry] = [ProviderEntry(*row) for row in (
-    ("anxious", "Anxious Portal", "Anxious Portal (Everything your agent needs, 300+ models with bundled tool use)"),
+    ("nous", "Nous Portal", "Nous Portal (Everything your agent needs, 300+ models with bundled tool use)"),
     ("fireworks", "Fireworks AI", "Fireworks AI (OpenAI-compatible direct model API)"),
     ("openrouter", "OpenRouter", "OpenRouter (Pay-per-use API aggregator)"),
     ("moa", "Mixture of Agents", "Mixture of Agents (named presets; aggregator acts after reference models)"),
@@ -510,7 +512,7 @@ _PROVIDER_ALIASES = dict((
 ))
 
 
-# Offline/fresh-install fallback for the model Pulse silently lands on when the user never picked
+# Offline/fresh-install fallback for the model PULSE silently lands on when the user never picked
 # one (GUI onboarding confirm card, empty ``model.default``, provider-set-but-model-missing). The
 # AUTHORITATIVE source is the remote catalog manifest, which labels exactly one entry per provider
 # ``"default": true`` (get_default_model_from_cache) so the default rotates without a release; this
@@ -526,8 +528,8 @@ PREFERRED_SILENT_DEFAULT_MODEL = "z-ai/glm-5.2"
 # otherwise silently bill the most expensive model (863 Opus requests before one user noticed).
 # Network-free (cache-only) on purpose — this is the hot resolution path. The *interactive* default
 # (GUI onboarding / ``pulse model``) uses the tier-aware ``get_recommended_default_model`` in
-# pulse_cli/web_server.py + ``partition_anxious_models_by_tier``, which may hit the Portal.
-_SILENT_DEFAULT_PROVIDERS: frozenset[str] = frozenset({"anxious", "openrouter"})
+# pulse_cli/web_server.py + ``partition_nous_models_by_tier``, which may hit the Portal.
+_SILENT_DEFAULT_PROVIDERS: frozenset[str] = frozenset({"nous", "openrouter"})
 
 
 # Retired model IDs kept for /model auto-detect only — not shown in pickers. DeepSeek cut these
@@ -537,7 +539,7 @@ _PROVIDER_RETIRED_ALIASES: dict[str, tuple[str, ...]] = {
 }
 
 
-_AGGREGATOR_PROVIDERS = frozenset({"anxious", "openrouter", "ai-gateway", "copilot", "kilocode"})
+_AGGREGATOR_PROVIDERS = frozenset({"nous", "openrouter", "ai-gateway", "copilot", "kilocode"})
 
 
 # Subscription/OAuth providers whose catalogs RE-EXPOSE other vendors' models; tried only as a last
@@ -559,12 +561,16 @@ _LIVE_FIRST_PICKER_PROVIDERS: frozenset[str] = frozenset({"opencode-zen", "openc
 # positives are harmless. Codex-series models are excluded — the Codex Responses API doesn't
 # expose service_tier.
 _OPENAI_FAST_MODE_PREFIXES: tuple[str, ...] = ("gpt-", "o1", "o3", "o4")
+# OpenAI Ultrafast (service_tier="ultrafast", 6x Standard): broadly available for GPT-6 Astra only
+# (developers.openai.com/api/docs/guides/ultrafast-mode, 2026-09-29); GPT-6.1 Sol "coming soon".
+# Exact wire slugs, matched after stripping the vendor prefix and the PULSE-side ``-900k`` alias.
+_OPENAI_ULTRAFAST_MODELS: frozenset[str] = frozenset({"gpt-6-astra"})
 
 
 # Providers where models.dev is authoritative: the curated list is an offline fallback plus custom
 # additions the registry lacks, merged fresh-first (curated-only names appended) for both the CLI
 # and the gateway /model picker. DELIBERATELY EXCLUDED: "openrouter" (curated list is a hand-picked
-# agentic subset of 400+ models — merging would dump everything), "anxious" (curated list + Portal
+# agentic subset of 400+ models — merging would dump everything), "nous" (curated list + Portal
 # /models are the subscription-tier source of truth), and providers with dedicated live-endpoint
 # branches (copilot, anthropic, ai-gateway, ollama-cloud, custom, stepfun, openai-codex).
 _MODELS_DEV_PREFERRED: frozenset[str] = frozenset({
@@ -573,7 +579,7 @@ _MODELS_DEV_PREFERRED: frozenset[str] = frozenset({
 })
 
 
-# OpenRouter-style ids -> Copilot ids. Dash-notation Claude ids are accepted too: Pulse' default
+# OpenRouter-style ids -> Copilot ids. Dash-notation Claude ids are accepted too: PULSE' default
 # Claude IDs use hyphens (Anthropic native) but Copilot's API only accepts dot-notation, so a
 # copilot + hyphenated default would otherwise hit HTTP 400 "model_not_supported".
 _COPILOT_MODEL_ALIASES = dict((

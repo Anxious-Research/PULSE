@@ -1,6 +1,6 @@
 """Session adapter for codex app-server runtime.
 
-Owns one Codex thread per Pulse session: drives ``turn/start``, consumes
+Owns one Codex thread per PULSE session: drives ``turn/start``, consumes
 streaming notifications via CodexEventProjector, bridges server-initiated
 approval requests, translates cancellation, and returns a TurnResult that
 AIAgent.run_conversation() splices into ``messages``. Synchronous: the client's
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 _STDERR_TAIL_LINES = 12  # stderr tail on generic errors: legible, yet enough for a config/auth diagnostic
 
-# Pulse' tools.terminal.security_mode -> Codex permissions profile id.
+# PULSE' tools.terminal.security_mode -> Codex permissions profile id.
 # Missing config -> workspace-write (Codex's own default).
 _PULSE_TO_CODEX_PERMISSION_PROFILE = {
     "auto": "workspace-write", "approval-required": "read-only-with-approval",
@@ -107,7 +107,7 @@ _IMAGE_URL_SCHEMES = ("data:", "http://", "https://")
 
 
 def _image_part_to_turn_input(item: dict) -> Optional[dict]:
-    """Map one Pulse image part onto the app-server ``UserInput`` shape.
+    """Map one PULSE image part onto the app-server ``UserInput`` shape.
 
     ``turn/start`` accepts ``{type: image, url}`` (data:/http URLs) and ``{type: localImage, path}``
     natively (protocol schema ``v2/UserInput``), so nothing here is flattened into a text marker.
@@ -206,7 +206,7 @@ def _extract_thread_id(result: dict) -> Optional[str]:
 
 
 class CodexAppServerSession:
-    """One Codex thread per Pulse session, lifetime owned by AIAgent. Not thread-safe: one caller at a time."""
+    """One Codex thread per PULSE session, lifetime owned by AIAgent. Not thread-safe: one caller at a time."""
 
     def __init__(
         self, *, cwd: Optional[str] = None, codex_bin: str = "codex",
@@ -222,19 +222,19 @@ class CodexAppServerSession:
         self._cwd = cwd or os.getcwd()
         self._codex_bin = codex_bin
         self._codex_home = codex_home
-        # A codex thread id persisted by an earlier process for this Pulse session: the first
+        # A codex thread id persisted by an earlier process for this PULSE session: the first
         # ``ensure_started`` issues ``thread/resume`` for it instead of ``thread/start``.
         self._resume_thread_id = resume_thread_id
         # ``thread/start.model`` / ``.modelProvider``: select a provider from codex's own
         # ``[model_providers.<id>]`` table. Only the id travels; codex reads base_url/env_key itself.
         self._model = (model or "").strip() or None
         self._model_provider = (model_provider or "").strip() or None
-        # Pulse' composed system prompt (SOUL.md, memory, channel overrides). Sent ONCE per thread as
+        # PULSE' composed system prompt (SOUL.md, memory, channel overrides). Sent ONCE per thread as
         # ``thread/start.developerInstructions``: codex keeps its own base instructions (tool guidance) and
         # inserts this as the first developer message of every model request. ``baseInstructions`` would
         # REPLACE codex's base and ``instructions`` is accepted but ignored (verified against codex 0.147).
         self._developer_instructions = developer_instructions
-        # Pulse' prior transcript, appended to developerInstructions ONLY when a thread is started from
+        # PULSE' prior transcript, appended to developerInstructions ONLY when a thread is started from
         # scratch: a resumed thread already holds the conversation (agent/codex_runtime_history_seed.py).
         self._history_seed = history_seed
         self._permission_profile = permission_profile or _PULSE_TO_CODEX_PERMISSION_PROFILE.get(
@@ -263,10 +263,10 @@ class CodexAppServerSession:
             return self._thread_id
         if self._client is None:
             self._client = self._client_factory(codex_bin=self._codex_bin, codex_home=self._codex_home)
-            self._client.initialize(client_name="pulse", client_title="Pulse Agent", client_version=_get_pulse_version())
+            self._client.initialize(client_name="pulse", client_title="PULSE Agent", client_version=_get_pulse_version())
         # Permissions are NOT sent on thread/start: codex gates ``thread/start.permissions``
         # behind experimentalApi + a matching ``[permissions]`` table in ~/.codex/config.toml.
-        # Pulse supplies the agent identity through its own system prompt; ``personality: "none"`` strips
+        # PULSE supplies the agent identity through its own system prompt; ``personality: "none"`` strips
         # codex's built-in "# Personality" section from the base instructions so it cannot compete (#72104).
         params: dict[str, Any] = {"cwd": self._cwd, "personality": "none"}
         if self._developer_instructions and self._developer_instructions.strip():
@@ -679,7 +679,7 @@ class CodexAppServerSession:
             logger.warning("turn/interrupt timed out")
 
     def _handle_server_request(self, req: dict) -> None:
-        """Answer a codex server request (approval / elicitation) via Pulse' approval flow.
+        """Answer a codex server request (approval / elicitation) via PULSE' approval flow.
 
         Permission escalations are always declined (the user chose their profile in
         ~/.codex/config.toml); unknown methods get a JSON-RPC error so codex doesn't hang.
@@ -807,13 +807,13 @@ def _apply_accounting_notification(result: TurnResult, note: dict) -> None:
         result.turn_id = params.get("turnId") or result.turn_id
 
 
-# Pulse approval choice -> codex decision (app-server-protocol v2). "deny" and
+# PULSE approval choice -> codex decision (app-server-protocol v2). "deny" and
 # "timeout" both decline — codex has no "prompt expired" wire value.
 _APPROVAL_CHOICE_TO_DECISION = {"once": "accept", "session": "acceptForSession", "always": "acceptForSession"}
 
 
 def _approval_choice_to_codex_decision(choice: str) -> str:
-    """Map a Pulse approval choice onto codex's approval decision wire value."""
+    """Map a PULSE approval choice onto codex's approval decision wire value."""
     return _APPROVAL_CHOICE_TO_DECISION.get(choice, "decline")
 
 
@@ -823,7 +823,7 @@ def _has_turn_aborted_marker(text: str) -> bool:
 
 
 def _get_pulse_version() -> str:
-    """Best-effort Pulse version string for codex's userAgent line."""
+    """Best-effort PULSE version string for codex's userAgent line."""
     try:
         from importlib.metadata import version
 

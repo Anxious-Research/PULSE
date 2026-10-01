@@ -1,4 +1,4 @@
-"""Generate canonical install-stamp.json for packaged Pulse builds.
+"""Generate canonical install-stamp.json for packaged PULSE builds.
 
 All packagers (Docker, Nix, desktop) call this script to produce the same
 ``install-stamp.json`` file. Runtime surfaces (CLI, TUI, desktop) read the
@@ -54,7 +54,7 @@ _REPO_ROOT = Path(__file__).parent.parent.resolve()
 #   app-installer    — the app hands the update to Windows App Installer.
 #   external         — a package manager or app store owns updates.
 
-# Pulse's historical tags use a four-digit calendar year as their major
+# PULSE's historical tags use a four-digit calendar year as their major
 # component (for example v2026.7.20). Restrict release majors to three digits
 # so these date tags cannot masquerade as the v0.x.y SemVer boundaries.
 _SEMVER_TAG_RE = re.compile(r"^v(0|[1-9]\d{0,2})\.(\d+)\.(\d+)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")

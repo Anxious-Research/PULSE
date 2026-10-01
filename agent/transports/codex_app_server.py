@@ -93,11 +93,11 @@ class CodexAppServerClient:
         extra_args: Optional[list[str]] = None, env: Optional[dict[str, str]] = None,
     ) -> None:
         self._codex_bin = codex_bin
-        # codex needs LLM provider creds but must not receive Tier-1 Pulse secrets (gateway/GitHub/infra tokens).
+        # codex needs LLM provider creds but must not receive Tier-1 PULSE secrets (gateway/GitHub/infra tokens).
         # codex app-server is a model-driving CLI executor: it runs a model-chosen agentic loop that
         # executes shell commands, so it legitimately needs LLM provider credentials
         # (inherit_credentials=True) to authenticate against the model endpoint. But the previous
-        # `os.environ.copy()` also handed it every Tier-1 Pulse secret — gateway bot tokens, GitHub auth,
+        # `os.environ.copy()` also handed it every Tier-1 PULSE secret — gateway bot tokens, GitHub auth,
         # Modal/Daytona infra tokens, the dashboard session token, AUXILIARY_* side-LLM keys,
         # GATEWAY_RELAY_* auth — none of which a coding subprocess has any use for. Route through the
         # centralized helper so Tier-1 + dynamic-internal secrets are always stripped while provider creds
@@ -113,7 +113,7 @@ class CodexAppServerClient:
             DELEGATED_CHILD_ENV_MARKER, KANBAN_ENV_KEYS,
             delegated_child_subprocess_env, is_dispatcher_owned_worker_context,
         )
-        # Native shell children remain unowned. Only Pulse' managed MCP tool
+        # Native shell children remain unowned. Only PULSE' managed MCP tool
         # endpoint acts for this worker; grant it scope via its existing per-server
         # environment (the entry the runtime migration registers), never by granting
         # the whole executor process ownership.
@@ -163,7 +163,7 @@ class CodexAppServerClient:
         self._stderr_reader.start()
 
     def initialize(
-        self, client_name: str = "pulse", client_title: str = "Pulse Agent",
+        self, client_name: str = "pulse", client_title: str = "PULSE Agent",
         client_version: str = "0.1", capabilities: Optional[dict] = None, timeout: float = 10.0,
     ) -> dict:
         """Send ``initialize`` + ``initialized``; return the server's InitializeResponse."""
@@ -378,12 +378,3 @@ def check_codex_binary(
     if version < min_version:
         return False, f"codex {have} is older than required {'.'.join(map(str, min_version))}. Run: npm i -g @openai/codex"
     return True, have
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from dataclasses import field  # noqa: F401,E402
-import time  # noqa: F401,E402
-# ---- END PLUGIN-COMPAT ----

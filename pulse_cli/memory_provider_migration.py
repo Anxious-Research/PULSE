@@ -33,7 +33,7 @@ def configured_provider(home: Path) -> str:
 
 
 def provider_present(name: str, home: Path) -> bool:
-    """True when the provider resolves anywhere Pulse looks for *home* (bundled, that home's user
+    """True when the provider resolves anywhere PULSE looks for *home* (bundled, that home's user
     plugins, entry point). The lookup reads the active home, so it is bound explicitly: the update
     hook walks several profile homes from one process."""
     from plugins.memory import find_provider_dir

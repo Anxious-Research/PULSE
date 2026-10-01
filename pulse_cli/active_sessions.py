@@ -93,7 +93,7 @@ def active_session_limit_message(
     held = summarize_holders(entries or [])
     detail = f" Held by: {held}." if held else ""
     return (
-        f"Pulse is at the active session limit ({active_count}/{max_sessions})."
+        f"PULSE is at the active session limit ({active_count}/{max_sessions})."
         f"{detail} Try again when another session finishes."
     )
 
@@ -163,7 +163,7 @@ def session_already_owned_message(session_id: str, entry: dict[str, Any]) -> str
     (no lease/pid/owner jargon); the second line is ``Details: ...`` for logs and bug reports.
     """
     return (
-        "This chat is open in another Pulse window/terminal. Use it there, or start a new chat here.\n"
+        "This chat is open in another PULSE window/terminal. Use it there, or start a new chat here.\n"
         + session_owner_details(session_id, entry)
     )
 
@@ -524,7 +524,7 @@ def try_acquire_active_session(
         )
         if loaded is None:
             return None, ActiveSessionRefusal(
-                "Pulse could not read the active-session registry at "
+                "PULSE could not read the active-session registry at "
                 f"{state_path}, so it cannot prove this session has no other "
                 "live owner. Fix or remove that file and try again.",
                 SESSION_COORDINATION_UNAVAILABLE,

@@ -5,10 +5,10 @@ module object so tests that monkeypatch that module keep working."""
 from datetime import datetime, timezone
 
 from pulse_cli.auth import AuthError
-from pulse_cli.anxious_account import (
-    format_anxious_portal_entitlement_message, get_anxious_portal_account_info)
-from pulse_cli.anxious_subscription import get_anxious_subscription_features
-from tools.tool_backend_helpers import managed_anxious_tools_enabled
+from pulse_cli.nous_account import (
+    format_nous_portal_entitlement_message, get_nous_portal_account_info)
+from pulse_cli.nous_subscription import get_nous_subscription_features
+from tools.tool_backend_helpers import managed_nous_tools_enabled
 from pulse_cli import config
 from pulse_time import safe_strftime
 
@@ -80,9 +80,9 @@ _APIKEY_PROVIDERS = {
     "StepFun Step Plan": ("STEPFUN_API_KEY",), "MiniMax": ("MINIMAX_API_KEY",),
     "MiniMax (China)": ("MINIMAX_CN_API_KEY",), "DeepInfra": ("DEEPINFRA_API_KEY",)}
 
-# Anxious Tool Gateway per-feature state: first matching (predicate(feature, anxious_auth), text(feature)).
+# Nous Tool Gateway per-feature state: first matching (predicate(feature, nous_auth), text(feature)).
 _FEATURE_STATES = (
-    (lambda f, _: f.managed_by_anxious, lambda f: "active via Anxious subscription"),
+    (lambda f, _: f.managed_by_nous, lambda f: "active via Nous subscription"),
     (lambda f, _: f.active, lambda f: f"active via {f.current_provider or 'configured provider'}"),
     (lambda f, auth: f.included_by_default and auth, lambda f: "included by subscription, not currently selected"),
     (lambda f, auth: f.key == "modal" and auth, lambda f: "available via subscription (optional)"))
@@ -103,10 +103,10 @@ def _render_auth_providers(ctx):
     try:
         # Read-only display: the refresh-free snapshot, so `pulse status` never performs an OAuth
         # refresh or burns a single-use refresh token.
-        anxious_status = auth.get_anxious_auth_status_local()
+        nous_status = auth.get_nous_auth_status_local()
         statuses = {getter: getattr(auth, getter)() for _, getter, _, _ in _OAUTH_BLOCKS[:3]}
     except Exception:
-        anxious_status, statuses = {}, {}
+        nous_status, statuses = {}, {}
     # xAI OAuth is guarded separately so an import failure there cannot disrupt the other rows.
     try:
         statuses["get_xai_oauth_auth_status"] = auth.get_xai_oauth_auth_status() or {}
@@ -114,66 +114,66 @@ def _render_auth_providers(ctx):
         statuses["get_xai_oauth_auth_status"] = {}
 
     info = None
-    if any(anxious_status.get(k) for k in ("logged_in", "access_token", "portal_base_url",
+    if any(nous_status.get(k) for k in ("logged_in", "access_token", "portal_base_url",
                                         "inference_credential_present", "error_code")):
         try:
-            info = get_anxious_portal_account_info()
+            info = get_nous_portal_account_info()
         except Exception:
             pass
-    ctx.anxious_account_info = info
-    ctx.anxious_logged_in = logged_in = bool(anxious_status.get("logged_in") or (info and info.logged_in))
-    ctx.anxious_inference_present = inference = bool(
-        anxious_status.get("inference_credential_present") or (info and info.inference_credential_present)
+    ctx.nous_account_info = info
+    ctx.nous_logged_in = logged_in = bool(nous_status.get("logged_in") or (info and info.logged_in))
+    ctx.nous_inference_present = inference = bool(
+        nous_status.get("inference_credential_present") or (info and info.inference_credential_present)
     )
-    if anxious_status.get("free_tier"):
+    if nous_status.get("free_tier"):
         # Free tier: never rendered as an account login (no account ids, no refresh row).
         from pulse_cli.anon_auth import FREE_TIER_LABEL, GUEST_MODEL, UPGRADE_HINT
-        _status._row("Anxious Portal", True, f"{FREE_TIER_LABEL} · {GUEST_MODEL}")
+        _status._row("Nous Portal", True, f"{FREE_TIER_LABEL} · {GUEST_MODEL}")
         _status._detail("", UPGRADE_HINT)
-        inference_url = anxious_status.get("inference_base_url")
+        inference_url = nous_status.get("inference_base_url")
         if inference_url:
             _status._detail("Inference:", inference_url)
         for name, getter, hint, rows in _OAUTH_BLOCKS:
             _oauth_block(name, statuses.get(getter, {}), hint, rows)
         return
-    anxious_error = anxious_status.get("error")
-    _status._row("Anxious Portal", logged_in,
-         "logged in" if logged_in else "not logged in (Anxious inference key configured)" if inference
+    nous_error = nous_status.get("error")
+    _status._row("Nous Portal", logged_in,
+         "logged in" if logged_in else "not logged in (Nous inference key configured)" if inference
          else "not logged in (run: pulse portal)")
-    portal_url = anxious_status.get("portal_base_url") or "(unknown)"
-    inference_url = anxious_status.get("inference_base_url") or (info.inference_base_url if info else None)
+    portal_url = nous_status.get("portal_base_url") or "(unknown)"
+    inference_url = nous_status.get("inference_base_url") or (info.inference_base_url if info else None)
     for label, value, show in (
-        ("Portal URL:", portal_url, logged_in or portal_url != "(unknown)" or anxious_error),
+        ("Portal URL:", portal_url, logged_in or portal_url != "(unknown)" or nous_error),
         ("Inference:", inference_url, inference and inference_url),
-        ("Access exp:", _format_iso_timestamp(anxious_status.get("access_expires_at")),
-         logged_in or anxious_status.get("access_expires_at")),
-        ("Key exp:", _format_iso_timestamp(anxious_status.get("agent_key_expires_at")),
-         logged_in or inference or anxious_status.get("agent_key_expires_at")),
-        ("Refresh:", "yes" if anxious_status.get("has_refresh_token") else "no",
-         logged_in or anxious_status.get("has_refresh_token")),
-        ("Error:", anxious_error, anxious_error)):
+        ("Access exp:", _format_iso_timestamp(nous_status.get("access_expires_at")),
+         logged_in or nous_status.get("access_expires_at")),
+        ("Key exp:", _format_iso_timestamp(nous_status.get("agent_key_expires_at")),
+         logged_in or inference or nous_status.get("agent_key_expires_at")),
+        ("Refresh:", "yes" if nous_status.get("has_refresh_token") else "no",
+         logged_in or nous_status.get("has_refresh_token")),
+        ("Error:", nous_error, nous_error)):
         if show:
             _status._detail(label, value)
     for name, getter, hint, rows in _OAUTH_BLOCKS:
         _oauth_block(name, statuses.get(getter, {}), hint, rows)
 
 
-def _render_anxious_gateway(ctx):
-    if managed_anxious_tools_enabled():
-        features = get_anxious_subscription_features(ctx.config)
-        _status._section("Anxious Tool Gateway")
-        print("  Anxious Portal   ✓ managed tools available" if features.anxious_auth_present
-              else "  Anxious Portal   ✗ not logged in")
+def _render_nous_gateway(ctx):
+    if managed_nous_tools_enabled():
+        features = get_nous_subscription_features(ctx.config)
+        _status._section("Nous Tool Gateway")
+        print("  Nous Portal   ✓ managed tools available" if features.nous_auth_present
+              else "  Nous Portal   ✗ not logged in")
         for f in features.items():
-            state = next((text(f) for match, text in _FEATURE_STATES if match(f, features.anxious_auth_present)),
+            state = next((text(f) for match, text in _FEATURE_STATES if match(f, features.nous_auth_present)),
                          "not configured")
-            _status._row(f.label, f.available or f.active or f.managed_by_anxious, state, 15, " ")
-    elif ctx.anxious_logged_in or ctx.anxious_inference_present:
-        # Anxious OAuth without entitlement, or an opaque inference key without Portal account
+            _status._row(f.label, f.available or f.active or f.managed_by_nous, state, 15, " ")
+    elif ctx.nous_logged_in or ctx.nous_inference_present:
+        # Nous OAuth without entitlement, or an opaque inference key without Portal account
         # information, cannot enable the Tool Gateway.
-        _status._section("Anxious Tool Gateway")
-        message = format_anxious_portal_entitlement_message(
-            ctx.anxious_account_info, capability="managed web, image, TTS, STT, browser, and Modal tools"
+        _status._section("Nous Tool Gateway")
+        message = format_nous_portal_entitlement_message(
+            ctx.nous_account_info, capability="managed web, image, TTS, STT, browser, and Modal tools"
         )
         for line in (message or "").splitlines():
             print(f"  {line}")

@@ -523,7 +523,7 @@ class ShellFileOperations(LintMixin, SearchMixin, FileOperations):
 
     def _escape_native_tool_arg(self, arg: str) -> str:
         """Quote a path for a NATIVE Windows binary (rg, node, git ...): those don't
-        understand the MSYS ``/c/...`` form and Pulse disables MSYS argument
+        understand the MSYS ``/c/...`` form and PULSE disables MSYS argument
         conversion, so nothing translates it back (→ ``os error 3``). ``C:/Users/x``
         is accepted by every layer. Identical to ``_escape_shell_arg`` off Windows."""
         from tools.environments.local import _IS_WINDOWS, _msys_to_windows_path
@@ -1651,53 +1651,3 @@ class ShellFileOperations(LintMixin, SearchMixin, FileOperations):
                 f"an unattended privacy prompt: {skipped}. Search a protected "
                 "folder directly when access is intentional.")
         return result
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from typing import Any  # noqa: F401,E402
-from typing import ClassVar  # noqa: F401,E402
-from typing import List  # noqa: F401,E402
-from agent.file_safety import build_write_denied_paths  # noqa: F401,E402
-from agent.file_safety import build_write_denied_prefixes  # noqa: F401,E402
-from dataclasses import dataclass  # noqa: F401,E402
-from dataclasses import field  # noqa: F401,E402
-import posixpath  # noqa: F401,E402
-import threading  # noqa: F401,E402
-
-MAX_LINES = 2000
-
-MAX_LINE_LENGTH = 2000
-
-WRITE_DENIED_PATHS = build_write_denied_paths(_HOME)
-
-WRITE_DENIED_PREFIXES = build_write_denied_prefixes(_HOME)
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'DEFAULT_READ_LIMIT': ('tools.file_operations_common', 'DEFAULT_READ_LIMIT'),
-    'DEFAULT_READ_OFFSET': ('tools.file_operations_common', 'DEFAULT_READ_OFFSET'),
-    'DEFAULT_SEARCH_LIMIT': ('tools.file_operations_common', 'DEFAULT_SEARCH_LIMIT'),
-    'DEFAULT_SEARCH_OFFSET': ('tools.file_operations_common', 'DEFAULT_SEARCH_OFFSET'),
-    'LINTERS': ('tools.file_operations_lint', 'LINTERS'),
-    'LintResult': ('tools.file_operations_common', 'LintResult'),
-    'MAX_FILE_SIZE': ('tools.transcription_common', 'MAX_FILE_SIZE'),
-    'SEARCH_PRUNE_DIR_NAMES': ('agent.search_policy', 'SEARCH_PRUNE_DIR_NAMES'),
-    'SearchMatch': ('tools.file_operations_common', 'SearchMatch'),
-    'build_write_denied_paths': ('agent.file_safety', 'build_write_denied_paths'),
-    'build_write_denied_prefixes': ('agent.file_safety', 'build_write_denied_prefixes'),
-    'tool_interrupt': ('tools', 'interrupt'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

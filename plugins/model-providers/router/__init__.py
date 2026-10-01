@@ -36,7 +36,7 @@ _disk_checked = False
 
 
 class _CacheState:
-    """Efforts cache + once-only flags for one Pulse home (same names as the module slots)."""
+    """Efforts cache + once-only flags for one PULSE home (same names as the module slots)."""
 
     __slots__ = ("_efforts_cache", "_warm_started", "_disk_checked")
 
@@ -294,7 +294,7 @@ router = RouterProfile(
     env_vars=("RAMP_ROUTER_API_KEY", "ROUTER_API_KEY", "RAMP_ROUTER_BASE_URL"), base_url=_base_url(),
     auth_type="api_key",
     # Router attributes coding-agent clients by UA prefix; its WAF rejects default UAs.
-    default_headers={"User-Agent": f"Pulse-Agent/{get_version_info().base_version}"},
+    default_headers={"User-Agent": f"PULSE-Agent/{get_version_info().base_version}"},
     supports_vision=True, default_aux_model="gpt-5.4-mini",
     fallback_models=(),  # account-scoped IDs; the picker uses fetch_models()
 )

@@ -143,7 +143,7 @@ def _blocked_url_in_code(code: str) -> Optional[str]:
 def _base_subprocess_env() -> dict:
     from tools.browser_tool import _build_browser_env
     env = _build_browser_env()
-    # The harness runs on Pulse's own interpreter, but a bundled Desktop install boots that
+    # The harness runs on PULSE's own interpreter, but a bundled Desktop install boots that
     # interpreter with its site dir on PYTHONPATH (no venv to activate), and the harness's daemon
     # re-runs sys.executable. Point PYTHONPATH at the harness's site dir, replacing whatever the
     # agent process inherited, so both the CLI and its daemon import the same packages.
@@ -185,17 +185,17 @@ def _read_browser_cfg() -> dict:
 
 
 def _use_gateway(browser_cfg: dict) -> bool:
-    """True when the browser section selects the Anxious Tool Gateway — by the current ``pulse tools``
-    picker row (``cloud_provider: anxious``) or the pre-picker ``use_gateway: true`` flag. Reading only
+    """True when the browser section selects the Nous Tool Gateway — by the current ``pulse tools``
+    picker row (``cloud_provider: nous``) or the pre-picker ``use_gateway: true`` flag. Reading only
     the legacy flag missed every picker-configured gateway, and the direct-API branch it fell into
     holds no credentials in managed mode (#108310)."""
     if is_truthy_value(browser_cfg.get("use_gateway"), default=False):
         return True
     try:
-        from tools.tool_backend_helpers import ANXIOUS_MANAGED_PROVIDER
+        from tools.tool_backend_helpers import NOUS_MANAGED_PROVIDER
     except Exception:  # pragma: no cover — helper ships with the package
         return False
-    return str(browser_cfg.get("cloud_provider") or "").strip().lower() == ANXIOUS_MANAGED_PROVIDER
+    return str(browser_cfg.get("cloud_provider") or "").strip().lower() == NOUS_MANAGED_PROVIDER
 
 
 def get_browser_backend() -> str:
@@ -245,7 +245,7 @@ def default_downgrade_notice() -> Optional[str]:
             stamp.parent.mkdir(parents=True, exist_ok=True)
             stamp.touch()
             os.utime(stamp, (now, now))
-        return ("browser-harness is missing from Pulse's Python environment — using the built-in browser tools. "
+        return ("browser-harness is missing from PULSE's Python environment — using the built-in browser tools. "
                 "Run `pulse update` to re-sync it, or set `browser.backend: off` in config.yaml to silence this.")
     except Exception as e:  # pragma: no cover — a notice must never break startup
         logger.debug("browser-use downgrade notice failed: %s", e)
@@ -253,7 +253,7 @@ def default_downgrade_notice() -> Optional[str]:
 
 
 def _harness_site_dir() -> Optional[str]:
-    """The site dir Pulse's interpreter imports ``browser_harness`` from, or None."""
+    """The site dir PULSE's interpreter imports ``browser_harness`` from, or None."""
     spec = importlib.util.find_spec("browser_harness")
     if spec is None or not spec.origin:
         return None
@@ -261,7 +261,7 @@ def _harness_site_dir() -> Optional[str]:
 
 
 def _find_cli() -> Optional[List[str]]:
-    """The Browser Use CLI's engine (browser-harness) is a core dependency of Pulse's own venv,
+    """The Browser Use CLI's engine (browser-harness) is a core dependency of PULSE's own venv,
     so every install, the Desktop bundle included, runs it on the current interpreter."""
     if _harness_site_dir() is None:
         return None
@@ -332,7 +332,7 @@ def _backend_cache_key(task_id: Optional[str], session_name: str = "") -> str:
 
 
 def _resolve_lightpanda_cdp(env: dict, task_id: Optional[str], session_name: str = "") -> Optional[str]:
-    """Point the harness at a Pulse-spawned ``lightpanda serve`` (``browser.engine: lightpanda`` and
+    """Point the harness at a PULSE-spawned ``lightpanda serve`` (``browser.engine: lightpanda`` and
     nothing of higher precedence claimed the session). Each cache key gets its own process via the
     legacy ``_get_session_info()`` (cache, reaper, atexit): private browser, own-tab preamble skipped."""
     try:
@@ -381,7 +381,7 @@ def _reach_sandbox_cdp(cdp: str) -> str:
 
 
 def _resolve_managed_chromium_cdp(env: dict, task_id: Optional[str], session_name: str = "") -> Optional[str]:
-    """Point the harness at Pulse' packaged Chromium, launched through agent-browser for this cache key —
+    """Point the harness at PULSE' packaged Chromium, launched through agent-browser for this cache key —
     the same browser the built-in tools drive. Left alone, the harness discovers the user's INSTALLED
     Chrome on its default profile, which needs the chrome://inspect toggle + an Allow popup per run and
     is blocked outright on Chrome >=136; on a headless box it just reports ``chrome-not-running``.
@@ -421,7 +421,7 @@ def _resolve_backend_cdp(env: dict, task_id: Optional[str], session_name: str = 
     Precedence: (1) ``BU_CDP_WS``/``BU_CDP_URL`` already in env (operator override); (2) ``BROWSER_CDP_URL``
     env / ``browser.cdp_url`` (``/browser connect``); (3) a cloud provider via the legacy ``_get_session_info()``
     so browser_exec shares the SAME session machinery (per-task cache, expiry, reaper, atexit);
-    (4) the local engine — ``browser.engine: lightpanda`` or Pulse' packaged Chromium via agent-browser
+    (4) the local engine — ``browser.engine: lightpanda`` or PULSE' packaged Chromium via agent-browser
     (never the harness's own discovery of the user's installed Chrome); (5) BU direct-API configs → None:
     the CLI reaches BU cloud natively (BU_AUTOSPAWN). ``session_name`` (BU_NAME) keys the session cache so
     each name gets its OWN browser — what makes named sessions concurrent-safe.
@@ -444,7 +444,7 @@ def _resolve_backend_cdp(env: dict, task_id: Optional[str], session_name: str = 
         return _resolve_local_engine_cdp(env, task_id, session_name)
 
     # Browser Use direct-API configs: the CLI talks to BU cloud natively (BU_AUTOSPAWN / auth login) — the
-    # legacy provider would create a second, redundant session. Anxious-gateway configs (cloud_provider: anxious
+    # legacy provider would create a second, redundant session. Nous-gateway configs (cloud_provider: nous
     # from the picker, or the pre-picker use_gateway: true) DO resolve through the provider: the gateway
     # provisions the browser server-side and returns its CDP URL.
     provider_key = str(getattr(provider, "name", "") or "").strip().lower()
@@ -604,7 +604,7 @@ def browser_exec(code: str, session: str = "", timeout_s: int = _DEFAULT_TIMEOUT
 
     cmd = _find_cli()
     if not cmd:
-        return tool_error("browser-harness is missing from Pulse's Python environment. "
+        return tool_error("browser-harness is missing from PULSE's Python environment. "
                           "Run `pulse update` to re-sync it.")
 
     env = _base_subprocess_env()
@@ -757,7 +757,7 @@ def _dynamic_schema_overrides() -> dict:
         props = dict(BROWSER_EXEC_SCHEMA["parameters"]["properties"])
         props["local"] = {
             "type": "boolean", "default": False,
-            "description": ("Drive the user's own local browser (a Pulse-managed copy of their real "
+            "description": ("Drive the user's own local browser (a PULSE-managed copy of their real "
                             "default-Chromium profile, logins/cookies included) instead of the configured "
                             "cloud browser backend. Use when the user asks to act as themselves — their "
                             "accounts, their sessions. No-op when the backend is already local. Default false."),

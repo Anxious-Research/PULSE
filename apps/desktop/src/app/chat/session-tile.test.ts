@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { PulseConnection } from '@/global'
+import type { PULSEConnection } from '@/global'
 import { getSession } from '@/pulse'
 import { clearSessionDraft, stashSessionDraft } from '@/store/composer'
 import { $gatewaySwitching } from '@/store/gateway-switch'
@@ -22,7 +22,7 @@ vi.mock('@/pulse', async importOriginal => ({
   getSession: vi.fn()
 }))
 
-function localConnection(): PulseConnection {
+function localConnection(): PULSEConnection {
   return {
     baseUrl: 'http://127.0.0.1:9119',
     isFullscreen: false,

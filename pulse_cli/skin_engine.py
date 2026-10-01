@@ -1,4 +1,4 @@
-"""Pulse skin/theme engine — the theme SDK for every surface."""
+"""PULSE skin/theme engine — the theme SDK for every surface."""
 
 import logging
 from dataclasses import dataclass, field
@@ -56,13 +56,13 @@ def _wings(*glyphs) -> List[List[str]]:
             for g in glyphs]
 
 
-# Branding shared by every Pulse-named built-in (mono/daylight override help_header).
+# Branding shared by every PULSE-named built-in (mono/daylight override help_header).
 _PULSE_BRANDING: Dict[str, str] = _branding(
-    "Pulse", "☤", "Goodbye! ☤", prompt="❯", help_header="(^_^)? Available Commands")
+    "PULSE", "☤", "Goodbye! ☤", prompt="❯", help_header="(^_^)? Available Commands")
 
 _BUILTIN_SKINS: Dict[str, Dict[str, Any]] = {
     "default": {
-        "name": "default", "description": "Classic Pulse — gold and kawaii",
+        "name": "default", "description": "Classic PULSE — gold and kawaii",
         # Dark-authored; values match the TUI's DARK_THEME so both render the same gold.
         "colors": {
             "banner_border": "#CD7F32", "banner_title": "#FFD700", "banner_accent": "#FFBF00",

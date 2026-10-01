@@ -1,13 +1,13 @@
 import { resolveGatewayWsUrl } from '@pulse/shared'
 
-import type { PulseConnection } from '@/global'
+import type { PULSEConnection } from '@/global'
 
 export function resolveDesktopGatewayWsUrl(
   desktop: Window['pulseDesktop'],
-  connection: PulseConnection
+  connection: PULSEConnection
 ): Promise<string> {
   // Only a registry-scoped descriptor may use the *For bridge (see
-  // PulseConnection.registryScoped); an absent bridge fails closed rather
+  // PULSEConnection.registryScoped); an absent bridge fails closed rather
   // than minting the peer's URL against the local pool.
   const { connectionId, profile, registryScoped } = connection
 

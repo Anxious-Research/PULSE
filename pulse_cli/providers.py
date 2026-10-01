@@ -1,4 +1,4 @@
-"""Single source of truth for provider identity in Pulse Agent."""
+"""Single source of truth for provider identity in PULSE Agent."""
 
 from __future__ import annotations
 
@@ -11,11 +11,11 @@ from utils import base_url_host_matches, base_url_hostname
 logger = logging.getLogger(__name__)
 
 
-# -- Pulse overlay: metadata models.dev doesn't provide ----------------------
+# -- PULSE overlay: metadata models.dev doesn't provide ----------------------
 
 @dataclass(frozen=True)
-class PulseOverlay:
-    """Pulse-specific provider metadata layered on top of models.dev."""
+class PULSEOverlay:
+    """PULSE-specific provider metadata layered on top of models.dev."""
 
     transport: str = "openai_chat"        # openai_chat | anthropic_messages | codex_responses
     is_aggregator: bool = False
@@ -25,70 +25,70 @@ class PulseOverlay:
     base_url_env_var: str = ""            # env var for user-custom base URL
 
 
-PULSE_OVERLAYS: Dict[str, PulseOverlay] = {
-    "moa": PulseOverlay(auth_type="virtual", base_url_override="moa://local"),
-    "openrouter": PulseOverlay(is_aggregator=True, base_url_env_var="OPENROUTER_BASE_URL"),
-    "anxious": PulseOverlay(auth_type="oauth_device_code", base_url_override="https://inference-api.anxiousresearchlab.com/v1"),
-    "openai-codex": PulseOverlay(transport="codex_responses", auth_type="oauth_external",
+PULSE_OVERLAYS: Dict[str, PULSEOverlay] = {
+    "moa": PULSEOverlay(auth_type="virtual", base_url_override="moa://local"),
+    "openrouter": PULSEOverlay(is_aggregator=True, base_url_env_var="OPENROUTER_BASE_URL"),
+    "nous": PULSEOverlay(auth_type="oauth_device_code", base_url_override="https://inference-api.anxious-research.com/v1"),
+    "openai-codex": PULSEOverlay(transport="codex_responses", auth_type="oauth_external",
                                   base_url_override="https://chatgpt.com/backend-api/codex"),
-    "openai-api": PulseOverlay(transport="codex_responses", base_url_override="https://api.openai.com/v1",
+    "openai-api": PULSEOverlay(transport="codex_responses", base_url_override="https://api.openai.com/v1",
                                 base_url_env_var="OPENAI_BASE_URL"),
-    "xai-oauth": PulseOverlay(transport="codex_responses", auth_type="oauth_external",
+    "xai-oauth": PULSEOverlay(transport="codex_responses", auth_type="oauth_external",
                                base_url_override="https://api.x.ai/v1", base_url_env_var="XAI_BASE_URL"),
-    "qwen-oauth": PulseOverlay(auth_type="oauth_external", base_url_override="https://portal.qwen.ai/v1",
+    "qwen-oauth": PULSEOverlay(auth_type="oauth_external", base_url_override="https://portal.qwen.ai/v1",
                                 base_url_env_var="PULSE_QWEN_BASE_URL"),
-    "lmstudio": PulseOverlay(extra_env_vars=("LM_API_KEY",), base_url_override="http://127.0.0.1:1234/v1",
+    "lmstudio": PULSEOverlay(extra_env_vars=("LM_API_KEY",), base_url_override="http://127.0.0.1:1234/v1",
                               base_url_env_var="LM_BASE_URL"),
-    "copilot-acp": PulseOverlay(transport="codex_responses", auth_type="external_process",
+    "copilot-acp": PULSEOverlay(transport="codex_responses", auth_type="external_process",
                                  base_url_override="acp://copilot", base_url_env_var="COPILOT_ACP_BASE_URL"),
-    "github-copilot": PulseOverlay(extra_env_vars=("COPILOT_GITHUB_TOKEN", "GH_TOKEN")),
-    "anthropic": PulseOverlay(transport="anthropic_messages", extra_env_vars=("ANTHROPIC_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN")),
-    "zai": PulseOverlay(extra_env_vars=("GLM_API_KEY", "ZAI_API_KEY", "Z_AI_API_KEY"), base_url_env_var="GLM_BASE_URL"),
-    "kimi-for-coding": PulseOverlay(base_url_env_var="KIMI_BASE_URL"),
-    "stepfun": PulseOverlay(extra_env_vars=("STEPFUN_API_KEY",),
+    "github-copilot": PULSEOverlay(extra_env_vars=("COPILOT_GITHUB_TOKEN", "GH_TOKEN")),
+    "anthropic": PULSEOverlay(transport="anthropic_messages", extra_env_vars=("ANTHROPIC_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN")),
+    "zai": PULSEOverlay(extra_env_vars=("GLM_API_KEY", "ZAI_API_KEY", "Z_AI_API_KEY"), base_url_env_var="GLM_BASE_URL"),
+    "kimi-for-coding": PULSEOverlay(base_url_env_var="KIMI_BASE_URL"),
+    "stepfun": PULSEOverlay(extra_env_vars=("STEPFUN_API_KEY",),
                              base_url_override="https://api.stepfun.ai/step_plan/v1",
                              base_url_env_var="STEPFUN_BASE_URL"),
-    "minimax": PulseOverlay(transport="anthropic_messages", base_url_env_var="MINIMAX_BASE_URL"),
-    "minimax-oauth": PulseOverlay(transport="anthropic_messages", auth_type="oauth_external",
+    "minimax": PULSEOverlay(transport="anthropic_messages", base_url_env_var="MINIMAX_BASE_URL"),
+    "minimax-oauth": PULSEOverlay(transport="anthropic_messages", auth_type="oauth_external",
                                    base_url_override="https://api.minimax.io/anthropic"),
-    "minimax-cn": PulseOverlay(transport="anthropic_messages", base_url_env_var="MINIMAX_CN_BASE_URL"),
-    "deepseek": PulseOverlay(base_url_env_var="DEEPSEEK_BASE_URL"),
-    "alibaba": PulseOverlay(base_url_env_var="DASHSCOPE_BASE_URL"),
-    "alibaba-coding-plan": PulseOverlay(base_url_env_var="ALIBABA_CODING_PLAN_BASE_URL"),
-    "vercel": PulseOverlay(is_aggregator=True),
-    "opencode": PulseOverlay(is_aggregator=True, base_url_env_var="OPENCODE_ZEN_BASE_URL"),
-    "opencode-go": PulseOverlay(is_aggregator=True, base_url_env_var="OPENCODE_GO_BASE_URL"),
-    "kilo": PulseOverlay(is_aggregator=True, base_url_env_var="KILOCODE_BASE_URL"),
-    "huggingface": PulseOverlay(is_aggregator=True, base_url_env_var="HF_BASE_URL"),
-    "novita": PulseOverlay(is_aggregator=True, base_url_env_var="NOVITA_BASE_URL"),
-    "xai": PulseOverlay(transport="codex_responses", base_url_override="https://api.x.ai/v1", base_url_env_var="XAI_BASE_URL"),
-    "nvidia": PulseOverlay(base_url_override="https://integrate.api.nvidia.com/v1", base_url_env_var="NVIDIA_BASE_URL"),
-    "xiaomi": PulseOverlay(base_url_env_var="XIAOMI_BASE_URL"),
-    "tencent-tokenhub": PulseOverlay(base_url_env_var="TOKENHUB_BASE_URL"),
-    "tencent-tokenplan": PulseOverlay(transport="anthropic_messages",
+    "minimax-cn": PULSEOverlay(transport="anthropic_messages", base_url_env_var="MINIMAX_CN_BASE_URL"),
+    "deepseek": PULSEOverlay(base_url_env_var="DEEPSEEK_BASE_URL"),
+    "alibaba": PULSEOverlay(base_url_env_var="DASHSCOPE_BASE_URL"),
+    "alibaba-coding-plan": PULSEOverlay(base_url_env_var="ALIBABA_CODING_PLAN_BASE_URL"),
+    "vercel": PULSEOverlay(is_aggregator=True),
+    "opencode": PULSEOverlay(is_aggregator=True, base_url_env_var="OPENCODE_ZEN_BASE_URL"),
+    "opencode-go": PULSEOverlay(is_aggregator=True, base_url_env_var="OPENCODE_GO_BASE_URL"),
+    "kilo": PULSEOverlay(is_aggregator=True, base_url_env_var="KILOCODE_BASE_URL"),
+    "huggingface": PULSEOverlay(is_aggregator=True, base_url_env_var="HF_BASE_URL"),
+    "novita": PULSEOverlay(is_aggregator=True, base_url_env_var="NOVITA_BASE_URL"),
+    "xai": PULSEOverlay(transport="codex_responses", base_url_override="https://api.x.ai/v1", base_url_env_var="XAI_BASE_URL"),
+    "nvidia": PULSEOverlay(base_url_override="https://integrate.api.nvidia.com/v1", base_url_env_var="NVIDIA_BASE_URL"),
+    "xiaomi": PULSEOverlay(base_url_env_var="XIAOMI_BASE_URL"),
+    "tencent-tokenhub": PULSEOverlay(base_url_env_var="TOKENHUB_BASE_URL"),
+    "tencent-tokenplan": PULSEOverlay(transport="anthropic_messages",
                                        base_url_override="https://api.lkeap.cloud.tencent.com/plan/anthropic",
                                        base_url_env_var="TOKENPLAN_BASE_URL"),
-    "arcee": PulseOverlay(base_url_override="https://api.arcee.ai/api/v1", base_url_env_var="ARCEE_BASE_URL"),
-    "gmi": PulseOverlay(extra_env_vars=("GMI_API_KEY",), base_url_override="https://api.gmi-serving.com/v1",
+    "arcee": PULSEOverlay(base_url_override="https://api.arcee.ai/api/v1", base_url_env_var="ARCEE_BASE_URL"),
+    "gmi": PULSEOverlay(extra_env_vars=("GMI_API_KEY",), base_url_override="https://api.gmi-serving.com/v1",
                          base_url_env_var="GMI_BASE_URL"),
-    "fireworks": PulseOverlay(extra_env_vars=("FIREWORKS_API_KEY",),
+    "fireworks": PULSEOverlay(extra_env_vars=("FIREWORKS_API_KEY",),
                                base_url_override="https://api.fireworks.ai/inference/v1"),
-    "actual": PulseOverlay(transport="chat_completions", extra_env_vars=("ACTUAL_API_KEY",),
+    "actual": PULSEOverlay(transport="chat_completions", extra_env_vars=("ACTUAL_API_KEY",),
                             base_url_override="https://api.actual.inc/v1", base_url_env_var="ACTUAL_BASE_URL"),
-    "upstage": PulseOverlay(extra_env_vars=("UPSTAGE_API_KEY",), base_url_override="https://api.upstage.ai/v1",
+    "upstage": PULSEOverlay(extra_env_vars=("UPSTAGE_API_KEY",), base_url_override="https://api.upstage.ai/v1",
                              base_url_env_var="UPSTAGE_BASE_URL"),
-    "nebius-token-factory": PulseOverlay(extra_env_vars=("NEBIUS_API_KEY", "NEBIUS_TOKEN_FACTORY_API_KEY"),
+    "nebius-token-factory": PULSEOverlay(extra_env_vars=("NEBIUS_API_KEY", "NEBIUS_TOKEN_FACTORY_API_KEY"),
                                           base_url_override="https://api.tokenfactory.nebius.com/v1",
                                           base_url_env_var="NEBIUS_BASE_URL"),
-    "ollama-cloud": PulseOverlay(base_url_override="https://ollama.com/v1", base_url_env_var="OLLAMA_BASE_URL"),
+    "ollama-cloud": PULSEOverlay(base_url_override="https://ollama.com/v1", base_url_env_var="OLLAMA_BASE_URL"),
     # Azure Foundry serves OpenAI- and Anthropic-style endpoints; transport comes from model.api_mode.
-    "azure-foundry": PulseOverlay(base_url_env_var="AZURE_FOUNDRY_BASE_URL"),
-    "bedrock": PulseOverlay(transport="bedrock_converse", auth_type="aws_sdk"),
+    "azure-foundry": PULSEOverlay(base_url_env_var="AZURE_FOUNDRY_BASE_URL"),
+    "bedrock": PULSEOverlay(transport="bedrock_converse", auth_type="aws_sdk"),
     # Vertex is OAuth2 (service-account JSON / ADC), resolved by agent/vertex_adapter.py. Without an
     # overlay get_provider("vertex") is None and auxiliary_client._preserve_provider_with_base_url
     # would treat a Vertex MoA slot as an unknown custom endpoint, losing the identity
     # _refresh_provider_credentials() needs to re-mint an expired token on 401.
-    "vertex": PulseOverlay(auth_type="vertex"),
+    "vertex": PULSEOverlay(auth_type="vertex"),
 }
 
 
@@ -142,7 +142,7 @@ ALIASES: Dict[str, str] = {alias: canon for canon, aliases in _ALIAS_GROUPS.item
 # -- Display labels for providers not in the models.dev catalog ---------------
 
 _LABEL_OVERRIDES: Dict[str, str] = {
-    "moa": "Mixture of Agents", "anxious": "Anxious Portal", "openai-codex": "ChatGPT or Codex Subscription",
+    "moa": "Mixture of Agents", "nous": "Nous Portal", "openai-codex": "ChatGPT or Codex Subscription",
     "copilot-acp": "GitHub Copilot ACP", "stepfun": "StepFun Step Plan", "xiaomi": "Xiaomi MiMo", "gmi": "GMI Cloud",
     "upstage": "Upstage Solar", "actual": "Actual Computer", "tencent-tokenhub": "Tencent TokenHub",
     "nebius-token-factory": "Nebius Token Factory", "tencent-tokenplan": "Tencent TokenPlan", "lmstudio": "LM Studio",
@@ -185,20 +185,20 @@ def _models_dev_info(canonical: str, allow_network: bool = True):
         return None
 
 
-def _overlay_pdef(canonical, ov: PulseOverlay, name, env_vars, base_url, doc, source) -> ProviderDef:
+def _overlay_pdef(canonical, ov: PULSEOverlay, name, env_vars, base_url, doc, source) -> ProviderDef:
     return ProviderDef(id=canonical, name=name, transport=ov.transport, api_key_env_vars=env_vars, base_url=base_url,
                        base_url_env_var=ov.base_url_env_var, is_aggregator=ov.is_aggregator, auth_type=ov.auth_type, doc=doc,
                        source=source)
 
 
 def get_provider(name: str, *, allow_network: bool = True) -> Optional[ProviderDef]:
-    """Look up a built-in provider by id or alias: models.dev catalog merged with the Pulse overlay;
-    Pulse-only overlay (anxious, openai-codex, …); plugin provider profiles with a concrete endpoint."""
+    """Look up a built-in provider by id or alias: models.dev catalog merged with the PULSE overlay;
+    PULSE-only overlay (nous, openai-codex, …); plugin provider profiles with a concrete endpoint."""
     canonical = normalize_provider(name)
     mdev_info = _models_dev_info(canonical, allow_network)
     overlay = PULSE_OVERLAYS.get(canonical)
     if mdev_info is not None:
-        ov = overlay or PulseOverlay()
+        ov = overlay or PULSEOverlay()
         env_vars = list(mdev_info.env)
         for ev in ov.extra_env_vars:
             if ev not in env_vars:
@@ -337,39 +337,39 @@ def host_mandated_api_mode(base_url: str = "") -> Optional[str]:
     return None
 
 
-def anxious_api_mode(model: str = "") -> str:
-    """Wire protocol for a Anxious Portal model. Portal serves its ``anthropic/*`` catalog on a native
+def nous_api_mode(model: str = "") -> str:
+    """Wire protocol for a Nous Portal model. Portal serves its ``anthropic/*`` catalog on a native
     Messages route alongside OpenAI-compatible chat/completions for everything else.
 
-    ``anthropic/*`` rides chat/completions by default for now (``anxious.anthropic_wire``). Measured
+    ``anthropic/*`` rides chat/completions by default for now (``nous.anthropic_wire``). Measured
     2026-09-06, 20 concurrent sessions x 6 tool calls on Fable 5.1, same account and hour: the
     native route re-wrote the previous turn on 14-20% of consecutive calls (4 runs; the cache read
     stopped at the prior breakpoint with byte-identical prefixes), chat/completions 0 of 320 pairs.
     That is 15-20% of a fan-out's cache-write bill. The cause is inside the portal's native route
-    (AnxiousResearchLab/api#227 carries the diagnostics); flip the default back to ``native`` when it is
+    (NousResearch/api#227 carries the diagnostics); flip the default back to ``native`` when it is
     fixed. Cost of ``chat``: prior-turn thinking travels as OpenAI-style reasoning fields instead of
     signed native blocks, and cache_control scopes are translated by the portal's adapter.
-    Empty/unknown model defaults to ``chat_completions`` (the historical Anxious transport)."""
+    Empty/unknown model defaults to ``chat_completions`` (the historical Nous transport)."""
     if str(model or "").strip().lower().startswith("anthropic/"):
-        # ``auto`` starts on chat too: it is safe on every upstream, and ``agent/anxious_wire.py``
+        # ``auto`` starts on chat too: it is safe on every upstream, and ``agent/nous_wire.py``
         # promotes the session to native from the first response when the upstream allows it.
-        return "anthropic_messages" if _anxious_anthropic_wire() == "native" else "chat_completions"
+        return "anthropic_messages" if _nous_anthropic_wire() == "native" else "chat_completions"
     return "chat_completions"
 
 
-def _anxious_anthropic_wire() -> str:
-    """``anxious.anthropic_wire``: ``"chat"`` (default), ``"native"``, or ``"auto"`` (chat, then per-session
-    promotion decided from the first response; see ``agent/anxious_wire.py``). Anything else reads as ``chat``."""
+def _nous_anthropic_wire() -> str:
+    """``nous.anthropic_wire``: ``"chat"`` (default), ``"native"``, or ``"auto"`` (chat, then per-session
+    promotion decided from the first response; see ``agent/nous_wire.py``). Anything else reads as ``chat``."""
     try:
         from pulse_cli.config import load_config_readonly
-        value = str(((load_config_readonly().get("anxious") or {}).get("anthropic_wire")) or "chat").strip().lower()
+        value = str(((load_config_readonly().get("nous") or {}).get("anthropic_wire")) or "chat").strip().lower()
     except Exception:
         return "chat"
     return value if value in ("native", "auto") else "chat"
 
 
 def determine_api_mode(provider: str, base_url: str = "", model: str = "") -> str:
-    """API mode (wire protocol) for a provider/endpoint: host-mandated mode, then Anxious dual-wire
+    """API mode (wire protocol) for a provider/endpoint: host-mandated mode, then Nous dual-wire
     (model-derived — the overlay alone says openai_chat and would pin Claude on the wrong wire),
     then the known provider's transport, then bedrock, else ``chat_completions``."""
     if is_actual_route(provider, base_url):
@@ -377,8 +377,8 @@ def determine_api_mode(provider: str, base_url: str = "", model: str = "") -> st
     mandated = host_mandated_api_mode(base_url)
     if mandated is not None:
         return mandated
-    if (provider or "").strip().lower() in {"anxious", "anxious-portal", "anxiousresearchlab"}:
-        return anxious_api_mode(model)
+    if (provider or "").strip().lower() in {"nous", "nous-portal", "nousresearch"}:
+        return nous_api_mode(model)
     pdef = get_provider(provider)
     if pdef is not None:
         if pdef.transport in TRANSPORT_TO_API_MODE:
@@ -400,12 +400,22 @@ def _user_pdef(pid: str, name: str, base_url: str, key_env: str, transport: str 
 
 
 def resolve_user_provider(name: str, user_config: Dict[str, Any]) -> Optional[ProviderDef]:
-    """Resolve a provider from the user's config.yaml ``providers:`` section."""
+    """Resolve a provider from the user's config.yaml ``providers:`` section.
+
+    A ``providers.<name>`` block that carries no endpoint (``api``/``url``/``base_url``) is not a
+    custom-endpoint definition — it is tuning for a BUILT-IN provider of the same name (e.g.
+    ``providers.bedrock: {stale_timeout_seconds: 600}``, the documented path in
+    ``agent/turn_recovery.py`` / ``thinking_timeout_guidance.py``). Resolving it here would shadow
+    the built-in's real transport/base_url/auth_type with an empty ``openai_chat``/``api_key``
+    stub, routing e.g. AWS Bedrock through the generic custom-endpoint ``/models`` probe (#110402).
+    """
     entry = user_config.get(name) if isinstance(user_config, dict) and user_config else None
     if not isinstance(entry, dict):
         return None
-    return _user_pdef(name, entry.get("name", "") or name,
-                      entry.get("api", "") or entry.get("url", "") or entry.get("base_url", "") or "",
+    base_url = entry.get("api", "") or entry.get("url", "") or entry.get("base_url", "") or ""
+    if not base_url:
+        return None
+    return _user_pdef(name, entry.get("name", "") or name, base_url,
                       entry.get("key_env") or entry.get("api_key_env") or "",
                       entry.get("transport", "openai_chat") or "openai_chat")
 
@@ -465,7 +475,7 @@ def resolve_custom_provider(name: str, custom_providers: Optional[List[Dict[str,
 
 
 def _lossy_alias_registry_pdef(raw: str, canonical: str) -> Optional[ProviderDef]:
-    """Exact Pulse registry ids win over LOSSY alias collapsing (kimi-coding-cn must stay distinct
+    """Exact PULSE registry ids win over LOSSY alias collapsing (kimi-coding-cn must stay distinct
     from kimi-coding instead of collapsing through the shared models.dev alias "kimi-for-coding").
     A collapse is lossy only when MULTIPLE registry providers normalize to the same canonical name;
     single-entry rewrites ("copilot" -> "github-copilot") are correct routing and keep resolving
@@ -492,7 +502,7 @@ LLAMACPP_ALIASES: Tuple[str, ...] = (LLAMACPP_PROVIDER_ID, "llama.cpp", "llama-c
 
 
 def _has_staged_local_models() -> bool:
-    """True when GGUFs are staged under the Pulse home's ``models/`` — the model the picker's Local
+    """True when GGUFs are staged under the PULSE home's ``models/`` — the model the picker's Local
     row offers, which the runtime seam serves by booting/attaching a server on selection."""
     try:
         from pulse_cli.local_runtime.bootstrap import staged_model_ids

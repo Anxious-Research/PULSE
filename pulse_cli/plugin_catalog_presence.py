@@ -1,6 +1,6 @@
 """Whether the desktop app a catalog plugin drives is on this machine, before the plugin is installed.
 
-A portable plugin declares its app in ``plugin.json`` (``extensions.com.anxiousresearchlab.pulse.servers``).
+A portable plugin declares its app in ``plugin.json`` (``extensions.com.nousresearch.pulse.servers``).
 The catalog pins the commit, so the declaration is read once per pin from the repo at that commit and
 judged by the same ``pulse_platform`` resolver the installer and the Plugins-tab pill use. Nothing is
 installed, spawned or connected. Any failure to read the declaration is ``unknown``, never a guess.
@@ -106,7 +106,7 @@ def presence(entry: Any) -> Presence:
     manifest = _pinned_manifest(entry.repo, entry.sha, entry.subdir)
     if not manifest:
         return UNKNOWN
-    raw_servers = (manifest.get("extensions") or {}).get("com.anxiousresearchlab.pulse", {}).get("servers") or {}
+    raw_servers = (manifest.get("extensions") or {}).get("com.nousresearch.pulse", {}).get("servers") or {}
     if not isinstance(raw_servers, dict) or not raw_servers:
         return UNKNOWN
     try:

@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
 
-from tools.mcp_oauth_provider import PulseProviderMixin
+from tools.mcp_oauth_provider import PULSEProviderMixin
 
 logger = logging.getLogger(__name__)
 
@@ -41,11 +41,11 @@ class _ProviderEntry:
     pending_401: dict[str, "asyncio.Future[bool]"] = field(default_factory=dict)
 
 
-class PulseMCPOAuthProvider(PulseProviderMixin, *_SDK_BASES):
+class PULSEMCPOAuthProvider(PULSEProviderMixin, *_SDK_BASES):
     """OAuthClientProvider with pre-flow disk-mtime reload (external refreshes become visible to
     a running session), expiry seeding on cold load, pre-flight metadata discovery, dead-client
     registration detection and the bidirectional ``async_auth_flow`` bridge. Token-endpoint
-    fixes come from ``PulseProviderMixin``. Only usable when the SDK's OAuth module imported.
+    fixes come from ``PULSEProviderMixin``. Only usable when the SDK's OAuth module imported.
 
     Reference: Claude Code's ``invalidateOAuthCacheIfDiskChanged`` (``src/utils/auth.ts:1320``, CC-1096 /
     GH#24317).
@@ -65,9 +65,9 @@ class PulseMCPOAuthProvider(PulseProviderMixin, *_SDK_BASES):
         self._pulse_preregistered = preregistered
 
     def _pulse_storage(self):
-        """The context storage when it is a ``PulseTokenStorage``, else None."""
-        from tools.mcp_oauth import PulseTokenStorage
-        return self.context.storage if isinstance(self.context.storage, PulseTokenStorage) else None
+        """The context storage when it is a ``PULSETokenStorage``, else None."""
+        from tools.mcp_oauth import PULSETokenStorage
+        return self.context.storage if isinstance(self.context.storage, PULSETokenStorage) else None
 
     def _log_nonfatal(self, what: str, exc: BaseException) -> None:
         logger.debug("MCP OAuth '%s': %s failed (non-fatal): %s", self._pulse_server_name, what, exc)
@@ -75,11 +75,11 @@ class PulseMCPOAuthProvider(PulseProviderMixin, *_SDK_BASES):
     async def _initialize(self) -> None:
         """Load stored state, seed ``token_expiry_time``, restore/prefetch metadata. The SDK's
         ``_initialize`` never calls ``update_token_expiry``, so a restarted process would ship stale
-        Bearer tokens as "valid"; seeding the expiry (``PulseTokenStorage`` persists absolute
+        Bearer tokens as "valid"; seeding the expiry (``PULSETokenStorage`` persists absolute
         ``expires_at``) makes the SDK refresh first. Metadata is restored from disk, else discovered
         pre-flight when we hold tokens but no metadata: otherwise ``_refresh_token`` guesses
         ``{server_url}/token`` (wrong for split-origin providers), 404s, and we fall to browser reauth."""
-        await super()._initialize()  # PulseProviderMixin: restores metadata from disk, enforces issuer binding
+        await super()._initialize()  # PULSEProviderMixin: restores metadata from disk, enforces issuer binding
         tokens = self.context.current_tokens
         if tokens is not None and tokens.expires_in is not None:
             # The SDK maps a zero TTL to ``time.time()`` and accepts equality
@@ -101,7 +101,7 @@ class PulseMCPOAuthProvider(PulseProviderMixin, *_SDK_BASES):
     async def _prefetch_oauth_metadata(self) -> None:
         """Fetch PRM + ASM from the well-known endpoints before the first request, via the SDK's own URL
         builders/response handlers so we track whatever the pinned SDK expects."""
-        # The SDK's httpx flavour, not Pulse': `create_oauth_metadata_request` returns *its* (httpx2) Request objects.
+        # The SDK's httpx flavour, not PULSE': `create_oauth_metadata_request` returns *its* (httpx2) Request objects.
         from tools.mcp_tool import sdk_httpx
         httpx = sdk_httpx()
         if httpx is None:  # pragma: no cover — SDK import would have failed
@@ -266,7 +266,7 @@ class PulseMCPOAuthProvider(PulseProviderMixin, *_SDK_BASES):
 
 
 # Cached at import time; None when the SDK's OAuth module is unavailable.
-_PULSE_PROVIDER_CLS: Optional[type] = PulseMCPOAuthProvider if _SDK_BASES else None
+_PULSE_PROVIDER_CLS: Optional[type] = PULSEMCPOAuthProvider if _SDK_BASES else None
 
 
 class MCPOAuthManager:
@@ -303,7 +303,7 @@ class MCPOAuthManager:
         return (str(home.expanduser().resolve(strict=False)), server_name)
 
     def _build_provider(self, server_name: str, entry: _ProviderEntry) -> Optional[Any]:
-        """Build a ``PulseMCPOAuthProvider``; None if the SDK's OAuth support is unavailable."""
+        """Build a ``PULSEMCPOAuthProvider``; None if the SDK's OAuth support is unavailable."""
         if _PULSE_PROVIDER_CLS is None:
             logger.warning("MCP OAuth '%s': SDK auth module unavailable", server_name)
             return None

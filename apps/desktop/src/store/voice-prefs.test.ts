@@ -1,18 +1,20 @@
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/pulse', () => ({
-  getPulseConfigRecord: vi.fn(async () => ({})),
-  savePulseConfig: vi.fn(async () => undefined)
+  getPULSEConfigRecord: vi.fn(async () => ({})),
+  savePULSEConfig: vi.fn(async () => undefined)
 }))
 
-import { savePulseConfig } from '@/pulse'
+import { savePULSEConfig } from '@/pulse'
 import { isVoiceStopCommand } from '@/lib/voice-stop-word'
 
 import {
+  $bargeInEnabled,
   $bargeInThresholdMultiplier,
   $voiceSilenceMs,
   $voiceStopPhrase,
   $voiceStopPhraseConfig,
+  applyBargeInEnabledFromConfig,
   applyBargeInThresholdFromConfig,
   applyVoiceSilenceMsFromConfig,
   applyVoiceStopPhraseFromConfig
@@ -32,13 +34,13 @@ it('keeps the desktop toggle local across config refreshes', async () => {
         })
       }
 
-      vi.mocked(savePulseConfig).mockClear()
+      vi.mocked(savePULSEConfig).mockClear()
 
       try {
         await prefs.setAutoSpeakReplies(enabled)
         prefs.applyAutoSpeakFromConfig({ voice: { auto_tts: !enabled } })
         expect(prefs.$autoSpeakReplies.get()).toBe(enabled)
-        expect(savePulseConfig).not.toHaveBeenCalled()
+        expect(savePULSEConfig).not.toHaveBeenCalled()
         expect(localStorage.getItem('pulse.desktop.autoSpeakReplies')).toBe(fails ? null : String(enabled))
       } finally {
         write.mockRestore()
@@ -115,7 +117,7 @@ describe('applyVoiceStopPhraseFromConfig', () => {
 })
 
 // The live matcher reads the atoms these seed, so drive it through them the way
-// `usePulseConfig` does: `/api/config` (defaults merged in) + `/api/config/defaults`.
+// `usePULSEConfig` does: `/api/config` (defaults merged in) + `/api/config/defaults`.
 describe('spoken stop follows the loaded voice.stop_phrases (#117801)', () => {
   const defaults = { voice: { stop_phrases: ['stop'] } }
 
@@ -171,6 +173,30 @@ describe('applyBargeInThresholdFromConfig', () => {
 
     applyBargeInThresholdFromConfig(null)
     expect($bargeInThresholdMultiplier.get()).toBeNull()
+  })
+})
+
+// `voice.barge_in` mirrors the gateway's `_arm_barge_listener_if_enabled`
+// (tui_gateway/methods_voice.py): the listener is armed unless the key is
+// explicitly false.
+describe('applyBargeInEnabledFromConfig', () => {
+  it('disarms only an explicit false', () => {
+    applyBargeInEnabledFromConfig({ voice: { barge_in: false } })
+    expect($bargeInEnabled.get()).toBe(false)
+
+    applyBargeInEnabledFromConfig({ voice: { barge_in: true } })
+    expect($bargeInEnabled.get()).toBe(true)
+  })
+
+  it('absent, null, or malformed values keep barge-in enabled', () => {
+    for (const voice of [undefined, {}, { barge_in: null }, { barge_in: 'nope' }, { barge_in: 0 }]) {
+      applyBargeInEnabledFromConfig({ voice: { barge_in: false } })
+      applyBargeInEnabledFromConfig({ voice })
+      expect($bargeInEnabled.get()).toBe(true)
+    }
+
+    applyBargeInEnabledFromConfig(null)
+    expect($bargeInEnabled.get()).toBe(true)
   })
 })
 

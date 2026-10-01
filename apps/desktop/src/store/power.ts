@@ -3,7 +3,7 @@
  *
  * Backstop polls are already event-demoted and visibility-gated; battery is
  * the third gate — on battery their cadence stretches (×4) so a laptop
- * running Pulse in the background isn't spending its charge on safety-net
+ * running PULSE in the background isn't spending its charge on safety-net
  * refreshes. Live streaming and event-driven refreshes are untouched: this
  * only slows timers whose job is catching what a degraded socket missed.
  *

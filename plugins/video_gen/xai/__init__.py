@@ -85,7 +85,7 @@ def _xai_error(error: str, error_type: str, prompt: str, model: str = "", aspect
 
 def _media_ref_to_xai_url(value: str, *, kind: str, fallback_mime: str) -> str:
     """URL/data URI accepted by xAI for ``kind`` (``image``/``video``) inputs: remote URLs and matching data URIs pass
-    through; a readable local file of the right MIME class is inlined as base64 (after Pulse' read deny-list /
+    through; a readable local file of the right MIME class is inlined as base64 (after PULSE' read deny-list /
     credential-store guard, which fails open if unavailable); anything else is returned as-is so the caller rejects it."""
     ref = (value or "").strip()
     path = Path(ref).expanduser()
@@ -318,63 +318,3 @@ async def _submit_xai_video_payload(api_key: str, base_url: str, endpoint: str, 
 def register(ctx) -> None:
     """Plugin entry point — wire ``XAIVideoGenProvider`` into the registry."""
     ctx.register_video_gen_provider(XAIVideoGenProvider())
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-def run_xai_video_generation(
-    *,
-    prompt: str,
-    model: Optional[str],
-    explicit_model: bool,
-    image_url: Optional[str],
-    reference_image_urls: Optional[List[str]],
-    duration: Optional[int],
-    aspect_ratio: str,
-    resolution: str,
-) -> Dict[str, Any]:
-    return _run_xai_video_coroutine(
-        _generate_xai_video_async(
-            prompt=prompt,
-            model=model,
-            explicit_model=explicit_model,
-            image_url=image_url,
-            reference_image_urls=reference_image_urls,
-            duration=duration,
-            aspect_ratio=aspect_ratio,
-            resolution=resolution,
-        ),
-        operation_label="generation",
-        model=model,
-        prompt=prompt,
-        aspect_ratio=aspect_ratio,
-    )
-
-def _run_xai_video_coroutine(
-    coro,
-    *,
-    operation_label: str,
-    model: Optional[str],
-    prompt: str,
-    aspect_ratio: str,
-) -> Dict[str, Any]:
-    try:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(coro)
-        finally:
-            loop.close()
-    except Exception as exc:
-        logger.warning("xAI video %s unexpected failure: %s", operation_label, exc, exc_info=True)
-        return error_response(
-            error=f"xAI video {operation_label} failed: {exc}",
-            error_type="api_error",
-            provider="xai",
-            model=model or DEFAULT_MODEL,
-            prompt=prompt,
-            aspect_ratio=aspect_ratio,
-        )
-# ---- END PLUGIN-COMPAT ----

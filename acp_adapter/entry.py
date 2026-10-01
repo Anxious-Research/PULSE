@@ -17,7 +17,7 @@ except ModuleNotFoundError as exc:
     if exc.name != "pulse_bootstrap":
         raise  # the bootstrap exists but cannot load: skipping it would skip PM activation
 else:
-    # Stop a ``utils/``/``proxy/``/``ui/`` package in the launch cwd from shadowing Pulse modules.
+    # Stop a ``utils/``/``proxy/``/``ui/`` package in the launch cwd from shadowing PULSE modules.
     pulse_bootstrap.harden_import_path()
 
 # `pulse-acp` runs without pulse_cli.main: repair a `pulse update` killed mid-pull here, before
@@ -92,11 +92,11 @@ def _load_env() -> None:
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="pulse-acp", description="Run Pulse Agent as an ACP stdio server.")
-    parser.add_argument("--version", action="store_true", help="Print Pulse version and exit")
+    parser = argparse.ArgumentParser(prog="pulse-acp", description="Run PULSE Agent as an ACP stdio server.")
+    parser.add_argument("--version", action="store_true", help="Print PULSE version and exit")
     parser.add_argument("--check", action="store_true", help="Verify ACP dependencies and adapter imports, then exit")
     parser.add_argument("--setup", action="store_true",
-                        help="Run interactive Pulse provider/model setup for ACP terminal auth")
+                        help="Run interactive PULSE provider/model setup for ACP terminal auth")
     parser.add_argument("--setup-browser", action="store_true",
                         help="Prepare PM's pinned browser tools and Chromium.")
     parser.add_argument("--yes", "-y", action="store_true", dest="assume_yes",
@@ -112,9 +112,9 @@ def _print_version() -> None:
 
 def _run_check() -> None:
     import acp  # noqa: F401
-    from acp_adapter.server import PulseACPAgent  # noqa: F401
+    from acp_adapter.server import PULSEACPAgent  # noqa: F401
 
-    print("Pulse ACP check OK")
+    print("PULSE ACP check OK")
 
 
 def _run_setup() -> None:
@@ -190,7 +190,7 @@ def main(argv: list[str] | None = None) -> None:
     install_truststore()
 
     import acp
-    from .server import PulseACPAgent
+    from .server import PULSEACPAgent
 
     # Windows: import the configured memory provider (and numpy) on the main thread before
     # the MCP-discovery and ACP stdin-reader threads start (pulse_cli's ~150 ms
@@ -215,7 +215,7 @@ def main(argv: list[str] | None = None) -> None:
         except Exception:
             logger.debug("MCP tool discovery failed at ACP startup", exc_info=True)
 
-    agent = PulseACPAgent()
+    agent = PULSEACPAgent()
     try:
         asyncio.run(acp.run_agent(agent, use_unstable_protocol=True))
     except KeyboardInterrupt:

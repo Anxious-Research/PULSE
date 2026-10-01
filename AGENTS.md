@@ -1,4 +1,4 @@
-# Pulse Agent - Development Guide
+# PULSE Agent - Development Guide
 
 Instructions for AI coding assistants and developers working on the pulse-agent codebase.
 This root file holds only what applies everywhere. Each area has its own `AGENTS.md` (aim for
@@ -7,9 +7,9 @@ past that); see the **routing table** at the end and read the area file before e
 
 **Never give up on the right solution.**
 
-## What Pulse Is
+## What PULSE Is
 
-Pulse is a personal AI agent that runs the same agent core across a CLI, a messaging
+PULSE is a personal AI agent that runs the same agent core across a CLI, a messaging
 gateway (Telegram, Discord, Slack, ~20 platforms), a TUI, and an Electron desktop app. It
 learns across sessions (memory + skills), delegates to subagents, runs scheduled jobs, and
 drives a real terminal and browser. It is extended primarily through **plugins and skills**,
@@ -35,7 +35,7 @@ sweeper, which may only close on `implemented_on_main`, `cannot_reproduce`, or `
 Taste-based "out of scope" closes are a human maintainer's call; the sweeper's job is to
 recognize design intent and *avoid wrongly closing a legitimate contribution*.
 
-Read the balance right: Pulse ships a **lot**. Most merges are bug fixes to reported
+Read the balance right: PULSE ships a **lot**. Most merges are bug fixes to reported
 behavior, and the product surface (platforms, providers, models, desktop/TUI features)
 expands aggressively on purpose. The restraint below targets the **core agent + model tool
 schema**, the one place where every addition is paid for on every API call. "Smallest
@@ -98,7 +98,7 @@ grow: expansive at the edges, conservative at the waist.
   SaaS connectors, analytics dashboards, and other "someone else's product" plugins do NOT
   land under `plugins/` — every one becomes our burden against a fast-moving core for a
   backend we don't own. Ship as a **standalone plugin repo** (`~/.pulse/plugins/` or pip
-  entry point), promoted in the Anxious Research Lab Discord `#plugins-skills-and-skins`. This is a
+  entry point), promoted in the Nous Research Discord `#plugins-skills-and-skins`. This is a
   coupling decision, not a quality bar; such PRs are closed with a pointer to publish.
 
 ### Before you call it a bug — verify the premise (and when NOT to close)
@@ -156,10 +156,10 @@ Choose the highest (least-footprint) rung that correctly solves the problem:
 A tool that works only because of *who is on the other end* (desktop panes, in-app browser,
 message reactions, Projects) must resolve availability from the **session's own source**, not
 from an env var on the backend. Client and backend are separate machines: the desktop app may
-drive a locally spawned backend, one over SSH, one behind URL + token, or Pulse Cloud, and
+drive a locally spawned backend, one over SSH, one behind URL + token, or PULSE Cloud, and
 only the first two carry `PULSE_DESKTOP=1`. An env-keyed gate is a silent no-op on the other
 topologies — the tool is stripped from the schema while the platform hint tells the model it
-is "inside the Pulse desktop app". The pattern:
+is "inside the PULSE desktop app". The pattern:
 
 - **The toolset is the surface gate.** Keep such tools off `_PULSE_CORE_TOOLS` and in a named
   toolset (`desktop_ui`, `project`); the GUI gateway's `_load_enabled_toolsets(platform)`
@@ -196,7 +196,7 @@ pulse-agent/
 ├── run_agent.py          # AIAgent facade; the turn loop lives in agent/turn_*.py
 ├── model_tools.py        # Tool orchestration, discover_builtin_tools(), handle_function_call()
 ├── toolsets.py           # TOOLSETS dict, _PULSE_CORE_TOOLS
-├── cli.py                # PulseCLI (REPL, slash dispatch) + pulse_cli/cli_*_mixin.py
+├── cli.py                # PULSECLI (REPL, slash dispatch) + pulse_cli/cli_*_mixin.py
 ├── pulse_state.py       # SessionDB facade; pulse_state_*.py siblings
 ├── pulse_constants.py   # get_pulse_home(), display_pulse_home() — profile-aware paths
 ├── pulse_logging.py     # agent.log / errors.log / gateway.log (profile-aware)
@@ -217,7 +217,7 @@ pulse-agent/
 ├── acp_adapter/          # ACP server (VS Code / Zed / JetBrains)
 ├── cron/                 # jobs.py + scheduler.py (+ scheduler_*.py)
 ├── evals/                # Offline benchmarks (codebase_navigability/, compaction/, ...)
-├── scripts/              # run_tests.sh, release.py, check_compat_pointers.py, ci/
+├── scripts/              # run_tests.sh, release.py, ci/
 ├── website/              # Docusaurus docs (developer-guide/ holds the long-form area docs)
 └── tests/                # Pytest suite (~39k tests / ~3.7k files, Sep 2026)
 ```
@@ -246,18 +246,14 @@ families: `pulse_state.py` (21), `gateway/run.py` (15), `tools/mcp_tool.py` (15)
   function so `monkeypatch.setattr(facade, "name", ...)` is the seam; a patch on the defining
   module passes silently. Check the call site's binding before writing a patch target
   (blind repointing to defining modules broke 130+ tests).
-- **Compat pointers are OFF LIMITS in-tree.** Old import paths kept alive for external plugins
-  (`PLUGIN-COMPAT` blocks, `COMPAT_MANIFEST.md`, `compat_manifest.json`) must not be used by
-  in-tree code or tests; `scripts/check_compat_pointers.py` runs in CI, and
-  `-W error::pulse_cli.plugin_compat.PulsePluginCompatWarning` catches them in the suite.
-  They are removed 2026-09-14 by reverting one commit. Import from the defining module.
 - **Don't recreate god files.** A file passing ~2,000 lines or a function passing ~300 lines /
   cyclomatic complexity 30 is the signal to split along `<stem>_<topic>` FIRST, in its own
   commit. New behaviour goes in a new or topical sibling — never appended to a facade.
 - **No `if/elif` ladders ≥ 4 branches keyed on a name/kind** — use a dict/table → handler
   (`_SLASH_DISPATCH` in `cli.py`, `_command_handler_table` in the gateway are the shape).
 - **No re-export shims for internal moves** ("keep the old name importable"). Internal paths
-  are not API; external compat is handled ONCE by the compat layer, not per PR.
+  are not API: plugins build on `ctx` and the documented ABCs. The one-time Sep 2026
+  decomposition compat layer for external plugins has been removed; never reintroduce one.
 - **Moving a symbol means fixing its docs in the same PR:** grep `website/docs`,
   `skills/`, and every `AGENTS.md` for the old `path.py` + symbol (23 doc files went stale
   after the refactor). `evals/codebase_navigability/static_metrics.py <tree> <label>` measures
@@ -329,14 +325,14 @@ Python requirements: `==exact`. A bare `>=X.Y.Z` is rejected by CI and reviewers
 After changing `pyproject.toml`, run `pulse pm lock`, re-source `./activate`, and commit
 `pyproject.toml` with `uv.lock`. Reference: #2810 (bounds), #9801 (SHA pinning + audit CI).
 
-PM owns Pulse Python dependency changes. Use `pm.sync_venv(['extra'], explicit=True)`
+PM owns PULSE Python dependency changes. Use `pm.sync_venv(['extra'], explicit=True)`
 for declared runtime extras, `pulse pm install` for setup/sync, and `pulse pm repair`
-for damaged dependencies. Do not mutate Pulse environments with raw pip or uv.
+for damaged dependencies. Do not mutate PULSE environments with raw pip or uv.
 Use `pm.build_environment` for fresh build outputs and `pm.ensure_environment` for
 isolated tool environments. Callers receive an interpreter or tool path, not uv.
 Nix's declarative uv2nix builds and unrelated user projects remain independently owned.
 
-The `[tool.uv] exclude-newer = "14 days"` quarantine covers **Pulse's own dependencies only**
+The `[tool.uv] exclude-newer = "14 days"` quarantine covers **PULSE's own dependencies only**
 (every registry package in core's `uv.lock`). Plugin `python_dependencies` follow the plugin's own
 policy: when PM generates the plugin workspace (`pm/workspace.py::_core_release_quarantine`) the
 global cutoff moves onto each core-locked package, so plugin-only packages are not filtered and a
@@ -513,7 +509,7 @@ extract, not to regex around it.
 | `cli.py`, `pulse_cli/`, `main.py` | `pulse_cli/AGENTS.md` | CLI mixins, `_SLASH_DISPATCH`, slash registry, config system + loaders, skins, `pulse update` pipeline, profiles / multiplex |
 | `gateway/` | `gateway/AGENTS.md` | Adapters, two message guards, streaming contract, background notifications, gateway vs desktop lifecycle, token locks, scoped secrets |
 | `tools/`, `toolsets.py`, `model_tools.py` | `tools/AGENTS.md` | Adding tools, registry, toolsets, delegation, cross-tool references, backends |
-| `plugins/`, `pulse_cli/plugins*.py` | `plugins/AGENTS.md` | Plugin kinds, native compat contract, in-tree policy, Sep-2026 compat window |
+| `plugins/`, `pulse_cli/plugins*.py` | `plugins/AGENTS.md` | Plugin kinds, native compat contract, in-tree policy |
 | `tui_gateway/`, `ui-tui/` | `tui_gateway/AGENTS.md` | Process model, JSON-RPC transport, key surfaces, slash flow, dev commands |
 | `web/`, `pulse_cli/web_routers/` | `web/AGENTS.md` | Dashboard embeds the real TUI; what React may and may not rebuild |
 | `apps/desktop/` | `apps/desktop/AGENTS.md`, `apps/desktop/src/AGENTS.md` | Desktop judgment guide; `serve` backend, slash palette curation, Bot Mode canonical chat |

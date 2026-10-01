@@ -36,7 +36,7 @@ import { fileURLToPath } from 'node:url';
  * strings, so they are types, not conventions.
  *
  * @typedef {'latest'} InstallerVersion
- *   The artifact published on the website right now -- Pulse-Setup.exe has
+ *   The artifact published on the website right now -- PULSE-Setup.exe has
  *   no versioned archive yet. Widen this union when one exists.
  * @typedef {'installer-script' | 'installer-script+desktop' | 'desktop-installer' | 'packaged-app'} InstallMethod
  *   installer-script is the platform's one-liner (curl | bash on
@@ -141,13 +141,13 @@ function startLabel(from, to) {
 export const SPEC = {
   windows: {
     install: [
-      // irm https://pulse.anxiousresearchlab.com/install.ps1 | iex
+      // irm https://pulse.anxious-research.com/install.ps1 | iex
       { method: 'installer-script' },
-      // The same one-liner with -IncludeDesktop: builds Pulse.exe AND
+      // The same one-liner with -IncludeDesktop: builds PULSE.exe AND
       // registers Start Menu / Desktop shortcuts, so it is a second real
       // path to a hand-launchable app.
       { method: 'installer-script+desktop' },
-      // Website Pulse-Setup.exe, clicked through the GUI.
+      // Website PULSE-Setup.exe, clicked through the GUI.
       { method: 'desktop-installer', versions: ['latest'] },
     ],
     update: [
@@ -167,7 +167,7 @@ export const SPEC = {
     install: [
       { method: 'installer-script' },
       { method: 'installer-script+desktop' },
-      // The published Pulse-Setup.dmg from the website, mounted and run.
+      // The published PULSE-Setup.dmg from the website, mounted and run.
       { method: 'desktop-installer', versions: ['latest'] },
     ],
     update: [

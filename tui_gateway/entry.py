@@ -1,7 +1,7 @@
 import os
 import sys
 
-# Stop a ``utils/``-style package in the launch directory from shadowing Pulse's own
+# Stop a ``utils/``-style package in the launch directory from shadowing PULSE's own
 # top-level modules; ``pulse_bootstrap``'s name can't collide, so importing it first is safe.
 import pulse_bootstrap
 
@@ -104,6 +104,9 @@ def _hard_exit() -> None:
     """The grace timer's ``os._exit``. The flush runs first and the graceful foreground kill
     (TERM, wait, KILL) after it, so a SIGTERM-ignoring command is usually still alive here:
     SIGKILL its tree now or it outlives us, reparented to init."""
+    with suppress(Exception):  # only armed by a termination signal (a requested stop); os._exit skips atexit
+        from pulse_cli.observability.shared_metrics_process import stamp_exit
+        stamp_exit("clean")
     with suppress(Exception):
         from tools.environments.base import kill_live_foreground_processes
         kill_live_foreground_processes(now=True)
@@ -276,6 +279,11 @@ def main():
         logger.warning("TUI message injector did not install", exc_info=True)
     _close_rpc_stdin_on_exec()
     _install_sidecar_publisher()
+    from pulse_cli.observability.shared_metrics_process import begin_process
+
+    begin_process("tui")
+    from pulse_cli.observability.shared_metrics_disabled import set_process_surface
+    set_process_surface("tui_gateway")
 
     # One TLS authority: trust the OS store process-wide before any
     # outbound call resolves a CA bundle (see agent/ssl_verify.py).
@@ -306,7 +314,7 @@ def main():
             "skin": resolve_skin(), "change_events": True, "replay_epoch": replay_epoch()}}},
         "startup write failed (broken stdout pipe before first event)")
 
-    # Live-apply skins Pulse activates mid-conversation.
+    # Live-apply skins PULSE activates mid-conversation.
     server._ensure_skin_watcher()
 
     # Warm the /model picker's provider-models cache in this idle window (fire-and-forget).

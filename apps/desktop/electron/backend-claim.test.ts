@@ -116,19 +116,19 @@ test('exit line carries the buffered tail next to the exit code, preferring the 
   tail.append('Traceback (most recent call last):\n')
 
   assert.equal(
-    formatBackendExitLine('Ignoring stale Pulse backend exit', 1, null, tail),
-    'Ignoring stale Pulse backend exit (1)\nRecent backend output:\nTraceback (most recent call last):'
+    formatBackendExitLine('Ignoring stale PULSE backend exit', 1, null, tail),
+    'Ignoring stale PULSE backend exit (1)\nRecent backend output:\nTraceback (most recent call last):'
   )
   assert.equal(
-    formatBackendExitLine('Pulse backend exited', null, 'SIGTERM', tail),
-    'Pulse backend exited (SIGTERM)\nRecent backend output:\nTraceback (most recent call last):'
+    formatBackendExitLine('PULSE backend exited', null, 'SIGTERM', tail),
+    'PULSE backend exited (SIGTERM)\nRecent backend output:\nTraceback (most recent call last):'
   )
 })
 
 test('exit line stays byte-identical to the legacy shape when the tail is empty or missing', () => {
   assert.equal(
-    formatBackendExitLine('Pulse backend exited', 0, null, createBackendOutputTail(64)),
-    'Pulse backend exited (0)'
+    formatBackendExitLine('PULSE backend exited', 0, null, createBackendOutputTail(64)),
+    'PULSE backend exited (0)'
   )
-  assert.equal(formatBackendExitLine('Pulse backend exited', 1, null, null), 'Pulse backend exited (1)')
+  assert.equal(formatBackendExitLine('PULSE backend exited', 1, null, null), 'PULSE backend exited (1)')
 })

@@ -116,7 +116,7 @@ export {
 } from './reconnect-backoff'
 export { skillInvocationText } from './skill-scaffold'
 export {
-  type PulseSkin,
+  type PULSESkin,
   SKIN_BRANDING_TOKENS,
   SKIN_COLOR_TOKENS,
   type SkinBranding,
@@ -176,12 +176,12 @@ export {
   type WindowsBackgroundMaterial
 } from './translucency'
 export {
-  buildPulseWebSocketUrl,
+  buildPULSEWebSocketUrl,
   type GatewayAuthMode,
   GatewayReauthRequiredError,
   type GatewayWsConnection,
   type GatewayWsUrlResult,
-  type PulseWebSocketUrlOptions,
+  type PULSEWebSocketUrlOptions,
   isGatewayReauthRequired,
   resolveGatewayWsUrl,
   type ResolveGatewayWsUrlDeps,

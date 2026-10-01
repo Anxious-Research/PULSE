@@ -383,7 +383,7 @@ def read_json_or_empty(path: Union[str, Path]) -> dict:
 def warn_if_credential_file_broadly_readable(path: Union[str, Path], *, label: str = "", log: logging.Logger | None = None) -> bool:
     """Warn when a credential file is group/world-readable; True when a warning was emitted.
 
-    Hand-made secret files (or ones older Pulse wrote without an explicit mode) commonly end up
+    Hand-made secret files (or ones older PULSE wrote without an explicit mode) commonly end up
     0o644 under the default umask; call this before loading any token/credential file. No-op on
     non-POSIX (Windows ACLs don't map onto group/other bits; st_mode there is synthesized), when
     the file is missing, or when permissions are already tight.
@@ -504,9 +504,9 @@ def atomic_roundtrip_yaml_save(path: Union[str, Path], new_state: dict, *,
                                extra_content_on_create: "str | None" = None) -> None:
     """Persist a full config-state dict while preserving comments and ordering.
 
-    THE writer for ``config.yaml`` (every production caller reaches it through
-    ``pulse_cli.config.atomic_config_write``): the on-disk document is loaded through ruamel
-    round-trip mode and *new_state* is merged onto it, so comments, key order, quotes, blank
+    THE on-disk primitive for ``config.yaml`` (production callers reach it through
+    ``pulse_cli.config.atomic_config_write`` or ``atomic_config_replace``): the document is
+    loaded through ruamel round-trip mode and *new_state* is merged onto it, so comments, key order, quotes, blank
     lines and readable Unicode survive. Only nodes whose value actually changed are reassigned;
     an untouched scalar or list keeps its inline comments and formatting. Keys absent from
     *new_state* are deleted ("explicit absence": ``cfg.pop(k)`` + save removes ``k`` from disk).

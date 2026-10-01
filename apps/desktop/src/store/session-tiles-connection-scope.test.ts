@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { PulseConnection } from '@/global'
+import type { PULSEConnection } from '@/global'
 
 import { $activeGatewayProfile } from './profile'
 import { $selectedStoredSessionId, setConnection } from './session'
@@ -13,21 +13,21 @@ const local = {
   connectionId: 'local',
   mode: 'local',
   profile
-} as unknown as PulseConnection
+} as unknown as PULSEConnection
 
 const remote = {
   baseUrl: 'https://homelab.example:8443',
   connectionId: 'homelab',
   mode: 'remote',
   profile
-} as unknown as PulseConnection
+} as unknown as PULSEConnection
 
 const otherRemote = {
   baseUrl: 'https://other.example:8443',
   connectionId: 'other-remote',
   mode: 'remote',
   profile
-} as unknown as PulseConnection
+} as unknown as PULSEConnection
 
 beforeEach(() => {
   window.localStorage.clear()

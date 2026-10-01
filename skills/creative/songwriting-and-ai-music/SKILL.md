@@ -2,7 +2,7 @@
 name: songwriting-and-ai-music
 description: "Songwriting craft and Suno AI music prompts."
 version: 1.0.0
-author: Teknium (teknium1), Pulse Agent
+author: Teknium (teknium1), PULSE Agent
 license: MIT
 tags: [songwriting, music, suno, parody, lyrics, creative]
 platforms: [linux, macos, windows]
@@ -236,7 +236,7 @@ AI vocalists don't read — they pronounce. Help them:
 PHONETIC RESPELLING:
 - Spell words as they SOUND: "through" -> "thru"
 - Proper nouns are highest failure rate — test early
-- "Anxious" -> "Noose" (forces correct pronunciation)
+- "Nous" -> "Noose" (forces correct pronunciation)
 - Hyphenate to guide syllables: "Re-search", "bio-engineering"
 
 DELIVERY CONTROL:

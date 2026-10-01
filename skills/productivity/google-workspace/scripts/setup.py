@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Google Workspace OAuth2 setup for Pulse Agent.
+"""Google Workspace OAuth2 setup for PULSE Agent.
 
 Fully non-interactive — designed to be driven by the agent via terminal commands.
 The agent mediates between this script and the user (works on CLI, Telegram, Discord, etc.)
@@ -91,28 +91,28 @@ def _format_missing_scopes(missing_scopes: list[str]) -> str:
     return (
         "Token is valid but missing required Google Workspace scopes:\n"
         f"{bullets}\n"
-        "Run the Google Workspace setup again from this same Pulse profile to refresh consent."
+        "Run the Google Workspace setup again from this same PULSE profile to refresh consent."
     )
 
 
 def install_deps():
-    """Sync Pulse' declared Google extra, ready for the next process."""
+    """Sync PULSE' declared Google extra, ready for the next process."""
     if pm is None:
-        print("ERROR: Run this script in the Pulse environment; use pulse setup first.")
+        print("ERROR: Run this script in the PULSE environment; use pulse setup first.")
         return False
     try:
         pm.sync_venv(["google"], explicit=True)
     except Exception as exc:
         print(f"ERROR: Failed to install Google dependencies: {exc}")
         return False
-    print("Google dependencies synced. Restart Pulse, then rerun setup to continue OAuth.")
+    print("Google dependencies synced. Restart PULSE, then rerun setup to continue OAuth.")
     return True
 
 
 def _ensure_deps():
     """Let PM check imports and stop if activation needs a new process."""
     if pm is None:
-        print("ERROR: Run this script in the Pulse environment; use pulse setup first.")
+        print("ERROR: Run this script in the PULSE environment; use pulse setup first.")
         sys.exit(1)
     try:
         pm.ensure_import("google")
@@ -218,7 +218,7 @@ def check_auth(quiet: bool = False):
 
 
 def store_client_secret(path: str):
-    """Copy and validate client_secret.json to Pulse home."""
+    """Copy and validate client_secret.json to PULSE home."""
     src = Path(path).expanduser().resolve()
     if not src.exists():
         print(f"ERROR: File not found: {src}")
@@ -415,7 +415,7 @@ def revoke():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Google Workspace OAuth setup for Pulse")
+    parser = argparse.ArgumentParser(description="Google Workspace OAuth setup for PULSE")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--check", action="store_true", help="Check if auth is valid (exit 0=yes, 1=no)")
     group.add_argument("--check-live", action="store_true", help="Check auth with a real API call (detects disabled_client)")

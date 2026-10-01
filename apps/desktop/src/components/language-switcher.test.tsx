@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import type { PulseConfigRecord } from '@/pulse'
+import type { PULSEConfigRecord } from '@/pulse'
 import { type I18nConfigClient, I18nProvider, registerAppLocale } from '@/i18n'
 import { stubMenuDomApis, stubResizeObserver } from '@/test/jsdom'
 
@@ -17,7 +17,7 @@ describe('LanguageSwitcher', () => {
 
   it('persists language changes through display.language config', async () => {
     const saveConfig = vi.fn().mockResolvedValue({ ok: true })
-    const latestConfig: PulseConfigRecord = { display: { language: 'en', skin: 'slate' } }
+    const latestConfig: PULSEConfigRecord = { display: { language: 'en', skin: 'slate' } }
 
     const configClient: I18nConfigClient = {
       getConfig: vi.fn().mockResolvedValue(latestConfig),
@@ -49,7 +49,7 @@ describe('LanguageSwitcher', () => {
     )
 
     const saveConfig = vi.fn().mockResolvedValue({ ok: true })
-    const latestConfig: PulseConfigRecord = { display: { language: 'en' } }
+    const latestConfig: PULSEConfigRecord = { display: { language: 'en' } }
 
     const configClient: I18nConfigClient = {
       getConfig: vi.fn().mockResolvedValue(latestConfig),

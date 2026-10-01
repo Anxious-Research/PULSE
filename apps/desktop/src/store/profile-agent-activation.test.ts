@@ -1,7 +1,7 @@
 import { atom } from 'nanostores'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { PulseConnection } from '@/global'
+import type { PULSEConnection } from '@/global'
 
 import { deferred } from '../test/deferred'
 
@@ -56,16 +56,16 @@ const {
   setCurrentProvider
 } = await import('./session')
 
-const agentConn = (over: Partial<PulseConnection> = {}): PulseConnection =>
-  ({ baseUrl: 'https://homelab.invalid', mode: 'remote', profile: 'research', ...over }) as PulseConnection
+const agentConn = (over: Partial<PULSEConnection> = {}): PULSEConnection =>
+  ({ baseUrl: 'https://homelab.invalid', mode: 'remote', profile: 'research', ...over }) as PULSEConnection
 
-const localConn = (over: Partial<PulseConnection> = {}): PulseConnection =>
-  ({ baseUrl: '', mode: 'local', profile: 'default', ...over }) as PulseConnection
+const localConn = (over: Partial<PULSEConnection> = {}): PULSEConnection =>
+  ({ baseUrl: '', mode: 'local', profile: 'default', ...over }) as PULSEConnection
 
-const getConnection = vi.fn<(profile?: string | null) => Promise<PulseConnection>>()
+const getConnection = vi.fn<(profile?: string | null) => Promise<PULSEConnection>>()
 
 const getConnectionFor =
-  vi.fn<(payload: { connectionId?: null | string; profile?: null | string }) => Promise<PulseConnection>>()
+  vi.fn<(payload: { connectionId?: null | string; profile?: null | string }) => Promise<PULSEConnection>>()
 
 beforeEach(() => {
   const localStorage = window.localStorage
@@ -392,7 +392,7 @@ describe('ensureGatewayAgent commit hook (beforeActivate) — the Sessions switc
     vi.useFakeTimers()
 
     try {
-      getConnectionFor.mockImplementationOnce(() => new Promise<PulseConnection>(() => undefined))
+      getConnectionFor.mockImplementationOnce(() => new Promise<PULSEConnection>(() => undefined))
 
       const activation = ensureGatewayAgent('homelab', 'research')
       await vi.advanceTimersByTimeAsync(20_000)

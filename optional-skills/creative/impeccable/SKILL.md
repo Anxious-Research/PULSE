@@ -19,7 +19,7 @@ metadata:
 
 > **Catalog stub.** This entry is maintained upstream at
 > [pbakaus/impeccable](https://github.com/pbakaus/impeccable): the project
-> ships and verifies a Pulse-native skill bundle under `.pulse/skills/`.
+> ships and verifies a PULSE-native skill bundle under `.pulse/skills/`.
 > `pulse skills install impeccable` pulls the current bundle live from that
 > repo (quarantined and scanned like any hub install) — this directory holds
 > only the catalog metadata, so the vendored copy can never go stale.

@@ -1,5 +1,5 @@
 /**
- * Pulse desktop plugin template. Save as:
+ * PULSE desktop plugin template. Save as:
  *   <pulse home>/desktop-plugins/<id>/plugin.js   (folder name == id)
  * where <pulse home> is ~/.pulse by default, or ~/.pulse/profiles/<name>
  * when running a named profile (`pulse -p <name>`). Run `pulse doctor` (or

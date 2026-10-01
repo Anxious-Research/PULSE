@@ -95,6 +95,8 @@ def _(rid, params, pdb, conn) -> dict:
         **_pick(params, "slug", "primary_path", "description", "icon", "color", "board_slug"))
     if params.get("use"):
         pdb.set_active(conn, pid)
+    from pulse_cli.observability.shared_metrics_signals import record_feature_used
+    record_feature_used("projects")
     proj = pdb.get_project(conn, pid)
     return _ok(rid, {"project": proj.to_dict() if proj else None})
 
@@ -210,7 +212,7 @@ def _scan_discovered_repos_remote(conn, policy: dict) -> bool:
     ``replace=True``; a partial/errored scan must MERGE, or a failed refresh blanks the sidebar.
 
     The desktop's native repo scan only runs on the local filesystem. On a remote gateway connection the
-    host must scan its own disk so repos with zero Pulse sessions still appear in the sidebar (#81723).
+    host must scan its own disk so repos with zero PULSE sessions still appear in the sidebar (#81723).
     Mirrors the desktop's behavior: walk each root (bounded depth), find `.git` directories, record (root,
     label) pairs into the discovery cache.
     See #81723.

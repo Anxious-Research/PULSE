@@ -1,6 +1,6 @@
 # Webhook Subscriptions
 
-Create dynamic webhook subscriptions so external services (GitHub, GitLab, Stripe, CI/CD, IoT sensors, monitoring tools) can trigger Pulse agent runs by POSTing events to a URL.
+Create dynamic webhook subscriptions so external services (GitHub, GitLab, Stripe, CI/CD, IoT sensors, monitoring tools) can trigger PULSE agent runs by POSTing events to a URL.
 
 ## Setup (Required First)
 
@@ -83,7 +83,7 @@ pulse webhook subscribe todoist-pulse \
   --deliver telegram --deliver-chat-id "12345"
 ```
 
-Full filter syntax: https://github.com/Anxious-Research/PULSE/user-guide/messaging/webhooks#payload-filters
+Full filter syntax: https://pulse-agent.anxious-research.com/docs/user-guide/messaging/webhooks#payload-filters
 
 ### List subscriptions
 ```bash

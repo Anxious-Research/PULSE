@@ -2,7 +2,7 @@
 
 The restart phase enumerates ``pulse-gateway*``/``pulse-serve*`` units, ``ai.pulse.gateway*``
 LaunchAgents and every ``gateway run`` process on the host. Those are HOST-wide namespaces: a
-second Pulse install (another ``PULSE_HOME`` root under the same account, its own checkout and
+second PULSE install (another ``PULSE_HOME`` root under the same account, its own checkout and
 venv) shares them, and the update used to restart that install's gateway too — including the
 account's real ``pulse-gateway.service`` when a scratch home ran ``pulse update``.
 
@@ -157,5 +157,5 @@ def launchd_label_foreign_home(label: str, scope: set[Path] | None = None) -> st
 def describe_skipped_runtime(kind: str, name: str, home: str | None) -> str:
     """One notice line for a runtime the update leaves alone (foreign home or unreadable ownership)."""
     if home is None:
-        return f"  ↷ {name}: {kind} whose Pulse home could not be read — left alone (not restarted)"
-    return f"  ↷ {name}: {kind} of another Pulse home ({home}) — left alone (not restarted)"
+        return f"  ↷ {name}: {kind} whose PULSE home could not be read — left alone (not restarted)"
+    return f"  ↷ {name}: {kind} of another PULSE home ({home}) — left alone (not restarted)"

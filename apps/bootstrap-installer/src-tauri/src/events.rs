@@ -209,8 +209,8 @@ mod tests {
             ("\u{1b}[2K\u{1b}[1GCloning repository…", "Cloning repository…"),
             ("down\u{1b}[?25lloading\u{1b}[K", "downloading"),
             // OSC title commands, BEL- and ST-terminated.
-            ("\u{1b}]0;pulse\u{07}Installing Pulse", "Installing Pulse"),
-            ("\u{1b}]2;pulse\u{1b}\\Installing Pulse", "Installing Pulse"),
+            ("\u{1b}]0;pulse\u{07}Installing PULSE", "Installing PULSE"),
+            ("\u{1b}]2;pulse\u{1b}\\Installing PULSE", "Installing PULSE"),
             // \r in-place redraws collapse to the last visible frame.
             ("\r 12%\r 67%\r100%", "100%"),
             ("Resolving dependencies…\r", "Resolving dependencies…"),

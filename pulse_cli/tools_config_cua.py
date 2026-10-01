@@ -120,7 +120,7 @@ def install_cua_driver(upgrade: bool = False, show_installer_progress: bool = Tr
                          "    Fix or unset the override before running computer-use install.")
     else:
         if show_installer_progress:
-            _print_info("    Preparing the pinned cua-driver with Pulse PM...")
+            _print_info("    Preparing the pinned cua-driver with PULSE PM...")
         try:
             ensure("cua-driver", explicit=True)
         except Exception as exc:

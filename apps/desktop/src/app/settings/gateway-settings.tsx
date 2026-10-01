@@ -54,7 +54,7 @@ import { useSettingDeepLink } from './use-setting-deep-link'
 
 type Mode = 'local' | 'remote' | 'cloud' | 'ssh'
 type AuthMode = 'oauth' | 'token'
-// Pulse Cloud discovery lifecycle for the cloud-mode panel.
+// PULSE Cloud discovery lifecycle for the cloud-mode panel.
 type CloudDiscoverStatus = 'idle' | 'loading' | 'done' | 'error'
 
 export interface GatewaySettingsState {
@@ -76,7 +76,7 @@ export interface GatewaySettingsState {
   sshUser: string
   sshPort: number | null
   sshKeyPath: string
-  sshRemotePulsePath: string
+  sshRemotePULSEPath: string
   sshRemoteProfile: string
 }
 
@@ -97,7 +97,7 @@ const EMPTY_STATE: GatewaySettingsState = {
   sshUser: '',
   sshPort: null,
   sshKeyPath: '',
-  sshRemotePulsePath: '',
+  sshRemotePULSEPath: '',
   sshRemoteProfile: ''
 }
 
@@ -344,7 +344,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
   // so confirm resumes the right one.
   const [plainTextConfirm, setPlainTextConfirm] = useState<null | { apply: boolean }>(null)
 
-  // --- Pulse Cloud (cloud mode) state ---
+  // --- PULSE Cloud (cloud mode) state ---
   // One portal session powers discovery + the silent per-agent cascade. These
   // track the cloud panel: whether we're signed in, the discovered agent list,
   // and which agent is mid-connect.
@@ -529,7 +529,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
     state.sshUser,
     state.sshPort,
     state.sshKeyPath,
-    state.sshRemotePulsePath,
+    state.sshRemotePULSEPath,
     state.sshRemoteProfile
   ])
 
@@ -541,10 +541,16 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
           remoteAuthMode: state.remoteAuthMode,
           remoteUrl: coerceRemoteUrlScheme(state.remoteUrl),
           sshHost: state.sshHost.trim(),
-          sshUser: state.sshUser.trim() || undefined,
+          // Send an explicit '' for cleared fields. Main merges with `??`, so
+          // `undefined` means "inherit the saved value" and a cleared Identity
+          // file (or User) could never be removed once saved: the form kept
+          // refilling the stale path, and the stale key path made the v1 SSH
+          // route's identity differ from the registered gateway's, leaving
+          // the window unscoped.
+          sshUser: state.sshUser.trim(),
           sshPort: state.sshPort,
-          sshKeyPath: state.sshKeyPath.trim() || undefined,
-          sshRemotePulsePath: state.sshRemotePulsePath.trim(),
+          sshKeyPath: state.sshKeyPath.trim(),
+          sshRemotePULSEPath: state.sshRemotePULSEPath.trim(),
           // A blank clears an existing remote-profile mapping.
           sshRemoteProfile: state.sshRemoteProfile.trim()
         }),
@@ -644,7 +650,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
     await performSave(apply, false)
   }
 
-  // --- Pulse Cloud handlers ---
+  // --- PULSE Cloud handlers ---
 
   // Pull the discovered agent list over the shared portal session. Tolerant of
   // a lapsed session: a needsCloudLogin error flips us back to signed-out.
@@ -1113,7 +1119,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
         </div>
       </div>
 
-      {/* Pulse Cloud panel: one portal sign-in, then a discovered-agent picker
+      {/* PULSE Cloud panel: one portal sign-in, then a discovered-agent picker
           whose selection drives the silent per-agent cascade + a cloud
           connection. Replaces the URL/token form while in cloud mode. */}
       {state.mode === 'cloud' && !state.envOverride ? (
@@ -1412,13 +1418,13 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
             action={
               <Input
                 className={cn('h-8 font-mono', CONTROL_TEXT)}
-                onChange={event => setState(current => ({ ...current, sshRemotePulsePath: event.target.value }))}
-                placeholder={g.sshPulsePathPlaceholder}
-                value={state.sshRemotePulsePath}
+                onChange={event => setState(current => ({ ...current, sshRemotePULSEPath: event.target.value }))}
+                placeholder={g.sshPULSEPathPlaceholder}
+                value={state.sshRemotePULSEPath}
               />
             }
-            description={g.sshPulsePathDesc}
-            title={g.sshPulsePathTitle}
+            description={g.sshPULSEPathDesc}
+            title={g.sshPULSEPathTitle}
           />
         </div>
       ) : null}

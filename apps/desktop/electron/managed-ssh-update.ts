@@ -216,7 +216,7 @@ function windowsChildPath(home: string, name: string): string {
  */
 function buildPosixManagedUpdateLaunch(target: RemoteUpdateTarget, correlationId: string): string {
   const correlation = validateCorrelationId(correlationId)
-  const home = validateRemoteValue(target.pulseHome, 'Pulse home')
+  const home = validateRemoteValue(target.pulseHome, 'PULSE home')
   const pulsePath = validateRemoteValue(target.pulsePath, 'launcher path')
   const statusPath = posixChildPath(home, `.update_exit_code.${correlation}`)
   const intentPath = posixChildPath(home, `.update_launch_intent.${correlation}`)
@@ -236,13 +236,15 @@ function buildPosixManagedUpdateLaunch(target: RemoteUpdateTarget, correlationId
     `${launcherWord} update --yes`
 
   const inner =
-    `set +e; if [ -r "/proc/$$/stat" ]; then ` +
+    `set +e; echo "managed-update start pid=$$ $(date -u +%Y-%m-%dT%H:%M:%SZ)" >&2; ` +
+    `if [ -r "/proc/$$/stat" ]; then ` +
     `intent_creation="linux:$(awk '{print $22}' "/proc/$$/stat")"; ` +
     `else intent_creation="darwin:$(ps -o lstart= -p "$$" | sed 's/^ *//')"; fi; ` +
     `intent_tmp=${intentWord}."$$".tmp; ` +
     `printf '{"correlation":"%s","pid":%s,"creation":"%s"}' ${shq(correlation)} "$$" "$intent_creation" > "$intent_tmp" && ` +
     `mv -f "$intent_tmp" ${intentWord} || exit 70; ` +
     `${updateCommand}; rc=$?; ` +
+    `echo "managed-update exit rc=$rc $(date -u +%Y-%m-%dT%H:%M:%SZ)" >&2; ` +
     `if [ "$rc" -ne ${UPDATE_EXIT_INDEPENDENT_HANDOFF} ] && [ ! -e ${statusWord} ]; then ` +
     `tmp=${statusWord}."$$".tmp; umask 077; ` +
     `printf "%s" "$rc" > "$tmp" && mv -f "$tmp" ${statusWord}; fi; ` +
@@ -261,7 +263,7 @@ function buildPosixManagedUpdateLaunch(target: RemoteUpdateTarget, correlationId
 /** Windows equivalent of buildPosixManagedUpdateLaunch. */
 function buildWindowsManagedUpdateLaunch(target: RemoteUpdateTarget, correlationId: string): string {
   const correlation = validateCorrelationId(correlationId)
-  const home = validateRemoteValue(target.pulseHome, 'Pulse home')
+  const home = validateRemoteValue(target.pulseHome, 'PULSE home')
   const pulsePath = validateRemoteValue(target.pulsePath, 'launcher path')
   const statusPath = windowsChildPath(home, `.update_exit_code.${correlation}`)
   const readyPath = windowsChildPath(home, `.update_coordinator_ready.${correlation}`)
@@ -461,7 +463,7 @@ print(json.dumps({'marker':state['state'],'markerPid':state.get('pid'),'launchIn
 
 function buildRemoteUpdateObservationCommand(target: RemoteUpdateTarget, correlationId: string): string {
   const correlation = validateCorrelationId(correlationId)
-  const home = validateRemoteValue(target.pulseHome, 'Pulse home')
+  const home = validateRemoteValue(target.pulseHome, 'PULSE home')
 
   if (target.platform === 'Windows') {
     const python = validateRemoteValue(target.pythonPath || '', 'Python path')
@@ -937,7 +939,7 @@ async function runManagedSshUpdate<TScope extends ManagedSshScope>(
     ...(error ? { error } : {}),
     message:
       outcome === 'updated'
-        ? 'Remote Pulse updated and every managed SSH profile is ready.'
+        ? 'Remote PULSE updated and every managed SSH profile is ready.'
         : restoreOk
           ? 'The remote update failed, but every managed SSH profile was restored.'
           : 'The remote update transaction could not restore every managed SSH profile.'
@@ -983,7 +985,7 @@ function managedSshDrainBlocker(
   return {
     reason: DARWIN_DRAIN_UNSUPPORTED,
     message:
-      `Skipped: Desktop cannot safely stop its running Pulse serve on this macOS remote (${blocked.join(', ')}). ` +
+      `Skipped: Desktop cannot safely stop its running PULSE serve on this macOS remote (${blocked.join(', ')}). ` +
       'Disconnect it, or run `pulse update` on the remote, then retry.'
   }
 }

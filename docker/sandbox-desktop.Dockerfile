@@ -1,14 +1,14 @@
 # Terminal-backend sandbox image WITH a desktop: the default sandbox base every
 # docker/modal/daytona/singularity user already runs (nikolaik/python-nodejs), plus
-# the tools that base was missing, plus the same display stack the -desktop Pulse
+# the tools that base was missing, plus the same display stack the -desktop PULSE
 # image carries (TigerVNC + Xfce components + headed Chromium) and cua-driver, so
 # Bot Screen, computer_use and the browser can live INSIDE the sandbox instead of
-# on the gateway host. No Pulse runtime in here; the gateway shells in.
+# on the gateway host. No PULSE runtime in here; the gateway shells in.
 #
-#   docker build -f docker/sandbox-desktop.Dockerfile -t anxiousresearchlab/pulse-sandbox:desktop .
+#   docker build -f docker/sandbox-desktop.Dockerfile -t nousresearch/pulse-sandbox:desktop .
 #
-# Published as anxiousresearchlab/pulse-sandbox:desktop by .github/workflows/sandbox-image.yml
-# on releases and manual dispatch only: it carries no Pulse code, so it does not track main.
+# Published as nousresearch/pulse-sandbox:desktop by .github/workflows/sandbox-image.yml
+# on releases and manual dispatch only: it carries no PULSE code, so it does not track main.
 # The tag lives in the ARG so CI and a local build read one place; hadolint cannot
 # see through the substitution, hence the inline ignore.
 ARG SANDBOX_BASE=nikolaik/python-nodejs:python3.13-nodejs26
@@ -33,7 +33,7 @@ RUN apt-get -o Acquire::Retries=3 update && \
     ln -sf /usr/bin/fdfind /usr/local/bin/fd && \
     rm -rf /var/lib/apt/lists/*
 
-# Display stack: identical package set to the Pulse -desktop image (Dockerfile,
+# Display stack: identical package set to the PULSE -desktop image (Dockerfile,
 # PULSE_BOT_DESKTOP=1) so tools/bot_desktop/launcher.sh finds the same binaries.
 # Components are launched individually by the launcher, never xfce4-session.
 RUN apt-get -o Acquire::Retries=3 update && \
@@ -43,7 +43,7 @@ RUN apt-get -o Acquire::Retries=3 update && \
         at-spi2-core libgtk-3-0 libnss3 libasound2 libxss1 && \
     rm -rf /var/lib/apt/lists/*
 
-# Headed Chromium through Playwright (the same build the Pulse -desktop image
+# Headed Chromium through Playwright (the same build the PULSE -desktop image
 # uses), so agent-browser and the dock's Browser icon share one binary and one
 # --user-data-dir. --with-deps pulls the Chromium runtime libraries. agent-browser
 # itself is baked (the CLI the browser tools drive), pinned to the same range the

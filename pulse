@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Pulse Agent CLI launcher.
+PULSE Agent CLI launcher.
 
 This wrapper should behave like the installed `pulse` command, including
 subcommands such as `gateway`, `cron`, and `doctor`.

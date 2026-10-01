@@ -1,7 +1,7 @@
 name: session-styler
 repo: https://github.com/emadalsaba/pulse-session-styler
 sha: 1991d65b8bd70573acecba950ff0b4c248bfda11
-description: Style the Pulse Desktop session list — per-conversation icons from a ✦ menu on every row,
+description: Style the PULSE Desktop session list — per-conversation icons from a ✦ menu on every row,
   a status mark beside them, colors, sizes and match rules, with branch children inheriting their
   parent's icon. Settings are mirrored into the active profile so a new machine restores them on load,
   and every load reports itself to the profile under a per-machine key. Arabic + English, follows the

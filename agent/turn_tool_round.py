@@ -52,7 +52,7 @@ def run_tool_round(
 ) -> ToolRoundVerdict:
     """Execute one tool round in the exact original order. Persist-before-execute is a
     durability invariant: resume must see the executed block if a destructive tool restarts
-    Pulse; a failed canonical append ends the turn rather than running tools from
+    PULSE; a failed canonical append ends the turn rather than running tools from
     process-only state."""
     from agent.conversation_loop import _invalid_tool_name_error_content
 
@@ -116,7 +116,7 @@ def run_tool_round(
         ]
 
     # Persist the tool-call turn before any tool side effects so resume sees the executed
-    # block if a destructive tool restarts Pulse.
+    # block if a destructive tool restarts PULSE.
     try:
         _tool_turn_persisted = agent._flush_messages_to_session_db(messages, conversation_history)
     except Exception as exc:
@@ -152,6 +152,9 @@ def run_tool_round(
             agent.stream_delta_callback(None)
 
     agent._execute_tool_calls(assistant_message, messages, effective_task_id, api_call_count)
+    from pulse_cli.observability.shared_metrics_harness import finish_tool_round
+
+    finish_tool_round(agent)
 
     if getattr(agent, "_incremental_persistence_failed", False):
         # Tool result could not be made canonical: never send the in-memory result to

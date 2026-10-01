@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read the in-app terminal pane in the Pulse desktop GUI.
+"""Read the in-app terminal pane in the PULSE desktop GUI.
 
 The buffer lives in the desktop renderer (xterm.js), so this round-trips through the
 gateway's blocking-prompt bridge (as `clarify` does): tui_gateway emits
@@ -39,10 +39,12 @@ def read_terminal_tool(
 ) -> str:
     """Return the in-app terminal's contents (+ line metadata) as a JSON string."""
     return read_pane(callback, (("start", start_line, 0), ("count", count, 1)), (
-        "read_terminal is only available in the Pulse desktop app.",
+        "read_terminal is only available in the PULSE desktop app.",
         "start_line and count must be integers.",
         "Failed to read terminal: ",
-        "No in-app terminal is open, or the read timed out.",
+        "No in-app terminal answered: nothing is open, or the bridge timed out. "
+        "If the terminal pane IS open, the desktop app may be older than this "
+        "backend — update it and retry.",
     ))
 
 
@@ -79,11 +81,3 @@ registry.register(
     ),
     emoji="🖥️",
 )
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-import json  # noqa: F401,E402
-# ---- END PLUGIN-COMPAT ----

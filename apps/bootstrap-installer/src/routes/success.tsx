@@ -1,9 +1,9 @@
-import { AlertCircle, ArrowRight } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 import { useState } from 'react'
 import { type CSSProperties } from 'react'
 
-import { Button } from '../components/button'
-import { launchPulseDesktop } from '../store'
+import { HackeryButton } from '../components/hackery-button'
+import { launchPULSEDesktop } from '../store'
 
 /*
  * Success screen. PULSE AGENT wordmark stays as the visual anchor
@@ -11,9 +11,9 @@ import { launchPulseDesktop } from '../store'
  * with a status line below.
  *
  * Launching the desktop can fail (e.g. Stage-Desktop was skipped and
- * Pulse.exe doesn't exist). We catch the Tauri error and surface it
+ * PULSE.exe doesn't exist). We catch the Tauri error and surface it
  * inline rather than silently doing nothing — the previous version
- * had `onClick={() => void launchPulseDesktop()}` which swallowed
+ * had `onClick={() => void launchPULSEDesktop()}` which swallowed
  * the rejection and left the user staring at an unresponsive button.
  */
 export default function Success() {
@@ -25,7 +25,7 @@ export default function Success() {
     setLaunching(true)
 
     try {
-      await launchPulseDesktop()
+      await launchPULSEDesktop()
       // On success the installer exits — control never returns here.
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
@@ -48,9 +48,9 @@ export default function Success() {
           }
         >
           <span>
-            <span>Pulse is ready</span>
+            <span>PULSE is ready</span>
           </span>
-          <span aria-hidden="true">Pulse is ready</span>
+          <span aria-hidden="true">PULSE is ready</span>
         </p>
 
         <p className="m-0 text-center text-base leading-normal tracking-tight text-muted-foreground">
@@ -59,15 +59,12 @@ export default function Success() {
         </p>
       </div>
 
-      <Button
-        size="lg"
-        className="group inline-flex items-center gap-2 px-6"
+      <HackeryButton
         disabled={launching}
+        label={launching ? 'Launching' : 'Launch'}
+        loading={launching}
         onClick={() => void handleLaunch()}
-      >
-        {launching ? 'Launching\u2026' : 'Launch Pulse'}
-        <ArrowRight size={18} className="transition-transform group-hover:translate-x-0.5" />
-      </Button>
+      />
 
       {error && (
         <div className="flex max-w-2xl items-start gap-2 text-sm" role="alert">

@@ -8,7 +8,7 @@ description: >-
   the chosen training JSONL rows to Modal after the human approval gate; the base model is downloaded
   from Hugging Face on the Modal side. Training and inference run in a separate Python interpreter the
   user configures via THOMAS_PYTHON (with the author's thomas package, torch and modal installed); the
-  Pulse venv only gets gonogo-eval. Runs and artifacts are written under PULSE_HOME/thomas/runs; the
+  PULSE venv only gets gonogo-eval. Runs and artifacts are written under PULSE_HOME/thomas/runs; the
   eval tool writes report files to the path the model supplies.
 maintainer: keppy
 tier: community

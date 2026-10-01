@@ -78,7 +78,7 @@ def _enable_disable(name: str, *, enable: bool) -> None:
     save_config(cfg)
     _say(
         f"  ✓ '{name}' {'enabled' if enable else 'disabled'}. "
-        "Start a new Pulse session for changes to take effect."
+        "Start a new PULSE session for changes to take effect."
     )
 
 
@@ -174,12 +174,12 @@ def _print_rows_text(rows: List[_Row]) -> None:
         print(f"  {_format_row(row)}")
     print()
     _say("  Install: pulse mcp install <name>    Picker: pulse mcp", Colors.DIM)
-    # Manifest-version warnings: the user's Pulse is too old to install everything listed.
+    # Manifest-version warnings: the user's PULSE is too old to install everything listed.
     future = [d for d in catalog_diagnostics() if d[1] == "future_manifest"]
     if future:
         print()
         for name, _, _msg in future:
-            _say(f"  ⚠ '{name}' requires a newer Pulse — run `pulse update` to install this entry.", Colors.YELLOW)
+            _say(f"  ⚠ '{name}' requires a newer PULSE — run `pulse update` to install this entry.", Colors.YELLOW)
         print()
     print()
 
@@ -218,25 +218,3 @@ def install_by_name(identifier: str) -> int:
         )
         return 1
     return 0 if _install(entry, "install") else 1
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'color': ('pulse_cli.colors', 'color'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

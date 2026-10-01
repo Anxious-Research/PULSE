@@ -1,4 +1,4 @@
-"""Safe Pulse Console command engine."""
+"""Safe PULSE Console command engine."""
 
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ class ConsoleCommand:
     path: tuple[str, ...]
     usage: str
     summary: str
-    handler: Callable[["PulseConsoleEngine", list[str]], str]
+    handler: Callable[["PULSEConsoleEngine", list[str]], str]
     mutating: bool = False
     confirmation: str = ""
 
@@ -335,14 +335,14 @@ _SEND_SURFACE = _CliSurface("adder", "pulse_cli.send_cmd", "register_send_subpar
 
 
 def _register_command_family(
-    engine: "PulseConsoleEngine", root: str, surface: _CliSurface, paths: str) -> None:
+    engine: "PULSEConsoleEngine", root: str, surface: _CliSurface, paths: str) -> None:
     summaries = _surface_summaries(surface, root)
     namespace_update = _apply_confirmed_defaults if surface.kind in _CONFIRMED_KINDS else None
     for child_path, mutating in _paths(paths):
         full_path = (root, *child_path)
         usage = " ".join(full_path)
 
-        def handler(_engine: PulseConsoleEngine, args: list[str], fixed=child_path) -> str:
+        def handler(_engine: PULSEConsoleEngine, args: list[str], fixed=child_path) -> str:
             return _dispatch(surface, root, fixed, args, namespace_update)
 
         engine.register(
@@ -355,28 +355,28 @@ _BLOCKED_TOP = frozenset(
     "oneshot proxy serve setup uninstall update whatsapp whatsapp-cloud".split())
 
 _BLOCKED_PAIRS = {
-    ("config", "edit"): "`config edit` opens an editor and is not available in Pulse Console.",
-    ("mcp", "serve"): "`mcp serve` starts a server and is not available in Pulse Console.",
-    ("profile", "alias"): "`profile alias` creates shell wrappers and is not available in Pulse Console.",
-    ("skills", "config"): "`skills config` is interactive and is not available in Pulse Console.",
-    ("skills", "publish"): "`skills publish` is not available in Pulse Console.",
-    ("portal", "login"): "`portal login` is interactive and is not available in Pulse Console.",
-    ("portal", "open"): "`portal open` opens a browser and is not available in Pulse Console.",
-    ("kanban", "tail"): "`kanban tail` streams output and is not available in Pulse Console.",
-    ("kanban", "watch"): "`kanban watch` streams output and is not available in Pulse Console.",
-    ("kanban", "daemon"): "`kanban daemon` starts a service and is not available in Pulse Console.",
-    ("kanban", "dispatcher"): "`kanban dispatcher` starts a worker and is not available in Pulse Console.",
-    ("kanban", "swarm"): "`kanban swarm` starts agent work and is not available in Pulse Console.",
-    ("kanban", "decompose"): "`kanban decompose` starts agent work and is not available in Pulse Console.",
-    ("kanban", "specify"): "`kanban specify` starts agent work and is not available in Pulse Console.",
-    ("kanban", "gc"): "`kanban gc` is not available in Pulse Console.",
-    ("sessions", "delete"): "`sessions delete` and `sessions prune` are not available in Pulse Console.",
-    ("sessions", "prune"): "`sessions delete` and `sessions prune` are not available in Pulse Console.",
+    ("config", "edit"): "`config edit` opens an editor and is not available in PULSE Console.",
+    ("mcp", "serve"): "`mcp serve` starts a server and is not available in PULSE Console.",
+    ("profile", "alias"): "`profile alias` creates shell wrappers and is not available in PULSE Console.",
+    ("skills", "config"): "`skills config` is interactive and is not available in PULSE Console.",
+    ("skills", "publish"): "`skills publish` is not available in PULSE Console.",
+    ("portal", "login"): "`portal login` is interactive and is not available in PULSE Console.",
+    ("portal", "open"): "`portal open` opens a browser and is not available in PULSE Console.",
+    ("kanban", "tail"): "`kanban tail` streams output and is not available in PULSE Console.",
+    ("kanban", "watch"): "`kanban watch` streams output and is not available in PULSE Console.",
+    ("kanban", "daemon"): "`kanban daemon` starts a service and is not available in PULSE Console.",
+    ("kanban", "dispatcher"): "`kanban dispatcher` starts a worker and is not available in PULSE Console.",
+    ("kanban", "swarm"): "`kanban swarm` starts agent work and is not available in PULSE Console.",
+    ("kanban", "decompose"): "`kanban decompose` starts agent work and is not available in PULSE Console.",
+    ("kanban", "specify"): "`kanban specify` starts agent work and is not available in PULSE Console.",
+    ("kanban", "gc"): "`kanban gc` is not available in PULSE Console.",
+    ("sessions", "delete"): "`sessions delete` and `sessions prune` are not available in PULSE Console.",
+    ("sessions", "prune"): "`sessions delete` and `sessions prune` are not available in PULSE Console.",
 }
 
 
-class PulseConsoleEngine:
-    """Curated line-command executor for Pulse Console."""
+class PULSEConsoleEngine:
+    """Curated line-command executor for PULSE Console."""
 
     def __init__(self, *, output_limit: int = 20000):
         self.output_limit = output_limit
@@ -396,8 +396,8 @@ class PulseConsoleEngine:
                 return ConsoleResult("ok", output=self.help_text())
             if _contains_shell_syntax(raw_line, tokens):
                 raise ConsoleCommandError(
-                    "Pulse Console does not run shell syntax. Use one supported "
-                    "Pulse command at a time.")
+                    "PULSE Console does not run shell syntax. Use one supported "
+                    "PULSE command at a time.")
             builtin = self._execute_builtin(tokens)
             if builtin is not None:
                 if raw_line not in {"history", "clear"}:
@@ -419,7 +419,7 @@ class PulseConsoleEngine:
         if subject:
             command, _args = self._resolve_command(subject.split())
             return f"{command.usage}\n{command.summary}"
-        lines = ["Pulse Console", "", "Supported commands:"]
+        lines = ["PULSE Console", "", "Supported commands:"]
         for command in sorted(self.commands.values(), key=lambda c: c.usage):
             marker = " *" if command.mutating else "  "
             lines.append(f"{marker} {command.usage:<32} {_table_summary(command.summary)}")
@@ -441,7 +441,7 @@ class PulseConsoleEngine:
 
     def register(
         self, path: Iterable[str], usage: str, summary: str,
-        handler: Callable[["PulseConsoleEngine", list[str]], str], *,
+        handler: Callable[["PULSEConsoleEngine", list[str]], str], *,
         mutating: bool = False, confirmation: str = "") -> None:
         key = tuple(path)
         self.commands[key] = ConsoleCommand(key, usage, summary, handler, mutating, confirmation)
@@ -473,14 +473,14 @@ class PulseConsoleEngine:
         probe = " ".join(tokens[:2]) if len(tokens) > 1 else tokens[0]
         suggestions = difflib.get_close_matches(probe, available, n=3, cutoff=0.45)
         suffix = f" Did you mean: {', '.join(suggestions)}?" if suggestions else ""
-        raise ConsoleCommandError(f"Unsupported Pulse Console command: {probe}.{suffix}")
+        raise ConsoleCommandError(f"Unsupported PULSE Console command: {probe}.{suffix}")
 
     def _rejection_for(self, tokens: Sequence[str]) -> str:
         first = tokens[0]
         if first.startswith("-"):
-            return f"{first} is not available in Pulse Console."
+            return f"{first} is not available in PULSE Console."
         if first in _BLOCKED_TOP:
-            return f"`pulse {first}` is not available in Pulse Console."
+            return f"`pulse {first}` is not available in PULSE Console."
         return _BLOCKED_PAIRS.get(tuple(tokens[:2]), "")
 
     def _cap_output(self, output: str) -> str:
@@ -507,14 +507,14 @@ def _parse(prog: str, args: Sequence[str], *specs) -> argparse.Namespace:
 def _captured(fn):
     """Handler decorator: run ``fn(engine, args)`` under ``_capture_output`` and return its text."""
     @functools.wraps(fn)
-    def wrapper(engine: PulseConsoleEngine, args: list[str]) -> str:
+    def wrapper(engine: PULSEConsoleEngine, args: list[str]) -> str:
         return _capture_output(lambda: fn(engine, args))
     return wrapper
 
 
 def _simple_command(usage: str, module: str, name: str, make_args=lambda: (), **kwargs):
     """Handler for no-arg commands that capture ``module.name(*make_args(), **kwargs)``."""
-    def handler(_engine: PulseConsoleEngine, args: list[str]) -> str:
+    def handler(_engine: PULSEConsoleEngine, args: list[str]) -> str:
         _expect_no_args(args, usage)
         fn = getattr(importlib.import_module(module), name)
         return _capture_output(lambda: fn(*make_args(), **kwargs))
@@ -540,7 +540,7 @@ def _apply_confirmed_defaults(args: argparse.Namespace) -> None:
         auth_type = getattr(args, "auth_type", None)
         if auth_type in {"api-key", "api_key"} and not getattr(args, "api_key", None):
             raise ConsoleCommandError(
-                "auth add --type api-key requires --api-key in Pulse Console.")
+                "auth add --type api-key requires --api-key in PULSE Console.")
     if getattr(args, "import_name", None) is not None:
         return  # profile import has no prompt flag; leave it alone.
     if getattr(args, "skills_action", None) in {"install", "reset", "opt-out", "repair-official"}:
@@ -553,7 +553,7 @@ _version = _simple_command(
     "version", "pulse_cli._startup_fast", "print_fast_version_info", check_updates=True)
 
 
-def _status(_engine: PulseConsoleEngine, args: list[str]) -> str:
+def _status(_engine: PULSEConsoleEngine, args: list[str]) -> str:
     _expect_no_args(args, "status")
     from pulse_cli.status import show_status
     output = _capture_output(lambda: show_status(SimpleNamespace(all=False, deep=False)))
@@ -566,9 +566,9 @@ _config_show = _simple_command("config show", "pulse_cli.config", "show_config")
 _cron_status = _simple_command("cron status", "pulse_cli.cron", "cron_status")
 
 
-def _logs(_engine: PulseConsoleEngine, args: list[str]) -> str:
+def _logs(_engine: PULSEConsoleEngine, args: list[str]) -> str:
     if "-f" in args or "--follow" in args:
-        raise ConsoleCommandError("`logs -f` is not available in Pulse Console.")
+        raise ConsoleCommandError("`logs -f` is not available in PULSE Console.")
     ns = _parse(
         "logs", args, (("log_name",), dict(nargs="?", default="agent")),
         (("-n", "--lines"), dict(type=int, default=50)),
@@ -595,7 +595,7 @@ def _session_db(*, read_only: bool = True):
     return closing(SessionDB(read_only=read_only))
 
 
-def _sessions_list(_engine: PulseConsoleEngine, args: list[str]) -> str:
+def _sessions_list(_engine: PULSEConsoleEngine, args: list[str]) -> str:
     ns = _parse("sessions list", args, (("--limit",), dict(type=int, default=20)))
     if ns.limit < 1 or ns.limit > 200:
         raise ConsoleCommandError("sessions list --limit must be between 1 and 200")
@@ -606,7 +606,7 @@ def _sessions_list(_engine: PulseConsoleEngine, args: list[str]) -> str:
     return _format_sessions(sessions)
 
 
-def _sessions_stats(_engine: PulseConsoleEngine, args: list[str]) -> str:
+def _sessions_stats(_engine: PULSEConsoleEngine, args: list[str]) -> str:
     _expect_no_args(args, "sessions stats")
     from pulse_state_sessions import INTERNAL_LISTING_SOURCES
     with _session_db() as db:
@@ -623,13 +623,13 @@ def _sessions_stats(_engine: PulseConsoleEngine, args: list[str]) -> str:
         return "\n".join(lines)
 
 
-def _config_path(_engine: PulseConsoleEngine, args: list[str]) -> str:
+def _config_path(_engine: PULSEConsoleEngine, args: list[str]) -> str:
     _expect_no_args(args, "config path")
     from pulse_cli.config import get_config_path
     return str(get_config_path())
 
 
-def _config_set(_engine: PulseConsoleEngine, args: list[str]) -> str:
+def _config_set(_engine: PULSEConsoleEngine, args: list[str]) -> str:
     if len(args) < 2:
         raise ConsoleCommandError("Usage: config set <key> <value>")
     from pulse_cli.config import set_config_value
@@ -637,7 +637,7 @@ def _config_set(_engine: PulseConsoleEngine, args: list[str]) -> str:
 
 
 @_captured
-def _config_migrate(_engine: PulseConsoleEngine, args: list[str]) -> None:
+def _config_migrate(_engine: PULSEConsoleEngine, args: list[str]) -> None:
     _expect_no_args(args, "config migrate")
     from pulse_cli.config import migrate_config
     results = migrate_config(interactive=False, quiet=False)
@@ -668,7 +668,7 @@ def _guard_exports(db, session_ids: list[str]) -> None:
 
 
 @_captured
-def _sessions_export(_engine: PulseConsoleEngine, args: list[str]) -> None:
+def _sessions_export(_engine: PULSEConsoleEngine, args: list[str]) -> None:
     ns = _parse("sessions export", args, "output", "--source", "--session-id")
     with _session_db() as db:
         if ns.session_id:
@@ -696,7 +696,7 @@ def _sessions_export(_engine: PulseConsoleEngine, args: list[str]) -> None:
 
 
 @_captured
-def _sessions_rename(_engine: PulseConsoleEngine, args: list[str]) -> None:
+def _sessions_rename(_engine: PULSEConsoleEngine, args: list[str]) -> None:
     ns = _parse("sessions rename", args, "session_id", (("title",), dict(nargs="+")))
     with _session_db(read_only=False) as db:
         resolved_session_id = db.resolve_session_id(ns.session_id)
@@ -707,7 +707,7 @@ def _sessions_rename(_engine: PulseConsoleEngine, args: list[str]) -> None:
 
 
 @_captured
-def _sessions_optimize(_engine: PulseConsoleEngine, args: list[str]) -> None:
+def _sessions_optimize(_engine: PULSEConsoleEngine, args: list[str]) -> None:
     # --force is parsed HERE: the refusal below points at it, and a hint the surface cannot
     # accept would make this command refuse forever whenever a gateway is running.
     ns = _parse("sessions optimize", args, (("--force",), dict(action="store_true")))
@@ -721,7 +721,7 @@ def _sessions_optimize(_engine: PulseConsoleEngine, args: list[str]) -> None:
 
 
 @_captured
-def _sessions_repair(_engine: PulseConsoleEngine, args: list[str]) -> int | None:
+def _sessions_repair(_engine: PULSEConsoleEngine, args: list[str]) -> int | None:
     ns = _parse(
         "sessions repair", args, (("--check-only",), dict(action="store_true")),
         (("--no-backup",), dict(action="store_true")))
@@ -747,12 +747,12 @@ def _sessions_repair(_engine: PulseConsoleEngine, args: list[str]) -> int | None
     print("Repaired session database.")
 
 
-def _profile_status(_engine: PulseConsoleEngine, args: list[str]) -> str:
+def _profile_status(_engine: PULSEConsoleEngine, args: list[str]) -> str:
     _expect_no_args(args, "profile")
     return _dispatch(_CLI_FAMILIES["profile"][0], "profile", (), ())
 
 
-def _cron_list(_engine: PulseConsoleEngine, args: list[str]) -> str:
+def _cron_list(_engine: PULSEConsoleEngine, args: list[str]) -> str:
     ns = _parse("cron list", args, (("--all",), dict(action="store_true")))
     from pulse_cli.cron import cron_list
     return _capture_output(lambda: cron_list(show_all=ns.all))
@@ -772,14 +772,14 @@ def _cron_job_action(args: list[str], usage: str, action: str, run) -> str:
     return _format_job(job, action)
 
 
-def _cron_pause(_engine: PulseConsoleEngine, args: list[str]) -> str:
+def _cron_pause(_engine: PULSEConsoleEngine, args: list[str]) -> str:
     from cron.jobs import pause_job
     return _cron_job_action(
         args, "cron pause <job>", "Paused",
         lambda ref: pause_job(ref, reason="paused from pulse console"))
 
 
-def _cron_resume(_engine: PulseConsoleEngine, args: list[str]) -> str:
+def _cron_resume(_engine: PULSEConsoleEngine, args: list[str]) -> str:
     ns = _parse("cron resume", args, "job", "--at", (("--run-now",), dict(action="store_true")))
     if ns.at and ns.run_now:
         raise ConsoleCommandError("Use exactly one of --at or --run-now.")
@@ -795,17 +795,17 @@ def _cron_resume(_engine: PulseConsoleEngine, args: list[str]) -> str:
     return _format_job(job, "Resumed")
 
 
-def _cron_run(_engine: PulseConsoleEngine, args: list[str]) -> str:
+def _cron_run(_engine: PULSEConsoleEngine, args: list[str]) -> str:
     from cron.jobs import trigger_job
     return _cron_job_action(args, "cron run <job>", "Triggered", trigger_job)
 
 
 # (path, usage, summary, handler, confirmation prompt) — a non-empty prompt marks it mutating.
 _BUILTIN_COMMANDS = (
-    (("status",), "status", "Show Pulse component status.", _status, ""),
-    (("version",), "version", "Show Pulse version information.", _version, ""),
+    (("status",), "status", "Show PULSE component status.", _status, ""),
+    (("version",), "version", "Show PULSE version information.", _version, ""),
     (("doctor",), "doctor", "Run diagnostics without auto-fix.", _doctor, ""),
-    (("logs",), "logs [name] [-n N]", "Show recent Pulse logs.", _logs, ""),
+    (("logs",), "logs [name] [-n N]", "Show recent PULSE logs.", _logs, ""),
     (("sessions", "list"), "sessions list [--limit N]", "List recent sessions.", _sessions_list,
      ""),
     (("sessions", "stats"), "sessions stats", "Show session store statistics.", _sessions_stats,
@@ -816,7 +816,7 @@ _BUILTIN_COMMANDS = (
     (("cron", "status"), "cron status", "Show cron scheduler status.", _cron_status, ""),
     (("profile",), "profile", "Show active profile status.", _profile_status, ""),
     (("config", "set"), "config set <key> <value>", "Set a configuration value.", _config_set,
-     "Update Pulse configuration?"),
+     "Update PULSE configuration?"),
     (("cron", "pause"), "cron pause <job>", "Pause a scheduled job.", _cron_pause,
      "Pause this cron job?"),
     (("cron", "resume"), "cron resume <job>", "Resume a paused cron job.", _cron_resume,
@@ -824,7 +824,7 @@ _BUILTIN_COMMANDS = (
     (("cron", "run"), "cron run <job>", "Run a job on the next scheduler tick.", _cron_run,
      "Trigger this cron job?"),
     (("config", "migrate"), "config migrate", "Update config with new options.", _config_migrate,
-     "Update Pulse configuration with missing defaults?"),
+     "Update PULSE configuration with missing defaults?"),
     (("sessions", "export"), "sessions export <output> [--source SOURCE] [--session-id ID]",
      "Export sessions to JSONL.", _sessions_export, "Export session data?"),
     (("sessions", "rename"), "sessions rename <session> <title>", "Rename a session.",
@@ -842,13 +842,13 @@ def run_console_repl(
     stdin, stdout, stderr = stdin or sys.stdin, stdout or sys.stdout, stderr or sys.stderr
     if interactive is None:
         interactive = bool(getattr(stdin, "isatty", lambda: False)())
-    engine = PulseConsoleEngine()
+    engine = PULSEConsoleEngine()
 
     def say(text: str, **kw) -> None:
         if interactive:
             print(text, file=stdout, **kw)
 
-    say("Pulse Console. Type `help` for commands, `exit` to quit.")
+    say("PULSE Console. Type `help` for commands, `exit` to quit.")
     while True:
         say("pulse> ", end="", flush=True)
         line = stdin.readline()
@@ -869,11 +869,3 @@ def run_console_repl(
             print(result.output, file=stderr if result.status == "error" else stdout)
         if result.status == "exit":
             return 0
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-import shlex  # noqa: F401,E402
-# ---- END PLUGIN-COMPAT ----

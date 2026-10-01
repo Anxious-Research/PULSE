@@ -3,7 +3,7 @@
  *
  * Decides whether a failed primary-backend boot should *latch* into
  * `backendStartFailure`. A latched failure makes every subsequent
- * startPulse() re-throw the cached error without re-attempting the connect —
+ * startPULSE() re-throw the cached error without re-attempting the connect —
  * the right behavior for a LOCAL backend so the renderer's retry loop can't
  * restart a broken install over and over.
  *
@@ -36,7 +36,7 @@ export interface BackendStartFailureContext {
 }
 
 /**
- * Whether a startPulse() failure should latch into `backendStartFailure`.
+ * Whether a startPULSE() failure should latch into `backendStartFailure`.
  * Latch local failures (prevent install-restart loops); never latch remote
  * failures (they are transient and must stay retryable so recovery paths work
  * without an app restart).
@@ -70,7 +70,7 @@ export interface RemoteReauthFailureContext {
  * signs in again.
  *
  * Without a latch, the non-latching remote path actively prevents recovery.
- * Every subsequent `getConnection`/`api` call re-runs `startPulse`, re-emits
+ * Every subsequent `getConnection`/`api` call re-runs `startPULSE`, re-emits
  * `running: true`, and the boot-failure overlay (`visible = Boolean(boot.error)
  * && !boot.running`) hides itself — so the "Sign in" button flickers out from
  * under the user before they can click it. Latching holds the overlay still
@@ -102,6 +102,13 @@ export interface RemoteBootRetryContext {
    * ssh-agent or fixes the connection settings: terminal, not connectivity.
    */
   isSshAuthFailed?: boolean
+  /**
+   * True when the LOCAL ssh client failed (`ssh -G` could not run or exited
+   * non-zero). `-G` never touches the network, so a retry re-runs the same
+   * doomed probe: terminal until the user fixes the client or sets
+   * `desktop.ssh_path` (#103288).
+   */
+  isSshClientFailed?: boolean
 }
 
 /**
@@ -143,10 +150,50 @@ export function isSshAuthFailedBootFailure(error: unknown): boolean {
   )
 }
 
+export const SSH_CLIENT_FAILED = 'ssh-client-failed'
+
+/**
+ * Wrap a failed local `ssh -G` probe as a terminal, tagged boot failure that
+ * names the client binary. On Windows the message points at
+ * `desktop.ssh_path`, the only way past a broken in-box OpenSSH (#103288).
+ */
+export function sshClientFailedError(sshBinary: string, cause: unknown, platform: string = process.platform): Error {
+  const detail = cause instanceof Error ? cause.message : String(cause ?? '')
+
+  const hint =
+    platform === 'win32'
+      ? " Set desktop.ssh_path in config.yaml to a working ssh.exe (for example Git for Windows' usr\\bin\\ssh.exe) and retry."
+      : ''
+
+  const error = new Error(
+    `The local SSH client (${sshBinary}) failed to resolve the connection config: ${detail}.${hint}`
+  ) as Error & {
+    kind: string
+  }
+
+  error.kind = SSH_CLIENT_FAILED
+
+  return error
+}
+
+/** A failed local ssh client probe, tagged by sshClientFailedError. */
+export function isSshClientFailedBootFailure(error: unknown): boolean {
+  return (error as { kind?: string } | null | undefined)?.kind === SSH_CLIENT_FAILED
+}
+
+/**
+ * Whether a failed remote boot should latch because the local ssh client
+ * itself failed. Same rationale as the credential latch: unlatched, every
+ * api call re-drives boot and the overlay never holds still (#103288).
+ */
+export function shouldLatchSshClientFailure(context: RemoteBootRetryContext): boolean {
+  return context.attemptedRemote && context.isSshClientFailed === true
+}
+
 /**
  * Whether a failed remote boot should latch (into `backendStartFailure`)
  * because SSH rejected the credentials (#72698). Unlatched, every
- * `getConnection`/api call re-runs startPulse, re-emits `running: true` and
+ * `getConnection`/api call re-runs startPULSE, re-emits `running: true` and
  * hides the boot-failure overlay, so its Gateway settings button — the only
  * way to fix the key — ignores clicks. Released by reset/repair/apply-config
  * like the host-key latch.
@@ -188,7 +235,8 @@ export function isRetryableRemoteBootFailure(context: RemoteBootRetryContext): b
     context.attemptedRemote &&
     !context.isReauth &&
     context.isHostKeyChanged !== true &&
-    context.isSshAuthFailed !== true
+    context.isSshAuthFailed !== true &&
+    context.isSshClientFailed !== true
   )
 }
 

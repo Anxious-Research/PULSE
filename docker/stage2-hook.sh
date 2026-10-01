@@ -244,7 +244,7 @@ if [ "$needs_chown" = true ]; then
         chown pulse:pulse "$PULSE_HOME" 2>/dev/null || \
             echo "[stage2] Warning: chown $PULSE_HOME failed (rootless container?) — continuing"
     fi
-    # Pulse-owned subdirs: recursive chown is safe here because these are
+    # PULSE-owned subdirs: recursive chown is safe here because these are
     # created and managed exclusively by pulse (see the s6-setuidgid mkdir
     # -p block below for the canonical list).
     for sub in cron sessions logs hooks memories skills skins plans workspace home profiles pairing platforms/pairing; do
@@ -467,7 +467,7 @@ seed_one "SOUL.md" "docker/SOUL.md"
 #
 # OPERATOR-PROVIDED KEYS WIN: if the container environment already carries
 # API_SERVER_KEY (documented `docker run -e API_SERVER_KEY=...` flow), do
-# not generate one. Pulse loads $PULSE_HOME/.env with override=True, so
+# not generate one. PULSE loads $PULSE_HOME/.env with override=True, so
 # a generated key written here would silently SHADOW the operator's env
 # key and 401 every client still using the supplied credential.
 if [ -n "${API_SERVER_KEY:-}" ]; then
@@ -528,9 +528,9 @@ elif ! grep -q '^API_SERVER_KEY=..*' "$PULSE_HOME/.env" 2>/dev/null; then
     fi
 fi
 
-# --- Sync deploy-injected Anxious routing overrides into every profile .env ---
-# Under multiplex, pulse_cli.auth_anxious reads PULSE_PORTAL_BASE_URL (or its
-# ANXIOUS_PORTAL_BASE_URL alias) and ANXIOUS_INFERENCE_BASE_URL through the profile
+# --- Sync deploy-injected Nous routing overrides into every profile .env ---
+# Under multiplex, pulse_cli.auth_nous reads PULSE_PORTAL_BASE_URL (or its
+# NOUS_PORTAL_BASE_URL alias) and NOUS_INFERENCE_BASE_URL through the profile
 # secret scope (agent.secret_scope.get_secret, #108319 / #111809), built from
 # <profile>/.env with no os.environ fallback — a value that lives only in the
 # container env is invisible on every routed turn, the Portal URL heals to
@@ -570,7 +570,7 @@ sync_routing_overrides() {
     if refuse_symlinked_path "sync" "$_file"; then
         return 0
     fi
-    for _name in PULSE_PORTAL_BASE_URL ANXIOUS_PORTAL_BASE_URL ANXIOUS_INFERENCE_BASE_URL; do
+    for _name in PULSE_PORTAL_BASE_URL NOUS_PORTAL_BASE_URL NOUS_INFERENCE_BASE_URL; do
         eval "_value=\${$_name:-}"
         _managed="^$_name=.* $_ROUTING_MARK\$"
         if [ -z "$_value" ]; then
@@ -584,7 +584,7 @@ sync_routing_overrides() {
             continue
         fi
         if [ ! -f "$_file" ] && ! (umask 077 && as_pulse touch "$_file") 2>/dev/null; then
-            echo "[stage2] Warning: could not create $_file — the Anxious routing overrides will not reach this profile's secret scope"
+            echo "[stage2] Warning: could not create $_file — the Nous routing overrides will not reach this profile's secret scope"
             return 0
         fi
         if rewrite_env_var "$_file" "$_name" "^$_name=" "$_line"; then
@@ -679,16 +679,16 @@ if [ ! -f "$PULSE_HOME/auth.json" ] && [ -n "${PULSE_AUTH_JSON_BOOTSTRAP:-}" ]; 
     fi
 fi
 
-# auth.json: re-seed a TERMINALLY-DEAD Anxious bootstrap session (self-heal).
+# auth.json: re-seed a TERMINALLY-DEAD Nous bootstrap session (self-heal).
 #
 # The [ ! -f ] guard above deliberately refuses to clobber an existing
-# auth.json, so a container whose Anxious bootstrap session took a terminal
-# invalid_grant (tokens cleared, providers.anxious.last_auth_error.relogin_required
+# auth.json, so a container whose Nous bootstrap session took a terminal
+# invalid_grant (tokens cleared, providers.nous.last_auth_error.relogin_required
 # stamped) can NOT recover from a plain restart — it stays unauthenticated until
 # the credential is replaced. An orchestrator that manages the container can
 # supply a freshly-issued session via PULSE_AUTH_JSON_REBOOTSTRAP (distinct
 # from the create-only *_BOOTSTRAP var); this helper swaps ONLY the
-# providers.anxious entry when the on-disk entry is provably terminal OR the
+# providers.nous entry when the on-disk entry is provably terminal OR the
 # orchestrator seed has a later obtained_at timestamp. The latter covers the
 # stop/update/start sequence where NAS already revoked the still-healthy-looking
 # local session. Older/incomparable seeds remain no-ops, so leaving the env set
@@ -699,9 +699,9 @@ if [ -f "$PULSE_HOME/auth.json" ] && [ -n "${PULSE_AUTH_JSON_REBOOTSTRAP:-}" ]; 
         :
     else
         s6-setuidgid pulse "$INSTALL_DIR/.venv/bin/python" \
-            "$INSTALL_DIR/scripts/docker_rebootstrap_anxious_session.py" \
+            "$INSTALL_DIR/scripts/docker_rebootstrap_nous_session.py" \
             "$PULSE_HOME/auth.json" \
-            || echo "[stage2] Warning: docker_rebootstrap_anxious_session.py failed; continuing"
+            || echo "[stage2] Warning: docker_rebootstrap_nous_session.py failed; continuing"
     fi
 fi
 
@@ -758,7 +758,7 @@ fi
 # resolved browser binary path into /etc/pulse/agent-browser-executable-path
 # (the layout differs per arch — chrome-linux64/chrome on amd64,
 # chromium-linux-arm64/chromium on arm64 — so it is resolved at build time,
-# not hard-coded). agent-browser (the runtime CLI Pulse spawns for the
+# not hard-coded). agent-browser (the runtime CLI PULSE spawns for the
 # browser tool) doesn't recognise Playwright's directory layout in its own
 # cache scan and fails with "Auto-launch failed: Chrome not found" — even
 # though the binary is right there (#15697).

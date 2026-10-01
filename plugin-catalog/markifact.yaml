@@ -9,7 +9,7 @@ description: >-
   streamable-http with OAuth 2.1 and dynamic client registration, so no Node.js or API keys.
   Disclosure: creates and edits real ad campaigns that spend your ad budgets; every write is a
   separate approval-gated operation and the skills instruct confirm-before-spend, but that is enforced
-  by the skills and the server's approval flag, not by Pulse.
+  by the skills and the server's approval flag, not by PULSE.
 maintainer: Markifact
 tier: community
 category: tools

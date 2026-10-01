@@ -1,4 +1,4 @@
-"""Profile management for multiple isolated Pulse instances."""
+"""Profile management for multiple isolated PULSE instances."""
 
 import contextlib
 import json
@@ -98,7 +98,7 @@ PROFILE_ROLES = frozenset({SETUP_ROLE})
 
 # Header seeded into a profile's empty .env so it owns a credentials file from day one.
 _PLACEHOLDER_ENV = (
-    "# Per-profile secrets for this Pulse profile.\n"
+    "# Per-profile secrets for this PULSE profile.\n"
     "# API keys and tokens set here override the shell environment.\n"
     "# Behavioral settings belong in config.yaml, not here.\n"
 )
@@ -186,7 +186,7 @@ _DEFAULT_EXPORT_EXCLUDE_ROOT = DEFAULT_EXPORT_EXCLUDE_ROOT = frozenset({
 # Allow-list for ``export_profile("default")``: when PULSE_HOME equals the
 # cwd (Docker/custom deployments), the default profile home is the working
 # directory and contains arbitrary user files that should NOT be bundled
-# into the export. The set below identifies the *known Pulse profile
+# into the export. The set below identifies the *known PULSE profile
 # artifacts* at the root of PULSE_HOME; everything else is excluded.
 # Sensitive runtime infrastructure (``state.db``, ``logs/``, ``auth.*``,
 # other profiles) is intentionally *not* in this list so the export stays
@@ -207,7 +207,7 @@ _DEFAULT_EXPORT_INCLUDE_ROOT = frozenset({
 # Names that cannot be used as profile aliases
 _RESERVED_NAMES = frozenset({"pulse", "default", "test", "tmp", "root", "sudo"})
 
-# Pulse subcommands that cannot be used as profile names/aliases
+# PULSE subcommands that cannot be used as profile names/aliases
 _PULSE_SUBCOMMANDS = frozenset({
     "chat", "model", "gateway", "setup", "whatsapp", "login", "logout",
     "status", "cron", "doctor", "dump", "config", "pairing", "skills", "tools",
@@ -244,7 +244,7 @@ def _wrapper_path(alias: str) -> Path:
 
 
 def _is_our_wrapper(path: Path) -> bool:
-    """True when *path* reads as a Pulse-generated wrapper (contains ``pulse -p``)."""
+    """True when *path* reads as a PULSE-generated wrapper (contains ``pulse -p``)."""
     try:
         return "pulse -p" in path.read_text(encoding="utf-8-sig")
     except Exception:
@@ -294,10 +294,21 @@ def normalize_profile_name(name: str) -> str:
     case-insensitively. Dashboards/tools may pass title-cased labels — normalize before
     validation, assignment, and subprocess spawn.
 
-    Named profiles are stored lowercase under ``profiles/<id>/``. See #18498.
+    Named profiles are stored lowercase under ``profiles/<id>/``. The special
+    alias ``default`` is matched case-insensitively (``Default`` → ``default``).
+    Dashboards and tools may pass title-cased display labels; normalize before
+    validation, assignment, and subprocess spawn (see issue #18498).
+
+    Raises ``ValueError`` for non-string input: a numeric profile id (e.g. a
+    DB row id or a falsy sentinel) silently coerced via ``str()`` becomes a
+    real on-disk profile directory (``profiles/0/``, #88842). Callers that
+    hold a numeric id must resolve it to an actual profile name first.
     """
     if not isinstance(name, str):
-        name = str(name)
+        raise ValueError(
+            "profile name must be a string, got "
+            f"{type(name).__name__}: {name!r}"
+        )
     stripped = name.strip()
     if not stripped:
         raise ValueError("profile name cannot be empty")
@@ -321,7 +332,7 @@ def validate_profile_name(name: str) -> None:
     if name in _RESERVED_NAMES:
         raise ValueError(
             f"Profile name {name!r} is reserved — it collides with either "
-            f"the Pulse installation itself or a common system binary.  "
+            f"the PULSE installation itself or a common system binary.  "
             f"Pick a different name."
         )
 
@@ -849,7 +860,7 @@ def _cached_skill_count(profile_dir: Path) -> int:
 
 
 # profile.yaml — per-profile metadata (description, role, etc.)
-# Deliberately tiny and separate from ``config.yaml`` (user-facing Pulse config, ~5000
+# Deliberately tiny and separate from ``config.yaml`` (user-facing PULSE config, ~5000
 # lines of defaults): this is metadata ABOUT the profile. Missing file -> empty defaults,
 # never an error; the kanban decomposer falls back to the profile name.
 
@@ -1510,7 +1521,7 @@ _PULSE_CONSOLE_SCRIPT_NAMES = frozenset({"pulse", "pulse-agent", "pulse-acp"})
 
 
 def _is_pulse_argv(argv: list) -> bool:
-    """True for a Pulse process: entrypoint marker in argv, executable named ``pulse*``,
+    """True for a PULSE process: entrypoint marker in argv, executable named ``pulse*``,
     or a python interpreter directly exec'ing a known ``pulse`` console-script shim."""
     joined = " ".join(argv)
     exe_name = os.path.basename(argv[0]).lower()
@@ -1532,7 +1543,7 @@ def _argv_profile_selectors(argv: list):
 
 
 def _profile_bound_backend_pids(canon: str, profile_dir: Path) -> list[int]:
-    """PIDs of running Pulse *backends* bound to this profile (``gateway.pid`` only tracks
+    """PIDs of running PULSE *backends* bound to this profile (``gateway.pid`` only tracks
     the messaging gateway). Tightly scoped: current-user processes, backend subcommands only
     (never an interactive ``chat``/``tui``), never this process or its ancestors. Empty when
     ``psutil`` can't inspect anything."""
@@ -1965,7 +1976,7 @@ def _stop_gateway_process(profile_dir: Path) -> None:
 # Active profile (sticky default)
 
 def get_active_profile(root: Path | None = None) -> str:
-    """Read the sticky active profile name (of *root*, default: this process's Pulse root)."""
+    """Read the sticky active profile name (of *root*, default: this process's PULSE root)."""
     path = root / "active_profile" if root is not None else _get_active_profile_path()
     try:
         name = path.read_text(encoding="utf-8-sig").strip()
@@ -2108,7 +2119,7 @@ def _default_export_ignore(root_dir: Path):
     * **Root-level allow-list** — only entries whose name appears in ``_DEFAULT_EXPORT_INCLUDE_ROOT``
     survive. Everything else (such as an unrelated ``x11-dev/`` directory in a Docker deployment where
     PULSE_HOME equals the cwd) is excluded. Blacklisting was tried first and proved unable to anticipate
-    every non-Pulse file the user may have lying alongside PULSE_HOME (#58394). * **Universal exclusions
+    every non-PULSE file the user may have lying alongside PULSE_HOME (#58394). * **Universal exclusions
     at any depth** — ``__pycache__``, sockets and other special files, temp files
     (:func:`_non_exportable_entries`); plus npm lockfiles, which may appear at the root.
     """
@@ -2425,7 +2436,7 @@ def rename_profile(old_name: str, new_name: str) -> Path:
 # Profile env resolution (called from _apply_profile_override)
 
 def profile_root_for_env_home(env_home: str, default_root: Path) -> Path:
-    """Pulse root named by an exported ``PULSE_HOME``: the grandparent of a profile-shaped value
+    """PULSE root named by an exported ``PULSE_HOME``: the grandparent of a profile-shaped value
     (``<root>/profiles/<name>``, mirrors ``get_default_pulse_root()``), the value itself otherwise,
     *default_root* when unset. Pure: callers pass any process's env, not only ``os.environ``."""
     env_home = env_home.strip()
@@ -2441,7 +2452,7 @@ def resolve_profile_env(profile_name: str) -> str:
 
     When PULSE_HOME is already set, the configured spelling IS the launch root (it may be a
     junction/symlink alias of the platform default). Keep that spelling so profile re-home does not destroy
-    the launcher's lexical provenance -- the subprocess sanitizer needs it to match Pulse-owned PYTHONPATH
+    the launcher's lexical provenance -- the subprocess sanitizer needs it to match PULSE-owned PYTHONPATH
     entries written in the same spelling (#82581 junction follow-up). Physically the paths are identical
     (junction-transparent); only the spelling is preserved.
     """
@@ -2453,17 +2464,3 @@ def resolve_profile_env(profile_name: str) -> str:
     if not named_profile_is_live(profile_dir):
         raise _missing_profile_error(canon)
     return str(profile_dir)
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-def has_bundled_skills_opt_out(profile_dir: Path) -> bool:
-    """Return True if the profile opted out of bundled-skill seeding."""
-    try:
-        return (profile_dir / NO_BUNDLED_SKILLS_MARKER).exists()
-    except OSError:
-        return False
-# ---- END PLUGIN-COMPAT ----

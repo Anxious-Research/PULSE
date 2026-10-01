@@ -3,7 +3,7 @@
 Instead of a 60s ticker, asks NAS to arm one external one-shot per job at its next-fire time;
 NAS calls back ``/api/cron/fire`` and the job re-arms after running. start() never blocks or
 spawns a periodic wake; reconcile runs only on a warm process (start / on_jobs_changed / fire).
-Holds no scheduler credentials — speaks only to NAS ``agent-cron`` endpoints with the Anxious token.
+Holds no scheduler credentials — speaks only to NAS ``agent-cron`` endpoints with the Nous token.
 Inert unless ``cron.provider: chronos``. Wire contract: ``website/docs/developer-guide/chronos-managed-cron-contract.md``.
 """
 
@@ -37,7 +37,7 @@ class ChronosCronScheduler(CronScheduler):
         self._armed: Dict[str, str] = {}
         self._lock = threading.Lock()
         self._client = None  # lazily constructed (no network in is_available)
-        # Set when NAS answered 403 invalid_client: the Anxious token in auth.json is not this
+        # Set when NAS answered 403 invalid_client: the Nous token in auth.json is not this
         # instance's provisioned identity, so every arm would fail the same way for the life of
         # the process. Once set, NAS is left alone and the built-in ticker fires jobs (#97494).
         self._identity_rejected = False
@@ -50,13 +50,13 @@ class ChronosCronScheduler(CronScheduler):
 
     def is_available(self) -> bool:
         """Config presence only — NO network: portal URL, publicly reachable callback URL and a
-        Anxious login; otherwise the resolver falls back to the built-in ticker."""
+        Nous login; otherwise the resolver falls back to the built-in ticker."""
         if not (_cfg("cron", "chronos", "portal_url") and _cfg("cron", "chronos", "callback_url")):
             return False
         # Stored-token presence only (no refresh); refresh-aware token resolved at provision time.
         try:
             from pulse_cli.auth import get_provider_auth_state
-            return bool((get_provider_auth_state("anxious") or {}).get("access_token"))
+            return bool((get_provider_auth_state("nous") or {}).get("access_token"))
         except Exception:
             return False
 
@@ -124,10 +124,10 @@ class ChronosCronScheduler(CronScheduler):
                 return
             self._identity_rejected = True
         logger.warning(
-            "Chronos: NAS rejected this agent's Anxious credential for agent-cron (403 invalid_client). "
-            "The Anxious token in auth.json is not this instance's provisioned identity (an agent:* client "
+            "Chronos: NAS rejected this agent's Nous credential for agent-cron (403 invalid_client). "
+            "The Nous token in auth.json is not this instance's provisioned identity (an agent:* client "
             "or the hosted bootstrap session), so no job can be armed. A normal `pulse auth` re-login "
-            "cannot fix this; the hosted credential has to be restored from the Anxious Portal. Falling back "
+            "cannot fix this; the hosted credential has to be restored from the Nous Portal. Falling back "
             "to the built-in cron ticker for this process so scheduled jobs keep firing on time.")
         if self._stop_event is None:
             return  # start() never ran (e.g. a CLI `pulse cron add`); nothing to tick here
@@ -205,11 +205,3 @@ class ChronosCronScheduler(CronScheduler):
 def register(ctx) -> None:
     """Plugin entrypoint — plugins/cron_providers discovery collects the provider here."""
     ctx.register_cron_scheduler(ChronosCronScheduler())
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from typing import Optional  # noqa: F401,E402
-# ---- END PLUGIN-COMPAT ----

@@ -167,29 +167,33 @@ async def get_model_options(
         return await run_in_threadpool(_build_payload_scoped)
 
 
-def _anxious_recommended_default() -> dict:
-    from pulse_cli.models import recommended_anxious_default_model
-    return recommended_anxious_default_model()
+def _nous_recommended_default() -> dict:
+    from pulse_cli.models import recommended_nous_default_model
+    return recommended_nous_default_model()
 
 
 @router.get("/api/model/recommended-default")
 def get_recommended_default_model(provider: str = "", profile: Optional[str] = None):
     """Recommended default model for a freshly-authenticated provider, mirroring
     ``pulse model``'s curation so GUI onboarding lands on a sensible default.
-    Anxious honors the user's free/paid tier. Any other provider gets the preferred
+    Nous honors the user's free/paid tier. Any other provider gets the preferred
     silent default when its curated list carries it, else the first curated model —
     aggregator lists lead with the priciest Anthropic flagship, which must never be
     the model a user lands on without explicitly picking it.
     Response: {"provider", "model", "free_tier": bool | None} — free_tier only for
-    Anxious; ``model`` may be empty (caller degrades gracefully)."""
+    Nous; ``model`` may be empty (caller degrades gracefully)."""
     slug = (provider or "").strip().lower()
 
-    if slug == "anxious":
+    if slug == "nous":
         try:
-            return _anxious_recommended_default()
+            # The tier, Portal URL and recommendation caches are all per profile home.
+            with _config_profile_scope(profile):
+                return _nous_recommended_default()
+        except HTTPException:
+            raise  # an unknown ?profile= is the scope's 404, not an empty recommendation
         except Exception:
-            _log.exception("GET /api/model/recommended-default (anxious) failed")
-            return {"provider": "anxious", "model": "", "free_tier": None}
+            _log.exception("GET /api/model/recommended-default (nous) failed")
+            return {"provider": "nous", "model": "", "free_tier": None}
 
     try:
         from pulse_cli.inventory import build_models_payload, load_picker_context
@@ -204,6 +208,8 @@ def get_recommended_default_model(provider: str = "", profile: Optional[str] = N
                 models = [str(m) for m in (row.get("models") or [])]
                 return {"provider": slug, "model": pick_silent_default_model(models, provider=slug), "free_tier": None}
         return {"provider": slug, "model": "", "free_tier": None}
+    except HTTPException:
+        raise  # an unknown ?profile= is the scope's 404, not an empty recommendation
     except Exception:
         _log.exception("GET /api/model/recommended-default failed")
         return {"provider": slug, "model": "", "free_tier": None}
@@ -321,6 +327,14 @@ async def set_model_assignment(body: ModelAssignment, profile: Optional[str] = N
         raise HTTPException(status_code=400, detail="scope must be 'main' or 'auxiliary'")
 
     with http_failure("POST /api/model/set failed", 500, detail="Failed to save model assignment"):
+        # #99859 (R2): the options picker already refuses on code skew; the WRITE path
+        # must too — a stale process persisting a post-update model string is the
+        # invalid-model-serving failure the reporter hit.
+        skew_msg = _dashboard_code_skew_guard()
+        if skew_msg:
+            _log.warning("POST /api/model/set refused: %s", skew_msg)
+            raise HTTPException(status_code=503, detail=f"Restart required: {skew_msg}")
+
         # Expensive-model warning runs BEFORE the profile scope is entered: _profile_scope
         # must never be held across an await (the RLock is reentrant per-thread, so a second
         # coroutine interleaving on the event-loop thread could cross-restore module globals).

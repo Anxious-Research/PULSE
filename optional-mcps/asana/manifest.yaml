@@ -1,4 +1,4 @@
-# Anxious-approved MCP catalog entry.
+# Nous-approved MCP catalog entry.
 # Presence in this directory = approval. Merged via PR review.
 manifest_version: 1
 
@@ -12,7 +12,7 @@ source: https://developers.asana.com/docs/integrating-with-asanas-mcp-server
 # https://mcp.asana.com/sse is retired. V2 does not support Dynamic Client
 # Registration: every client must be a user-owned, pre-registered Asana
 # "MCP app" (developer console), so the OAuth block below pins that client
-# and a fixed callback URL that the app must register verbatim. Pulse's MCP
+# and a fixed callback URL that the app must register verbatim. PULSE's MCP
 # client + mcp_oauth_manager still handle discovery, PKCE, token exchange,
 # and refresh with the configured credentials.
 transport:
@@ -57,6 +57,6 @@ post_install: |
 
   Then run `pulse mcp login asana` (or click Authorize in the dashboard /
   Desktop: the callback still arrives at http://localhost:27890/callback, so
-  the browser must run on the same machine as Pulse), approve access, and
-  restart (or `/reload-mcp`) the Pulse session or gateway that should
+  the browser must run on the same machine as PULSE), approve access, and
+  restart (or `/reload-mcp`) the PULSE session or gateway that should
   expose the Asana tools.

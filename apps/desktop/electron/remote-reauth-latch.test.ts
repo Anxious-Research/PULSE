@@ -9,7 +9,7 @@
  *   fetchJson (native bearer)  →  bare Error("401: ...") — no statusCode
  *   withTransientRetries       →  not an auth rejection → hammered 3x
  *   gatewayTicketFailure       →  transport copy, no needsOauthLogin
- *   startPulse                →  isReauth=false → NOT latched, retryable:true
+ *   startPULSE                →  isReauth=false → NOT latched, retryable:true
  *   renderer boot-retry loop   →  running:true hides the overlay, repeat
  *
  * Composes the REAL modules exactly the way main.ts does, so the contract is
@@ -58,7 +58,7 @@ test('FIX #95701: a native-bearer 401 is a confirmed, non-retryable reauth rejec
   assert.equal(wrapped.needsOauthLogin, true)
   assert.equal(wrapped.statusCode, 401)
 
-  // startPulse's own composition: isReauth = isReauthRequiredError(error).
+  // startPULSE's own composition: isReauth = isReauthRequiredError(error).
   const isReauth = isReauthRequiredError(wrapped)
 
   assert.equal(isReauth, true)

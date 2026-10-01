@@ -1,4 +1,4 @@
-"""Streamlined setup flows: the Anxious Portal one-shot (`pulse portal`), first-time quick setup,
+"""Streamlined setup flows: the Nous Portal one-shot (`pulse portal`), first-time quick setup,
 Blank Slate setup and the `--quick` missing-items pass. Names from setup.py are imported lazily
 per function so test patches on ``pulse_cli.setup`` take effect."""
 
@@ -35,33 +35,33 @@ def _reload_config_into(config: dict, *, dict_only: bool = False) -> None:
         config.update(refreshed)
 
 
-def _run_anxious_flow(config: dict, *, context: str, cancel_exc: tuple, cancel_lines: tuple, print_error) -> bool:
-    """Run ``_model_flow_anxious`` (login, model pick, provider switch, Tool Gateway opt-in) — the
+def _run_nous_flow(config: dict, *, context: str, cancel_exc: tuple, cancel_lines: tuple, print_error) -> bool:
+    """Run ``_model_flow_nous`` (login, model pick, provider switch, Tool Gateway opt-in) — the
     single source of truth shared with ``pulse model``. False when cancelled or failed (the
     message is already printed)."""
     from pulse_cli.setup import _info
     try:
-        from pulse_cli.model_setup_flows import _model_flow_anxious
-        _model_flow_anxious(config)
+        from pulse_cli.model_setup_flows import _model_flow_nous
+        _model_flow_nous(config)
         return True
     except cancel_exc:
-        # _login_anxious raises SystemExit(130)/(1) on cancel/failure; the expired-session re-login
-        # path inside _model_flow_anxious only catches Exception, so SystemExit would kill the CLI.
+        # _login_nous raises SystemExit(130)/(1) on cancel/failure; the expired-session re-login
+        # path inside _model_flow_nous only catches Exception, so SystemExit would kill the CLI.
         _info(*cancel_lines)
     except Exception as exc:
-        logger.debug("_model_flow_anxious error during %s: %s", context, exc)
+        logger.debug("_model_flow_nous error during %s: %s", context, exc)
         print_error(exc)
     return False
 
 
 def _run_portal_one_shot(config: dict) -> None:
-    """One-shot Anxious Portal setup (``pulse setup --portal`` / ``pulse portal``)."""
-    from pulse_cli.setup import _info, _print_banner, print_error, print_info, print_success
-    _print_banner("│     ☤ Pulse Setup — Anxious Portal (one-shot)             │")
+    """One-shot Nous Portal setup (``pulse setup --portal`` / ``pulse portal``)."""
+    from pulse_cli.setup import _info, _print_banner, _record_setup_completed, print_error, print_info, print_success
+    _print_banner("│     ☤ PULSE Setup — Nous Portal (one-shot)             │")
     _info(None, "  One subscription, 300+ models, plus the Tool Gateway:",
           "    web search, image generation, TTS, browser automation",
-          "    — all routed through your Anxious Portal sub.", None,
-          "  Sign up: https://portal.anxiousresearchlab.com/manage-subscription", None)
+          "    — all routed through your Nous Portal sub.", None,
+          "  Sign up: https://portal.anxious-research.com/manage-subscription", None)
 
     def _on_error(exc: Exception) -> None:
         from pulse_cli.auth_error_copy import provider_setup_failure_lines
@@ -71,7 +71,7 @@ def _run_portal_one_shot(config: dict) -> None:
         for line in rest:
             print_info(f"  {line}")
 
-    if not _run_anxious_flow(config, context="`pulse portal`", cancel_exc=(KeyboardInterrupt, EOFError, SystemExit),
+    if not _run_nous_flow(config, context="`pulse portal`", cancel_exc=(KeyboardInterrupt, EOFError, SystemExit),
                           cancel_lines=(None, "  Setup cancelled.", "  You can retry later with `pulse portal`."),
                           print_error=_on_error):
         return
@@ -82,20 +82,21 @@ def _run_portal_one_shot(config: dict) -> None:
     print()
     print_success("Portal setup complete.")
     _info("  Run `pulse portal info` to inspect routing.", "  Run `pulse` to start chatting.")
+    _record_setup_completed(config)
 
 
 def _run_first_time_quick_setup(config: dict, pulse_home, is_existing: bool):
-    """Streamlined first-time setup via Anxious Portal: OAuth, model, terminal & messaging;
+    """Streamlined first-time setup via Nous Portal: OAuth, model, terminal & messaging;
     everything else gets defaults."""
     from pulse_cli.setup import (
         _apply_default_agent_settings, _info, print_header, print_info, _print_setup_summary, print_success,
         print_warning, prompt_choice, save_config, setup_gateway, setup_terminal_backend
     )
-    # Step 1: Anxious Portal — OAuth login + model selection (provider set to "anxious" by the save).
-    print_header("Anxious Portal", gap=True)
+    # Step 1: Nous Portal — OAuth login + model selection (provider set to "nous" by the save).
+    print_header("Nous Portal", gap=True)
     _info("One subscription, 300+ models, plus the Tool Gateway:",
           "  web search, image generation, TTS, browser automation.",
-          "Sign up: https://portal.anxiousresearchlab.com/manage-subscription", None)
+          "Sign up: https://portal.anxious-research.com/manage-subscription", None)
 
     def _on_error(exc: Exception) -> None:
         from pulse_cli.auth_error_copy import provider_setup_failure_lines
@@ -104,8 +105,8 @@ def _run_first_time_quick_setup(config: dict, pulse_home, is_existing: bool):
         for line in rest:
             print_info(line)
 
-    _run_anxious_flow(config, context="quick setup", cancel_exc=(KeyboardInterrupt, EOFError),
-                   cancel_lines=(None, "Anxious Portal setup cancelled."), print_error=_on_error)
+    _run_nous_flow(config, context="quick setup", cancel_exc=(KeyboardInterrupt, EOFError),
+                   cancel_lines=(None, "Nous Portal setup cancelled."), print_error=_on_error)
     # The wizard's later save_config(config) must not clobber the login/model save.
     _reload_config_into(config)
 
@@ -156,9 +157,9 @@ def _print_macos_fda_tip() -> None:
         return  # indeterminate — don't nag
     _info(None, "  macOS tip: silence ALL folder permission prompts with one switch —",
           "  System Settings → Privacy & Security → Full Disk Access → enable",
-          "  your terminal (and Pulse.app if you use Desktop), or run:",
+          "  your terminal (and PULSE.app if you use Desktop), or run:",
           "    open \"x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles\"",
-          "  The grant is permanent — it survives every Pulse update.")
+          "  The grant is permanent — it survives every PULSE update.")
 
 
 def _blank_slate_minimal_toolsets(config: dict):
@@ -233,7 +234,7 @@ def _run_blank_slate_setup(config: dict, pulse_home, is_existing: bool):
           "Everything else (web, browser, code exec, memory,",
           "delegation, cron, plugins, MCP, …) starts disabled. The",
           "essential `pulse-agent` skill is always kept so the agent",
-          "can help you drive and configure Pulse itself.", None)
+          "can help you drive and configure PULSE itself.", None)
 
     # Step 1: Provider & Model (REQUIRED — the agent cannot run without it)
     print_header("Step 1 — Provider & Model (required)")
@@ -373,7 +374,7 @@ def _run_quick_setup(config: dict, pulse_home):
             _prompt_api_key(missing_tools[idx])
     if missing_messaging:  # checklist, then prompt for each selected platform's vars
         print_header("Messaging Platforms", gap=True)
-        _info("Connect Pulse to messaging apps to chat from anywhere.",
+        _info("Connect PULSE to messaging apps to chat from anywhere.",
               "You can configure these later with 'pulse setup gateway'.")
         # Group by platform in first-seen order; vars matching no platform are dropped.
         grouped: dict[str, list] = {}

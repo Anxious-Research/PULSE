@@ -603,8 +603,9 @@ def _scan_gateway_pids(
 
         # Root home: reject argv that advertises another profile in any spelling the CLI pre-parser
         # accepts (``--profile=ops`` slipped past a substring test, so a default-profile fallback stop
-        # could SIGTERM the named gateway) or a PULSE_HOME= naming another home.
-        if profile_flag_value(command_lc) is not None:
+        # could SIGTERM the named gateway) or a PULSE_HOME= naming another home. An explicit
+        # ``--profile default`` names this home (#100817).
+        if profile_flag_value(command_lc) not in (None, "default"):
             return False
         if pulse_home_assignments(command_lc):
             return command_line_names_pulse_home(command_lc, current_home_lc)
@@ -768,7 +769,7 @@ def find_gateway_pids(exclude_pids: set | None = None, all_profiles: bool = Fals
 
 
 def find_profile_gateway_processes(exclude_pids: set | None = None, *, strict: bool = False) -> list[ProfileGatewayProcess]:
-    """Return running gateway PIDs mapped to Pulse profiles via PID files."""
+    """Return running gateway PIDs mapped to PULSE profiles via PID files."""
     _exclude = set(exclude_pids or set())
     processes: list[ProfileGatewayProcess] = []
     try:
@@ -815,9 +816,9 @@ def _scm_service_field(service, field: str):
 def find_windows_gateway_services(
     *, psutil_module=None, profile_processes: list[ProfileGatewayProcess] | None = None
 ) -> list[WindowsGatewayService]:
-    """Profile gateways supervised by real, Pulse-owned Windows services. Service-logon processes may
-    hide their command lines, so identity = Pulse's own PID file + a parent chain ending at a running
-    SCM service PID whose name or binary path is Pulse's (``gateway_windows.pulse_owns_windows_service``).
+    """Profile gateways supervised by real, PULSE-owned Windows services. Service-logon processes may
+    hide their command lines, so identity = PULSE's own PID file + a parent chain ending at a running
+    SCM service PID whose name or binary path is PULSE's (``gateway_windows.pulse_owns_windows_service``).
     The whole service subtree is returned so the Desktop preflight exempts exactly what the updater stops
     through the SCM; a gateway under any other service (a Scheduled Task's svchost) is a plain process."""
     if sys.platform != "win32":
@@ -839,10 +840,10 @@ def find_windows_gateway_services(
                     raise RuntimeError("SCM service has an empty name")
                 # Ownership before state: an OS service above the gateway (Task Scheduler's svchost for a
                 # task-launched gateway, BITS mid-transition) is never its supervisor, so neither its
-                # PID nor its status may steer the pause. Only Pulse-owned services reach the guards below.
-                # The name alone settles Pulse-named services; binpath (QueryServiceConfig) is asked only
+                # PID nor its status may steer the pause. Only PULSE-owned services reach the guards below.
+                # The name alone settles PULSE-named services; binpath (QueryServiceConfig) is asked only
                 # for the rest, and a service that refuses even that to this user is one this user could
-                # not `sc stop` either — never Pulse's, never a reason to abort the enumeration.
+                # not `sc stop` either — never PULSE's, never a reason to abort the enumeration.
                 owned = pulse_owns_windows_service(service_name, "", pulse_roots)
                 if not owned:
                     try:
@@ -1812,7 +1813,7 @@ def _reap_unsupervised_gateway_orphans(
             from pulse_cli.gateway_windows import get_task_name  # profile-aware task name
             _task_name = get_task_name()
         except Exception:
-            _task_name = "Pulse_Gateway"
+            _task_name = "PULSE_Gateway"
         if _windows_scheduled_task_supervises(_task_name):
             return False
 
@@ -2117,9 +2118,13 @@ def _windows_scheduled_task_state(task_name: str) -> str | None:
         powershell = shutil.which("powershell") or shutil.which("pwsh")
         if powershell is None:
             return None
+        # pythonw/console-less backend startup reaches this probe; powershell.exe is a
+        # console-subsystem binary and would flash a window per spawn (#117781).
+        from pulse_cli._subprocess_compat import windows_hide_flags
         result = subprocess.run(
             [powershell, "-NoProfile", "-NonInteractive", "-Command", ps_cmd],
             capture_output=True, text=True, encoding="utf-8", errors="ignore", timeout=10,
+            creationflags=windows_hide_flags(),
         )
         if result.returncode != 0:
             return None
@@ -2187,7 +2192,7 @@ def _windows_gateway_breakaway_state() -> bool | None:
 # =============================================================================
 
 _SERVICE_BASE = "pulse-gateway"
-SERVICE_DESCRIPTION = "Pulse Agent Gateway - Messaging Platform Integration"
+SERVICE_DESCRIPTION = "PULSE Agent Gateway - Messaging Platform Integration"
 
 _SYSTEM_UNIT_DIR = Path("/etc/systemd/system")
 
@@ -2242,7 +2247,7 @@ def _bare_unit_pinned_home() -> Path | None:
         return None
     try:
         return Path(pinned).expanduser().resolve()
-    except (RuntimeError, ValueError):  # hand-edited unit: ``~anxiouser`` or an embedded NUL
+    except (RuntimeError, ValueError):  # hand-edited unit: ``~nouser`` or an embedded NUL
         return None
 
 
@@ -2576,7 +2581,7 @@ def _find_legacy_pulse_units() -> list[tuple[str, Path, bool]]:
     fight the current unit for the bot token (SIGTERM flap loop). Explicit name allowlist + ExecStart
     marker check so profile/third-party units never match; no mutation.
 
-    Detects unit files installed by older Pulse versions that used a different service name (e.g. When both
+    Detects unit files installed by older PULSE versions that used a different service name (e.g. When both
     a legacy unit and the current ``pulse-gateway.service`` are active, they fight over the same bot token
     — the PR #5646 signal-recovery change turns this into a 30-second SIGTERM flap loop.
     """
@@ -2596,7 +2601,7 @@ def _find_legacy_pulse_units() -> list[tuple[str, Path, bool]]:
 
 
 def has_legacy_pulse_units() -> bool:
-    """Return True when any legacy Pulse gateway unit files exist."""
+    """Return True when any legacy PULSE gateway unit files exist."""
     return bool(_find_legacy_pulse_units())
 
 
@@ -2605,7 +2610,7 @@ def print_legacy_unit_warning() -> None:
     legacy = _find_legacy_pulse_units()
     if not legacy:
         return
-    print_warning("Legacy Pulse gateway unit(s) detected from an older install:")
+    print_warning("Legacy PULSE gateway unit(s) detected from an older install:")
     for name, path, is_system in legacy:
         print_info(f"    {path}  ({_service_scope_label(is_system)} scope)")
     print_info("  These run alongside the current pulse-gateway service and")
@@ -2619,11 +2624,11 @@ def remove_legacy_pulse_units(interactive: bool = True, dry_run: bool = False) -
     only lists. Returns ``(removed_count, remaining_paths)`` (remaining: e.g. system-scope when not root)."""
     legacy = _find_legacy_pulse_units()
     if not legacy:
-        print("No legacy Pulse gateway units found.")
+        print("No legacy PULSE gateway units found.")
         return 0, []
 
     print()
-    print("Legacy Pulse gateway unit(s) found:")
+    print("Legacy PULSE gateway unit(s) found:")
     for name, path, is_system in legacy:
         print(f"  {path}  ({_service_scope_label(is_system)} scope)")
     print()
@@ -3412,7 +3417,7 @@ def _refuse_temp_home_service_write(definition: str, kind: str) -> bool:
 
 
 def _retire_pulse_replace_dropin(system: bool = False) -> bool:
-    """Remove only the legacy ``--replace`` drop-in written by Pulse."""
+    """Remove only the legacy ``--replace`` drop-in written by PULSE."""
     unit_path = get_systemd_unit_path(system=system)
     dropin = unit_path.parent / f"{unit_path.name}.d" / "20-replace.conf"
     try:
@@ -3435,7 +3440,7 @@ def refresh_systemd_unit_if_needed(system: bool = False) -> bool:
     current = systemd_unit_is_current(system=system)
     if _retire_pulse_replace_dropin(system=system):
         _run_systemctl(["daemon-reload"], system=system, check=True, timeout=30)
-        print(f"↻ Removed the stale Pulse --replace drop-in from the gateway {_service_scope_label(system)} service")
+        print(f"↻ Removed the stale PULSE --replace drop-in from the gateway {_service_scope_label(system)} service")
         if current:
             return True
     elif current:
@@ -3456,7 +3461,7 @@ def refresh_systemd_unit_if_needed(system: bool = False) -> bool:
     _prepare_service_launcher(system=system, run_as_user=expected_user)
     unit_path.write_text(new_unit, encoding="utf-8")
     _run_systemctl(["daemon-reload"], system=system, check=True, timeout=30)
-    print(f"↻ Updated gateway {_service_scope_label(system)} service definition to match the current Pulse install")
+    print(f"↻ Updated gateway {_service_scope_label(system)} service definition to match the current PULSE install")
     return True
 
 
@@ -4130,7 +4135,16 @@ def host_multiplexer_serving(profile_name: str | None = None):
     try:
         from gateway.host_attach import host_gateway_serving
         name = profile_name if profile_name is not None else _current_profile_name()
-        return host_gateway_serving(name or "default")
+        gateway = host_gateway_serving(name or "default")
+        if gateway is None:
+            return None
+        # Same predicate as decide() / _claim_host_gateway_role: another tenant's multiplexer
+        # "serving default" is a name collision, and the CLI guards refused on it with exit 78 (#121352).
+        from gateway.host_attach import launched_by_other_tenant
+        if launched_by_other_tenant(gateway.home, get_pulse_home()):
+            logger.debug("Host gateway %s belongs to another PULSE home; not ours", gateway.describe())
+            return None
+        return gateway
     except Exception:
         logger.debug("Host multiplexer probe failed", exc_info=True)
         return None
@@ -4169,9 +4183,15 @@ def named_profile_served_by_running_multiplexer(profile_name: str | None = None)
         return False
 
     # The host record answers first: it names the live host process whatever home launched it, so a
-    # multiplexer started by a named profile is visible here too.
-    if host_multiplexer_serving(suffix) is not None:
-        return True
+    # multiplexer started by a named profile is visible here too. A record launched by THIS profile's
+    # own home is its own gateway (a standalone fleet member, or a multiplexer it hosts), never a
+    # multiplexer serving a satellite: counting it refused the owner's own restart with exit 78 and
+    # pointed it at `-p default`, whose gateway was not running (#120871).
+    gateway = host_multiplexer_serving(suffix)
+    if gateway is not None:
+        from pulse_cli.profiles import normalize_profile_name
+        if normalize_profile_name(gateway.profile_label) != normalize_profile_name(suffix):
+            return True
 
     try:
         from pulse_constants import get_default_pulse_root
@@ -4450,11 +4470,11 @@ def _guard_official_docker_root_gateway() -> None:
     if not _is_official_docker_checkout():
         return
 
-    print_error("Refusing to run the Pulse gateway as root inside the official Docker image.")
+    print_error("Refusing to run the PULSE gateway as root inside the official Docker image.")
     print(
         "  The image entrypoint normally drops privileges to the 'pulse' user. "
         "If you override entrypoint in Docker Compose, include "
-        "/opt/pulse/docker/entrypoint.sh before the Pulse command."
+        "/opt/pulse/docker/entrypoint.sh before the PULSE command."
     )
     print(
         "  Running the gateway as root can leave root-owned files in "
@@ -4591,6 +4611,8 @@ def run_gateway(verbose: int = 0, quiet: bool = False, replace: bool = False, fo
     _guard_existing_gateway_process_conflict(replace=replace)
     sys.path.insert(0, str(PROJECT_ROOT))
     _apply_startup_watchdog_config()
+    from pulse_cli.observability.shared_metrics_process import begin_process
+    begin_process("gateway")
 
     # Detached Windows runs (PULSE_GATEWAY_DETACHED=1, or non-TTY for older wrappers) ignore
     # console-control broadcasts from sibling CLIs; foreground runs keep Ctrl+C-to-stop.
@@ -4616,7 +4638,7 @@ def run_gateway(verbose: int = 0, quiet: bool = False, replace: bool = False, fo
 
     from gateway.run import start_gateway
     print("┌─────────────────────────────────────────────────────────┐")
-    print("│           ☤ Pulse Gateway Starting...                 │")
+    print("│           ☤ PULSE Gateway Starting...                 │")
     print("├─────────────────────────────────────────────────────────┤")
     print("│  Messaging platforms + cron scheduler                    │")
     print("│  Press Ctrl+C to stop                                   │")
@@ -5593,12 +5615,14 @@ def _status_host_kind() -> str:
 
 def _cmd_status(args):
     from pulse_cli.gateway_profile_lifecycle import print_parked_status
-    if print_parked_status():
-        return
     deep = getattr(args, "deep", False)
     full = getattr(args, "full", False)
     system = getattr(args, "system", False)
     snapshot = get_gateway_runtime_snapshot(system=system)
+    # The marker records intent, not runtime: a `--force` gateway bypasses parking and stays live
+    # beside it, so only a parked profile with nothing running stops here.
+    if print_parked_status() and not snapshot.running:
+        return
     from pulse_cli.profiles import get_active_profile_name, profile_is_standalone
 
     active_standalone = ((get_active_profile_name() or "default") != "default"
@@ -5634,6 +5658,13 @@ def _cmd_status(args):
             _print_served_ingress_urls()
             print()
             _print_lines(*_STATUS_RUNNING_HINTS[_status_host_kind()])
+        elif snapshot.service_running:
+            # s6 container: the service is up but the scan finds no PID (the `python -c` launcher
+            # argv is deliberately unmatched, #123881, and there is no gateway.pid) — #125390.
+            print(f"✓ Gateway is running (supervised by {snapshot.manager})")
+            _print_runtime_health()
+            _print_multiplex_standalone_reason()
+            _print_served_ingress_urls()
         else:
             print("✗ Gateway is not running")
             _print_runtime_health()
@@ -5665,7 +5696,7 @@ def _cmd_list(args):
 
 
 def _cmd_migrate_legacy(args):
-    """Stop, disable, and remove legacy Pulse gateway unit files (e.g. pulse.service)."""
+    """Stop, disable, and remove legacy PULSE gateway unit files (e.g. pulse.service)."""
     dry_run = getattr(args, "dry_run", False)
     yes = getattr(args, "yes", False)
     if not supports_systemd_services() and not is_macos():
@@ -5690,41 +5721,6 @@ def _gateway_command_inner(args):
     handler = _GATEWAY_SUBCOMMANDS.get(getattr(args, "gateway_command", None))
     if handler is not None:
         handler(args)
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-def print_systemd_linger_guidance() -> None:
-    """Print the current linger status and the fix when it is disabled."""
-    linger_enabled, linger_detail = get_systemd_linger_status()
-    if linger_enabled is True:
-        print("✓ Systemd linger is enabled (service survives logout)")
-    elif linger_enabled is False:
-        print("⚠ Systemd linger is disabled (gateway may stop when you log out)")
-        print("  Run: sudo loginctl enable-linger $USER")
-    else:
-        print(f"⚠ Could not verify systemd linger ({linger_detail})")
-        print("  If you want the gateway user service to survive logout, run:")
-        print("  sudo loginctl enable-linger $USER")
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'DEFAULT_GATEWAY_RESTART_AFTER_TURN_TIMEOUT': ('gateway.restart', 'DEFAULT_GATEWAY_RESTART_AFTER_TURN_TIMEOUT'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----
 
 
 def _pm_runtime_venv_dir(project_root: Path | None = None) -> Path | None:

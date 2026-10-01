@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { savePulseConfig } from '@/pulse'
+import { savePULSEConfig } from '@/pulse'
 import { useI18n } from '@/i18n'
 import { notifyError } from '@/store/notifications'
 import {
@@ -10,9 +10,9 @@ import {
   resolveChatFontFamily,
   setChatFontFamilyFromConfig
 } from '@/themes/chat-font'
-import type { PulseConfigRecord } from '@/types/pulse'
+import type { PULSEConfigRecord } from '@/types/pulse'
 
-import { setPulseConfigCache, usePulseConfigRecord } from '../hooks/use-config-record'
+import { setPULSEConfigCache, usePULSEConfigRecord } from '../hooks/use-config-record'
 import { useOnProfileSwitch } from '../hooks/use-on-profile-switch'
 import { useProfileSwitchLatch } from '../hooks/use-profile-switch-latch'
 
@@ -23,7 +23,7 @@ import { ListRow } from './primitives'
 const AUTOSAVE_DELAY_MS = 550
 const CONFIG_PATH = 'desktop.font_family'
 
-function fontFamilyFromConfig(config: PulseConfigRecord): string {
+function fontFamilyFromConfig(config: PULSEConfigRecord): string {
   return normalizeChatFontFamily(getNested(config, CONFIG_PATH))
 }
 
@@ -35,7 +35,7 @@ function fontFamilyFromConfig(config: PulseConfigRecord): string {
 export function ChatFontSetting() {
   const { t } = useI18n()
   const copy = t.settings.appearance
-  const { data: loadedConfig, dataUpdatedAt, writeScope } = usePulseConfigRecord()
+  const { data: loadedConfig, dataUpdatedAt, writeScope } = usePULSEConfigRecord()
   const [draft, setDraft] = useState<string | null>(null)
   // The seed effect refuses to reseed while the query still carries the
   // previous profile's stamp. A structurally-shared refetch keeps the object
@@ -85,7 +85,7 @@ export function ChatFontSetting() {
 
       // Sparse patch: PUT /api/config deep-merges; echoing the cached snapshot
       // would overwrite keys other surfaces changed since it loaded.
-      void savePulseConfig(setNested({}, CONFIG_PATH, value), writeScope)
+      void savePULSEConfig(setNested({}, CONFIG_PATH, value), writeScope)
         .then(result => {
           if (!result.ok) {
             throw new Error(t.settings.config.autosaveFailed)
@@ -95,7 +95,7 @@ export function ChatFontSetting() {
             return
           }
 
-          setPulseConfigCache(next)
+          setPULSEConfigCache(next)
         })
         .catch(error => {
           if (saveVersionRef.current !== version) {

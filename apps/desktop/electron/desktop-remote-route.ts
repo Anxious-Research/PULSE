@@ -16,7 +16,7 @@ interface SshRouteConfig {
   keyPath?: string
   mode: 'ssh'
   port?: number
-  remotePulsePath?: string
+  remotePULSEPath?: string
   remoteProfile?: string
   user?: string
 }
@@ -126,7 +126,7 @@ export function resolveDesktopRemoteRoute({
     if (!envToken) {
       throw new Error(
         'PULSE_DESKTOP_REMOTE_URL is set but PULSE_DESKTOP_REMOTE_TOKEN is not. ' +
-          'Both must be provided to connect to a remote Pulse backend.'
+          'Both must be provided to connect to a remote PULSE backend.'
       )
     }
 

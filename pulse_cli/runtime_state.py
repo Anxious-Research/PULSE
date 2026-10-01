@@ -108,7 +108,7 @@ def recover_publication(project: Path) -> None:
         for entry in entries:
             config = Path(entry["config"])
             if config.name != "config.yaml" or not config.resolve().is_relative_to(dependency_home_root().resolve()):
-                raise ValueError("config path is outside Pulse state")
+                raise ValueError("config path is outside PULSE state")
             previous = base64.b64decode(entry["previous"], validate=True) if entry["previous"] is not None else None
             configs.append((config, previous, entry.get("config_after")))
         if not row.get("committed") and _digest(runtime_facts_path(project)) == row["facts_before"]:

@@ -19,18 +19,18 @@ const digestModule = pathToFileURL(path.join(import.meta.dirname, 'payload-diges
 // provides; a PATH python would fail later with an unrelated ImportError.
 function preparedPython() {
   const configured = process.env.PULSE_PYTHON
-  if (!configured) throw new Error('mac-sign tests need PULSE_PYTHON set to the prepared Pulse runtime interpreter')
+  if (!configured) throw new Error('mac-sign tests need PULSE_PYTHON set to the prepared PULSE runtime interpreter')
   return configured
 }
 
 function fixture() {
   const python = preparedPython()
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mac-digest-order-'))
-  const app = path.join(root, 'Pulse.app')
+  const app = path.join(root, 'PULSE.app')
   const payload = path.join(app, 'Contents', 'Resources', 'agent-payload')
   const tools = path.join(payload, 'tools')
   const nested = path.join(tools, 'chromium', 'Browser.app')
-  const binaries = [path.join(app, 'Contents', 'MacOS', 'Pulse'),
+  const binaries = [path.join(app, 'Contents', 'MacOS', 'PULSE'),
     path.join(tools, 'python', 'bin', 'python3'),
     path.join(nested, 'Contents', 'MacOS', process.platform === 'win32' ? 'chrome.exe' : 'Chromium')]
   for (const binary of binaries) {

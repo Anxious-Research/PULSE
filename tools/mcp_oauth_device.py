@@ -204,14 +204,14 @@ async def _authorize(client, provider, cfg):
 async def login_device(name, server_url, oauth_config):
     """Authorize then commit state in the active profile; failed grants preserve old state."""
     from tools.mcp_oauth import _build_client_metadata
-    from tools.mcp_oauth_manager import PulseMCPOAuthProvider, get_manager
+    from tools.mcp_oauth_manager import PULSEMCPOAuthProvider, get_manager
     from tools.mcp_oauth_provider import prepare_oauth_config
     from tools.mcp_tool import sdk_httpx
 
     cfg, storage = prepare_oauth_config(name, server_url, oauth_config)
     # Device flow never binds a callback socket or uses the hosted browser CIMD.
     cfg["_resolved_port"] = cfg.get("redirect_port", 8420)
-    provider = PulseMCPOAuthProvider(server_url=server_url, server_name=name, storage=storage,
+    provider = PULSEMCPOAuthProvider(server_url=server_url, server_name=name, storage=storage,
                                      client_metadata=_build_client_metadata(cfg),
                                      token_user_agent=cfg.get("user_agent"))
     httpx = sdk_httpx()

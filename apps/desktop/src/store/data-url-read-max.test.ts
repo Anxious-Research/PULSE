@@ -9,7 +9,7 @@ import {
 } from './data-url-read-max'
 
 const desktopWindow = window as unknown as { pulseDesktop?: Window['pulseDesktop'] }
-const initialPulseDesktop = desktopWindow.pulseDesktop
+const initialPULSEDesktop = desktopWindow.pulseDesktop
 
 const get = vi.fn(async () => ({ defaultMaxMb: 16, maxBytes: 16 * 1024 * 1024, maxMb: 16 }))
 
@@ -27,7 +27,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  desktopWindow.pulseDesktop = initialPulseDesktop
+  desktopWindow.pulseDesktop = initialPULSEDesktop
 })
 
 describe('clampDataUrlReadMaxMb', () => {

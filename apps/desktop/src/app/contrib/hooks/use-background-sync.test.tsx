@@ -44,7 +44,7 @@ function render(
         refreshActiveTranscript: noop,
         refreshCronJobs: noop,
         refreshCurrentModel: noop,
-        refreshPulseConfig: noop,
+        refreshPULSEConfig: noop,
         refreshMessagingSessions: noop,
         refreshSessions,
         requestGateway: gatewayRequest
@@ -156,8 +156,7 @@ describe('useBackgroundSync keeps a quiet working turn live', () => {
     noteSessionEvent('rt-quiet')
   }
 
-  const cardShown = () =>
-    Boolean($sessionStates.get()['rt-quiet']?.messages.some(message => message.errorSurface))
+  const cardShown = () => Boolean($sessionStates.get()['rt-quiet']?.messages.some(message => message.errorSurface))
 
   beforeEach(() => {
     vi.useFakeTimers()
@@ -211,7 +210,7 @@ describe('useBackgroundSync keeps a quiet working turn live', () => {
     render('default', 'local', async () => undefined, request)
     await act(async () => undefined)
     request.mockImplementation(async () => {
-      throw new Error('Pulse gateway unavailable')
+      throw new Error('PULSE gateway unavailable')
     })
 
     await act(async () => {

@@ -1,4 +1,4 @@
-# Anxious-approved MCP catalog entry.
+# Nous-approved MCP catalog entry.
 # Presence in this directory = approval. Merged via PR review.
 manifest_version: 1
 
@@ -7,10 +7,10 @@ connector_slug: better_stack_mcp
 description: 'Better Stack: logs, uptime monitors, incidents, and status pages.'
 source: https://betterstack.com/docs/getting-started/integrations/mcp/
 
-# Official vendor-hosted remote MCP (URL-only — Pulse never spawns a local
+# Official vendor-hosted remote MCP (URL-only — PULSE never spawns a local
 # process for this entry). Native OAuth 2.1 + Dynamic Client Registration
 # (verified live: RFC 9728 protected-resource metadata -> AS metadata with
-# registration_endpoint); Pulse's MCP client + mcp_oauth_manager handle
+# registration_endpoint); PULSE's MCP client + mcp_oauth_manager handle
 # discovery, PKCE, token exchange, and refresh.
 transport:
   type: http
@@ -52,12 +52,12 @@ suggest:
     - betterstack.com
 
 post_install: |
-  On first connection Pulse opens a browser to authorize with
+  On first connection PULSE opens a browser to authorize with
   Better Stack (or run `pulse mcp login betterstack`). Approve access,
   then restart the session so tools load.
 
   Heads-up: this server exposes a LARGE tool surface (~106 tools as of
-  Aug 2026). Pulse applies a curated exclude list automatically at install
+  Aug 2026). PULSE applies a curated exclude list automatically at install
   (docs search, instruction pseudo-tools, the raw-SQL query hatch, cloud
   credential minting, and team-membership tools); everything else stays
   enabled. Review or change the selection any time with:

@@ -18,7 +18,7 @@ def cmd_pause(args: argparse.Namespace) -> int:
     already = is_engaged()
     path = engage(reason=reason)
     state = get_state() or {}
-    verb = "Still paused" if already else "Pulse paused"
+    verb = "Still paused" if already else "PULSE paused"
     detail = f" — reason: {state['reason']}" if state.get("reason") else ""
     print(f"⏸️  {verb}{detail}")
     print(f"    sentinel: {path}")
@@ -33,9 +33,9 @@ def cmd_resume(args: argparse.Namespace) -> int:
     from agent.estop import disengage, sentinel_path
 
     if disengage():
-        print("▶️  Pulse resumed — dispatch picks up on the next tick.")
+        print("▶️  PULSE resumed — dispatch picks up on the next tick.")
     else:
-        print(f"Pulse is not paused (no sentinel at {sentinel_path()}).")
+        print(f"PULSE is not paused (no sentinel at {sentinel_path()}).")
     return 0
 
 

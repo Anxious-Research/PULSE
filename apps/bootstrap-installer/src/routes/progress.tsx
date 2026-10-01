@@ -51,11 +51,11 @@ export default function ProgressScreen({ bootstrap }: ProgressProps) {
   }, [bootstrap.status])
 
   const isUpdate = mode === 'update'
-  const title = bootstrap.status === 'completed' ? 'Done' : isUpdate ? 'Updating Pulse' : 'Setting up Pulse Agent'
+  const title = bootstrap.status === 'completed' ? 'Done' : isUpdate ? 'Updating PULSE' : 'Setting up PULSE Agent'
 
   const description = isUpdate
-    ? 'Pulse is updating to the latest version — this only takes a moment.'
-    : 'This is a one-time setup. The Pulse installer is downloading dependencies and configuring your machine. Subsequent launches will skip this step.'
+    ? 'PULSE is updating to the latest version — this only takes a moment.'
+    : 'This is a one-time setup. The PULSE installer is downloading dependencies and configuring your machine. Subsequent launches will skip this step.'
 
   const pct = Math.round(progress.fraction * 100)
 

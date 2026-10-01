@@ -1,6 +1,6 @@
 /**
  * Bot Screen install card — installs the TigerVNC + Xfce packages on the bot's
- * gateway host from inside Pulse Desktop.
+ * gateway host from inside PULSE Desktop.
  *
  * `display.install` starts the distro package command on the host; sudo, when
  * needed, arrives as the same masked password card the terminal tool uses

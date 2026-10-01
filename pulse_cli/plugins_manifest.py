@@ -12,7 +12,7 @@ import re
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Set, Tuple, Union
 
 from utils import fast_safe_load
 from pulse_cli.plugin_capabilities import parse_declared_capabilities as _parse_declared_capabilities
@@ -35,10 +35,10 @@ _KNOWN_MANIFEST_FIELDS: Set[str] = {
     "pip_dependencies", "provides_browser_providers", "provides_web_providers",
     "manifest_version", "api_version", "requires_plugins", "python_dependencies", "config_schema",
     "license", "homepage", "tags", "capabilities", "emits", "listens", "pulse", "depends",
-    "requires_pulse", "python_runtime",
+    "requires_pulse", "python_runtime", "provides_locales",
 }
 
-# Highest manifest schema version this Pulse understands.
+# Highest manifest schema version this PULSE understands.
 SUPPORTED_MANIFEST_VERSION = 2
 
 _CONFIG_SCHEMA_TYPES: Dict[str, tuple] = {
@@ -136,7 +136,7 @@ def _parse_manifest_v2_fields(data: Mapping, key: str) -> Dict[str, Any]:
                        "Plugin %s: manifest_version %r is not an integer; treating as 1", 1)
     if mv > SUPPORTED_MANIFEST_VERSION:
         logger.warning(
-            "Plugin %s: manifest_version %d is newer than this Pulse "
+            "Plugin %s: manifest_version %d is newer than this PULSE "
             "supports (%d); loading anyway and ignoring unknown fields", key, mv, SUPPORTED_MANIFEST_VERSION,
         )
     raw_api = data.get("api_version")
@@ -358,7 +358,7 @@ class PluginManifest:
     # Path-derived registry key used by plugins.enabled/disabled and `pulse plugins list`: ``disk-cleanup``
     # for a flat plugin, ``image_gen/openai`` for a category plugin. Empty -> name.
     key: str = ""
-    # Pulse version requirement (``">=0.19"``, comma-separated clauses allowed). Unsatisfied plugins are
+    # PULSE version requirement (``">=0.19"``, comma-separated clauses allowed). Unsatisfied plugins are
     # recorded with an error and skipped before import — see ``requires_pulse_error``.
     requires_pulse: str = ""
     portable: bool = False
@@ -375,7 +375,7 @@ class PluginManifest:
     # Advisory deps [{"id", "version_range"}]: missing ones warn but load; they order the load.
     requires_plugins: List[Dict[str, Any]] = field(default_factory=list)
     # Declared pip deps — VALIDATED AND SURFACED ONLY, never auto-installed.
-    # VALIDATED AND SURFACED ONLY — Pulse never auto-installs these (isolation design for the install seam
+    # VALIDATED AND SURFACED ONLY — PULSE never auto-installs these (isolation design for the install seam
     # is a deferred follow-up; see #64165 round-2 review and #15220).
     python_dependencies: List[str] = field(default_factory=list)
     # Schema for plugins.entries.<id>.settings; mismatches warn, never fail.
@@ -387,6 +387,46 @@ class PluginManifest:
     # ``<key>:``; ``listens`` fully-qualified ``<plugin>:<event>`` names.
     emits: List[str] = field(default_factory=list)
     listens: List[str] = field(default_factory=list)
+    # Language pack declaration: ids whose ``locales/<id>[.tui|.desktop].yaml`` the loader registers
+    # automatically (no Python needed). ``locale_metadata`` carries the optional per-id
+    # ``{endonym, rtl}`` from the mapping form of a ``provides_locales`` entry.
+    provides_locales: List[str] = field(default_factory=list)
+    locale_metadata: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+
+
+def parse_provides_locales(raw: Any, key: str = "") -> Tuple[List[str], Dict[str, Dict[str, Any]]]:
+    """``provides_locales`` -> (ids, metadata). Entries are ``"pl"`` or ``{id: pl, endonym: Polski, rtl: false}``;
+    ids are canonicalised (lowercase, ``_`` -> ``-``), invalid or duplicate ones are dropped with a warning."""
+    from agent.i18n_layers import is_language_id, normalize_language_id
+    ids: List[str] = []
+    metadata: Dict[str, Dict[str, Any]] = {}
+    if raw is None:
+        return ids, metadata
+    if isinstance(raw, (str, Mapping)):
+        raw = [raw]
+    if not isinstance(raw, list):
+        logger.warning("Plugin %s: provides_locales must be a list of language ids, got %s", key, type(raw).__name__)
+        return ids, metadata
+    for item in raw:
+        entry_meta: Dict[str, Any] = {}
+        if isinstance(item, Mapping):
+            lang_id = normalize_language_id(item.get("id", ""))
+            if isinstance(item.get("endonym"), str) and item["endonym"].strip():
+                entry_meta["endonym"] = item["endonym"].strip()
+            if "rtl" in item:
+                entry_meta["rtl"] = bool(item["rtl"])
+        else:
+            lang_id = normalize_language_id(item)
+        if not is_language_id(lang_id):
+            logger.warning("Plugin %s: ignoring invalid provides_locales entry %r", key, item)
+            continue
+        if lang_id in ids:
+            logger.warning("Plugin %s: duplicate provides_locales entry %r", key, lang_id)
+            continue
+        ids.append(lang_id)
+        if entry_meta:
+            metadata[lang_id] = entry_meta
+    return ids, metadata
 
 
 # ── requires_pulse version gate ─────────────────────────────────────────────
@@ -394,7 +434,7 @@ _VERSION_COMPARATOR_RE = re.compile(r"^\s*(>=|<=|==|!=|>|<)\s*(.+?)\s*$")
 
 
 def running_pulse_version() -> str:
-    """Base release version of the Pulse code that is running."""
+    """Base release version of the PULSE code that is running."""
     from pulse_cli.version_info import get_version_info
 
     return get_version_info().base_version
@@ -499,6 +539,7 @@ def parse_manifest_file(
         kind = _manifest_kind(data, key, plugin_dir)
         logger.debug(
             "Parsed manifest: key=%s name=%s kind=%s source=%s path=%s", key, name, kind, source, plugin_dir)
+        provides_locales, locale_metadata = parse_provides_locales(data.get("provides_locales"), key)
         return PluginManifest(
             name=name, version=str(data.get("version", "")),
             description=data.get("description", ""), author=_display_author(data.get("author", "")),
@@ -511,6 +552,7 @@ def parse_manifest_file(
             capabilities=_parse_declared_capabilities(data.get("capabilities"), name),
             **_parse_manifest_v2_fields(data, key), emits=data.get("emits") or [],
             listens=data.get("listens") or [],
+            provides_locales=provides_locales, locale_metadata=locale_metadata,
         )
     except Exception as exc:
         logger.warning("Failed to parse %s: %s", manifest_file, exc, exc_info=_plugins_debug())

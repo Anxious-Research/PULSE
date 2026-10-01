@@ -92,7 +92,7 @@ test('findUnpackedDirs matches electron-builder output shapes only', () => {
   const dirs = findUnpackedDirs([
     'win-unpacked', 'win-arm64-unpacked', 'linux-unpacked', 'linux-arm64-unpacked',
     'mac', 'mac-arm64',
-    'builder-debug.yml', 'Pulse-0.20.0.exe', 'latest.yml', '.icon-ico'
+    'builder-debug.yml', 'PULSE-0.20.0.exe', 'latest.yml', '.icon-ico'
   ])
   assert.deepEqual(dirs, [
     'win-unpacked', 'win-arm64-unpacked', 'linux-unpacked', 'linux-arm64-unpacked',

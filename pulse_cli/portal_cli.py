@@ -1,4 +1,4 @@
-"""``pulse portal`` — the human-readable entry point for Anxious Portal."""
+"""``pulse portal`` — the human-readable entry point for Nous Portal."""
 from __future__ import annotations
 
 import sys
@@ -7,12 +7,12 @@ import webbrowser
 from pulse_cli.colors import Colors, color
 from pulse_cli.config import load_config
 
-DEFAULT_PORTAL_URL = "https://portal.anxiousresearchlab.com"
-SUBSCRIPTION_URL = "https://portal.anxiousresearchlab.com/manage-subscription"
-DOCS_URL = "https://pulse-agent.anxiousresearchlab.com/docs/user-guide/features/tool-gateway"
+DEFAULT_PORTAL_URL = "https://portal.anxious-research.com"
+SUBSCRIPTION_URL = "https://portal.anxious-research.com/manage-subscription"
+DOCS_URL = "https://pulse-agent.anxious-research.com/docs/user-guide/features/tool-gateway"
 # Static `portal tools` catalog — the partners Tool Gateway routes to today: (key, label, partner).
 _CATALOG = [
-    ("web", "Web search & extract", "Anxious-managed"),
+    ("web", "Web search & extract", "Nous-managed"),
     ("image_gen", "Image generation", "FAL"),
     ("tts", "Text-to-speech", "OpenAI TTS"),
     ("browser", "Browser automation", "Browser Use"),
@@ -20,10 +20,10 @@ _CATALOG = [
 ]
 
 
-def _feature_state(feat, *, via_anxious: str) -> str:
+def _feature_state(feat, *, via_nous: str) -> str:
     """Routing column shared by `portal info` and `portal tools`."""
-    if feat.managed_by_anxious:
-        return color(via_anxious, Colors.GREEN)
+    if feat.managed_by_nous:
+        return color(via_nous, Colors.GREEN)
     if feat.active:
         return feat.current_provider or "active"
     return color("not configured", Colors.DIM)
@@ -37,17 +37,17 @@ def _heading(title: str) -> None:
 
 def _cmd_status(args) -> int:
     """Show Portal auth + Tool Gateway routing summary."""
-    from pulse_cli.auth import get_anxious_auth_status_local
-    from pulse_cli.anxious_subscription import get_anxious_subscription_features
+    from pulse_cli.auth import get_nous_auth_status_local
+    from pulse_cli.nous_subscription import get_nous_subscription_features
 
     config = load_config() or {}
     try:
-        auth = get_anxious_auth_status_local() or {}  # refresh-free snapshot
+        auth = get_nous_auth_status_local() or {}  # refresh-free snapshot
     except Exception:
         auth = {}
     logged_in = bool(auth.get("logged_in"))
     free_tier = bool(auth.get("free_tier"))
-    _heading("Anxious Portal")
+    _heading("Nous Portal")
     if free_tier:
         from pulse_cli.anon_auth import FREE_TIER_LABEL, GUEST_MODEL, UPGRADE_HINT
         print(f"  Auth:    {color(f'{FREE_TIER_LABEL} · {GUEST_MODEL}', Colors.GREEN)}")
@@ -67,18 +67,18 @@ def _cmd_status(args) -> int:
     # Provider selection (independent of auth)
     model_cfg = config.get("model") if isinstance(config.get("model"), dict) else {}
     provider = str(model_cfg.get("provider") or "").strip().lower()
-    if provider == "anxious":
-        print(f"  Model:   {color('✓ using Anxious as inference provider', Colors.GREEN)}")
+    if provider == "nous":
+        print(f"  Model:   {color('✓ using Nous as inference provider', Colors.GREEN)}")
     elif provider:
         print(f"  Model:   currently {provider} (switch with `pulse model`)")
 
     _heading("Tool Gateway")
     try:
-        features = get_anxious_subscription_features(config)
+        features = get_nous_subscription_features(config)
     except Exception:
         print("  (could not resolve subscription state)")
         return 0
-    rows = [(feat.label, _feature_state(feat, via_anxious="via Anxious Portal")) for feat in features.items()]
+    rows = [(feat.label, _feature_state(feat, via_nous="via Nous Portal")) for feat in features.items()]
     width = max((len(r[0]) for r in rows), default=0)
     for label, state in rows:
         print(f"  {label:<{width}}   {state}")
@@ -104,24 +104,26 @@ def _cmd_open(args) -> int:
 
 def _cmd_tools(args) -> int:
     """List the Tool Gateway catalog + current routing."""
-    from pulse_cli.anxious_subscription import get_anxious_subscription_features
+    from pulse_cli.nous_subscription import get_nous_subscription_features, managed_image_partner
 
     config = load_config() or {}
     try:
-        features = get_anxious_subscription_features(config)
+        features = get_nous_subscription_features(config)
     except Exception:
         print("Could not resolve Tool Gateway state.", file=sys.stderr)
         return 1
 
     _heading("Tool Gateway catalog")
-    if not features.anxious_auth_present:
-        print(color("  Not logged into Anxious Portal — sign in with `pulse portal`.", Colors.YELLOW))
+    if not features.nous_auth_present:
+        print(color("  Not logged into Nous Portal — sign in with `pulse portal`.", Colors.YELLOW))
         print()
 
     label_width = max(len(label) for _, label, _ in _CATALOG)
     for key, label, partner in _CATALOG:
+        if key == "image_gen":
+            partner = managed_image_partner(config) or partner
         feat = features.features.get(key)
-        state = color("unknown", Colors.DIM) if feat is None else _feature_state(feat, via_anxious="✓ via Anxious Portal")
+        state = color("unknown", Colors.DIM) if feat is None else _feature_state(feat, via_nous="✓ via Nous Portal")
         print(f"  {label:<{label_width}}  partner: {partner:<14} {state}")
 
     print()
@@ -131,7 +133,7 @@ def _cmd_tools(args) -> int:
 
 
 def _cmd_login(args) -> int:
-    """One-shot Anxious Portal onboarding (login + model + provider + tools).
+    """One-shot Nous Portal onboarding (login + model + provider + tools).
 
     Reuses the exact wiring behind ``pulse setup --portal`` so the commands stay in lockstep.
     """
@@ -147,7 +149,7 @@ def _cmd_login(args) -> int:
     return 0
 
 
-# Default (None/"") is the one-shot onboarding (alias for `pulse auth add anxious --type oauth` /
+# Default (None/"") is the one-shot onboarding (alias for `pulse auth add nous --type oauth` /
 # `pulse setup --portal`). `status` kept as a back-compat alias for `info`.
 _SUBCOMMANDS = {
     None: _cmd_login,
@@ -175,12 +177,12 @@ def add_parser(subparsers) -> None:
     """Register `pulse portal` on the given argparse subparsers object."""
     portal_parser = subparsers.add_parser(
         "portal",
-        help="Set up Anxious Portal (login, model pick, Tool Gateway); see also `portal info`",
+        help="Set up Nous Portal (login, model pick, Tool Gateway); see also `portal info`",
         description=(
-            "Run `pulse portal` with no subcommand to log in to Anxious Portal "
-            "and set it up — pick a model, set Anxious as your provider, and offer "
+            "Run `pulse portal` with no subcommand to log in to Nous Portal "
+            "and set it up — pick a model, set Nous as your provider, and offer "
             "the Tool Gateway (the human-readable alias for `pulse auth add "
-            "anxious --type oauth`, identical to `pulse setup --portal`). "
+            "nous --type oauth`, identical to `pulse setup --portal`). "
             "Subcommands: login (default), info, open, tools."
         ),
     )
@@ -188,11 +190,11 @@ def add_parser(subparsers) -> None:
 
     # `status` is a hidden (no help) back-compat alias; registration order = `pulse portal -h` order.
     for name, help_text in (
-        ("login", "Log in to Anxious Portal + set it up (default; one-shot onboarding)"),
+        ("login", "Log in to Nous Portal + set it up (default; one-shot onboarding)"),
         ("info", "Show Portal auth + Tool Gateway routing summary"),
         ("status", None),
         ("open", "Open the Portal subscription page in your default browser"),
-        ("tools", "List Tool Gateway tools and which are routed via Anxious"),
+        ("tools", "List Tool Gateway tools and which are routed via Nous"),
     ):
         portal_sub.add_parser(name, **({} if help_text is None else {"help": help_text}))
 

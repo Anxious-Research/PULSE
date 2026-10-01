@@ -1,1 +1,1 @@
-# Pulse plugins package
+# PULSE plugins package

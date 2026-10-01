@@ -1,5 +1,5 @@
 #!/usr/bin/env -S bash -c 'exec "$BASH" "$(dirname "$0")/_pulse-python" "$0" "$@"'
-"""Build the Pulse Skills Index — a centralized JSON catalog of all skills.
+"""Build the PULSE Skills Index — a centralized JSON catalog of all skills.
 
 This script crawls every skill source (skills.sh, GitHub taps, official,
 clawhub, lobehub) and writes a JSON index with resolved
@@ -236,7 +236,7 @@ def batch_resolve_paths(skills: list, auth: GitHubAuth) -> list:
 
 
 def main():
-    print("Building Pulse Skills Index...", flush=True)
+    print("Building PULSE Skills Index...", flush=True)
     overall_start = time.time()
 
     auth = GitHubAuth()

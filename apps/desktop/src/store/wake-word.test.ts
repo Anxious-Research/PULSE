@@ -123,13 +123,13 @@ describe('toggleWakeWord', () => {
 
     await toggleWakeWord(
       requester(() => {
-        throw new Error('Pulse gateway unavailable')
+        throw new Error('PULSE gateway unavailable')
       })
     )
 
     expect($wakeWord.get()).toMatchObject({
       listening: false,
-      notice: 'Pulse gateway unavailable',
+      notice: 'PULSE gateway unavailable',
       pending: false
     })
   })

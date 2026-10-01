@@ -56,7 +56,7 @@
           # environment instead of creating an empty project .venv.
           export VIRTUAL_ENV="$(dirname "$(dirname "$(readlink -f "$(command -v python)")")")"
 
-          echo "Pulse Agent dev shell in $PULSE_PYTHON_SRC_ROOT"
+          echo "PULSE Agent dev shell in $PULSE_PYTHON_SRC_ROOT"
           echo "Ready. Run 'pulse' or 'sandbox pulse' to start."
         '';
       };

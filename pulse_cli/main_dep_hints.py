@@ -5,7 +5,7 @@ def missing_optional_deps_message(surface: str, what: str, extra: str) -> str:
     return (
         f"The {surface} can't start: {what} are missing from this install.\n"
         "Run `pulse pm install` to prepare the declared dependencies.\n"
-        "If an installed dependency is damaged, run `pulse pm repair`, then restart Pulse."
+        "If an installed dependency is damaged, run `pulse pm repair`, then restart PULSE."
     )
 
 
@@ -29,14 +29,14 @@ def smart_app_control_block_message(error: BaseException) -> "str | None":
         f"  {message}",
         "",
         "This happens when Windows Smart App Control or an Application Control",
-        "policy blocks the embedded Python runtime that ships with Pulse Desktop.",
+        "policy blocks the embedded Python runtime that ships with PULSE Desktop.",
         "A repair / reinstall loop cannot fix this — the packages are not missing,",
         "the runtime's DLL is being blocked.",
         "",
         "Recovery options:",
         "  1. Use a trusted system Python installation instead of the embedded",
         "     runtime (if your organization allows it).",
-        "  2. Ask your IT administrator for an exemption for the Pulse Desktop",
+        "  2. Ask your IT administrator for an exemption for the PULSE Desktop",
         "     application (Smart App Control / Application Control).",
         "  3. Use the CLI or gateway instead (they use your system Python).",
         "",

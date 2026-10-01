@@ -152,7 +152,7 @@ def _anydoc_missing_error(path: str) -> str:
 
 def _hosted_ocr_config() -> tuple:
     """(enabled, api_key, api_url); never raises, no network. Maintainer decision: the ONLY route
-    is a direct ``FIRECRAWL_API_KEY`` (anydoc defaults api_url); the Anxious gateway's Parse proxy
+    is a direct ``FIRECRAWL_API_KEY`` (anydoc defaults api_url); the Nous gateway's Parse proxy
     live-probed broken, so it is NOT used. ``file_tools.hosted_ocr: false`` disables even with a
     key. The key is a profile credential: read through the secret scope so a multiplexed
     secondary never spends (or reveals its documents to) the default profile's Firecrawl key."""
@@ -621,12 +621,3 @@ def _sqlite_cell(value: Any) -> str:
 _STDLIB_EXTRACTORS: dict[str, Callable[[str], str]] = {
     ".ipynb": _extract_notebook, ".docx": _extract_docx, ".xlsx": _extract_xlsx,
     ".db": _extract_sqlite, ".sqlite": _extract_sqlite, ".sqlite3": _extract_sqlite}
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-MAX_XLSX_BYTES = 50 * 1024 * 1024
-# ---- END PLUGIN-COMPAT ----

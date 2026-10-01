@@ -23,33 +23,33 @@ _log = logging.getLogger("pulse_cli.web_server")
 # and pulls required_env from a plugin's PlatformEntry when available.
 _PLATFORM_OVERRIDES: dict[str, dict[str, Any]] = {
     "telegram": {
-        "name": "Telegram", "description": "Run Pulse from Telegram DMs, groups, and topics.",
+        "name": "Telegram", "description": "Run PULSE from Telegram DMs, groups, and topics.",
         "docs_url": "https://core.telegram.org/bots/features#botfather",
         "env_vars": ("TELEGRAM_BOT_TOKEN", "TELEGRAM_ALLOWED_USERS", "TELEGRAM_PROXY"),
         "required_env": ("TELEGRAM_BOT_TOKEN",),
     },
     "discord": {
-        "name": "Discord", "description": "Connect Pulse to Discord DMs, channels, and threads.",
+        "name": "Discord", "description": "Connect PULSE to Discord DMs, channels, and threads.",
         "docs_url": "https://discord.com/developers/applications",
         "env_vars": ("DISCORD_BOT_TOKEN", "DISCORD_ALLOWED_USERS"),
         "required_env": ("DISCORD_BOT_TOKEN",),
     },
     "slack": {
         "name": "Slack",
-        "description": "Use Pulse from Slack via Socket Mode. Add allowed Slack member IDs so connected bots can respond.",
+        "description": "Use PULSE from Slack via Socket Mode. Add allowed Slack member IDs so connected bots can respond.",
         "docs_url": "https://api.slack.com/apps",
         "env_vars": ("SLACK_BOT_TOKEN", "SLACK_APP_TOKEN", "SLACK_ALLOWED_USERS"),
         "required_env": ("SLACK_BOT_TOKEN", "SLACK_APP_TOKEN"),
     },
     "mattermost": {
         "name": "Mattermost",
-        "description": "Connect Pulse to Mattermost channels and direct messages.",
+        "description": "Connect PULSE to Mattermost channels and direct messages.",
         "docs_url": "https://mattermost.com/deploy/",
         "env_vars": ("MATTERMOST_URL", "MATTERMOST_TOKEN", "MATTERMOST_ALLOWED_USERS"),
         "required_env": ("MATTERMOST_URL", "MATTERMOST_TOKEN"),
     },
     "matrix": {
-        "name": "Matrix", "description": "Use Pulse in Matrix rooms and direct messages.",
+        "name": "Matrix", "description": "Use PULSE in Matrix rooms and direct messages.",
         "docs_url": "https://matrix.org/ecosystem/servers/",
         "env_vars": (
             "MATRIX_HOMESERVER", "MATRIX_ACCESS_TOKEN", "MATRIX_USER_ID", "MATRIX_ALLOWED_USERS",
@@ -64,7 +64,7 @@ _PLATFORM_OVERRIDES: dict[str, dict[str, Any]] = {
     },
     "whatsapp": {
         "name": "WhatsApp",
-        "description": "Use Pulse through the bundled WhatsApp bridge with QR-based auth.",
+        "description": "Use PULSE through the bundled WhatsApp bridge with QR-based auth.",
         "docs_url": "https://github.com/tulir/whatsmeow",
         "env_vars": (
             "WHATSAPP_ENABLED", "WHATSAPP_MODE", "WHATSAPP_DM_POLICY", "WHATSAPP_ALLOWED_USERS",
@@ -73,13 +73,13 @@ _PLATFORM_OVERRIDES: dict[str, dict[str, Any]] = {
     },
     "homeassistant": {
         "name": "Home Assistant",
-        "description": "Control your smart home from Pulse via Home Assistant.",
+        "description": "Control your smart home from PULSE via Home Assistant.",
         "docs_url": "https://www.home-assistant.io/docs/authentication/",
         "env_vars": ("HASS_URL", "HASS_TOKEN"), "required_env": ("HASS_URL", "HASS_TOKEN"),
     },
     "email": {
-        "name": "Email", "description": "Talk to Pulse through an IMAP/SMTP mailbox.",
-        "docs_url": "https://pulse-agent.anxiousresearchlab.com/docs/user-guide/messaging/",
+        "name": "Email", "description": "Talk to PULSE through an IMAP/SMTP mailbox.",
+        "docs_url": "https://pulse-agent.anxious-research.com/docs/user-guide/messaging/",
         "env_vars": ("EMAIL_ADDRESS", "EMAIL_PASSWORD", "EMAIL_IMAP_HOST", "EMAIL_SMTP_HOST"),
         "required_env": ("EMAIL_ADDRESS", "EMAIL_PASSWORD", "EMAIL_IMAP_HOST", "EMAIL_SMTP_HOST"),
     },
@@ -90,13 +90,13 @@ _PLATFORM_OVERRIDES: dict[str, dict[str, Any]] = {
         "required_env": ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"),
     },
     "dingtalk": {
-        "name": "DingTalk", "description": "Connect Pulse to DingTalk groups (钉钉).",
+        "name": "DingTalk", "description": "Connect PULSE to DingTalk groups (钉钉).",
         "docs_url": "https://open.dingtalk.com/document/orgapp/the-robot-development-process",
         "env_vars": ("DINGTALK_CLIENT_ID", "DINGTALK_CLIENT_SECRET"),
         "required_env": ("DINGTALK_CLIENT_ID", "DINGTALK_CLIENT_SECRET"),
     },
     "feishu": {
-        "name": "Feishu / Lark", "description": "Use Pulse inside Feishu / Lark.",
+        "name": "Feishu / Lark", "description": "Use PULSE inside Feishu / Lark.",
         "docs_url": "https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/intro",
         "env_vars": (
             "FEISHU_APP_ID", "FEISHU_APP_SECRET", "FEISHU_ENCRYPT_KEY", "FEISHU_VERIFICATION_TOKEN",
@@ -104,8 +104,8 @@ _PLATFORM_OVERRIDES: dict[str, dict[str, Any]] = {
         "required_env": ("FEISHU_APP_ID", "FEISHU_APP_SECRET"),
     },
     "google_chat": {
-        "name": "Google Chat", "description": "Connect Pulse to Google Chat via Cloud Pub/Sub.",
-        "docs_url": "https://pulse-agent.anxiousresearchlab.com/docs/user-guide/messaging/google_chat",
+        "name": "Google Chat", "description": "Connect PULSE to Google Chat via Cloud Pub/Sub.",
+        "docs_url": "https://pulse-agent.anxious-research.com/docs/user-guide/messaging/google_chat",
     },
     "wecom": {
         "name": "WeCom (group bot)", "description": "Send-only WeCom group bot via webhook.",
@@ -126,13 +126,13 @@ _PLATFORM_OVERRIDES: dict[str, dict[str, Any]] = {
     "weixin": {
         "name": "Weixin / WeChat (Personal)",
         "description": "Connect a personal WeChat account through Tencent's iLink Bot API.",
-        "docs_url": "https://pulse-agent.anxiousresearchlab.com/docs/user-guide/messaging/weixin/",
+        "docs_url": "https://pulse-agent.anxious-research.com/docs/user-guide/messaging/weixin/",
         "env_vars": ("WEIXIN_ACCOUNT_ID", "WEIXIN_TOKEN", "WEIXIN_BASE_URL"),
         "required_env": ("WEIXIN_ACCOUNT_ID", "WEIXIN_TOKEN"),
     },
     "bluebubbles": {
         "name": "BlueBubbles (iMessage)",
-        "description": "Use Pulse through iMessage via a BlueBubbles server.",
+        "description": "Use PULSE through iMessage via a BlueBubbles server.",
         "docs_url": "https://bluebubbles.app/",
         "env_vars": (
             "BLUEBUBBLES_SERVER_URL", "BLUEBUBBLES_PASSWORD", "BLUEBUBBLES_ALLOWED_USERS",
@@ -140,7 +140,7 @@ _PLATFORM_OVERRIDES: dict[str, dict[str, Any]] = {
         "required_env": ("BLUEBUBBLES_SERVER_URL", "BLUEBUBBLES_PASSWORD"),
     },
     "qqbot": {
-        "name": "QQ Bot", "description": "Connect Pulse to a QQ Bot from the QQ Open Platform.",
+        "name": "QQ Bot", "description": "Connect PULSE to a QQ Bot from the QQ Open Platform.",
         "docs_url": "https://q.qq.com",
         "env_vars": ("QQ_APP_ID", "QQ_CLIENT_SECRET", "QQ_ALLOWED_USERS"),
         "required_env": ("QQ_APP_ID", "QQ_CLIENT_SECRET"),
@@ -149,44 +149,44 @@ _PLATFORM_OVERRIDES: dict[str, dict[str, Any]] = {
     # plugin registry. Only the docs link needs an override here so the
     # Channels page can point at the Microsoft Teams setup guide.
     "teams": {
-        "description": "Connect Pulse to Microsoft Teams chats via the Bot Framework.",
-        "docs_url": "https://pulse-agent.anxiousresearchlab.com/docs/user-guide/messaging/teams",
+        "description": "Connect PULSE to Microsoft Teams chats via the Bot Framework.",
+        "docs_url": "https://pulse-agent.anxious-research.com/docs/user-guide/messaging/teams",
     },
     # Bundled platform plugins: name comes from the plugin registry label;
     # give each a human description (the registry's install_hint is a
     # dependency note, not a description) and a docs link.
     "irc": {
-        "description": "Relay messages between an IRC channel (or DMs) and Pulse.",
-        "docs_url": "https://pulse-agent.anxiousresearchlab.com/docs/user-guide/messaging/irc",
+        "description": "Relay messages between an IRC channel (or DMs) and PULSE.",
+        "docs_url": "https://pulse-agent.anxious-research.com/docs/user-guide/messaging/irc",
     },
     "line": {
-        "description": "Use Pulse from LINE via the LINE Messaging API webhook.",
-        "docs_url": "https://pulse-agent.anxiousresearchlab.com/docs/user-guide/messaging/line",
+        "description": "Use PULSE from LINE via the LINE Messaging API webhook.",
+        "docs_url": "https://pulse-agent.anxious-research.com/docs/user-guide/messaging/line",
     },
     "ntfy": {
-        "description": "Chat with Pulse over ntfy push topics (ntfy.sh or self-hosted).",
-        "docs_url": "https://pulse-agent.anxiousresearchlab.com/docs/user-guide/messaging/ntfy",
+        "description": "Chat with PULSE over ntfy push topics (ntfy.sh or self-hosted).",
+        "docs_url": "https://pulse-agent.anxious-research.com/docs/user-guide/messaging/ntfy",
     },
     "photon": {
-        "description": "Use Pulse through iMessage via Photon's managed Spectrum platform.",
-        "docs_url": "https://pulse-agent.anxiousresearchlab.com/docs/user-guide/messaging/photon",
+        "description": "Use PULSE through iMessage via Photon's managed Spectrum platform.",
+        "docs_url": "https://pulse-agent.anxious-research.com/docs/user-guide/messaging/photon",
     },
     "raft": {
         "description": "Join a Raft workspace as an external agent.",
-        "docs_url": "https://pulse-agent.anxiousresearchlab.com/docs/user-guide/messaging/raft",
+        "docs_url": "https://pulse-agent.anxious-research.com/docs/user-guide/messaging/raft",
     },
     "simplex": {
-        "description": "Talk to Pulse over SimpleX Chat via a local simplex-chat daemon.",
-        "docs_url": "https://pulse-agent.anxiousresearchlab.com/docs/user-guide/messaging/simplex",
+        "description": "Talk to PULSE over SimpleX Chat via a local simplex-chat daemon.",
+        "docs_url": "https://pulse-agent.anxious-research.com/docs/user-guide/messaging/simplex",
     },
     "yuanbao": {
-        "name": "Yuanbao (元宝)", "description": "Connect Pulse to Tencent Yuanbao.", "docs_url": "",
+        "name": "Yuanbao (元宝)", "description": "Connect PULSE to Tencent Yuanbao.", "docs_url": "",
         "required_env": (),
     },
     "api_server": {
         "name": "API server",
-        "description": "Expose Pulse as an OpenAI-compatible HTTP API for tools like Open WebUI.",
-        "docs_url": "https://pulse-agent.anxiousresearchlab.com/docs/user-guide/messaging/",
+        "description": "Expose PULSE as an OpenAI-compatible HTTP API for tools like Open WebUI.",
+        "docs_url": "https://pulse-agent.anxious-research.com/docs/user-guide/messaging/",
         "env_vars": (
             "API_SERVER_ENABLED", "API_SERVER_KEY", "API_SERVER_PORT", "API_SERVER_HOST",
             "API_SERVER_MODEL_NAME",
@@ -196,23 +196,23 @@ _PLATFORM_OVERRIDES: dict[str, dict[str, Any]] = {
     "webhook": {
         "name": "Webhooks",
         "description": "Receive events from GitHub, GitLab, and other webhook sources.",
-        "docs_url": "https://pulse-agent.anxiousresearchlab.com/docs/user-guide/messaging/webhooks/",
+        "docs_url": "https://pulse-agent.anxious-research.com/docs/user-guide/messaging/webhooks/",
         "env_vars": ("WEBHOOK_ENABLED", "WEBHOOK_PORT", "WEBHOOK_SECRET"), "required_env": (),
     },
     "msgraph_webhook": {
         "name": "Microsoft Graph Webhook",
         "description": "Receive Microsoft Graph change notifications (Teams meetings, Outlook, …).",
-        "docs_url": "https://pulse-agent.anxiousresearchlab.com/docs/user-guide/messaging/msgraph-webhook",
+        "docs_url": "https://pulse-agent.anxious-research.com/docs/user-guide/messaging/msgraph-webhook",
         "required_env": (),
     },
     "whatsapp_cloud": {
         "name": "WhatsApp Cloud API",
-        "description": "Use Pulse via Meta's hosted WhatsApp Cloud API (no local bridge).",
-        "docs_url": "https://pulse-agent.anxiousresearchlab.com/docs/user-guide/messaging/whatsapp-cloud",
+        "description": "Use PULSE via Meta's hosted WhatsApp Cloud API (no local bridge).",
+        "docs_url": "https://pulse-agent.anxious-research.com/docs/user-guide/messaging/whatsapp-cloud",
     },
     "relay": {
         "name": "Relay (experimental)",
-        "description": "Generic relay adapter fronted by the Pulse Relay connector.",
+        "description": "Generic relay adapter fronted by the PULSE Relay connector.",
         "docs_url": "", "required_env": (),
     },
 }
@@ -373,8 +373,8 @@ def _restart_gateway_after_whatsapp_onboarding(profile: Optional[str] = None) ->
     return _restart_gateway_after(profile, what="WhatsApp onboarding", label="WhatsApp onboarding")
 
 
-_TELEGRAM_ONBOARDING_DEFAULT_URL = "https://setup.pulse-agent.anxiousresearchlab.com"
-_TELEGRAM_ONBOARDING_USER_AGENT = f"PulseDashboard/{get_version_info().base_version}"
+_TELEGRAM_ONBOARDING_DEFAULT_URL = "https://setup.pulse-agent.anxious-research.com"
+_TELEGRAM_ONBOARDING_USER_AGENT = f"PULSEDashboard/{get_version_info().base_version}"
 
 
 @dataclass

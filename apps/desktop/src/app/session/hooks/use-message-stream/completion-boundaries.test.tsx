@@ -53,7 +53,7 @@ function mount(rpc = requestGateway) {
       updateSessionState: cache.updateSessionState,
       queryClient,
       hydrateFromStoredSession: hydrate,
-      refreshPulseConfig: noop,
+      refreshPULSEConfig: noop,
       refreshSessions: noop
     })
 

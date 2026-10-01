@@ -191,7 +191,7 @@ class _SupermemoryClient:
                                    default_headers={"x-sm-source": "pulse"})
 
     def _merge_metadata(self, metadata: Optional[dict]) -> dict:
-        # sm_source routes Pulse writes into the "Pulse" Space in the Supermemory app so the user
+        # sm_source routes PULSE writes into the "PULSE" Space in the Supermemory app so the user
         # can filter / bulk-manage them per source agent (a routing key for the user, not telemetry).
         merged = {"sm_source": "pulse", **(metadata or {})}
         if (legacy_source := merged.pop("source", None)) and "type" not in merged:
@@ -431,7 +431,7 @@ class SupermemoryMemoryProvider(MemoryProvider):
                 batch = [t for t in turns if t["session_id"] == sid]
                 now = datetime.now(timezone.utc)
                 content = "\n\n".join(_format_turn(t["user"], t["assistant"]) for t in batch)
-                metadata = {"type": "conversation", "session_id": sid, "timestamp": now.isoformat()}  # no sm_capture_mode: Pulse policy
+                metadata = {"type": "conversation", "session_id": sid, "timestamp": now.isoformat()}  # no sm_capture_mode: PULSE policy
                 result = _quietly(lambda: self._client.add_memory(content, metadata=metadata, entity_context=self._entity_context,
                                                                   custom_id=_capture_custom_id(sid, now)),
                                   "Supermemory capture failed (%s, session=%s, %d turns pending)", mode, sid, len(batch),
@@ -579,59 +579,3 @@ class SupermemoryMemoryProvider(MemoryProvider):
 
 def register(ctx):
     ctx.register_memory_provider(SupermemoryMemoryProvider())
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-FORGET_SCHEMA = {
-    "name": "supermemory_forget",
-    "description": "Forget a memory by exact id or by best-match query.",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "id": {"type": "string", "description": "Exact memory id to delete."},
-            "query": {"type": "string", "description": "Query used to find the memory to forget."},
-        },
-    },
-}
-
-PROFILE_SCHEMA = {
-    "name": "supermemory_profile",
-    "description": "Retrieve persistent profile facts and recent memory context.",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "query": {"type": "string", "description": "Optional query to focus the profile response."},
-        },
-    },
-}
-
-SEARCH_SCHEMA = {
-    "name": "supermemory_search",
-    "description": "Search long-term memory by semantic similarity.",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "query": {"type": "string", "description": "What to search for."},
-            "limit": {"type": "integer", "description": "Maximum results to return, 1 to 20."},
-        },
-        "required": ["query"],
-    },
-}
-
-STORE_SCHEMA = {
-    "name": "supermemory_store",
-    "description": "Store an explicit memory for future recall.",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "content": {"type": "string", "description": "The memory content to store."},
-            "metadata": {"type": "object", "description": "Optional metadata attached to the memory."},
-        },
-        "required": ["content"],
-    },
-}
-# ---- END PLUGIN-COMPAT ----

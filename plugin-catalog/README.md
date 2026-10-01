@@ -1,6 +1,6 @@
-# Pulse Plugin Catalog
+# PULSE Plugin Catalog
 
-Curated, Anxious-approved Pulse plugins. Each YAML file in this directory
+Curated, Nous-approved PULSE plugins. Each YAML file in this directory
 (except `removed.yaml`) is one catalog entry, discoverable via
 `pulse plugins catalog` / `pulse plugins search` and installable with
 `pulse plugins install <name>`.
@@ -29,7 +29,7 @@ meaningful:
 5. **Owner-or-major-contributor submissions, or a maintainer-curated sweep.**
    An entry may be submitted by the plugin repository's owner or a major
    contributor to it; drive-by submissions of third-party repos are declined.
-   Pulse maintainers may also add entries in batches from a reviewed sweep
+   PULSE maintainers may also add entries in batches from a reviewed sweep
    of community plugins (every pin validated and scanned at the pinned
    commit, self-updater and credential-store checks run, English-first UI).
    Authors of swept-in entries keep control: a PR from the owner adjusting
@@ -54,10 +54,10 @@ meaningful:
    validate` refuses these at admission (`desktop surface` check); a plugin
    that needs a capability the SDK lacks asks for an SDK hook instead of
    patching around it.
-9. **Dependency security policy is the plugin's.** Pulse's 14-day
-   `exclude-newer` quarantine covers Pulse's own dependencies only; a plugin's
+9. **Dependency security policy is the plugin's.** PULSE's 14-day
+   `exclude-newer` quarantine covers PULSE's own dependencies only; a plugin's
    `python_dependencies` / `pyproject.toml` install under the plugin's policy
-   (no quarantine, still inside Pulse's core constraints). Reviewers read the
+   (no quarantine, still inside PULSE's core constraints). Reviewers read the
    dependency list at the pinned SHA: bare floors (`>=X` with no upper bound)
    and floors on the newest release get a request for the oldest
    API-compatible floor plus an upper bound, and authors are strongly
@@ -100,7 +100,7 @@ so the Desktop catalog and the docs site never fetch from third-party hosts;
 pin the raw URL to the entry's commit and the picture is as immutable as the
 code.
 
-Every entry gets a page at `https://github.com/Anxious-Research/PULSE/plugins/<name>`
+Every entry gets a page at `https://pulse-agent.anxious-research.com/docs/plugins/<name>`
 and every maintainer a page at `/docs/plugins/by/<maintainer>`, both generated
 from these files at docs build time. `screenshots:` fills the page's gallery;
 the build fetches the README (from `subdir` if set, else the repo root) **at the

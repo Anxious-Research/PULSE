@@ -12,7 +12,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from pulse_cli.cli_output import line_input
 
@@ -103,7 +103,7 @@ def _consent_python_deps(plugin_name: str, deps: tuple[str, ...], console) -> tu
         return False, "dependency install skipped (non-interactive)"
     try:
         answer = input(
-            "  Prepare these with Pulse through PM now? [y/N]: "
+            "  Prepare these with PULSE through PM now? [y/N]: "
         ).strip().lower()
     except (EOFError, KeyboardInterrupt):
         answer = ""
@@ -186,7 +186,7 @@ def _check_manifest_version(manifest: dict, plugin_name: str) -> None:
     reason = manifest_version_error(manifest, plugin_name)
     if reason:
         from pulse_cli.config import recommended_update_command
-        raise _pc().PluginOperationError(f"{reason} Run {recommended_update_command()} to update Pulse.")
+        raise _pc().PluginOperationError(f"{reason} Run {recommended_update_command()} to update PULSE.")
 
 
 def _read_manifest_for_install(plugin_dir: Path) -> dict:
@@ -222,7 +222,7 @@ def _probe_readable(path: Path) -> None:
 
 
 def _ensure_tree_readable(root: Path, plugins_dir: Path) -> None:
-    """Refuse to ship a tree Pulse cannot read back. A clone can land unreadable (Windows ACL
+    """Refuse to ship a tree PULSE cannot read back. A clone can land unreadable (Windows ACL
     inheritance -> WinError 5, a mode-000 file) and discovery would then skip the plugin forever
     (#111804); repair ``u+rX`` where the OS supports it, otherwise fail before anything moves."""
     paths = [root]
@@ -403,6 +403,24 @@ def _install_plugin_core(
     return target, installed_manifest, installed_manifest.get("name") or target.name
 
 
+def recorded_install(install: Callable[[], tuple], *, catalog_name: Optional[str], identifier: str) -> tuple:
+    """Run one plugin install attempt (a core ``(target, manifest, installed_name)`` call) and record
+    it as a shared-metrics extension install: failed when it raises, success unless it replaced an
+    already-installed plugin (a reinstall is not an install)."""
+    from pulse_cli.observability.shared_metrics_events import record_extension_install
+
+    source = "catalog" if catalog_name else ("local" if identifier.startswith("file://") else "url")
+    before = set(_pc()._read_install_metadata())
+    try:
+        result = install()
+    except Exception:
+        record_extension_install(kind="plugin", source=source, name=catalog_name, outcome="failed")
+        raise
+    if result[2] not in before:
+        record_extension_install(kind="plugin", source=source, name=catalog_name, outcome="success")
+    return result
+
+
 def cmd_install(
     identifier: str,
     force: bool = False,
@@ -427,7 +445,7 @@ def cmd_install(
         console.print(f"[bold]{entry.name}[/bold] [cyan]\\[{entry.tier}][/cyan] [dim]pinned @ {entry.sha[:8]}[/dim]")
         console.print(catalog.entry_capability_summary(entry))
     else:
-        console.print("[yellow]Warning:[/yellow] custom (unreviewed) source — not from the Pulse catalog.")
+        console.print("[yellow]Warning:[/yellow] custom (unreviewed) source — not from the PULSE catalog.")
     if allow_removed:
         console.print(
             "[bold red]WARNING:[/bold red] [red]--allow-removed set — skipping the catalog kill-list check. "
@@ -454,21 +472,24 @@ def cmd_install(
         console.print(format_scan_report(scan_result))
         return _pc()._is_tty() and _pc()._ask_yes("  Install anyway? Only continue if you trust the source. [y/N]: ")
 
-    try:
+    def _install() -> tuple:
         if entry is not None:
-            target, installed_manifest, installed_name = catalog.install_catalog_entry(
+            return catalog.install_catalog_entry(
                 entry, force=force, ref=ref, allow_removed=allow_removed, scan_decision_cb=_interactive_scan_decision,
                 python_deps=not no_deps)
-        else:
-            target, installed_manifest, installed_name = _pc()._install_plugin_core(
-                identifier, force=force, ref=ref, scan_decision_cb=_interactive_scan_decision,
-                python_deps=not no_deps, allow_removed=allow_removed)
+        return _pc()._install_plugin_core(
+            identifier, force=force, ref=ref, scan_decision_cb=_interactive_scan_decision,
+            python_deps=not no_deps, allow_removed=allow_removed)
+
+    try:
+        target, installed_manifest, installed_name = recorded_install(
+            _install, catalog_name=entry.name if entry is not None else None, identifier=identifier)
     except _pc().PluginOperationError as e:
         _pc()._fail(console, f"[red]{'Blocked' if isinstance(e, _pc().PluginScanBlocked) else 'Error'}:[/red] {e}")
     if not _pc()._looks_like_plugin_dir(target):
         console.print(
             f"[yellow]Warning:[/yellow] {installed_name} doesn't contain plugin.yaml, "
-            f"plugin.json, or __init__.py. It may not be a valid Pulse plugin.")
+            f"plugin.json, or __init__.py. It may not be a valid PULSE plugin.")
     _prompt_plugin_env_vars(installed_manifest, console)
 
     from pm.workspace import enabled_plugin_dirs
@@ -549,11 +570,11 @@ def dashboard_install_plugin(
     if catalog_name:
         entry = catalog.get_live_catalog_entry(catalog_name)
         if entry is None:
-            return {"ok": False, "error": f"'{catalog_name}' is not in the Pulse plugin catalog."}
+            return {"ok": False, "error": f"'{catalog_name}' is not in the PULSE plugin catalog."}
         warnings.extend(_known_issue_warnings(entry))
         identifier = entry.install_identifier
     else:
-        warnings.append("Custom (unreviewed) source — not from the Pulse catalog.")
+        warnings.append("Custom (unreviewed) source — not from the PULSE catalog.")
     try:
         git_url = _pc()._resolve_git_url(identifier)[0]
         if git_url.startswith(("http://", "file://")):
@@ -563,13 +584,14 @@ def dashboard_install_plugin(
         pass
     except _pc().PluginOperationError as exc:
         return {"ok": False, "error": str(exc)}
-    try:
+    def _install() -> tuple:
         if entry is not None:
-            target, installed_manifest, installed_name = catalog.install_catalog_entry(
-                entry, force=force, allow_removed=False)
-        else:
-            target, installed_manifest, installed_name = _pc()._install_plugin_core(
-                identifier, force=force, ref=(ref or "").strip() or None)
+            return catalog.install_catalog_entry(entry, force=force, allow_removed=False)
+        return _pc()._install_plugin_core(identifier, force=force, ref=(ref or "").strip() or None)
+
+    try:
+        target, installed_manifest, installed_name = recorded_install(
+            _install, catalog_name=entry.name if entry is not None else None, identifier=identifier)
     except _pc().PluginScanBlocked as exc:
         fields = ("pattern_id", "severity", "category", "file", "line", "description")
         return {

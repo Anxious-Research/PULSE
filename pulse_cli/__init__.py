@@ -1,4 +1,4 @@
-"""Pulse CLI - Unified command-line interface for Pulse Agent."""
+"""PULSE CLI - Unified command-line interface for PULSE Agent."""
 
 import sys
 

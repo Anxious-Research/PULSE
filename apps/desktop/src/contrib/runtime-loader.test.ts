@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { PulseReadDirResult } from '@/global'
-import type * as PulseModule from '@/pulse'
+import type { PULSEReadDirResult } from '@/global'
+import type * as PULSEModule from '@/pulse'
 
 import { emitGatewayEvent } from './events'
 import { $pluginRecords, publishPlugin, setPluginEnabled } from './plugins-store'
@@ -18,12 +18,12 @@ import {
 const getStatus = vi.fn(async () => ({ pulse_home: '/remote/box/.pulse' }))
 
 vi.mock('@/pulse', async importActual => ({
-  ...(await importActual<typeof PulseModule>()),
+  ...(await importActual<typeof PULSEModule>()),
   getStatus: () => getStatus()
 }))
 
 const desktopPluginsRoot = vi.fn<() => Promise<string>>()
-const readDir = vi.fn<(path: string) => Promise<PulseReadDirResult>>()
+const readDir = vi.fn<(path: string) => Promise<PULSEReadDirResult>>()
 const readFileText = vi.fn<(path: string) => Promise<{ text: string; truncated?: boolean }>>()
 const readPluginSource = vi.fn<(path: string) => Promise<{ text: string; truncated?: boolean }>>()
 const watchDirectory = vi.fn<(path: string) => Promise<{ id: string }>>()

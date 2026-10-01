@@ -3,12 +3,12 @@
 Bootstrap a video production kanban from a structured plan JSON.
 
 Reads a plan.json describing the team + brief, expands templates from
-../assets/, and writes a setup.sh that creates Pulse profiles and fires the
+../assets/, and writes a setup.sh that creates PULSE profiles and fires the
 initial kanban task.
 
 Profile-config patching, SOUL.md-per-profile, TEAM.md task-graph convention,
 and the `pulse kanban create --workspace dir:` initial-task pattern are
-adapted from alt-glitch's AnxiousResearchLab/kanban-video-pipeline.
+adapted from alt-glitch's NousResearch/kanban-video-pipeline.
 
 Usage:
     bootstrap_pipeline.py plan.json [--out setup.sh]
@@ -98,13 +98,13 @@ def validate_plan(plan: dict) -> list[str]:
                           "responsibilities"]:
                     if k not in t:
                         errors.append(f"team[{i}] missing {k}")
-                # Profile name must match Pulse's regex (lowercase
+                # Profile name must match PULSE's regex (lowercase
                 # alphanumeric + hyphens + underscores, up to 64 chars).
                 if "profile" in t:
                     if not PROFILE_NAME_RE.match(t["profile"]):
                         errors.append(
                             f"team[{i}].profile {t['profile']!r} must match "
-                            f"[a-z0-9][a-z0-9_-]{{0,63}} per Pulse profile rules"
+                            f"[a-z0-9][a-z0-9_-]{{0,63}} per PULSE profile rules"
                         )
                     if t["profile"] in seen_profiles:
                         errors.append(

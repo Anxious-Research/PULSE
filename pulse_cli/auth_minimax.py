@@ -159,7 +159,7 @@ def _minimax_poll_token(
 
 
 def _minimax_save_auth_state(auth_state: Dict[str, Any]) -> None:
-    """Persist MiniMax OAuth state to Pulse auth store (~/.pulse/auth.json)."""
+    """Persist MiniMax OAuth state to PULSE auth store (~/.pulse/auth.json)."""
     from pulse_cli.auth import _save_active_provider_state
     _save_active_provider_state("minimax-oauth", auth_state)
 
@@ -180,7 +180,7 @@ def _minimax_oauth_login(*, region: str = "global", open_browser: bool = True, t
     if _is_remote_session():
         open_browser = False
 
-    print(f"Starting Pulse login via MiniMax ({region}) OAuth...")
+    print(f"Starting PULSE login via MiniMax ({region}) OAuth...")
     print(f"Portal: {portal_base_url}")
 
     with httpx.Client(timeout=httpx.Timeout(timeout_seconds), headers={"Accept": "application/json"},

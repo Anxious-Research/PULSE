@@ -1,4 +1,4 @@
-"""Unified removal contract for every credential source Pulse reads from.
+"""Unified removal contract for every credential source PULSE reads from.
 
 Readers live in ``agent.credential_pool``; what is unified here is **removal**:
 ``pulse auth remove <provider> <N>`` must make the entry stay gone across
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 EXTERNAL_LOGINS_NOT_ADOPTED_NOTICE = (
     "External CLI logins (Codex CLI, Claude Code) are not adopted: auth.adopt_external_logins is false. "
-    "Pulse uses only its own logins; run `pulse auth add <provider>` to add one."
+    "PULSE uses only its own logins; run `pulse auth add <provider>` to add one."
 )
 _notice_logged = False
 
@@ -32,9 +32,9 @@ _notice_logged = False
 def adopt_external_logins_enabled() -> bool:
     """``auth.adopt_external_logins`` (default True).
 
-    Codex and Claude OAuth refresh tokens are single-use and rotate, so once Pulse borrows a CLI's
+    Codex and Claude OAuth refresh tokens are single-use and rotate, so once PULSE borrows a CLI's
     token pair the two programs hold one token family and whichever refreshes first logs the other
-    out. When the user opts out, Pulse never reads or refreshes those files and says so once per
+    out. When the user opts out, PULSE never reads or refreshes those files and says so once per
     process (INFO) the first time it would have."""
     global _notice_logged
     try:
@@ -124,8 +124,8 @@ def _remove_env_source(provider: str, removed) -> RemovalResult:
             f"Note: {env_var} is still set in your shell environment "
             f"(not in ~/.pulse/.env).",
             "  Unset it there (shell profile, systemd EnvironmentFile, "
-            "launchd plist, etc.) or it will keep being visible to Pulse.",
-            f"  The pool entry is now suppressed — Pulse will ignore "
+            "launchd plist, etc.) or it will keep being visible to PULSE.",
+            f"  The pool entry is now suppressed — PULSE will ignore "
             f"{env_var} until you run `pulse auth add {provider}`.",
         ])
     else:
@@ -145,14 +145,14 @@ def _remove_pulse_pkce(provider: str, removed) -> RemovalResult:
     if oauth_file.exists():
         try:
             oauth_file.unlink()
-            result.cleaned.append("Cleared Pulse Anthropic OAuth credentials")
+            result.cleaned.append("Cleared PULSE Anthropic OAuth credentials")
         except OSError as exc:
             result.hints.append(f"Could not delete {oauth_file}: {exc}")
     return result
 
 
 def _remove_auth_store_oauth(provider: str, removed) -> RemovalResult:
-    """Clear auth.json ``providers.<provider>`` (anxious, minimax-oauth, xai-oauth, openai-codex).
+    """Clear auth.json ``providers.<provider>`` (nous, minimax-oauth, xai-oauth, openai-codex).
 
     Suppression by the dispatcher is still required — otherwise
     ``_seed_from_singletons`` re-seeds from any path that rewrites the block.
@@ -252,9 +252,9 @@ _REGISTRY: List[RemovalStep] = [
         description="~/.pulse/.anthropic_oauth.json",
     ),
     RemovalStep(
-        provider="anxious", source_id="device_code",
+        provider="nous", source_id="device_code",
         remove_fn=_remove_auth_store_oauth,
-        description="auth.json providers.anxious",
+        description="auth.json providers.nous",
     ),
     RemovalStep(
         provider="openai-codex", source_id="device_code",
@@ -292,14 +292,3 @@ _REGISTRY: List[RemovalStep] = [
         description="Custom provider config.yaml api_key field",
     ),
 ]
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-def register(step: RemovalStep) -> RemovalStep:
-    _REGISTRY.append(step)
-    return step
-# ---- END PLUGIN-COMPAT ----

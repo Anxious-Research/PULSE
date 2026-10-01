@@ -228,7 +228,7 @@ def _holder_value_flags() -> frozenset:
 
 
 def _pulse_holder_subcommand(cmdline: str) -> str | None:
-    """The actual Pulse SUBCOMMAND a venv-holder argv runs, or None (callers must NOT guess a label).
+    """The actual PULSE SUBCOMMAND a venv-holder argv runs, or None (callers must NOT guess a label).
 
     Token-based, never substring (``kanban --preserve-cache`` contains "serve"): find the ``pulse_cli.main`` /
     ``pulse(.exe)`` entry token, return the first following token that isn't a flag or a flag's value.
@@ -242,7 +242,7 @@ def _pulse_holder_subcommand(cmdline: str) -> str | None:
         tokens = cmdline.split()
     # ``python -c <src> … -m pulse_cli.main <subcommand>``: the entry token belongs to the argv the
     # inline source carries for a LATER spawn, not to this holder (#107002) -- unless the source is a
-    # Pulse bootstrap running the entry point in this process (#124318).
+    # PULSE bootstrap running the entry point in this process (#124318).
     from gateway.status import command_line_runs_inline_source, inline_bootstrap_argv
     normalized = [t.strip("\"'").replace("\\", "/") for t in tokens]
     if command_line_runs_inline_source(normalized):
@@ -301,7 +301,7 @@ def _venv_holder_kind(cmdline: str) -> str:
     """Machine-readable class of one venv holder for ``--list-venv-holders``.
 
     ``gateway`` (the pausable gateway matcher), ``backend`` (``serve``/``dashboard`` -- the Desktop
-    app's backend shape), ``pulse:<subcommand>`` for any other Pulse entry, else ``python``.
+    app's backend shape), ``pulse:<subcommand>`` for any other PULSE entry, else ``python``.
     Derived from the same classifiers the refusal path uses so automation stops exactly what the
     guard would refuse on."""
     from pulse_cli._scan_venv_blockers import _is_pausable_gateway
@@ -475,8 +475,8 @@ def _orphaned_desktop_backend_pids(matches: list[tuple[int, str, str]]) -> list[
     """``(pid, start_time)`` roots from *matches* when every remaining holder is an ORPHANED backend, else ``None``.
 
     Killing a Desktop-owned ``serve`` is futile (the app respawns it), but a straggler whose Desktop is gone
-    would dead-end the update with "Pulse is still running" and zero open windows. Qualifies only if cmdline
-    is a Pulse backend AND the parent is demonstrably gone (PID missing or reused). Tree-aware: holders inside
+    would dead-end the update with "PULSE is still running" and zero open windows. Qualifies only if cmdline
+    is a PULSE backend AND the parent is demonstrably gone (PID missing or reused). Tree-aware: holders inside
     an accepted root's tree fold into it; only roots are returned (``taskkill /T`` reaps descendants). Any
     live-parent backend, unjustified non-backend, unprovable case, or no psutil -> ``None``. Never raises.
 
@@ -487,7 +487,7 @@ def _orphaned_desktop_backend_pids(matches: list[tuple[int, str, str]]) -> list[
     update-in-progress marker parks any relaunched Desktop from spawning a fresh backend (#50238). A
     ``serve`` backend still holding the venv at that point is a straggler whose supervisor is gone: SIGTERM
     raced its spawn, or it belongs to a crashed window. Nothing will respawn it, and refusing on it
-    dead-ends the update with "Pulse is still running" while the user stares at zero open windows (ryanc's
+    dead-ends the update with "PULSE is still running" while the user stares at zero open windows (ryanc's
     2026-08-09 01:59/02:17 failures).
     """
     psutil = _psutil()
@@ -599,7 +599,7 @@ def _stop_process_trees(pids: list[int] | list[tuple[int, int]]) -> None:
                 logger.debug("Skipping taskkill of PID %s: process identity unavailable", pid)
                 continue
             if not pid_is_pulse(pid, expected_start_time=expected_start_time):
-                logger.debug("Skipping taskkill of non-Pulse or changed PID %s", pid)
+                logger.debug("Skipping taskkill of non-PULSE or changed PID %s", pid)
                 continue
             subprocess.run(
                 ["taskkill", "/PID", str(pid), "/T", "/F"], check=False,
@@ -840,7 +840,7 @@ def _pause_windows_gateway_services(service_gateways, token: dict, profiles: dic
 def _owned_gateway_pids(pids, *, keep=(), quiet: bool = True) -> list[int]:
     """*pids* whose live home this update owns, plus *keep* (PIDs mapped to this install's profile
     PID files / services). The same home scope the POSIX fleet restart uses (#93349): a gateway of
-    another Pulse install, or one whose home cannot be read, is named (unless *quiet*) and left
+    another PULSE install, or one whose home cannot be read, is named (unless *quiet*) and left
     running, never paused, force-killed or replayed (#124659)."""
     from pulse_cli.update_cmd_fleet import _scoped_manual_gateway_pids
     return _scoped_manual_gateway_pids(list(pids), keep=keep, quiet=quiet)
@@ -932,7 +932,7 @@ def _pause_windows_gateways_for_update() -> dict | None:
     # Resolve venv-side launchers BEFORE draining: a dead worker's parent cannot be recovered (NoSuchProcess).
     # The launcher keeps ``.pyd`` mapped and would trip the venv-holder guard; it is killed with the survivors.
     launcher_pids = _m()._venv_launcher_ancestors(mapped_pids)
-    print("→ Stopping Windows gateway process(es) before updating Pulse...")
+    print("→ Stopping Windows gateway process(es) before updating PULSE...")
     drain_timeout = _gateway_drain_timeout(socket_acks)
     survivors = _m()._wait_for_windows_update_gateway_exit(mapped_pids, timeout=drain_timeout)
     unmapped_pids = [pid for pid in running_pids if pid not in profile_processes and pid not in service_gateway_pids]

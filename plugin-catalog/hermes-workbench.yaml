@@ -1,0 +1,20 @@
+name: pulse-workbench
+repo: https://github.com/sxuff/pulse-workbench
+sha: f07fb5c90e24c1a396604758feb0fd4ae077760b
+description: The PULSE desktop app in your browser. `pulse workbench` serves the desktop interface through the PULSE dashboard, for headless servers, VPSes and tablets. Disclosure — community plugin, not a Nous product. On the first `pulse workbench` run and again after each PULSE update it runs `npm install --ignore-scripts` (guided by PULSE's lockfile) and Vite against your PULSE checkout's desktop sources, writing only under ~/.pulse/pulse-workbench and its own plugin dir (the checkout is only read), and starts `pulse dashboard` on loopback when none is running.
+maintainer: sxuff
+tier: community
+category: desktop
+requires_pulse: ">=0.21"
+docs_url: https://github.com/sxuff/pulse-workbench#readme
+version: "0.2.1"
+image: https://raw.githubusercontent.com/sxuff/pulse-workbench/f07fb5c90e24c1a396604758feb0fd4ae077760b/docs/media/banner.png
+screenshots:
+  - https://raw.githubusercontent.com/sxuff/pulse-workbench/f07fb5c90e24c1a396604758feb0fd4ae077760b/docs/media/session.png
+  - https://raw.githubusercontent.com/sxuff/pulse-workbench/f07fb5c90e24c1a396604758feb0fd4ae077760b/docs/media/slash-commands.png
+  - https://raw.githubusercontent.com/sxuff/pulse-workbench/f07fb5c90e24c1a396604758feb0fd4ae077760b/docs/media/model-picker.png
+capabilities:
+  provides_tools: []
+  provides_hooks: []
+  provides_middleware: []
+  requires_env: []

@@ -27,7 +27,7 @@ test.runIf(process.platform !== 'win32')('the launch environment keeps Chromium 
   expect(Buffer.byteLength(path.join(env.TMPDIR, 'scoped_dirXXXXXX', 'SingletonSocket'))).toBeLessThan(108)
 })
 
-test('the update window carries Pulse connection state without cloning Chromium state', (): void => {
+test('the update window carries PULSE connection state without cloning Chromium state', (): void => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'update-window-userdata-'))
   const userData = path.join(root, 'electron-user-data')
   fs.mkdirSync(userData)

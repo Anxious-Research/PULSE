@@ -11,15 +11,15 @@ from pulse_cli.subcommands._shared import add_accept_hooks_flag
 def build_mcp_parser(subparsers, *, cmd_mcp: Callable) -> None:
     """Attach the ``mcp`` subcommand to ``subparsers``."""
     mcp_parser = subparsers.add_parser(
-        "mcp", help="Manage MCP servers and run Pulse as an MCP server",
-        description="Manage MCP server connections and run Pulse as an MCP server.\n\n"
+        "mcp", help="Manage MCP servers and run PULSE as an MCP server",
+        description="Manage MCP server connections and run PULSE as an MCP server.\n\n"
             "MCP servers provide additional tools via the Model Context Protocol.\n"
             "Use 'pulse mcp add' to connect to a new server, or\n"
-            "'pulse mcp serve' to expose Pulse conversations over MCP.")
+            "'pulse mcp serve' to expose PULSE conversations over MCP.")
     mcp_sub = mcp_parser.add_subparsers(dest="mcp_action")
 
     mcp_serve_p = mcp_sub.add_parser(
-        "serve", help="Run Pulse as an MCP server (expose conversations to other agents)")
+        "serve", help="Run PULSE as an MCP server (expose conversations to other agents)")
     mcp_serve_p.add_argument(
         "-v", "--verbose", action="store_true", help="Enable verbose logging on stderr")
     add_accept_hooks_flag(mcp_serve_p)
@@ -67,10 +67,10 @@ def build_mcp_parser(subparsers, *, cmd_mcp: Callable) -> None:
         "--all", action="store_true",
         help="Re-authenticate every OAuth server in config, one at a time")
 
-    # Catalog (Anxious-approved MCPs shipped with the repo)
+    # Catalog (Nous-approved MCPs shipped with the repo)
     mcp_sub.add_parser(
         "picker", help="Interactive catalog picker (also the default for `pulse mcp`)")
-    mcp_sub.add_parser("catalog", help="List Anxious-approved MCPs available for one-click install")
+    mcp_sub.add_parser("catalog", help="List Nous-approved MCPs available for one-click install")
     mcp_install_p = mcp_sub.add_parser(
         "install", help="Install a catalog MCP by name (e.g. `pulse mcp install deepwiki`)")
     mcp_install_p.add_argument("identifier", help="Catalog entry name (or `official/<name>`)")

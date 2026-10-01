@@ -7,7 +7,7 @@
  * identical guard (#93528) for the same class in a sibling pulse-bots surface.
  */
 
-import type * as PulseSdk from '@pulse/plugin-sdk'
+import type * as PULSESdk from '@pulse/plugin-sdk'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -21,7 +21,7 @@ beforeAll(() => {
 })
 
 vi.mock('@pulse/plugin-sdk', async importOriginal => {
-  const sdk = await importOriginal<typeof PulseSdk>()
+  const sdk = await importOriginal<typeof PULSESdk>()
 
   return {
     ...sdk,

@@ -17,7 +17,7 @@ function config(overrides: Partial<ProfileRouteConfig> = {}): ProfileRouteConfig
     remoteUrl: '',
     sshHost: '',
     sshPort: null,
-    sshRemotePulsePath: '',
+    sshRemotePULSEPath: '',
     sshRemoteProfile: '',
     sshUser: '',
     ...overrides
@@ -32,7 +32,7 @@ describe('buildOpaqueProfileRoutes', () => {
         config({
           mode: 'ssh',
           sshHost: 'lab-a',
-          sshRemotePulsePath: '~/.pulse',
+          sshRemotePULSEPath: '~/.pulse',
           sshRemoteProfile: 'remote-research'
         })
       ],
@@ -41,7 +41,7 @@ describe('buildOpaqueProfileRoutes', () => {
         config({
           mode: 'ssh',
           sshHost: 'lab-b',
-          sshRemotePulsePath: '~/.pulse',
+          sshRemotePULSEPath: '~/.pulse',
           sshRemoteProfile: 'remote-writing'
         })
       ]
@@ -74,7 +74,7 @@ describe('buildOpaqueProfileRoutes', () => {
 
   it('changes opaque IDs when the effective SSH destination changes', async () => {
     const options = {
-      getProfileConfig: () => config({ mode: 'ssh', sshHost: 'lab', sshRemotePulsePath: '~/.pulse' }),
+      getProfileConfig: () => config({ mode: 'ssh', sshHost: 'lab', sshRemotePULSEPath: '~/.pulse' }),
       globalConfig: config(),
       installationId: 'install-a-secret',
       primaryProfile: 'default',
@@ -209,6 +209,7 @@ describe('buildRegistryProfileRoutes', () => {
         { connectionId: 'homelab', profile: 'research' }
       ],
       legacyRoutes: [{ connectionId: 'legacy-hash', mode: 'local', profile: 'research', targetProfile: 'research' }],
+      primaryConnectionId: 'homelab',
       sources: [
         { id: 'local', kind: 'local', label: 'This device' },
         {
@@ -226,7 +227,13 @@ describe('buildRegistryProfileRoutes', () => {
 
     expect(routes).toEqual([
       { connectionId: 'local', mode: 'local', profile: 'research', targetProfile: 'research' },
-      { connectionId: 'homelab', mode: 'remote', profile: 'research', targetProfile: 'remote-research' }
+      {
+        connectionId: 'homelab',
+        mode: 'remote',
+        primary: true,
+        profile: 'research',
+        targetProfile: 'remote-research'
+      }
     ])
     expect(JSON.stringify(routes)).not.toContain('private.lan')
     expect(JSON.stringify(routes)).not.toContain('id_ed25519')
@@ -238,10 +245,13 @@ describe('buildRegistryProfileRoutes', () => {
     const routes = buildRegistryProfileRoutes({
       agents: [{ connectionId: 'local', profile: 'barry' }],
       legacyRoutes: [{ connectionId: 'legacy-hash', mode: 'remote', profile: 'barry', targetProfile: 'default' }],
+      primaryConnectionId: 'local',
       sources: [{ id: 'local', kind: 'local', label: 'This device' }]
     })
 
-    expect(routes).toEqual([{ connectionId: 'local', mode: 'local', profile: 'barry', targetProfile: 'barry' }])
+    expect(routes).toEqual([
+      { connectionId: 'local', mode: 'local', primary: true, profile: 'barry', targetProfile: 'barry' }
+    ])
   })
 
   it('scopes registry-shared remote websocket URLs to the requested profile', () => {

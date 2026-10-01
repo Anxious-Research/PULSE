@@ -24,28 +24,28 @@ function withStoredProfile(profile: string, run: (target: string) => void) {
 }
 
 test('parses both --profile spellings and ignores a missing flag', () => {
-  assert.equal(parseLaunchProfile(['Pulse.exe', '--profile', 'desktop']), 'desktop')
-  assert.equal(parseLaunchProfile(['Pulse.exe', '--profile=desktop']), 'desktop')
-  assert.equal(parseLaunchProfile(['open', '-a', 'Pulse', '--args', '--profile', 'work']), 'work')
-  assert.equal(parseLaunchProfile(['Pulse.exe', '--local']), null)
-  assert.equal(parseLaunchProfile(['Pulse.exe']), null)
+  assert.equal(parseLaunchProfile(['PULSE.exe', '--profile', 'desktop']), 'desktop')
+  assert.equal(parseLaunchProfile(['PULSE.exe', '--profile=desktop']), 'desktop')
+  assert.equal(parseLaunchProfile(['open', '-a', 'PULSE', '--args', '--profile', 'work']), 'work')
+  assert.equal(parseLaunchProfile(['PULSE.exe', '--local']), null)
+  assert.equal(parseLaunchProfile(['PULSE.exe']), null)
 })
 
 test('normalizes a launch profile the same way the CLI does', () => {
-  assert.equal(parseLaunchProfile(['Pulse.exe', '--profile', '  Desktop  ']), 'desktop')
-  assert.equal(parseLaunchProfile(['Pulse.exe', '--profile=Work']), 'work')
-  assert.equal(parseLaunchProfile(['Pulse.exe', '--profile', 'default']), 'default')
-  assert.equal(parseLaunchProfile(['Pulse.exe', '--profile']), null)
-  assert.equal(parseLaunchProfile(['Pulse.exe', '--profile=']), null)
-  assert.equal(parseLaunchProfile(['Pulse.exe', '--profile', 'my profile']), null)
-  assert.equal(parseLaunchProfile(['Pulse.exe', '--profile', '-desktop']), null)
+  assert.equal(parseLaunchProfile(['PULSE.exe', '--profile', '  Desktop  ']), 'desktop')
+  assert.equal(parseLaunchProfile(['PULSE.exe', '--profile=Work']), 'work')
+  assert.equal(parseLaunchProfile(['PULSE.exe', '--profile', 'default']), 'default')
+  assert.equal(parseLaunchProfile(['PULSE.exe', '--profile']), null)
+  assert.equal(parseLaunchProfile(['PULSE.exe', '--profile=']), null)
+  assert.equal(parseLaunchProfile(['PULSE.exe', '--profile', 'my profile']), null)
+  assert.equal(parseLaunchProfile(['PULSE.exe', '--profile', '-desktop']), null)
 })
 
 test('a launch --profile is persisted before the backend reads active-profile.json', () => {
   withStoredProfile('stored', target => {
     const preferences = createDesktopProfilePreferences(target)
 
-    const launched = applyLaunchProfileOverride(['Pulse.exe', '--profile', 'desktop'], name => {
+    const launched = applyLaunchProfileOverride(['PULSE.exe', '--profile', 'desktop'], name => {
       preferences.remember(name)
     })
 
@@ -62,7 +62,7 @@ test('--profile=<name> persists the same profile the space spelling does', () =>
   withStoredProfile('stored', target => {
     const preferences = createDesktopProfilePreferences(target)
 
-    applyLaunchProfileOverride(['Pulse.exe', '--ozone-platform=wayland', '--profile=desktop'], name => {
+    applyLaunchProfileOverride(['PULSE.exe', '--ozone-platform=wayland', '--profile=desktop'], name => {
       preferences.remember(name)
     })
 
@@ -72,11 +72,11 @@ test('--profile=<name> persists the same profile the space spelling does', () =>
 
 test('a missing or invalid flag does not change the stored profile', () => {
   for (const argv of [
-    ['Pulse.exe'],
-    ['Pulse.exe', '--local'],
-    ['Pulse.exe', '--profile'],
-    ['Pulse.exe', '--profile', 'Not a name'],
-    ['Pulse.exe', '--profile=../desktop']
+    ['PULSE.exe'],
+    ['PULSE.exe', '--local'],
+    ['PULSE.exe', '--profile'],
+    ['PULSE.exe', '--profile', 'Not a name'],
+    ['PULSE.exe', '--profile=../desktop']
   ]) {
     withStoredProfile('stored', target => {
       const before = fs.readFileSync(target, 'utf8')

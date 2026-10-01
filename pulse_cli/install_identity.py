@@ -1,4 +1,4 @@
-"""Stable opaque identity shared by every profile in one Pulse install."""
+"""Stable opaque identity shared by every profile in one PULSE install."""
 
 from __future__ import annotations
 
@@ -86,7 +86,7 @@ def read_or_create_install_id(root: Path | None = None) -> Optional[str]:
 
 
 def get_install_id(*, cache: dict[str, Optional[str]] | None = None) -> Optional[str]:
-    """Return the process-cached stable id for the active Pulse root."""
+    """Return the process-cached stable id for the active PULSE root."""
     root = get_default_pulse_root()
     root_key = str(root)
     target_cache = _INSTALL_ID_CACHE if cache is None else cache

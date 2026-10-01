@@ -2,7 +2,7 @@
 name: watchers
 description: Poll RSS, JSON APIs, and GitHub with watermark dedup.
 version: 1.0.0
-author: Pulse Agent
+author: PULSE Agent
 license: MIT
 platforms: [linux, macos]
 metadata:

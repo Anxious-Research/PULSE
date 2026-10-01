@@ -4,7 +4,7 @@ repo: https://github.com/indexnetwork/pulse-plugin
 sha: 97ce52266792a5171004cabbc7f9ab42ed8a9677
 description: >-
   Index tools for intents, networks, and opportunities. Disclosure — registers
-  an index gateway platform. Login writes INDEX_SESSION_TOKEN to the Pulse
+  an index gateway platform. Login writes INDEX_SESSION_TOKEN to the PULSE
   env. When this install is the selected negotiator, a Bun child from PATH
   runs the pinned bundle and mints INDEX_API_KEY from that session if it is
   missing; that key also registers the Index MCP server. API traffic goes to

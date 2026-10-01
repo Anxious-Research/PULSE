@@ -41,7 +41,7 @@ describe('shouldUseRichEightBitDowngradeForLegacyAppleTerminal', () => {
 })
 
 describe('richEightBitColorNumber', () => {
-  it('matches Rich downgrade output for default Pulse skin colors', () => {
+  it('matches Rich downgrade output for default PULSE skin colors', () => {
     expect(richEightBitColorNumber(0xff, 0xd7, 0x00)).toBe(220)
     expect(richEightBitColorNumber(0xff, 0xbf, 0x00)).toBe(214)
     expect(richEightBitColorNumber(0xcd, 0x7f, 0x32)).toBe(173)

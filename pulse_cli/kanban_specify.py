@@ -29,7 +29,7 @@ PULSE_KANBAN_SPECIFY_MAX_TOKENS = max(1500, env_int("PULSE_KANBAN_SPECIFY_MAX_TO
 logger = logging.getLogger(__name__)
 
 
-_SYSTEM_PROMPT = """You are the Kanban triage specifier for the Pulse Agent board.
+_SYSTEM_PROMPT = """You are the Kanban triage specifier for the PULSE Agent board.
 A user dropped a rough idea into the Triage column. Your job is to turn it
 into a concrete, actionable task spec that an autonomous worker can pick up
 and execute without further clarification.

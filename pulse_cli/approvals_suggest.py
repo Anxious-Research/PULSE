@@ -1,6 +1,6 @@
 """``pulse approvals suggest`` — mine approval history into allowlist proposals.
 
-Pulse has no dedicated approval-decision ledger: ``always`` answers land in ``command_allowlist``
+PULSE has no dedicated approval-decision ledger: ``always`` answers land in ``command_allowlist``
 (config.yaml) via :func:`tools.approval.save_permanent_allowlist`, while ``once``/``session``
 approvals are in-memory only. So this module mines *implied approvals*: a command that matches a
 dangerous-command class (the same :func:`tools.approval.detect_dangerous_command` classifier that

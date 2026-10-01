@@ -3,12 +3,12 @@ label: Discord
 kind: platform
 version: 1.0.0
 description: >
-  Discord gateway adapter for Pulse Agent.
+  Discord gateway adapter for PULSE Agent.
   Connects to Discord via the discord.py library and relays messages
-  between Discord guilds/DMs and the Pulse agent. Supports voice mode,
+  between Discord guilds/DMs and the PULSE agent. Supports voice mode,
   slash commands, free-response channels, role-based DM auth, threads,
   reactions, and channel skill bindings.
-author: AnxiousResearchLab
+author: NousResearch
 requires_env:
   - name: DISCORD_BOT_TOKEN
     description: "Discord bot token"

@@ -82,9 +82,9 @@ describe('fetchRuntimeReadinessSignals', () => {
       throw new Error(`unexpected method: ${method}`)
     }
 
-    await fetchRuntimeReadinessSignals(requestGateway, 'pulse')
+    await fetchRuntimeReadinessSignals(requestGateway, 'nous')
 
-    expect(calls).toEqual([{ method: 'setup.status' }, { method: 'setup.runtime_check', params: { provider: 'pulse' } }])
+    expect(calls).toEqual([{ method: 'setup.status' }, { method: 'setup.runtime_check', params: { provider: 'nous' } }])
   })
 })
 

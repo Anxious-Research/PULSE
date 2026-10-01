@@ -1,4 +1,4 @@
-"""ACP model picker: deduplicated ``provider:model`` rows from the Pulse inventory + named endpoints."""
+"""ACP model picker: deduplicated ``provider:model`` rows from the PULSE inventory + named endpoints."""
 
 from __future__ import annotations
 

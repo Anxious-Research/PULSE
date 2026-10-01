@@ -2,7 +2,7 @@ name: junie-acp
 repo: https://github.com/JetBrains/junie
 sha: 296ea839b354956fbd22544687a88b944c18dc22
 subdir: pulse-plugin
-description: JetBrains Junie coding agent as a Pulse model provider over ACP.
+description: JetBrains Junie coding agent as a PULSE model provider over ACP.
 maintainer: JetBrains
 tier: community
 category: models

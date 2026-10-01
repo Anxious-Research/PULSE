@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as PulseApi from '@/pulse'
+import type * as PULSEApi from '@/pulse'
 import { $desktopOnboarding, type DesktopOnboardingState, type OnboardingContext } from '@/store/onboarding'
 
 import { FlowPanel } from './flow'
@@ -10,11 +10,11 @@ import { FlowPanel } from './flow'
 // Only the catalog fetch is replaced; the model assignment keeps its real path
 // down to window.pulseDesktop.api so the test observes the wire body.
 vi.mock('@/pulse', async importOriginal => ({
-  ...(await importOriginal<typeof PulseApi>()),
+  ...(await importOriginal<typeof PULSEApi>()),
   getGlobalModelOptions: async () => ({
     providers: [
       { free_tier: false, models: ['gpt-5.6-terra'], name: 'OpenAI OAuth (ChatGPT)', slug: 'openai' },
-      { models: ['deepseek/deepseek-v4-flash-0731'], name: 'Pulse Portal', slug: 'pulse' }
+      { models: ['deepseek/deepseek-v4-flash-0731'], name: 'Nous Portal', slug: 'nous' }
     ]
   })
 }))
@@ -30,8 +30,8 @@ vi.mock('@/components/model-picker', () => ({
     open: boolean
   }) =>
     open ? (
-      <button onClick={() => onSelect({ model: 'deepseek/deepseek-v4-flash-0731', provider: 'pulse' })} type="button">
-        pick-pulse-model
+      <button onClick={() => onSelect({ model: 'deepseek/deepseek-v4-flash-0731', provider: 'nous' })} type="button">
+        pick-nous-model
       </button>
     ) : null
 }))
@@ -89,7 +89,7 @@ describe('ConfirmingModelPanel model pick', () => {
           calls.push({ body, path })
 
           if (path === '/api/model/set') {
-            return { ok: true, provider: 'pulse', model: 'deepseek/deepseek-v4-flash-0731' }
+            return { ok: true, provider: 'nous', model: 'deepseek/deepseek-v4-flash-0731' }
           }
 
           throw new Error(`unexpected api path: ${path}`)
@@ -104,15 +104,15 @@ describe('ConfirmingModelPanel model pick', () => {
     await screen.findByText('Pro')
 
     // The user signed in with OpenAI OAuth; the picker offers a deepseek
-    // model that only Pulse Portal serves.
+    // model that only Nous Portal serves.
     fireEvent.click(screen.getByRole('button', { name: 'Change' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'pick-pulse-model' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'pick-nous-model' }))
 
     await waitFor(() => expect(calls.some(c => c.path === '/api/model/set')).toBe(true))
 
     expect(calls.find(c => c.path === '/api/model/set')?.body).toMatchObject({
       scope: 'main',
-      provider: 'pulse',
+      provider: 'nous',
       model: 'deepseek/deepseek-v4-flash-0731'
     })
 
@@ -120,8 +120,8 @@ describe('ConfirmingModelPanel model pick', () => {
     expect(flow.status).toBe('confirming_model')
 
     if (flow.status === 'confirming_model') {
-      expect(flow.providerSlug).toBe('pulse')
-      expect(flow.label).toBe('Pulse Portal')
+      expect(flow.providerSlug).toBe('nous')
+      expect(flow.label).toBe('Nous Portal')
     }
   })
 })

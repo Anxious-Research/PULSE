@@ -193,7 +193,7 @@ def _(rid, params: dict) -> dict:
         return _err(rid, _DISPLAY_ERR, "Bot Desktop runs on Linux gateway hosts only")
     if _bd_runtime.in_sandbox():
         return _err(rid, _DISPLAY_ERR, "this profile's screen lives inside the terminal backend's sandbox; give that "
-                                       "sandbox an image with the desktop stack (anxiousresearchlab/pulse-sandbox:desktop) "
+                                       "sandbox an image with the desktop stack (nousresearch/pulse-sandbox:desktop) "
                                        "instead of installing on the gateway host")
     if _bd_runtime.install_command() is None:
         return _err(rid, _DISPLAY_ERR, "no supported package manager (apt-get, dnf, pacman) on this host")

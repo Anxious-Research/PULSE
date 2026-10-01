@@ -43,23 +43,23 @@ import { useProfileScope } from "@/contexts/useProfileScope";
 import { ToolsetConfigDrawer } from "@/components/ToolsetConfigDrawer";
 import { SkillEditorDialog } from "@/components/SkillEditorDialog";
 import { LoadErrorNotice } from "@/components/LoadErrorNotice";
-import { useToast } from "@anxious-research/ui/hooks/use-toast";
-import { Toast } from "@anxious-research/ui/ui/components/toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@anxious-research/ui/ui/components/card";
-import { Badge } from "@anxious-research/ui/ui/components/badge";
-import { Button } from "@anxious-research/ui/ui/components/button";
-import { ListItem } from "@anxious-research/ui/ui/components/list-item";
-import { Spinner } from "@anxious-research/ui/ui/components/spinner";
-import { Switch } from "@anxious-research/ui/ui/components/switch";
+import { useToast } from "@nous-research/ui/hooks/use-toast";
+import { Toast } from "@nous-research/ui/ui/components/toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@nous-research/ui/ui/components/card";
+import { Badge } from "@nous-research/ui/ui/components/badge";
+import { Button } from "@nous-research/ui/ui/components/button";
+import { ListItem } from "@nous-research/ui/ui/components/list-item";
+import { Spinner } from "@nous-research/ui/ui/components/spinner";
+import { Switch } from "@nous-research/ui/ui/components/switch";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@anxious-research/ui/ui/components/dialog";
+} from "@nous-research/ui/ui/components/dialog";
 import { cn } from "@/lib/utils";
-import { Input } from "@anxious-research/ui/ui/components/input";
+import { Input } from "@nous-research/ui/ui/components/input";
 import { useI18n } from "@/i18n";
 import { en } from "@/i18n/en";
 import { usePageHeader } from "@/contexts/usePageHeader";
@@ -706,7 +706,7 @@ export default function SkillsPage() {
           <DialogHeader>
             <DialogTitle>Learn a skill</DialogTitle>
             <DialogDescription>
-              Point Pulse at anything and it will distill a reusable skill —
+              Point PULSE at anything and it will distill a reusable skill —
               following the house authoring standards. Fill in any combination
               below; the agent gathers the sources and writes the skill in chat.
             </DialogDescription>
@@ -1117,7 +1117,7 @@ function HubBrowser({
                   Featured skills
                 </span>
                 <span className="text-xs text-text-tertiary">
-                  from the Pulse index — search above for thousands more
+                  from the PULSE index — search above for thousands more
                 </span>
               </div>
               {featured.map((r) => (

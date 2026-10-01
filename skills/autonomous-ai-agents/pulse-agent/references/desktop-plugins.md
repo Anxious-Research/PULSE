@@ -1,6 +1,6 @@
 # Desktop App Plugins — UI Panes, Commands, Widgets
 
-Write plugins for the Pulse desktop app: statusbar items, layout panes,
+Write plugins for the PULSE desktop app: statusbar items, layout panes,
 command-palette commands, keybinds, routes, and themes. A plugin is a single
 plain-JavaScript ESM file the app loads at runtime — no build step, no repo
 changes. A plugin can also talk to its own Python backend namespace
@@ -34,7 +34,7 @@ Full human reference (every export, area payloads, backend, security):
 
 ## Prerequisites
 
-- The Pulse desktop app (it loads plugins; the CLI/gateway alone does not).
+- The PULSE desktop app (it loads plugins; the CLI/gateway alone does not).
 - Write access to `$PULSE_HOME/desktop-plugins/` (usually
   `~/.pulse/desktop-plugins/`).
 
@@ -116,7 +116,7 @@ The ONLY import surface is `@pulse/plugin-sdk` (plus `react` /
 - `ctx.storage.get/set/remove` — persistence namespaced to your plugin.
 - `ctx.os` — the curated OS door, attributed to your plugin:
   `ctx.os.notify({ title, body?, silent?, icon?, activate?, onActivate?, actions? })`
-  posts a native OS notification. Fires only while the user is away from Pulse
+  posts a native OS notification. Fires only while the user is away from PULSE
   (use `host.notify` for the in-app toast); gated by Settings ▸ Notifications ▸
   "Plugin notifications" and throttled per plugin — reserve it for genuinely
   notable events. `activate` accepts a plugin deep link
@@ -133,6 +133,15 @@ The ONLY import surface is `@pulse/plugin-sdk` (plus `react` /
   reactively in components with `usePluginI18n(id)` returning `t('key', ...args)`
   (re-renders on a locale switch), or via `ctx.i18n.t` in handlers/stores.
   Resolution follows the app's active locale, then your `en`, then the raw key.
+- `ctx.i18n.registerAppLocale('pl', { endonym: 'Polski', rtl?, translations })`
+  — a LANGUAGE PACK: add or extend a language for the whole app. `translations`
+  is a partial of the app catalog (nested, or flat dotted keys as in a
+  `pl.desktop.yaml`); missing keys fall back to the bundled catalog then
+  English; a string where English has a function takes positional `{0}`/`{1}`
+  placeholders. Dropped on unload. Key set: `locales/_keys.desktop.json`
+  (`npm run i18n:keys`). Registering never changes `display.language`.
+  `host.i18n.registerAppLocale` is the ctx-less twin (returns the disposer);
+  `host.i18n.languageOptions()` lists bundled ∪ registered ∪ backend languages.
 - Data: `useQuery`/`useMutation`/`useQueryClient`/`queryClient` (the app's ONE
   React Query client — cache, dedupe, `refetchInterval`, invalidate like core;
   never hand-roll a poll loop), plus `atom`/`computed` for plugin-local state.

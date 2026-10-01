@@ -33,7 +33,7 @@ describe('createBillingApi', () => {
       min_usd: '10',
       monthly_cap: null,
       ok: true,
-      org_name: 'Pulse',
+      org_name: 'Nous',
       portal_url: 'https://portal.anxious-research.com/billing',
       role: 'OWNER'
     } satisfies BillingStateResponse

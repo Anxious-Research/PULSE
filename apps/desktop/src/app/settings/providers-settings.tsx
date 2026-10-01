@@ -36,6 +36,7 @@ import { providerGroup, providerMeta, providerPriority } from './helpers'
 import { LocalModelsSettings } from './local-models-settings'
 import { SettingsContent, SettingsSkeleton } from './primitives'
 import { SettingsProfileScope } from './profile-scope'
+import { useDeepLinkHighlight } from './use-deep-link-highlight'
 
 // The embedded terminal (and thus the "run disconnect command" path) only
 // exists in the Electron desktop shell, not the web dashboard.
@@ -68,6 +69,8 @@ export type ProviderView = (typeof PROVIDER_VIEWS)[number]
 //   2. Desktop prefix match (`providerGroup`) — legacy fallback for provider
 //      env vars that predate the backend tagging.
 // Only entries that resolve to neither (the "Other" bucket) are skipped.
+const providerKeyElementId = (name: string) => `provider-key-${name.replace(/\W+/g, '-')}`
+
 function buildProviderKeyGroups(vars: Record<string, EnvVarInfo>): ProviderKeyGroup[] {
   const buckets = new Map<string, [string, EnvVarInfo][]>()
 
@@ -177,8 +180,8 @@ function OAuthPicker({
 
   const select = (p: OAuthProvider) => startManualProviderOAuth(p.id, profile)
 
-  // The free tier holds a token but no account: it is never "connected"; the featured Pulse row
-  // names it (Pulse · free tier) and offers the sign-in that keeps its connectors.
+  // The free tier holds a token but no account: it is never "connected"; the featured Nous row
+  // names it (Nous · free tier) and offers the sign-in that keeps its connectors.
   const isConnected = (p: OAuthProvider) => Boolean(p.status?.logged_in) && p.status?.free_tier !== true
   const featured = ordered.find(p => p.id === FEATURED_ID && !isConnected(p)) ?? null
   const rest = featured ? ordered.filter(p => p.id !== FEATURED_ID) : ordered
@@ -269,9 +272,9 @@ function ConnectedProviderRow({
   const copy = t.settings.providers
   const title = providerTitle(provider)
   const Trail = provider.flow === 'external' ? Terminal : ChevronRight
-  // Pulse can clear this provider's creds via the API.
+  // PULSE can clear this provider's creds via the API.
   const canDisconnect = provider.disconnectable ?? provider.flow !== 'external'
-  // External (CLI-managed) provider Pulse can't clear via the API, but ships a
+  // External (CLI-managed) provider PULSE can't clear via the API, but ships a
   // command we can run in the embedded terminal (Electron shell only).
   const terminalDisconnect = !canDisconnect && Boolean(provider.disconnect_command) && canRunInTerminal()
   // Only fall back to a static "remove it elsewhere" hint when we offer no button.
@@ -401,6 +404,32 @@ export function ProvidersSettings({
   // they launched from this page — otherwise the cards keep their stale status.
   const onboardingActive = useStore($desktopOnboarding).manual
 
+  const keyGroupByEnv = useMemo(() => {
+    const byEnv = new Map<string, string>()
+
+    for (const group of vars ? buildProviderKeyGroups(vars) : []) {
+      for (const [key] of [group.primary, ...group.advanced]) {
+        byEnv.set(key, group.name)
+      }
+    }
+
+    return byEnv
+  }, [vars])
+
+  const apiKeysShown = view === 'keys' || (oauthProviders.length === 0 && view !== 'custom-endpoints')
+
+  // Deep link from a rejected-key error card (?pview=keys&key=<ENV_KEY>):
+  // clear the filter, expand that provider's card and scroll to it.
+  useDeepLinkHighlight({
+    elementId: key => providerKeyElementId(keyGroupByEnv.get(key) ?? ''),
+    onResolve: key => {
+      setKeyQuery('')
+      setOpenProvider(keyGroupByEnv.get(key) ?? null)
+    },
+    param: 'key',
+    ready: key => apiKeysShown && keyGroupByEnv.has(key)
+  })
+
   const refreshOAuthProviders = useCallback(async () => {
     // OAuth providers are best-effort — a failure here just hides the panel.
     const { providers } = await listOAuthProviders(scopeProfile)
@@ -430,7 +459,7 @@ export function ProvidersSettings({
   }, [onboardingActive, scopeProfile])
 
   // External (CLI-managed) providers can't be cleared via the API by design —
-  // Pulse never deletes creds another tool owns behind a silent API call.
+  // PULSE never deletes creds another tool owns behind a silent API call.
   // Instead we run the documented removal command in the embedded terminal so
   // the user sees exactly what executes, then return them to chat to watch it.
   async function handleTerminalDisconnect(provider: OAuthProvider) {
@@ -538,14 +567,15 @@ export function ProvidersSettings({
             {visibleGroups.length > 0 ? (
               <div className="grid gap-2">
                 {visibleGroups.map(group => (
-                  <ProviderKeyRows
-                    expanded={openProvider === group.name}
-                    group={group}
-                    key={group.name}
-                    onExpand={() => setOpenProvider(group.name)}
-                    onToggle={() => setOpenProvider(prev => (prev === group.name ? null : group.name))}
-                    rowProps={rowProps}
-                  />
+                  <div className="scroll-mt-6 rounded-[6px]" id={providerKeyElementId(group.name)} key={group.name}>
+                    <ProviderKeyRows
+                      expanded={openProvider === group.name}
+                      group={group}
+                      onExpand={() => setOpenProvider(group.name)}
+                      onToggle={() => setOpenProvider(prev => (prev === group.name ? null : group.name))}
+                      rowProps={rowProps}
+                    />
+                  </div>
                 ))}
               </div>
             ) : (

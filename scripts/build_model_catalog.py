@@ -1,10 +1,10 @@
 #!/usr/bin/env -S bash -c 'exec "$BASH" "$(dirname "$0")/_pulse-python" "$0" "$@"'
-"""Build the Pulse Model Catalog — a centralized JSON manifest of curated models.
+"""Build the PULSE Model Catalog — a centralized JSON manifest of curated models.
 
 This script reads the in-repo hardcoded curated lists (``OPENROUTER_MODELS``,
-``_PROVIDER_MODELS["anxious"]``) and writes them to a JSON manifest that the
-Pulse CLI fetches at runtime. Publishing the catalog through the docs site
-lets maintainers update model lists without shipping a Pulse release.
+``_PROVIDER_MODELS["nous"]``) and writes them to a JSON manifest that the
+PULSE CLI fetches at runtime. Publishing the catalog through the docs site
+lets maintainers update model lists without shipping a PULSE release.
 
 The runtime fetcher falls back to the same in-repo hardcoded lists if the
 manifest is unreachable, so this script is a convenience for keeping the
@@ -17,7 +17,7 @@ Usage::
 Output: ``website/static/api/model-catalog.json``
 
 Live URL (after ``deploy-site.yml`` runs on merge to main):
-``https://pulse-agent.anxiousresearchlab.com/docs/api/model-catalog.json``
+``https://pulse-agent.anxious-research.com/docs/api/model-catalog.json``
 """
 
 from __future__ import annotations
@@ -51,7 +51,7 @@ def _openrouter_entry(mid: str, desc: str) -> dict:
     return entry
 
 
-def _anxious_entry(mid: str) -> dict:
+def _nous_entry(mid: str) -> dict:
     entry: dict = {"id": mid}
     if mid == PREFERRED_SILENT_DEFAULT_MODEL:
         entry["default"] = True
@@ -64,7 +64,7 @@ def build_catalog() -> dict:
         "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "metadata": {
             "source": "pulse-agent repo",
-            "docs": "https://pulse-agent.anxiousresearchlab.com/docs/reference/model-catalog",
+            "docs": "https://pulse-agent.anxious-research.com/docs/reference/model-catalog",
         },
         "providers": {
             "openrouter": {
@@ -73,7 +73,7 @@ def build_catalog() -> dict:
                     "note": (
                         "Descriptions drive picker badges. Live /api/v1/models "
                         "filters curated ids by tool-calling support and free pricing. "
-                        'The entry labeled "default": true is the model Pulse '
+                        'The entry labeled "default": true is the model PULSE '
                         "silently lands on when the user never picked one."
                     ),
                 },
@@ -82,17 +82,17 @@ def build_catalog() -> dict:
                     for mid, desc in OPENROUTER_MODELS
                 ],
             },
-            "anxious": {
+            "nous": {
                 "metadata": {
-                    "display_name": "Anxious Portal",
+                    "display_name": "Nous Portal",
                     "note": (
-                        'The entry labeled "default": true is the model Pulse '
+                        'The entry labeled "default": true is the model PULSE '
                         "silently lands on when the user never picked one."
                     ),
                 },
                 "models": [
-                    _anxious_entry(mid)
-                    for mid in _PROVIDER_MODELS.get("anxious", [])
+                    _nous_entry(mid)
+                    for mid in _PROVIDER_MODELS.get("nous", [])
                 ],
             },
         },

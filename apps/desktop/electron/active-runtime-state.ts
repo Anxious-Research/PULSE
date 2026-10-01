@@ -33,9 +33,9 @@ export function hasValidBootstrapMarker(
 }
 
 // The active install at ~/.pulse/pulse-agent can be real and runnable even if
-// Desktop never wrote its first-run bootstrap marker (for example when Pulse
+// Desktop never wrote its first-run bootstrap marker (for example when PULSE
 // was installed by the CLI first, or when a past desktop build forgot the
-// marker). Runtime usability is authoritative for "can we launch local Pulse
+// marker). Runtime usability is authoritative for "can we launch local PULSE
 // right now?"; the marker is only provenance about how that install was
 // created. A missing/stale marker must never force a healthy local install into
 // the first-run bootstrap UI.

@@ -24,7 +24,7 @@ def _find_stale_dashboard_pids(*, exclude_pids: set[int] | None = None,
                                scope_home: str | None = None) -> list[int]:
     """PIDs of running ``dashboard``/``serve`` backends the caller may stop.
 
-    *scope_home*: keep only backends whose resolved Pulse home (see
+    *scope_home*: keep only backends whose resolved PULSE home (see
     ``_pulse_home_for_pid``) is this home; unreadable ownership is spared, never guessed.
     ``--stop`` and the post-update cleanup pass their own home so another install's or
     profile's backend on the same machine is never a target (#113978).
@@ -103,7 +103,7 @@ def _restart_managed_dashboard_service(reason: str, unit: str = _DASHBOARD_SYSTE
     def _systemctl(*args: str, timeout: int = 10) -> subprocess.CompletedProcess:
         return _run_probe(["systemctl", *args], timeout=timeout)
 
-    # User manager first (Pulse installs Linux services in the user scope by
+    # User manager first (PULSE installs Linux services in the user scope by
     # default), system manager only when the unit isn't there. Keep the selected
     # scope for ALL probes and the restart — a user unit must never be restarted
     # through the system manager (or raw-killed).
@@ -639,7 +639,7 @@ def _maybe_setup_dashboard_auth_interactively(args) -> None:
     print()
     print("  How do you want to authenticate the dashboard?")
     print("    [1] Username & password (quickest; for a trusted LAN / VPN)")
-    print("    [2] OAuth via Anxious Portal (run `pulse dashboard register`)\n    [3] Cancel\n")
+    print("    [2] OAuth via Nous Portal (run `pulse dashboard register`)\n    [3] Cancel\n")
 
     try:
         choice = input("  Choice [1]: ").strip() or "1"
@@ -652,9 +652,9 @@ def _maybe_setup_dashboard_auth_interactively(args) -> None:
             "  Run this on the host where the dashboard lives, then start "
             "the dashboard again:\n"
             "    pulse dashboard register\n"
-            "  It provisions a Anxious Portal OAuth client and writes "
+            "  It provisions a Nous Portal OAuth client and writes "
             "PULSE_DASHBOARD_OAUTH_CLIENT_ID into ~/.pulse/.env for you.\n"
-            "  Docs: https://pulse-agent.anxiousresearchlab.com/docs/"
+            "  Docs: https://pulse-agent.anxious-research.com/docs/"
             "user-guide/features/web-dashboard#authentication-gated-mode"
         )
         sys.exit(0)
@@ -929,7 +929,7 @@ def _attach_to_host_backend(args, headless_backend: bool) -> None:
     url = f"http://{hr.dial_host(record)}:{record.port}/?profile={wanted}"
 
     kind = "backend" if headless_backend else "dashboard"
-    print(f"Pulse {kind} already running on this host: PID {record.pid}, port {record.port}.")
+    print(f"PULSE {kind} already running on this host: PID {record.pid}, port {record.port}.")
     print(f"  Managing profile '{wanted}': {url}")
     if not headless_backend and not args.no_open:
         with contextlib.suppress(Exception):

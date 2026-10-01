@@ -2,7 +2,7 @@
 name: dogfood
 description: "Exploratory QA of web apps: find bugs, evidence, reports."
 version: 1.0.0
-author: Teknium (teknium1), Pulse Agent
+author: Teknium (teknium1), PULSE Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

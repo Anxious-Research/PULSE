@@ -347,7 +347,7 @@ def _for_each_served_profile(runner, body) -> None:
     Housekeeping runs on a bare thread with no turn on the stack, so nothing binds a profile for it:
     ``get_pulse_home()`` and ``get_secret()`` see the LAUNCH profile's values, and under
     ``gateway.multiplex_profiles`` a fail-closed credential read logs ``no profile secret scope on a
-    multiplexed call`` on every tick (the skills-sync pulls resolved Anxious credentials this way, four
+    multiplexed call`` on every tick (the skills-sync pulls resolved Nous credentials this way, four
     WARNINGs per hourly tick per chore). A single-profile gateway runs ``body`` once, unscoped:
     there the process env IS the profile's own value — unless a hosted room already flipped the
     process-wide guard (#112878), in which case the launch profile's OWN scope is bound, as

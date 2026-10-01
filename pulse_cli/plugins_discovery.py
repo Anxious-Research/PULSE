@@ -269,10 +269,10 @@ def gate_manifest(
     # Relay lifecycle is core-owned; an old plugin copy would compete for its registries.
     if names & LEGACY_RELAY_PLUGIN_KEYS:
         error = (
-            "removed — Relay lifecycle is owned by Pulse core; configure "
-            f"{RELAY_PLUGINS_CONFIG_ENV} instead"
+            "removed — Relay lifecycle is owned by PULSE core; configure a standard user or system Relay "
+            f"plugins.toml, or use {RELAY_PLUGINS_CONFIG_ENV} for an explicit user-file override"
         )
-        return _placeholder(error, logging.WARNING, "Refusing to load removed Pulse Relay plugin '%s'; %s", error)
+        return _placeholder(error, logging.WARNING, "Refusing to load removed PULSE Relay plugin '%s'; %s", error)
     if names & disabled:
         return _placeholder("disabled via config", logging.DEBUG, "Skipping disabled plugin '%s'")
     # Exclusive plugins (memory providers) have their own activation path; record only.
@@ -305,7 +305,7 @@ def gate_manifest(
         from pulse_cli.plugins_cmd_catalog import installed_plugin_removal
         removed = installed_plugin_removal(manifest.name, manifest.path)
         if removed is not None:
-            error = f"removed from the Pulse plugin catalog: {removed.reason or 'no reason recorded'}"
+            error = f"removed from the PULSE plugin catalog: {removed.reason or 'no reason recorded'}"
             return _placeholder(error, logging.WARNING, "Refusing to load plugin '%s' — %s; run `pulse plugins remove`",
                                 error)
     return ManifestGate("load")

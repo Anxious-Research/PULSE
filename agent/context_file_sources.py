@@ -30,7 +30,7 @@ _STATUS_DISPLAY = {
     "flagged": ("⚠", "loaded — matched prompt-injection pattern(s); review the file"),
     "empty": ("○", "not loaded — empty file"),
     "unreadable": ("✗", "not loaded — could not be read"),
-    "suppressed": ("○", "not loaded — cwd fell back to the Pulse install tree"),
+    "suppressed": ("○", "not loaded — cwd fell back to the PULSE install tree"),
 }
 
 
@@ -61,7 +61,7 @@ def list_context_file_sources(
     cwd: Optional[str] = None, context_length: Optional[int] = None, allow_install_tree_fallback: bool = False,
     home_override: "Path | None" = None, skip_soul: bool = False,
 ) -> List[Dict[str, Any]]:
-    """One dict per context file Pulse considered, in the builder's priority order.
+    """One dict per context file PULSE considered, in the builder's priority order.
 
     Same signature semantics as ``build_context_files_prompt`` (``cwd=None`` → launch dir, install-tree guard
     unless *allow_install_tree_fallback*). Keys: ``label``, ``path``, ``chars``, ``est_tokens``, ``loaded``
@@ -104,7 +104,7 @@ def context_file_sources_for_agent(agent: Any) -> List[Dict[str, Any]]:
     from agent.runtime_cwd import resolve_context_cwd
     from agent.system_prompt import _agent_home
     launch_artifact = getattr(agent, "_context_cwd_is_launch_artifact", False)
-    cwd = None if launch_artifact else resolve_context_cwd()
+    cwd = resolve_context_cwd(include_session_override=not launch_artifact)
     ctx_len = getattr(getattr(agent, "context_compressor", None), "context_length", None)
     return list_context_file_sources(
         cwd=str(cwd) if cwd is not None else None, context_length=ctx_len if isinstance(ctx_len, int) else None,

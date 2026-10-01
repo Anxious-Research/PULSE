@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 import subprocess
 from typing import Dict, List, Optional
-from pulse_cli.auth_constants import DEFAULT_ANXIOUS_PORTAL_URL
+from pulse_cli.auth_constants import DEFAULT_NOUS_PORTAL_URL
 
 logger = logging.getLogger("pulse_cli.auth")
 
@@ -49,7 +49,7 @@ def _confirm_selection_guards(
 
 
 class _ModelPickerRows:
-    """Column-aligned picker rows (name + $/Mtok + Anxious sale chrome).
+    """Column-aligned picker rows (name + $/Mtok + Nous sale chrome).
 
     Sale chrome is emitted as styled segments, not ANSI baked into one string — curses addnstr
     would render escape bytes literally.
@@ -64,7 +64,7 @@ class _ModelPickerRows:
         # Per-model dim annotation (e.g. "usage credits"); the row stays selectable.
         self.notes = notes or {}
         self.has_pricing = bool(pricing and any(pricing.get(m) for m in all_models))
-        # Leave room for a leading "★ " on sale rows (Anxious only).
+        # Leave room for a leading "★ " on sale rows (Nous only).
         name_pad = 3 if sale_chrome else 2
         self.name_col = max((len(m) for m in all_models), default=0) + name_pad if self.has_pricing else 0
         # (inp, out, cache, pct|None, was_inp, was_out)
@@ -164,8 +164,8 @@ def _prompt_model_selection(
     """
     from pulse_cli.cli_output import line_input
     _unavailable = unavailable_models or []
-    # Sale chrome is Anxious Portal-only, even if pricing.original is present for another provider.
-    sale_chrome = (confirm_provider or "").strip().lower() == "anxious"
+    # Sale chrome is Nous Portal-only, even if pricing.original is present for another provider.
+    sale_chrome = (confirm_provider or "").strip().lower() == "nous"
 
     def _confirmed_selection(mid: str) -> Optional[str]:
         if not mid:
@@ -195,7 +195,7 @@ def _prompt_model_selection(
     _RESET = "\033[0m"
 
     menu_title = rows.menu_title()
-    _upgrade_url = (portal_url or DEFAULT_ANXIOUS_PORTAL_URL).rstrip("/")
+    _upgrade_url = (portal_url or DEFAULT_NOUS_PORTAL_URL).rstrip("/")
     n = len(ordered)
 
     # Try arrow-key menu first, fall back to number input.
@@ -292,3 +292,6 @@ def _save_model_choice(model_id: str) -> None:
     else:
         config["model"] = {"default": model_id}
     save_config(config)
+    from pulse_cli.observability.shared_metrics_setup import note_provider_setup_saved
+
+    note_provider_setup_saved()

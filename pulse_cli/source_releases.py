@@ -13,7 +13,7 @@ import urllib.request
 from pulse_cli.update_channel import STABLE_TAG_RE, is_canary_tag
 
 logger = logging.getLogger(__name__)
-_PUBLIC_BASE = "https://pulse-assets.anxiousresearchlab.com"
+_PUBLIC_BASE = "https://pulse-assets.anxious-research.com"
 OFFICIAL_REPOSITORY = "Anxious-Research/PULSE"
 _GITHUB_ORIGIN = re.compile(
     r"^(?:https://github\.com/|git@github\.com:|ssh://git@github\.com/)"
@@ -74,17 +74,17 @@ def _resolve_channel(name: str, repository: str):
 
 def resolve_source_target(channel: str, git_cmd=None, cwd=None, *, repository=None) -> SourceTarget:
     """Resolve every subscription, including default labels, through R2."""
-    from pulse_cli.release_channels import ChannelError, ChannelNotFound, validate_name
+    from pulse_cli.release_channels import ChannelNotFound, validate_name
 
     validate_name(channel)
     repository = repository or source_repository(git_cmd, cwd)
     try:
         resolved = _resolve_channel(channel, repository)
-    except (ChannelNotFound, ChannelError):
+    except ChannelNotFound:
         if channel != "main":
             raise
         # main IS the source branch; its record can only add a retirement.
-        # When CDN is unavailable or record unpublished, follow the branch via git.
+        # Until one is published, a checkout keeps following the branch via git.
         return SourceTarget(channel, channel, repository, branch="main")
     terminal = resolved.terminal
     if terminal["repository"].lower() != repository.lower():

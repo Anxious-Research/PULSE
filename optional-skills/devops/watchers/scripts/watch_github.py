@@ -8,7 +8,7 @@ Usage (via cron with --no-agent):
       --script "$PULSE_HOME/skills/devops/watchers/scripts/watch_github.py" \\
       --script-args "--name pulse-issues --repo Anxious-Research/PULSE --scope issues"
 
-Set GITHUB_TOKEN (or GH_TOKEN) in the Pulse .env file
+Set GITHUB_TOKEN (or GH_TOKEN) in the PULSE .env file
 (``${PULSE_HOME:-~/.pulse}/.env``) to avoid the 60 req/hr
 anonymous rate limit.
 
@@ -113,7 +113,7 @@ def main() -> int:
 
     headers = {
         "Accept": "application/vnd.github+json",
-        "User-Agent": "Pulse-Watcher/1.0",
+        "User-Agent": "PULSE-Watcher/1.0",
     }
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
     if token:

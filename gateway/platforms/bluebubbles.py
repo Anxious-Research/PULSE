@@ -50,7 +50,7 @@ DEFAULT_WEBHOOK_PATH = "/bluebubbles-webhook"
 MAX_TEXT_LENGTH = 4000
 
 # iMessage has no stable bot mention identity (unlike <@U...>/@botname/MXID), so
-# `require_mention: true` without custom aliases uses Pulse wake words.
+# `require_mention: true` without custom aliases uses PULSE wake words.
 DEFAULT_MENTION_PATTERNS = [r"(?<![\w@])@?pulse\s+agent\b[,:\-]?", r"(?<![\w@])@?pulse\b[,:\-]?"]
 
 # Tapback associatedMessageType codes: 2000-2005 added, 3000-3005 removed (love, like, dislike, ...).
@@ -140,7 +140,7 @@ class BlueBubblesAdapter(BasePlatformAdapter):
     @staticmethod
     def _compile_mention_patterns(raw: Any) -> List[re.Pattern]:
         """Compile group-mention wake words; ``raw`` is a list, a raw env string (JSON list or
-        comma/newline-separated), or None (Pulse defaults)."""
+        comma/newline-separated), or None (PULSE defaults)."""
         return compile_mention_patterns(raw, log_prefix="bluebubbles", defaults=DEFAULT_MENTION_PATTERNS,
                                         logger_=logger)
 

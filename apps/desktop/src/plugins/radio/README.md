@@ -1,6 +1,6 @@
 # Radio
 
-Bundled Pulse Desktop plugin, **off by default**. Enable **Radio** in
+Bundled PULSE Desktop plugin, **off by default**. Enable **Radio** in
 Capabilities → Plugins. Playback starts only when you press Play.
 
 ## Controls
@@ -25,7 +25,7 @@ SDK, backend, dependency, or registry changes are needed.
 
 The same plain-ESM file can be loaded through the runtime plugin door at
 `$PULSE_HOME/desktop-plugins/radio/plugin.js` for development. Do not install
-that duplicate alongside the bundled version. Layout styles use Pulse theme
+that duplicate alongside the bundled version. Layout styles use PULSE theme
 tokens and are removed on disable. Playback, timers, and audio nodes are also
 released. Closing the window stops playback; there is no background audio
 service. Other windows pause when a window starts playing.
@@ -47,7 +47,7 @@ requests are paced across windows. No account or API key is needed.
 Audio connects directly to broadcasters. Searches send the typed station query
 to Radio Browser. There are no accounts, keys, analytics, recording, or
 rebroadcasting. Disabled plugins perform no work; enabling does not autoplay.
-Stream availability, regional restrictions, and metadata vary. Pulse is not
+Stream availability, regional restrictions, and metadata vary. PULSE is not
 endorsed by these broadcasters.
 
 ## References

@@ -56,7 +56,7 @@ body:
     id: component
     attributes:
       label: Affected Component
-      description: Which part of Pulse is affected?
+      description: Which part of PULSE is affected?
       multiple: true
       options:
         - CLI (interactive chat)
@@ -121,7 +121,7 @@ body:
   - type: input
     id: pulse-version
     attributes:
-      label: Pulse Version
+      label: PULSE Version
       description: Output of `pulse version`
       placeholder: "2.1.0"
 

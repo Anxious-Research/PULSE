@@ -1,6 +1,6 @@
 """xAI Web Search — search-only provider backed by Grok's server-side ``web_search`` tool on the
 Responses API (https://docs.x.ai/developers/tools/web-search); Grok is asked for structured JSON
-so rows match every other Pulse web provider. Config: ``web.backend: "xai"``; optional ``web.xai``:
+so rows match every other PULSE web provider. Config: ``web.backend: "xai"``; optional ``web.xai``:
 ``model`` (default grok-build-0.1), ``allowed_domains`` / ``excluded_domains`` (max 5, mutually
 exclusive), ``timeout`` (default 90s). Auth: Grok OAuth via ``pulse auth``, else XAI_API_KEY.
 """
@@ -258,25 +258,3 @@ class XAIWebSearchProvider(BaseWebSearchProvider):
             "xAI Web Search (Grok)", "paid",
             "Agentic web search via Grok's web_search tool — uses xAI Grok OAuth or XAI_API_KEY.", post_setup="xai_grok",
         )
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'WebSearchProvider': ('agent.web_search_provider', 'WebSearchProvider'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

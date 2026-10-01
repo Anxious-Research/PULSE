@@ -10,7 +10,7 @@
  *   2. stale PID rejection — recycled PID must not pass as a running gateway
  *   3. fallback behavior — single-profile installs and missing files are no-ops
  *   4. remote-boot path — verified by code review (the migration is moved to the
- *      top of startPulse() in main.ts, before primaryProfileKey() is read); the
+ *      top of startPULSE() in main.ts, before primaryProfileKey() is read); the
  *      pure decision logic that the function relies on is covered below.
  */
 
@@ -146,7 +146,7 @@ function baseDeps(overrides: Record<string, unknown> = {}) {
     readFileSync: fs.readFileSync,
     statSync: fs.statSync,
     readdirSync: fs.readdirSync,
-    isPulseProcess: () => true,
+    isPULSEProcess: () => true,
     now: () => NOW,
     writeJson: () => {},
     isValidProfileName,
@@ -210,7 +210,7 @@ test('findRunningGatewayProfiles returns [] when no pid files exist', () => {
   assert.deepEqual(
     findRunningGatewayProfiles('/home/u/.pulse/profiles', ['coder'], {
       ...fs,
-      isPulseProcess: () => true
+      isPULSEProcess: () => true
     }),
     []
   )
@@ -226,7 +226,7 @@ test('findRunningGatewayProfiles drops stale (non-pulse) recycled PIDs', () => {
 
   const deps = {
     ...fs,
-    isPulseProcess: (pid: number) => pid === 1234
+    isPULSEProcess: (pid: number) => pid === 1234
   }
 
   assert.deepEqual(findRunningGatewayProfiles('/home/u/.pulse/profiles', ['coder', 'writer'], deps), ['coder'])
@@ -240,7 +240,7 @@ test('findRunningGatewayProfiles tolerates malformed pid files', () => {
   assert.deepEqual(
     findRunningGatewayProfiles('/home/u/.pulse/profiles', ['coder'], {
       ...fs,
-      isPulseProcess: () => true
+      isPULSEProcess: () => true
     }),
     []
   )
@@ -256,7 +256,7 @@ test('findRunningGatewayProfiles drops non-integer and non-positive PIDs', () =>
   assert.deepEqual(
     findRunningGatewayProfiles('/home/u/.pulse/profiles', ['coder', 'writer', 'extra'], {
       ...fs,
-      isPulseProcess: () => true
+      isPULSEProcess: () => true
     }),
     []
   )
@@ -268,7 +268,7 @@ test('findRunningGatewayProfiles preserves order of allProfiles', () => {
     '/home/u/.pulse/profiles/writer/gateway.pid': { content: '{"pid":2}' }
   })
 
-  const deps = { ...fs, isPulseProcess: () => true }
+  const deps = { ...fs, isPULSEProcess: () => true }
   assert.deepEqual(findRunningGatewayProfiles('/home/u/.pulse/profiles', ['coder', 'writer'], deps), [
     'coder',
     'writer'
@@ -513,7 +513,7 @@ test('migrateActiveProfileIfMissing prefers a single running gateway over heuris
 
   const deps = baseDeps({
     ...fs,
-    isPulseProcess: (pid: number) => pid === 42,
+    isPULSEProcess: (pid: number) => pid === 42,
     writeJson: (_p: string, payload: unknown) => {
       written = payload
     }
@@ -562,7 +562,7 @@ test('findRunningGatewayProfiles sees default gateway.pid at pulseHome', () => {
     findRunningGatewayProfiles('/home/u/.pulse/profiles', ['default', 'coder'], {
       ...fs,
       pulseHome: '/home/u/.pulse',
-      isPulseProcess: pid => pid === 99
+      isPULSEProcess: pid => pid === 99
     }),
     ['default']
   )
@@ -621,7 +621,7 @@ test('migrateActiveProfileIfMissing does not pin default when only default gatew
 
   const deps = baseDeps({
     ...fs,
-    isPulseProcess: (pid: number) => pid === 7,
+    isPULSEProcess: (pid: number) => pid === 7,
     writeJson: (_p: string, payload: unknown) => {
       written = payload
     }

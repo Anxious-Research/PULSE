@@ -48,6 +48,7 @@ except Exception:
 
 from gateway.config import Platform, PlatformConfig
 from gateway.platforms.helpers import MessageDeduplicator, compile_mention_patterns
+from agent.i18n import t
 from gateway.platforms.base import BasePlatformAdapter, SendResult
 from gateway.platforms.event import MessageEvent
 from gateway.platforms._shared import (
@@ -324,7 +325,7 @@ class DingTalkAdapter(BasePlatformAdapter):
         if not _is_sdk_incompat(exc) or getattr(self, "_fatal_error_code", None) == "dingtalk_stream_error":
             return
         msg = (f"dingtalk-stream cannot open its websocket with the installed websockets package ({exc}). "
-               "Pulse pins dingtalk-stream==0.24.3 with websockets==15.0.1; reinstall the dingtalk extra "
+               "PULSE pins dingtalk-stream==0.24.3 with websockets==15.0.1; reinstall the dingtalk extra "
                "so those versions are used (e.g. `pip install 'pulse-agent[dingtalk]'`).")
         logger.error("[%s] %s", self.name, msg)
         # Not retryable: only a reinstall + restart fixes it, and connect() returns True before the
@@ -450,8 +451,8 @@ class DingTalkAdapter(BasePlatformAdapter):
         if not (msg_id and conversation_id):
             return
         async def _swap() -> None:
-            await self._send_emotion(msg_id, conversation_id, "🤔Thinking", recall=True)
-            await self._send_emotion(msg_id, conversation_id, "🥳Done", recall=False)
+            await self._send_emotion(msg_id, conversation_id, t("platform.dingtalk.emotion.thinking"), recall=True)
+            await self._send_emotion(msg_id, conversation_id, t("platform.dingtalk.emotion.done"), recall=False)
         self._spawn_bg(_swap())
 
     async def _on_message(self, message: "ChatbotMessage") -> None:
@@ -524,7 +525,7 @@ class DingTalkAdapter(BasePlatformAdapter):
                 return result
             logger.warning("[%s] AI Card send failed, falling back to webhook", self.name)
         logger.debug("[%s] Sending via webhook", self.name)
-        payload = {"msgtype": "markdown", "markdown": {"title": "Pulse", "text": self._normalize_markdown(content[: self.MAX_MESSAGE_LENGTH])}}
+        payload = {"msgtype": "markdown", "markdown": {"title": "PULSE", "text": self._normalize_markdown(content[: self.MAX_MESSAGE_LENGTH])}}
         try:
             resp = await self._http_client.post(session_webhook, json=payload, timeout=15.0)
             if resp.status_code < 300:
@@ -731,7 +732,7 @@ class _IncomingHandler(dingtalk_stream.ChatbotHandler if DINGTALK_STREAM_AVAILAB
                 chatbot_msg.is_in_at_list = True
             msg_id, conversation_id = getattr(chatbot_msg, "message_id", None) or "", getattr(chatbot_msg, "conversation_id", None) or ""
             if msg_id and conversation_id:
-                self._adapter._spawn_bg(self._adapter._send_emotion(msg_id, conversation_id, "🤔Thinking", recall=False))
+                self._adapter._spawn_bg(self._adapter._send_emotion(msg_id, conversation_id, t("platform.dingtalk.emotion.thinking"), recall=False))
             asyncio.create_task(self._safe_on_message(chatbot_msg))  # surfaces exceptions in logs instead of losing them
         except Exception:
             logger.exception("[%s] Error preparing incoming message", self._adapter.name)
@@ -846,7 +847,7 @@ def _is_connected(config) -> bool:
 
 
 def register(ctx) -> None:
-    """Plugin entry point — called by the Pulse plugin system."""
+    """Plugin entry point — called by the PULSE plugin system."""
     ctx.register_platform(
         name="dingtalk", label="DingTalk", adapter_factory=DingTalkAdapter, check_fn=dingtalk_deps_present,
         ensure_deps_fn=ensure_dingtalk_deps, is_connected=_is_connected, validate_config=_is_connected,
@@ -855,44 +856,3 @@ def register(ctx) -> None:
         allow_all_env="DINGTALK_ALLOW_ALL_USERS", cron_deliver_env_var="DINGTALK_HOME_CHANNEL",
         standalone_sender_fn=_standalone_send, emoji="🐳", allow_update_command=True,
     )
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-EXT_MAP = {
-    "pdf": "application/pdf",
-    "png": "image/png",
-    "jpg": "image/jpeg",
-    "jpeg": "image/jpeg",
-    "gif": "image/gif",
-    "webp": "image/webp",
-    "doc": "application/msword",
-    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "xls": "application/vnd.ms-excel",
-    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "md": "text/markdown",
-    "txt": "text/plain",
-    "csv": "text/csv",
-    "zip": "application/zip",
-    "mp4": "video/mp4",
-}
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'DINGTALK_TYPE_MAPPING': ('plugins.platforms.dingtalk.inbound', 'DINGTALK_TYPE_MAPPING'),
-    'MessageType': ('gateway.platforms.event', 'MessageType'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

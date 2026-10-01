@@ -1,7 +1,7 @@
 name: session-ref
 repo: https://github.com/kama-dev/pulse-session-ref
 sha: 468a0408a657becfcc70025d20b6ffc3bf66f8d1
-description: Reference another Pulse session in the Desktop composer with @session —
+description: Reference another PULSE session in the Desktop composer with @session —
   type @ and pick from live session suggestions. Inserts a compact @session:"<title>"
   reference; nothing is injected into context, the agent resolves it with its own
   session-search. No more copying session IDs.

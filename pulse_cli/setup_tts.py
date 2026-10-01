@@ -7,7 +7,7 @@ import shutil
 import subprocess
 import sys
 from tools import tool_backend_helpers
-from pulse_cli import anxious_subscription
+from pulse_cli import nous_subscription
 
 logger = logging.getLogger("pulse_cli.setup")
 
@@ -22,7 +22,7 @@ def _install_tts_extra(extra: str) -> bool:
         _setup.print_error(f"Failed to install {extra}: {exc}")
         _setup.print_info("Retry with: pulse setup tts")
         return False
-    _setup.print_success(f"{extra} installed. Restart Pulse to use it.")
+    _setup.print_success(f"{extra} installed. Restart PULSE to use it.")
     return True
 
 
@@ -239,18 +239,18 @@ def _setup_tts_provider(config: dict):
     _setup.print_header("Text-to-Speech Provider (optional)")
     _setup._info(f"Current: {current_label}", None)
     options = list(_TTS_PROVIDER_CHOICES)
-    if tool_backend_helpers.managed_anxious_tools_enabled() and anxious_subscription.get_anxious_subscription_features(config).anxious_auth_present:
-        options.insert(0, ("anxious-openai",
-                           "Anxious Subscription (managed OpenAI TTS, billed to your subscription)"))
+    if tool_backend_helpers.managed_nous_tools_enabled() and nous_subscription.get_nous_subscription_features(config).nous_auth_present:
+        options.insert(0, ("nous-openai",
+                           "Nous Subscription (managed OpenAI TTS, billed to your subscription)"))
     choices = [label for _, label in options] + [f"Keep current ({current_label})"]
     keep_current_idx = len(choices) - 1
     idx = _setup.prompt_choice("Select TTS provider:", choices, keep_current_idx)
     if idx == keep_current_idx:
         return
     selected = options[idx][0]
-    if selected == "anxious-openai":
+    if selected == "nous-openai":
         selected = "openai"
-        _setup.print_info("OpenAI TTS will use the managed Anxious gateway and bill to your subscription.")
+        _setup.print_info("OpenAI TTS will use the managed Nous gateway and bill to your subscription.")
         if _setup.get_env_value("VOICE_TOOLS_OPENAI_KEY") or _setup.get_env_value("OPENAI_API_KEY"):
             _setup.print_warning("Direct OpenAI credentials are still configured and may take precedence "
                                  "until removed from ~/.pulse/.env.")

@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 # AT-SPI wants a user session). Falls back to the exec default when the image has no such user.
 DESKTOP_USER = "pn"
 _REQUIRED = ("Xvnc", "xfwm4", "xfce4-panel", "xfdesktop", "xfsettingsd", "dbus-run-session", "xauth", "xdpyinfo", "xprop")
-SANDBOX_IMAGE_HINT = "anxiousresearchlab/pulse-sandbox:desktop"
+SANDBOX_IMAGE_HINT = "nousresearch/pulse-sandbox:desktop"
 
 _RELAY = (
     "import os,socket,sys,threading\n"

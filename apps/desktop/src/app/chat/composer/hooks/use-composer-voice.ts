@@ -95,6 +95,11 @@ export function useComposerVoice({
   // Engine selection is latched at conversation START (a Settings change
   // applies to the next conversation, never mid-call).
   const [liveEngineActive, setLiveEngineActive] = useState(false)
+  // Barge-in can retain a submit callback from a render where the interrupted
+  // turn was still busy. Read the current gate when its transcript arrives so
+  // that stale closure does not silently drop the next voice turn.
+  const busyRef = useRef(busy)
+  busyRef.current = busy
   const ownsWakeIndicatorRef = useRef(false)
   const previousSessionIdRef = useRef(sessionId)
   const voiceStartRequest = useStore($voiceConversationStartRequest)
@@ -166,7 +171,7 @@ export function useComposerVoice({
   }
 
   const submitVoiceTurn = async (text: string) => {
-    if (busy) {
+    if (busyRef.current) {
       return
     }
 
@@ -176,7 +181,7 @@ export function useComposerVoice({
     await onSubmit(text)
   }
 
-  /** A GPT-Live delegation → Pulse turn. The bubble and the persisted row are
+  /** A GPT-Live delegation → PULSE turn. The bubble and the persisted row are
    *  what the user said; the transcript window rides the model input only. */
   const submitLiveDelegation = async (text: string, voiceContext: string) => {
     triggerHaptic('submit')
@@ -194,7 +199,7 @@ export function useComposerVoice({
         .map(m => ({ role: m.role as 'assistant' | 'user', text: chatMessageText(m) }))
     )
 
-  /** The tool Pulse is running right now, for quiet progress in the voice. */
+  /** The tool PULSE is running right now, for quiet progress in the voice. */
   const activeToolLabel = () => {
     const last = $messages.get().findLast(m => m.role === 'assistant' && !m.hidden)
     const running = last?.parts.findLast(part => part.type === 'tool-call' && part.result === undefined)

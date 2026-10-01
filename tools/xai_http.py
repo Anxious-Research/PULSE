@@ -50,12 +50,12 @@ def has_xai_credentials() -> bool:
 
 
 def pulse_xai_user_agent() -> str:
-    """Return a stable Pulse-specific User-Agent for xAI HTTP calls."""
+    """Return a stable PULSE-specific User-Agent for xAI HTTP calls."""
     try:
         from pulse_cli.version_info import get_version_info
-        return f"Pulse-Agent/{get_version_info().base_version}"
+        return f"PULSE-Agent/{get_version_info().base_version}"
     except Exception:
-        return "Pulse-Agent/unknown"
+        return "PULSE-Agent/unknown"
 
 
 def pulse_xai_default_headers() -> Dict[str, str]:
@@ -141,7 +141,7 @@ def xai_storage_notice_text(section_name: str) -> str:
 
 
 def maybe_mark_xai_storage_notice_seen(section_name: str) -> Optional[str]:
-    """Return the storage notice once per Pulse home, then mark it seen."""
+    """Return the storage notice once per PULSE home, then mark it seen."""
     notice = xai_storage_notice_text(section_name)
     if not notice:
         return None
@@ -179,7 +179,7 @@ def resolve_xai_http_credentials(
 ) -> Dict[str, str]:
     """Resolve bearer credentials for direct xAI HTTP endpoints.
 
-    Default order: Pulse-managed xAI OAuth, then ``XAI_API_KEY`` (via ``get_env_value`` so
+    Default order: PULSE-managed xAI OAuth, then ``XAI_API_KEY`` (via ``get_env_value`` so
     ``~/.pulse/.env`` keys count). ``prefer_api_key=True`` inverts that for API-metered
     endpoints where the subscription OAuth bearer authorizes but misbehaves (x_search answers
     without citations, TTS 403s). Both branches honor ``PULSE_XAI_BASE_URL``/``XAI_BASE_URL``
@@ -187,8 +187,8 @@ def resolve_xai_http_credentials(
     pass the rejected bearer as ``api_key_hint`` so a multi-account pool refreshes the issuing
     entry, not whichever its strategy selects first.
 
-    Prefers Pulse-managed xAI OAuth credentials when available, then falls back to ``XAI_API_KEY`` resolved
-    via ``pulse_cli.config.get_env_value`` so keys stored in ``~/.pulse/.env`` (the standard Pulse
+    Prefers PULSE-managed xAI OAuth credentials when available, then falls back to ``XAI_API_KEY`` resolved
+    via ``pulse_cli.config.get_env_value`` so keys stored in ``~/.pulse/.env`` (the standard PULSE
     location) are honored — not just ones already exported into ``os.environ``. This keeps direct xAI
     endpoints (images, TTS, STT, etc.) aligned with the main runtime auth model and preserves the regression
     contract from PR #17140 / #17163.

@@ -37,7 +37,7 @@ export type BackendTeardownIntent = 'quit' | 'reconnect'
  * The `soft` option a deliberate teardown must pass to
  * `teardownPrimaryBackendAndWait()`.
  *
- * `soft: true` is what stops `resetPulseConnectionState()` from rewriting the
+ * `soft: true` is what stops `resetPULSEConnectionState()` from rewriting the
  * boot-progress overlay — the step that writes `[boot] Restarting desktop
  * connection` into desktop.log and pushes `pulse:boot-progress` to the
  * renderer. A reconnect may announce that; a quit must not, because the

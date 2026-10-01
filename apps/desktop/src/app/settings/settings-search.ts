@@ -1,6 +1,6 @@
 import type { IconComponent } from '@/lib/icons'
 import { normalize } from '@/lib/text'
-import type { ConfigFieldSchema, EnvVarInfo, PulseConfigRecord } from '@/types/pulse'
+import type { ConfigFieldSchema, EnvVarInfo, PULSEConfigRecord } from '@/types/pulse'
 
 import { FIELD_LABELS, SECTIONS } from './constants'
 import { credentialRowLabel } from './credential-key-ui'
@@ -72,7 +72,7 @@ function configFieldDescription(key: string, field: ConfigFieldSchema, copy: Con
 
 export function buildConfigSearchEntries(
   schema: Record<string, ConfigFieldSchema> | null | undefined,
-  config: PulseConfigRecord | null | undefined,
+  config: PULSEConfigRecord | null | undefined,
   copy: ConfigSearchCopy,
   sections: DesktopConfigSection[] = SECTIONS
 ): SettingsSearchEntry[] {

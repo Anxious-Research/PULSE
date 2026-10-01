@@ -61,7 +61,7 @@ def _pulse_home_real() -> str:
 
 
 def _get_pulse_config_resolved() -> str | None:
-    """Resolved absolute path of the Pulse config file for the ACTIVE profile.
+    """Resolved absolute path of the PULSE config file for the ACTIVE profile.
 
     Resolved per call so it tracks the per-turn ``PULSE_HOME`` scope (#107327);
     a test may pin it via ``_pulse_config_resolved`` + ``_pulse_config_resolved_loaded``."""
@@ -86,7 +86,7 @@ def _get_pulse_config_resolved() -> str | None:
 
 
 def _get_real_pulse_home() -> str | None:
-    """Realpath of the authoritative Pulse home for the ACTIVE profile.
+    """Realpath of the authoritative PULSE home for the ACTIVE profile.
 
     Resolved per call so it tracks the per-turn ``PULSE_HOME`` scope (#107327);
     a test may pin it via ``_real_pulse_home_cached`` + ``_real_pulse_home_loaded``.
@@ -112,8 +112,8 @@ def _get_real_pulse_home() -> str | None:
 
 
 def _pulse_exempt_homes() -> tuple[str, ...]:
-    """Realpaths of the Pulse home tree(s) the protected-instruction gate must stay out of:
-    the ACTIVE profile's home, plus the Pulse ROOT when that home is a named profile
+    """Realpaths of the PULSE home tree(s) the protected-instruction gate must stay out of:
+    the ACTIVE profile's home, plus the PULSE ROOT when that home is a named profile
     (``<root>/profiles/<name>``). Exempting only the profile dir left the root's DIRECT files
     (LEDGER.md / MEMORY.md / SOUL.md / AGENTS.md ...) to the ``.pulse`` component rule, which
     gated them like a project-local ``<repo>/.pulse/config.yaml`` — fail-closed headless
@@ -167,7 +167,7 @@ def _check_sensitive_path(filepath: str, task_id: str = "default") -> str | None
     pulse_config = _get_pulse_config_resolved()
     if pulse_config and pulse_config in candidates:
         return (
-            f"Refusing to write to Pulse config file: {filepath}\n"
+            f"Refusing to write to PULSE config file: {filepath}\n"
             "Agent cannot modify security-sensitive configuration. "
             "Edit ~/.pulse/config.yaml directly or use 'pulse config' instead.")
     return None
@@ -391,7 +391,7 @@ def _check_approval_required_write(paths: list[str], task_id: str = "default") -
 
 
 def _get_container_mirror_prefix_for_task(task_id: str = "default") -> str | None:
-    """Return the container-side Pulse mirror prefix for persistent Docker file tools."""
+    """Return the container-side PULSE mirror prefix for persistent Docker file tools."""
     try:
         from tools.terminal_tool import (
             _active_environments, _env_lock, _get_env_config, _resolve_container_task_id)
@@ -412,7 +412,7 @@ def _get_container_mirror_prefix_for_task(task_id: str = "default") -> str | Non
 
 def _check_cross_profile_path(filepath: str, task_id: str = "default") -> str | None:
     """Soft-guard: warn when ``filepath`` lands on a host-side or Docker sandbox MIRROR of
-    Pulse state (a write the host never reads). Not profile isolation — that guard was
+    PULSE state (a write the host never reads). Not profile isolation — that guard was
     removed; ``cross_profile=True`` keeps bypassing this one for replay compat. Fails open."""
     try:
         from agent.file_safety import get_container_mirror_warning, get_sandbox_mirror_warning

@@ -16,7 +16,6 @@ import logging
 import os
 import re
 import shutil
-import subprocess
 import threading
 import time
 import urllib.parse
@@ -525,16 +524,18 @@ def local_models_status():
 
 # ── hardware: what this machine can do ───────────────────────
 def _nvidia_smi_facts() -> dict:
-    """GPU identity + live utilization (NVIDIA only; other vendors degrade to {} and the UI hides those readouts)."""
-    smi_exe = hardware._nvidia_smi_path()
-    if not smi_exe:
+    """GPU identity + live utilization (NVIDIA only; other vendors degrade to {} and the UI hides those readouts).
+
+    Reads the shared cached query: one nvidia-smi spawn per poll window, hidden on Windows,
+    instead of a second bare one per request (#101895, #120262)."""
+    query = hardware._cached_nvidia_gpu_query()
+    if query is None:
         return {}
-    smi = subprocess.run([smi_exe, "--query-gpu=name,utilization.gpu,memory.used", "--format=csv,noheader,nounits"],
-                         capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=5)
-    if smi.returncode != 0 or not smi.stdout.strip():
-        return {}
-    name, util, used_mib = (x.strip() for x in smi.stdout.strip().splitlines()[0].split(","))
-    return dict(gpu_name=name, gpu_util_percent=int(util), vram_used_bytes=int(used_mib) << 20)
+    return dict(
+        gpu_name=query["gpu_name"],
+        gpu_util_percent=query["gpu_util_percent"],
+        vram_used_bytes=query["used_bytes"],
+    )
 
 
 @router.get("/api/local-models/hardware")
@@ -821,7 +822,7 @@ def _terminate_state_pid() -> None:
 
     if not stop_recorded_orphan():
         raise HTTPException(status_code=409, detail=(
-            "Another Pulse process owns this server, or its ownership could not be verified"))
+            "Another PULSE process owns this server, or its ownership could not be verified"))
 
 
 def _stop_server() -> None:
@@ -965,7 +966,7 @@ async def local_models_download_browsed(body: BrowsedDownloadBody):
 @router.post("/api/local-models/sideload")
 async def local_models_sideload(body: SideloadBody):
     """Register a GGUF already on this machine: link it into the managed models dir (copy only when linking is
-    impossible) and bounce the router. The original stays put; delete-from-Pulse removes only our link."""
+    impossible) and bounce the router. The original stays put; delete-from-PULSE removes only our link."""
     src = Path(body.path)
     if not src.is_file() or src.suffix.lower() != ".gguf":
         raise HTTPException(status_code=422, detail="Pick a .gguf model file")

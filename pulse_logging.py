@@ -1,4 +1,4 @@
-"""Centralized logging setup for Pulse Agent.
+"""Centralized logging setup for PULSE Agent.
 
 Log files: agent.log (INFO+, everything), errors.log (WARNING+), gateway.log (INFO+,
 gateway components; ``mode="gateway"``), gui.log (INFO+, dashboard/TUI-gateway;
@@ -72,7 +72,7 @@ def _portalocker_probe() -> bool:
 # Windows-ONLY swap (#44873): stdlib ``RotatingFileHandler.doRollover()`` calls
 # ``os.rename()``, which fails with ``PermissionError [WinError 32]`` whenever
 # another process holds an append handle on ``agent.log`` — essentially always
-# in Pulse (TUI, gateway, hy_memory, MCP servers, CLI commands all log) —
+# in PULSE (TUI, gateway, hy_memory, MCP servers, CLI commands all log) —
 # pinning the file at the size threshold and spamming stderr on every emit.
 # ``concurrent-log-handler`` serializes rollover with a cross-process lock.
 # POSIX keeps stdlib: renames of open files work, and managed mode (NixOS)
@@ -329,7 +329,7 @@ def setup_logging(
     mode: Optional[str] = None,
     force: bool = False,
 ) -> Path:
-    """Configure the Pulse logging subsystem; returns the ``logs/`` directory.
+    """Configure the PULSE logging subsystem; returns the ``logs/`` directory.
 
     Safe to call multiple times; the second call is a no-op unless *force*. Level and
     rotation defaults come from config.yaml ``logging.*``. ``mode="gateway"`` adds
@@ -346,7 +346,7 @@ def setup_logging(
     # reaches this function gets it; a no-op once this stdout is line-buffered.
     _line_buffer_piped_stdout()
 
-    # A second Pulse home in a process that already logs for another one — a dashboard or
+    # A second PULSE home in a process that already logs for another one — a dashboard or
     # ``pulse serve`` backend building agents for several profiles, a multiplexed gateway —
     # gets routed by record home. Stacking another file handler here would hand it EVERY
     # profile's records (the handlers carry no home filter), and a duplicate writer on top of
@@ -540,7 +540,22 @@ class _ManagedRotatingFileHandler(RotatingFileHandler):
         return stream
 
     def doRollover(self):
+        # The stdlib rollover opens a fresh baseFilename owned by whichever process crossed
+        # maxBytes. With one rotating handler per profile that is usually the long-lived root
+        # gateway, and a worker on another uid can never reopen its own agent.log (#120151).
+        # Only root can hand the file back; an unprivileged process never changed the owner.
+        try:
+            previous = os.stat(self.baseFilename)
+        except OSError:
+            previous = None
         super().doRollover()
+        if previous is not None:
+            try:
+                if getattr(os, "geteuid", lambda: -1)() == 0:
+                    os.chown(self.baseFilename, previous.st_uid, previous.st_gid)
+                os.chmod(self.baseFilename, previous.st_mode & 0o7777)
+            except OSError:
+                pass  # a log that cannot be chowned is still a working log
         self._chmod_if_managed()
         # Our own rollover writes a new baseFilename; refresh the snapshot so
         # the next emit doesn't mistake it for external rotation.
@@ -565,7 +580,7 @@ def _new_file_handler(
 
 
 class _ProfileRoutingFileHandler(logging.Handler):
-    """Route queued records to the log file for their Pulse home.
+    """Route queued records to the log file for their PULSE home.
 
     Used only behind the QueueListener, so its small routing lock never blocks an agent
     or dashboard event loop. Per-home handlers keep rotation, redaction and managed perms.
@@ -903,18 +918,3 @@ def _read_logging_config():
     except Exception:
         pass
     return (None, None, None)
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-def rotating_file_handlers() -> list:
-    """Return the live rotating file handlers.
-
-    They are attached to the async ``QueueListener`` rather than the root
-    logger, so callers/tests must use this instead of scanning
-    ``logging.getLogger().handlers``."""
-    return list(_queued_file_handlers)
-# ---- END PLUGIN-COMPAT ----

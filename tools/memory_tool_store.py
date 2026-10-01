@@ -183,7 +183,7 @@ class MemoryStore:
         raw_fd = os.open(lock_path, flags, 0o600)
         try:
             # The creation mode is filtered through the process umask and does
-            # not repair a lock left loose by an older Pulse process. Tighten
+            # not repair a lock left loose by an older PULSE process. Tighten
             # the opened inode before acquiring the lock so both cases are
             # owner-only. Operating on the fd avoids a path-swap window.
             if hasattr(os, "fchmod"):

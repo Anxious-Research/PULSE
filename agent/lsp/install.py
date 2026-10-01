@@ -1,6 +1,6 @@
 """Auto-installation of LSP server binaries.
 
-Installs go to a Pulse-owned staging dir, ``<PULSE_HOME>/lsp/bin/``, so the
+Installs go to a PULSE-owned staging dir, ``<PULSE_HOME>/lsp/bin/``, so the
 user's global toolchain stays untouched.  Strategies: ``auto`` (install with
 the best available package manager), ``manual`` / ``off`` (probe only; a
 missing binary skips the server and ``pulse lsp status`` reports it).
@@ -83,7 +83,7 @@ def _is_windows() -> bool:
 
 
 def pulse_lsp_bin_dir() -> Path:
-    """Return the Pulse-owned bin staging dir for LSP servers."""
+    """Return the PULSE-owned bin staging dir for LSP servers."""
     from pulse_constants import get_pulse_home
 
     p = get_pulse_home() / "lsp" / "bin"
@@ -242,7 +242,7 @@ def _install_npm(pkg: str, bin_name: str, extra_pkgs: Optional[list] = None) -> 
     pm = _node_package_manager()
     if pm is None:
         return None
-    # npm is Pulse's own PM-managed copy, never the user's; pnpm/yarn are an explicit user choice.
+    # npm is PULSE's own PM-managed copy, never the user's; pnpm/yarn are an explicit user choice.
     pm_bin = find_node_executable(pm)
     if pm_bin is None and pm == "npm":
         try:
@@ -262,7 +262,9 @@ def _install_npm(pkg: str, bin_name: str, extra_pkgs: Optional[list] = None) -> 
     install_targets = [pkg] + list(extra_pkgs or [])
     cmd = [pm_bin, *_NODE_PM_ARGV[pm](str(staging)), *install_targets]
     logger.info("[install] %s %s", pm, " ".join(cmd[1:]))
-    if not _run_installer(pm, pkg, cmd, timeout=300, env=with_pulse_node_path()):
+    from tools.environments.local import pulse_subprocess_env
+    # Package install scripts are third-party code: scrubbed env, never PULSE' credentials.
+    if not _run_installer(pm, pkg, cmd, timeout=300, env=with_pulse_node_path(pulse_subprocess_env())):
         return None
     found = _first_existing(staging / "node_modules" / ".bin" / bin_name)
     if found is not None:
@@ -281,7 +283,9 @@ def _install_go(pkg: str, bin_name: str) -> Optional[str]:
         return None
     staging = pulse_lsp_bin_dir()
     logger.info("[install] go install %s (GOBIN=%s)", pkg, staging)
-    if not _run_installer("go", pkg, [go, "install", pkg], timeout=600, env={**os.environ, "GOBIN": str(staging)}):
+    from tools.environments.local import pulse_subprocess_env
+    env = {**pulse_subprocess_env(), "GOBIN": str(staging)}
+    if not _run_installer("go", pkg, [go, "install", pkg], timeout=600, env=env):
         return None
     bin_path = (staging / bin_name).with_suffix(".exe") if _is_windows() else staging / bin_name
     if bin_path.exists():

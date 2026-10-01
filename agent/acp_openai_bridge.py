@@ -1,11 +1,11 @@
-"""OpenAI-shape bridge shared by Pulse' ACP clients.
+"""OpenAI-shape bridge shared by PULSE' ACP clients.
 
-ACP has no OpenAI-style ``tools``/``tool_calls`` channel, so Pulse' tool schemas travel INTO the
+ACP has no OpenAI-style ``tools``/``tool_calls`` channel, so PULSE' tool schemas travel INTO the
 prompt as text (:func:`render_tool_bridge_sections`) and calls are parsed back OUT of the response
 text (:func:`extract_tool_calls_from_text`). Clients differ only in WHICH tools they forward
 (``allowlist``): a CLI with no tools of its own forwards everything; an autonomous agent with its own
-read/edit/execute tools forwards only Pulse' agent-level tools, since re-offering overlapping ones
-makes Pulse redo finished work.
+read/edit/execute tools forwards only PULSE' agent-level tools, since re-offering overlapping ones
+makes PULSE redo finished work.
 """
 
 from __future__ import annotations
@@ -37,7 +37,7 @@ __all__ = [
 
 class StreamChunks(list):
     """Chunk list that also carries response-level attributes (e.g. ``pulse_projected_messages``)
-    Pulse reads off the ``create`` result; a plain list would drop them on the stream path."""
+    PULSE reads off the ``create`` result; a plain list would drop them on the stream path."""
 
 
 def completion_to_stream_chunks(completion: SimpleNamespace) -> StreamChunks:

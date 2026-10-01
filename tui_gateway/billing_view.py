@@ -2,7 +2,7 @@
 
 STRUCTURED envelopes (result.ok / result.error) rather than JSON-RPC errors, so
 rpc() always resolves and the client branches on the typed billing code.
-Data-building lives in agent/billing_view.py + pulse_cli/anxious_billing.py.
+Data-building lives in agent/billing_view.py + pulse_cli/nous_billing.py.
 Bodies are rebound onto server.py's globals at install time (method_ctx.bind_module),
 so tests may still monkeypatch e.g. ``server._usage_payload``.
 """
@@ -21,7 +21,7 @@ def _wire_str(value):
 
 def _serialize_billing_error(exc) -> dict:
     """Map a BillingError into the result.error envelope the TUI branches on."""
-    from pulse_cli.anxious_billing import (
+    from pulse_cli.nous_billing import (
         BillingRemoteSpendingRevoked, BillingScopeRequired, BillingSessionRevoked, BillingTransient)
     typed = {BillingRemoteSpendingRevoked: "remote_spending_revoked",
              BillingSessionRevoked: "session_revoked", BillingScopeRequired: "insufficient_scope"}
@@ -71,9 +71,9 @@ def _serialize_auto_reload(ar, format_money) -> dict | None:
         "reload_to_display": format_money(ar.reload_to_usd), "card": card_out}
 
 
-def _serialize_billing_state(state, *, free_tier: bool = False) -> dict:
-    """Serialize a BillingState for the wire (Decimals → strings, money-safe). ``free_tier`` marks the
-    Anxious free tier: no account, no balance, nothing to pay; the renderer branches on it before
+def _serialize_billing_state(state, *, free_tier_account: bool = False) -> dict:
+    """Serialize a BillingState for the wire (Decimals → strings, money-safe). ``free_tier_account`` marks the
+    Nous free tier: no account, no balance, nothing to pay; the renderer branches on it before
     ``logged_in``."""
     from agent.billing_view import format_money
     from pulse_cli.anon_auth import GUEST_MODEL
@@ -92,7 +92,7 @@ def _serialize_billing_state(state, *, free_tier: bool = False) -> dict:
               "is_default_ceiling": m.is_default_ceiling}
     return {
         "ok": True, "logged_in": state.logged_in,
-        "free_tier": bool(free_tier), "free_tier_model": GUEST_MODEL if free_tier else None,
+        "free_tier_account": bool(free_tier_account), "free_tier_model": GUEST_MODEL if free_tier_account else None,
         "org_name": state.org_name,
         "org_slug": state.org_slug, "role": state.role, "is_admin": state.is_admin,
         "can_change_plan": state.can_change_plan, "can_charge": state.can_charge,

@@ -104,7 +104,7 @@ def validate_params(contract: MethodContract | ServerRequestContract, params: di
             if err.get("type") == "extra_forbidden":
                 loc = ".".join(str(p) for p in err.get("loc", ())) or "params"
                 return None, (f"invalid params for {contract.name}: {loc}: {err.get('msg')} — the client and "
-                              "the Pulse backend are out of sync (different versions); run `pulse update` "
+                              "the PULSE backend are out of sync (different versions); run `pulse update` "
                               "and restart both")
     return params, None
 

@@ -18,8 +18,8 @@ from tools.environments.singularity import SingularityEnvironment as _Singularit
 from tools.environments.ssh import SSHEnvironment as _SSHEnvironment
 from tools.managed_tool_gateway import is_managed_tool_gateway_ready
 from tools.terminal_tool_config import _get_plugin_env_provider
-from tools.tool_backend_helpers import (has_direct_modal_credentials, managed_anxious_tools_enabled,
-                                        anxious_tool_gateway_unavailable_message, resolve_modal_backend_state)
+from tools.tool_backend_helpers import (has_direct_modal_credentials, managed_nous_tools_enabled,
+                                        nous_tool_gateway_unavailable_message, resolve_modal_backend_state)
 
 # Log-record parity with the origin module.
 logger = logging.getLogger("tools.terminal_tool")
@@ -61,7 +61,7 @@ _RESOURCE_KEYS = (("cpu", "container_cpu", 1), ("memory", "container_memory", 51
                   ("disk", "container_disk", 51200), ("persistent_filesystem", "container_persistent", True))
 _CONTAINER_KEYS = (
     ("container_cpu", 1), ("container_memory", 5120), ("container_disk", 51200),
-    ("container_persistent", True), ("modal_mode", "auto"), ("vercel_runtime", ""),
+    ("container_persistent", True), ("modal_mode", "auto"), ("vercel_runtime", ""), ("vercel_image", ""),
     ("docker_volumes", []), ("docker_mount_cwd_to_workspace", False), ("docker_forward_env", []),
     ("docker_env", {}), ("docker_run_as_host_user", False), ("docker_extra_args", []),
     ("docker_shm_size", "1g"), ("docker_network", True), ("docker_persist_across_processes", True),
@@ -106,14 +106,14 @@ def _get_modal_backend_state(modal_mode: object | None) -> Dict[str, Any]:
 def _modal_unavailable_reason(modal_state: Dict[str, Any]) -> tuple[str, str]:
     """(log message, ValueError message) for a modal_state with no selected backend.
     Single decision shared by the requirements checker and the env builder."""
-    gateway = anxious_tool_gateway_unavailable_message("managed Modal execution")
+    gateway = nous_tool_gateway_unavailable_message("managed Modal execution")
     if modal_state["managed_mode_blocked"] or modal_state["mode"] == "managed":
-        tail = (("Anxious Tool Gateway access is not currently available and no direct Modal credentials/config "
+        tail = (("Nous Tool Gateway access is not currently available and no direct Modal credentials/config "
                  f"were found. {gateway} Choose TERMINAL_MODAL_MODE=direct/auto to use direct Modal credentials.")
                 if modal_state["managed_mode_blocked"] else f"the managed tool gateway is unavailable. {gateway}")
         return (f"Modal backend selected with TERMINAL_MODAL_MODE=managed, but {tail}",
                 f"Modal backend is configured for managed mode, but {tail}")
-    managed = managed_anxious_tools_enabled()
+    managed = managed_nous_tools_enabled()
     if modal_state["mode"] == "direct":
         return ("Modal backend selected with TERMINAL_MODAL_MODE=direct, but no direct Modal credentials/config "
                 f"were found. Configure Modal or choose TERMINAL_MODAL_MODE={'managed/auto' if managed else 'auto'}.",
@@ -134,7 +134,7 @@ def _build_local_env(*, cwd, timeout, **_):
 def _build_docker_env(*, image, cwd, timeout, cc, task_id, host_cwd, **_):
     from tools.terminal_tool import (_docker_session_isolation_enabled, _has_isolation_overrides,
                                      _maybe_reap_docker_orphans)
-    # One-shot reaper for labeled containers orphaned by prior Pulse processes that died before
+    # One-shot reaper for labeled containers orphaned by prior PULSE processes that died before
     # atexit (SIGKILL / OOM / closed terminal); ``terminal.docker_orphan_reaper: false`` disables it.
     _maybe_reap_docker_orphans(cc)
     # A session-keyed container must not outlive its session, so cross-process reuse/persist is
@@ -183,7 +183,8 @@ _SANDBOX_ROWS = {
     "daytona": (lambda: importlib.import_module("tools.environments.daytona").DaytonaEnvironment, True,
                 lambda cc, kw: {"cpu": int(kw["cpu"])}),
     "vercel_sandbox": (lambda: importlib.import_module("tools.environments.vercel_sandbox").VercelSandboxEnvironment,
-                       False, lambda cc, kw: {"runtime": cc.get("vercel_runtime") or None}),
+                       False, lambda cc, kw: {"runtime": cc.get("vercel_runtime") or None,
+                                       "image": cc.get("vercel_image") or None}),
 }
 
 

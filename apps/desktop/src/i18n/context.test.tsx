@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import type { PulseConfigRecord } from '@/pulse'
+import type { PULSEConfigRecord } from '@/pulse'
 
 import { TRANSLATIONS } from './catalog'
 import { type I18nConfigClient, I18nProvider, useI18n } from './context'
@@ -170,7 +170,9 @@ describe('I18nProvider', () => {
       expect(screen.getByTestId('label').textContent).toBe('Język')
       // Unregistered keys fall back to English, never to the raw key.
       expect(screen.getByTestId('save').textContent).toBe(TRANSLATIONS.en.common.save)
-      expect(document.documentElement.lang).toBe('pl')
+      // The provider writes <html lang> in a passive effect after the render
+      // commits, so it can trail the rendered locale under load.
+      await waitFor(() => expect(document.documentElement.lang).toBe('pl'))
       expect(configClient.saveConfig).not.toHaveBeenCalled()
     } finally {
       dispose()
@@ -202,7 +204,7 @@ describe('I18nProvider', () => {
   it('reads latest config before saving language and preserves unrelated values', async () => {
     const saveConfig = vi.fn().mockResolvedValue({ ok: true })
 
-    const latestConfig: PulseConfigRecord = {
+    const latestConfig: PULSEConfigRecord = {
       display: { language: 'en', skin: 'slate' },
       terminal: { cwd: '/new' }
     }

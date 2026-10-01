@@ -2,7 +2,7 @@
  * ChatWorkspacePicker — choose which host directory a FRESH dashboard chat
  * starts in.
  *
- * The dashboard is the "drive Pulse from a phone or any browser" surface,
+ * The dashboard is the "drive PULSE from a phone or any browser" surface,
  * yet every new /chat used to spawn in the dashboard process's launch
  * directory with no way to say "work in ~/code/foo". The Desktop sidebar
  * already knows the user's projects and discovered repos; this exposes the
@@ -14,9 +14,9 @@
  * changed at any time and applies on the next "New chat".
  */
 
-import { Button } from "@anxious-research/ui/ui/components/button";
-import { Input } from "@anxious-research/ui/ui/components/input";
-import { Select, SelectOption } from "@anxious-research/ui/ui/components/select";
+import { Button } from "@nous-research/ui/ui/components/button";
+import { Input } from "@nous-research/ui/ui/components/input";
+import { Select, SelectOption } from "@nous-research/ui/ui/components/select";
 import { FolderGit2, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 

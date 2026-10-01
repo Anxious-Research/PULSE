@@ -93,5 +93,5 @@ case "$1" in
         ;;
 esac
 
-# Pulse subcommand pass-through.
+# PULSE subcommand pass-through.
 drop pulse "$@"

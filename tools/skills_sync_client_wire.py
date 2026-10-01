@@ -187,8 +187,8 @@ def _check_version(caps: Dict[str, Any]) -> None:
     """Reject an incompatible server major version."""
     ver = str(caps.get("hsp_version") or "")  # wire field name
     if ver.split(".", 1)[0] != WIRE_VERSION:
-        raise SyncError(f"this server speaks sync version {ver!r}, but this Pulse speaks "
-                        f"{WIRE_VERSION} — update Pulse to sync with it")
+        raise SyncError(f"this server speaks sync version {ver!r}, but this PULSE speaks "
+                        f"{WIRE_VERSION} — update PULSE to sync with it")
 
 
 def _body(r) -> Dict[str, Any]:
@@ -203,7 +203,7 @@ def checked_capabilities(client: "SyncClient") -> Tuple[Dict[str, Any], int]:
 
 
 class SyncClient:
-    """Sync client bound to a base URL + Anxious bearer. Org refs/objects live behind SEPARATE ``org/``
+    """Sync client bound to a base URL + Nous bearer. Org refs/objects live behind SEPARATE ``org/``
     routes: the personal routes are hard-scoped to the token's owner and would silently answer an
     org query with personal data, so org readers MUST pass ``org_scope=True`` on every hop."""
 

@@ -1,4 +1,4 @@
-# Anxious-approved MCP catalog entry.
+# Nous-approved MCP catalog entry.
 # Presence in this directory = approval. Merged via PR review.
 manifest_version: 1
 
@@ -7,10 +7,10 @@ connector_slug: dropbox
 description: Search, read, and manage files in Dropbox.
 source: https://help.dropbox.com/integrations/connect-dropbox-mcp-server
 
-# Official vendor-hosted remote MCP (URL-only — Pulse never spawns a local
+# Official vendor-hosted remote MCP (URL-only — PULSE never spawns a local
 # process for this entry). Native OAuth 2.1 + Dynamic Client Registration
 # (verified live: RFC 9728 protected-resource metadata -> AS metadata with
-# registration_endpoint); Pulse's MCP client + mcp_oauth_manager handle
+# registration_endpoint); PULSE's MCP client + mcp_oauth_manager handle
 # discovery, PKCE, token exchange, and refresh.
 
 transport:
@@ -36,6 +36,6 @@ suggest:
     - dropbox.com
 
 post_install: |
-  On first connection Pulse opens a browser to authorize with
+  On first connection PULSE opens a browser to authorize with
   Dropbox (or run `pulse mcp login dropbox`). Approve access,
   then restart the session so tools load.

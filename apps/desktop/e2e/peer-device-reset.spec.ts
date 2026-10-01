@@ -197,7 +197,7 @@ const peerTest = test.extend<{ gateways: { app: ElectronApplication; source: Pag
 
         try {
           return (await fetch(`${remoteUrl}/api/status`, {
-            headers: { 'X-Pulse-Session-Token': REMOTE_TOKEN },
+            headers: { 'X-PULSE-Session-Token': REMOTE_TOKEN },
             signal: AbortSignal.timeout(2_000),
           })).status
         } catch { return 0 }

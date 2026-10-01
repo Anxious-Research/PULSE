@@ -96,7 +96,7 @@ def _validate_source(source: SecretSource) -> Optional[str]:
         return f"Ignoring secret source with invalid name {name!r}"
     if source.api_version != SECRET_SOURCE_API_VERSION:
         return (f"Ignoring secret source '{name}': built against secret-source API "
-                f"v{source.api_version}, this Pulse speaks v{SECRET_SOURCE_API_VERSION}")
+                f"v{source.api_version}, this PULSE speaks v{SECRET_SOURCE_API_VERSION}")
     if source.shape not in ("mapped", "bulk"):
         return f"Ignoring secret source '{name}': shape must be 'mapped' or 'bulk', got {source.shape!r}"
     return None
@@ -285,6 +285,14 @@ def _ordered_enabled_sources(secrets_cfg: dict, *, scope: Optional[str] = None) 
         except Exception:  # noqa: BLE001
             logger.warning("Secret source '%s' is_enabled() raised; skipping", name, exc_info=True)
     return enabled
+
+
+def enabled_source_names(secrets_cfg: dict, home_path: Path) -> frozenset:
+    """Names of the sources :func:`apply_all` would fetch for *home_path* right now (registered
+    and enabled). A source missing here was removed or disabled, so a value it injected earlier
+    is no longer backed by anything and must be revoked, not kept as process residue."""
+    secrets_cfg = secrets_cfg if isinstance(secrets_cfg, dict) else {}
+    return frozenset(s.name for s in _ordered_enabled_sources(secrets_cfg, scope=pulse_home_key(home_path)))
 
 
 def _active_profile_name(home_path: Optional[Path]) -> str:

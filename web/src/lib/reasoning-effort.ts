@@ -11,7 +11,7 @@ import {
  * resolution logic without loading React or the UI kit.
  *
  * Values come from @pulse/shared (pulse_constants.VALID_REASONING_EFFORTS
- * plus `none`, thinking-off). An empty/unset config value means the Pulse
+ * plus `none`, thinking-off). An empty/unset config value means the PULSE
  * default.
  */
 
@@ -39,7 +39,7 @@ export const EFFORT_OPTIONS: ReadonlyArray<EffortOption> = REASONING_EFFORT_VALU
 export const VALID_EFFORTS: ReadonlySet<string> = new Set(REASONING_EFFORT_VALUES);
 
 /** Normalize a raw `agent.reasoning_effort` config value to a selectable
- *  option. Empty/unknown → `medium` (Pulse' default when unset). */
+ *  option. Empty/unknown → `medium` (PULSE' default when unset). */
 export function normalizeEffort(raw: unknown): string {
   const value = String(raw ?? "").trim().toLowerCase();
   if (!value) return DEFAULT_REASONING_EFFORT;

@@ -67,8 +67,8 @@ export function webPresetFromShared(
 
 export const defaultTheme: DashboardTheme = {
   name: "default",
-  label: "Pulse Teal",
-  description: "Classic dark teal — the canonical Pulse look",
+  label: "PULSE Teal",
+  description: "Classic dark teal — the canonical PULSE look",
   palette: {
     background: { hex: "#041c1c", alpha: 1 },
     midground: { hex: "#ffe6cb", alpha: 1 },
@@ -199,11 +199,11 @@ export const roseTheme: DashboardTheme = {
   },
 };
 
-/** Light mode — vivid Anxious-blue accents on a cream canvas. */
-export const anxiousBlueTheme: DashboardTheme = {
-  name: "anxious-blue",
-  label: "Anxious Blue",
-  description: "Light mode — vivid Anxious-blue accents on cream canvas",
+/** Light mode — vivid Nous-blue accents on a cream canvas. */
+export const nousBlueTheme: DashboardTheme = {
+  name: "nous-blue",
+  label: "Nous Blue",
+  description: "Light mode — vivid Nous-blue accents on cream canvas",
   palette: {
     background: { hex: "#E8F2FD", alpha: 1 },
     midground: { hex: "#0053FD", alpha: 1 },
@@ -229,8 +229,8 @@ export const anxiousBlueTheme: DashboardTheme = {
  */
 export const defaultLargeTheme: DashboardTheme = {
   name: "default-large",
-  label: "Pulse Teal (Large)",
-  description: "Pulse Teal with bigger fonts and roomier spacing",
+  label: "PULSE Teal (Large)",
+  description: "PULSE Teal with bigger fonts and roomier spacing",
   palette: defaultTheme.palette,
   typography: {
     ...DEFAULT_TYPOGRAPHY,
@@ -246,7 +246,7 @@ export const defaultLargeTheme: DashboardTheme = {
 export const BUILTIN_THEMES: Record<string, DashboardTheme> = {
   default: defaultTheme,
   "default-large": defaultLargeTheme,
-  "anxious-blue": anxiousBlueTheme,
+  "nous-blue": nousBlueTheme,
   midnight: midnightTheme,
   ember: emberTheme,
   mono: monoTheme,

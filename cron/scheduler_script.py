@@ -143,7 +143,7 @@ def _posix_cron_script_argv(script: Path) -> tuple[list[str], dict[str, str]]:
     interpreter: the store Python has the repo and managed site-packages only on its in-process
     ``sys.path``, so its children import neither (#123044). No ``PYTHONPATH``: everything the
     script spawns would inherit it and a foreign interpreter would load the store's compiled
-    extensions (#123440). The venv resolves Pulse from its generation's workspace snapshot,
+    extensions (#123440). The venv resolves PULSE from its generation's workspace snapshot,
     rebuilt only on a dependency change, so the bootstrap puts the live checkout first.
     Lazy installs are off for the script's process tree: a script importing ``pulse_bootstrap``
     could otherwise complete a source update and ``execv`` itself onto the bare store Python."""
@@ -417,7 +417,7 @@ def _script_argv(
         return [_bash, str(path)], {}, None
     if isinstance(interpreter, str) and interpreter.strip():
         # A user venv gets none of the managed-store overlays: the repo bootstrap / PYTHONPATH
-        # exist to run Pulse' own dependency venv and would shadow the user's packages.
+        # exist to run PULSE' own dependency venv and would shadow the user's packages.
         python_exe, err = _resolve_cron_interpreter(interpreter)
         return ([python_exe, str(path)] if python_exe else None), {}, err
     if sys.platform != "win32":
@@ -473,10 +473,11 @@ def _run_job_script(
                 "encoding": "utf-8",
                 "errors": "replace"}
         # The process env is the LAUNCH profile's. For a job owned by a routed profile, drop that
-        # profile's .env residue from the base first (no-op for the launch profile's own jobs);
-        # the sanitizer then overlays the names the owning profile declares in
-        # terminal.env_passthrough from its own secret scope (#114209). The factory snapshots the
-        # process env itself — no raw copy at the spawn site (test_subprocess_env_guard).
+        # profile's .env residue from the base first (no-op for the launch profile's own jobs), then
+        # overlay the routed profile's own scope (which never enters os.environ under multiplex
+        # semantics) before the sanitizer, which also overlays the names the owning profile declares
+        # in terminal.env_passthrough from that scope (#114209). The factory snapshots the process
+        # env itself — no raw copy at the spawn site (test_subprocess_env_guard).
         env = build_subprocess_env(strip_launch_profile=True)
         env.update(env_overlay)
         # Subprocess cwd only (default: scripts-dir parent). NEVER os.chdir() the process.

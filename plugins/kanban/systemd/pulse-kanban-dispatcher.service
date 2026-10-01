@@ -14,8 +14,8 @@
 # dispatch_in_gateway=true is NOT supported.
 
 [Unit]
-Description=Pulse Kanban dispatcher (DEPRECATED standalone daemon — prefer gateway-embedded dispatch)
-Documentation=https://pulse-agent.anxiousresearchlab.com/docs/user-guide/features/kanban
+Description=PULSE Kanban dispatcher (DEPRECATED standalone daemon — prefer gateway-embedded dispatch)
+Documentation=https://pulse-agent.anxious-research.com/docs/user-guide/features/kanban
 After=network.target
 
 [Service]

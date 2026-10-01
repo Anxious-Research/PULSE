@@ -38,8 +38,8 @@ foreach ($needle in @(
     'function Invoke-PhaseInstall',
     'function Invoke-PhaseUpdate',
     'Invoke-RefInstaller $state.old "old" -IncludeDesktop',
-    'Invoke-PulseDesktopAppUpdate $state.current',
-    'Invoke-PulseUpdate',
+    'Invoke-PULSEDesktopAppUpdate $state.current',
+    'Invoke-PULSEUpdate',
     'Invoke-PhaseInstallGui -Mode "update"'
 )) {
     if ($text.IndexOf($needle) -lt 0) { Write-Host "dispatch missing: $needle"; exit 1 }

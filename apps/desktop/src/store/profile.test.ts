@@ -1,7 +1,7 @@
 import { atom } from 'nanostores'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { PulseConnection } from '@/global'
+import type { PULSEConnection } from '@/global'
 import type { ProfileInfo } from '@/types/pulse'
 
 // Keep profile.ts's side-effecting imports inert: the gateway socket layer and
@@ -71,13 +71,13 @@ const profile = (name: string, isDefault = false): ProfileInfo => ({
   skill_count: 0
 })
 
-const remoteConn = (over: Partial<PulseConnection> = {}): PulseConnection =>
-  ({ baseUrl: 'https://pulse-roy.tail.ts.net', mode: 'remote', profile: 'vps-remote', ...over }) as PulseConnection
+const remoteConn = (over: Partial<PULSEConnection> = {}): PULSEConnection =>
+  ({ baseUrl: 'https://pulse-roy.tail.ts.net', mode: 'remote', profile: 'vps-remote', ...over }) as PULSEConnection
 
-const localConn = (over: Partial<PulseConnection> = {}): PulseConnection =>
-  ({ baseUrl: '', mode: 'local', profile: 'default', ...over }) as PulseConnection
+const localConn = (over: Partial<PULSEConnection> = {}): PULSEConnection =>
+  ({ baseUrl: '', mode: 'local', profile: 'default', ...over }) as PULSEConnection
 
-const getConnection = vi.fn<(profile?: string | null) => Promise<PulseConnection>>()
+const getConnection = vi.fn<(profile?: string | null) => Promise<PULSEConnection>>()
 
 beforeEach(() => {
   getConnection.mockReset()

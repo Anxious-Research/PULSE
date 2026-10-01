@@ -2,7 +2,7 @@
 name: youtube-content
 description: "YouTube transcripts to summaries, threads, blogs."
 version: 1.0.0
-author: Teknium (teknium1), Pulse Agent
+author: Teknium (teknium1), PULSE Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
@@ -21,12 +21,12 @@ Extract transcripts from YouTube videos and convert them into useful formats.
 
 ## Setup
 
-Use `terminal` with the Python from a PM-prepared Pulse source checkout. The
+Use `terminal` with the Python from a PM-prepared PULSE source checkout. The
 `youtube` extra declares the helper's dependency; do not install packages into
-Pulse with raw pip or project-discovering `uv run`.
+PULSE with raw pip or project-discovering `uv run`.
 
 From that checkout, first follow the isolated development-home setup in
-Package Management,
+[Package Management](https://pulse-agent.anxious-research.com/docs/reference/package-management#developer-workflow),
 then prepare the extra and reactivate before running the helper:
 
 ```bash

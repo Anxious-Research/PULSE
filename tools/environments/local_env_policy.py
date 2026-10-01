@@ -1,5 +1,5 @@
-"""Secret-scrub policy for Pulse child processes: pure data + predicates for which env
-names are Pulse-managed credentials. The env *builders* applying it (``_make_run_env``,
+"""Secret-scrub policy for PULSE child processes: pure data + predicates for which env
+names are PULSE-managed credentials. The env *builders* applying it (``_make_run_env``,
 ``_sanitize_subprocess_env``, ``pulse_subprocess_env``) live in ``tools.environments.local``."""
 
 import functools
@@ -9,7 +9,7 @@ from typing import Optional
 # Prefix a caller uses in ``extra_env`` to force a blocklisted var through.
 _PULSE_PROVIDER_ENV_FORCE_PREFIX = "_PULSE_FORCE_"
 
-# Pulse-managed AWS *inference* credentials for ``auth_type="aws_sdk"`` (Bedrock):
+# PULSE-managed AWS *inference* credentials for ``auth_type="aws_sdk"`` (Bedrock):
 # only the Bedrock bearer token, which no aws/terraform/boto3 toolchain uses. The
 # general AWS chain stays inheritable on purpose — the local terminal is the user's
 # trusted operator shell (SECURITY.md §3.2) and env_passthrough can never re-allow a
@@ -40,6 +40,15 @@ _STATIC_PROVIDER_ENV_BLOCKLIST = frozenset({
     "DAYTONA_API_KEY", "GATEWAY_RELAY_ID", "GATEWAY_RELAY_SECRET",
     "GATEWAY_RELAY_DELIVERY_KEY", "VERCEL_OIDC_TOKEN", "VERCEL_TOKEN",
     "VERCEL_PROJECT_ID", "VERCEL_TEAM_ID",
+    # Keys the OAuth provider profiles (nous, qwen-oauth) also accept when pasted. The auth
+    # registry mirrors env_vars only for api_key profiles, and discovering the provider plugins
+    # from here, at import, would re-mirror them over a plugin's own registry entry.
+    "NOUS_API_KEY", "QWEN_API_KEY",
+    # PULSE' own secrets read in code: the anonymous-inference secret, dashboard auth
+    # (basic, OIDC, drain) and the Google Meet realtime key.
+    "PULSE_ANON_API_SECRET", "PULSE_DASHBOARD_BASIC_AUTH_PASSWORD",
+    "PULSE_DASHBOARD_BASIC_AUTH_SECRET", "PULSE_DASHBOARD_DRAIN_SECRET",
+    "PULSE_DASHBOARD_OIDC_CLIENT_SECRET", "PULSE_MEET_REALTIME_KEY",
 })
 
 
@@ -66,14 +75,14 @@ def _build_provider_env_blocklist() -> frozenset:
     except ImportError:
         pass
     # CLAUDE_CODE_OAUTH_TOKEN (via the anthropic registry entry) belongs to the user's
-    # Claude Code install, not Pulse: stripping it made agent-spawned ``claude`` CLIs
+    # Claude Code install, not PULSE: stripping it made agent-spawned ``claude`` CLIs
     # fall through to the shared Keychain / ~/.claude store and, on auth failure, wipe
     # it — logging the user out. BUZZ_* is deliberately NOT discarded: this list feeds
     # every scrub surface, so an import-time discard would leak BUZZ_PRIVATE_KEY into
     # non-terminal children; the Buzz carve-out is terminal-only and context-gated
     # (``_is_terminal_first_party_env``).
-    # It is set and owned by the user's Claude Code install (subscription OAuth), not a Pulse-managed
-    # inference credential — Claude subscription auth is not a working Pulse provider path. It arrives via
+    # It is set and owned by the user's Claude Code install (subscription OAuth), not a PULSE-managed
+    # inference credential — Claude subscription auth is not a working PULSE provider path. It arrives via
     # the registry loop above (anthropic api_key_env_vars), so remove it explicitly. See #55878.
     blocked.discard("CLAUDE_CODE_OAUTH_TOKEN")
     # BUZZ_* is deliberately NOT discarded here, even for Buzz-managed agents (BUZZ_MANAGED_AGENT set by the
@@ -81,17 +90,89 @@ def _build_provider_env_blocklist() -> frozenset:
     return frozenset(blocked)
 
 
-_PULSE_PROVIDER_ENV_BLOCKLIST = _build_provider_env_blocklist()
+def _build_adapter_secret_env() -> frozenset:
+    """Secrets the messaging adapters declare, process-wide: core ``password`` messaging entries
+    of OPTIONAL_ENV_VARS, the bundled platform plugin manifests' secret entries, and the
+    secret-named keys the gateway env-override table reads (WEIXIN_TOKEN, FEISHU_ENCRYPT_KEY, ...).
+    Declared names only: a user's own ``SLACK_USER_TOKEN`` or ``LOCAL_LLM_API_KEY`` is not PULSE's.
+    A profile's user-installed platform plugins are per home: :func:`_home_adapter_secret_env`.
+    Nothing here fails soft: an unreadable bundled manifest or env table fails the import rather
+    than dropping its secrets from the policy."""
+    from pulse_cli.config import (
+        CORE_DECLARED_ENV_NAMES, OPTIONAL_ENV_VARS, PLATFORM_SECRET_ENV_SUFFIXES, platform_manifest_secret_envs)
+    from pulse_cli.profile_channels import config_env_table_keys
+    # Read in code only, declared nowhere else: the Microsoft Graph app secret and webhook
+    # clientState, and the QQ bot's speech-to-text key.
+    names: set[str] = {"MSGRAPH_CLIENT_SECRET", "MSGRAPH_WEBHOOK_CLIENT_STATE", "QQ_STT_API_KEY"}
+    names.update(name.upper() for name, meta in OPTIONAL_ENV_VARS.items()
+                 if name in CORE_DECLARED_ENV_NAMES
+                 and meta.get("category") == "messaging" and meta.get("password"))
+    names |= platform_manifest_secret_envs(source="bundled", strict=True)
+    names.update(n.upper() for n in config_env_table_keys() if n.upper().endswith(PLATFORM_SECRET_ENV_SUFFIXES))
+    return frozenset(names)
 
 
-def _is_provider_env_blocklisted(name: str) -> bool:
-    """``name`` is a blocklisted provider/tool credential, matched the way the
-    platform's environment resolves names: exact plus case-folded. On Windows
-    the environment block is case-insensitive, so ``openai_api_key`` IS
-    ``OPENAI_API_KEY``; consistent with ``_is_pulse_internal_secret``, which
-    already folds (``key.upper()``)."""
-    return (name in _PULSE_PROVIDER_ENV_BLOCKLIST
-            or name.upper() in _PULSE_PROVIDER_ENV_BLOCKLIST)
+# Provider blocklist first: it imports pulse_cli.auth before pulse_cli.config, whose import
+# discovers provider plugins that expect a fully initialized auth registry.
+_PROVIDER_ENV_BLOCKLIST = _build_provider_env_blocklist()
+_ADAPTER_SECRET_ENV = _build_adapter_secret_env()
+_PULSE_PROVIDER_ENV_BLOCKLIST = _PROVIDER_ENV_BLOCKLIST | _ADAPTER_SECRET_ENV
+
+_HOME_ADAPTER_SECRET_CACHE: dict[str, tuple] = {}
+
+
+def _home_adapter_secret_env() -> frozenset:
+    """Secrets declared by the bound profile's own user-installed platform plugins. Per home, not
+    process-wide: under multiplex profile A's plugin must neither strip a same-named value from
+    profile B's children nor be missing from A's. Cached per home and keyed on every manifest's
+    file signature, so an edit, replacement or deletion takes effect on the next spawn. A plugin
+    manifest under ``plugins/platforms/`` that cannot be read raises. A partial scan (a plugin dir
+    or flat manifest unreadable or unparsable) keeps the names this home already had and is not
+    cached, so a failed discovery never releases a known denial and recovery is seen at once."""
+    from pulse_cli.config import platform_manifest_secret_scan, platform_manifest_stamp
+    from pulse_constants import get_pulse_home, pulse_home_key
+    home = get_pulse_home()
+    key, stamp = pulse_home_key(home), platform_manifest_stamp(home)
+    cached = _HOME_ADAPTER_SECRET_CACHE.get(key)
+    if cached is None or cached[0] is None or cached[0] != stamp:
+        names, complete = platform_manifest_secret_scan(home)
+        names -= _ADAPTER_SECRET_ENV
+        if not complete and cached is not None:
+            names |= cached[1]
+        cached = (stamp if complete else None, names)
+        _HOME_ADAPTER_SECRET_CACHE[key] = cached
+    return cached[1]
+
+
+def _registry_adapter_secret_env() -> frozenset:
+    """Secret-named ``required_env`` of the adapters registered in the current profile scope.
+    Tier 2 only: ``required_env`` is an unchecked setup list, so a plugin naming OPENAI_API_KEY
+    must not strip it from credentialed children. No blanket fallback: a registry error surfaces
+    instead of an empty (fail-open) set."""
+    from gateway.platform_registry import platform_registry
+    from pulse_cli.config import PLATFORM_SECRET_ENV_SUFFIXES
+    return frozenset(n.upper() for n in platform_registry.required_env_names()
+                     if n.upper().endswith(PLATFORM_SECRET_ENV_SUFFIXES))
+
+
+def _registered_adapter_secret_env() -> frozenset:
+    """Per-call adapter secrets: the bound profile's user-plugin declarations (Tier 1, see
+    :func:`_home_adapter_secret_env`) plus the registered adapters' (Tier 2,
+    :func:`_registry_adapter_secret_env`)."""
+    return _registry_adapter_secret_env() | _home_adapter_secret_env()
+
+
+def _is_provider_env_blocklisted(name: str, _registered: "frozenset | None" = None) -> bool:
+    """``name`` is a blocklisted provider/tool credential or adapter secret, matched the way the
+    platform's environment resolves names: exact plus case-folded. On Windows the environment
+    block is case-insensitive, so ``openai_api_key`` IS ``OPENAI_API_KEY``; consistent with
+    ``_is_pulse_internal_secret``, which already folds (``key.upper()``). Loops pass
+    ``_registered`` so the registry is read once per env, not once per key."""
+    upper = name.upper()
+    if name in _PULSE_PROVIDER_ENV_BLOCKLIST or upper in _PULSE_PROVIDER_ENV_BLOCKLIST:
+        return True
+    return upper in (_registered_adapter_secret_env() if _registered is None else _registered)
+
 
 # First-party platform credentials (``BUZZ_*``, driving the platform-mandated ``buzz``
 # CLI) carved out of the TERMINAL scrub only (``_make_run_env``,
@@ -125,7 +206,7 @@ def _is_provider_env_blocklisted(name: str) -> bool:
 # treats these names like profile-scoped passthrough names (see
 # ``LocalEnvironment._additional_profile_scoped_passthrough_names``) so they never persist in the shared
 # terminal snapshot across profiles. Contrast with CLAUDE_CODE_OAUTH_TOKEN above, which is discarded from
-# the blocklist entirely because it is NOT a Pulse credential; these ARE Pulse-managed first-party
+# the blocklist entirely because it is NOT a PULSE credential; these ARE PULSE-managed first-party
 # platform credentials, so they stay IN the blocklist for every non-terminal surface. See issue #78026 (Buzz
 # agents could not use ``buzz`` from the terminal tool) and #76243 (Buzz Desktop managed agent wakes but
 # cannot reply).
@@ -166,26 +247,26 @@ def _is_terminal_first_party_env(name: str) -> bool:
 
 
 # Active-venv markers that must NOT leak: VIRTUAL_ENV/CONDA_PREFIX make uv/poetry sync
-# ANOTHER project's deps into the Pulse venv (still reachable via PATH, so stripping
-# is safe); PYTHONHOME redirects a child interpreter's stdlib to the Pulse venv
-# (version-mismatch crashes). PYTHONPATH is handled separately (Pulse-owned entries only).
+# ANOTHER project's deps into the PULSE venv (still reachable via PATH, so stripping
+# is safe); PYTHONHOME redirects a child interpreter's stdlib to the PULSE venv
+# (version-mismatch crashes). PYTHONPATH is handled separately (PULSE-owned entries only).
 # The gateway runs inside its own venv, so its process environment carries VIRTUAL_ENV (and possibly
 # CONDA_PREFIX). If those leak into commands the agent runs against OTHER Python projects, tools like
 # ``uv``/``poetry`` treat the inherited value as the active environment and build/sync that other project's
-# dependencies into the Pulse venv path instead of the project's own ``.venv`` — silently clobbering the
-# Pulse environment (e.g. a project pinned to a different Python version overwrites it and breaks the
+# dependencies into the PULSE venv path instead of the project's own ``.venv`` — silently clobbering the
+# PULSE environment (e.g. a project pinned to a different Python version overwrites it and breaks the
 # gateway). PYTHONHOME is included because a gateway-inherited value redirects the standard-library search
-# of ANY child interpreter — including unrelated system/venv Pythons — to the Pulse venv's stdlib, which
-# crashes with version-mismatch errors before a child script even imports a package (#75018). Pulse itself
+# of ANY child interpreter — including unrelated system/venv Pythons — to the PULSE venv's stdlib, which
+# crashes with version-mismatch errors before a child script even imports a package (#75018). PULSE itself
 # treats PYTHONHOME as contamination in its own child processes (managed_uv.py, sqlite_runtime.py), so
 # stripping it from subprocess envs is consistent. Users who need PYTHONHOME for a specific child can set it
 # explicitly in the command. PYTHONPATH is NOT included here — it's handled by
-# _strip_pulse_owned_pythonpath() which removes only Pulse-owned entries, preserving user-set paths.
+# _strip_pulse_owned_pythonpath() which removes only PULSE-owned entries, preserving user-set paths.
 _ACTIVE_VENV_MARKER_VARS = ("VIRTUAL_ENV", "CONDA_PREFIX", "PYTHONHOME")
 
 
 def _is_pulse_internal_secret(key: str) -> bool:
-    """True for Pulse-internal secrets injected under *dynamic* names the static
+    """True for PULSE-internal secrets injected under *dynamic* names the static
     blocklist cannot enumerate: ``AUXILIARY_<TASK>_API_KEY``/``_BASE_URL`` (per-task
     side-LLM credentials) and ``GATEWAY_RELAY_*_SECRET``/``_KEY``/``_TOKEN`` (relay
     auth; non-secret routing hints stay visible). Stripped on every spawn path
@@ -204,7 +285,7 @@ def _is_pulse_internal_secret(key: str) -> bool:
 # A's channel/user/role list as its own (#113270). The suffix is matched by shape so a gate
 # added to any adapter is covered without a second edit, but ONLY under a platform prefix
 # (``DISCORD_``, ``GATEWAY_``, a plugin adapter's name): an operator's own ``DEMO_ALLOWED_SENDER``
-# is script data, not a Pulse gate, and deleting it by name shape broke routed ``no_agent``
+# is script data, not a PULSE gate, and deleting it by name shape broke routed ``no_agent``
 # cron scripts (#119539). ``PULSE_*`` never counts (``PULSE_MEDIA_ALLOW_DIRS``,
 # ``PULSE_ALLOW_PRIVATE_URLS`` are process settings, not adapter gates).
 _PROFILE_GATE_ENV_MARKERS = (
@@ -294,6 +375,12 @@ _ALWAYS_STRIP_KEYS: frozenset[str] = frozenset({
     # enumerated here to stay stripped on the inherit_credentials=True path.
     "GATEWAY_RELAY_ID", "GATEWAY_RELAY_SECRET", "GATEWAY_RELAY_DELIVERY_KEY",
     "HASS_TOKEN", "EMAIL_PASSWORD", "PULSE_DASHBOARD_SESSION_TOKEN",
+    # Dashboard auth: the basic-auth password and session-signing secret, the OIDC client
+    # secret and the drain bearer. They let a holder mint or forge dashboard sessions, and no
+    # child (credentialed CLIs included) consumes them.
+    "PULSE_DASHBOARD_BASIC_AUTH_PASSWORD", "PULSE_DASHBOARD_BASIC_AUTH_SECRET",
+    "PULSE_DASHBOARD_OIDC_CLIENT_SECRET", "PULSE_DASHBOARD_DRAIN_SECRET",
     # Remote-compute / infrastructure secrets
     "MODAL_TOKEN_ID", "MODAL_TOKEN_SECRET", "DAYTONA_API_KEY",
-})
+}) | _ADAPTER_SECRET_ENV  # every declared adapter secret is Tier 1, like the bot tokens above
+_ALWAYS_STRIP_FOLDED: frozenset[str] = frozenset(k.upper() for k in _ALWAYS_STRIP_KEYS)

@@ -3,7 +3,7 @@ name: neuroskill-bci
 description: "Use live BCI cognitive and mood state from NeuroSkill."
 platforms: [linux, macos, windows]
 version: 1.0.0
-author: Pulse Agent + Anxious Research Lab
+author: PULSE Agent + Nous Research
 license: MIT
 metadata:
   pulse:
@@ -14,7 +14,7 @@ metadata:
 
 # NeuroSkill BCI Integration
 
-Connect Pulse to a running [NeuroSkill](https://neuroskill.com/) instance to read
+Connect PULSE to a running [NeuroSkill](https://neuroskill.com/) instance to read
 real-time brain and body metrics from a BCI wearable. Use this to give
 cognitively-aware responses, suggest interventions, and track mental performance
 over time.

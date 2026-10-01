@@ -1,4 +1,4 @@
-"""Shared leaf helpers for the ``pulse update`` modules (no Pulse imports; no cycle)."""
+"""Shared leaf helpers for the ``pulse update`` modules (no PULSE imports; no cycle)."""
 
 import logging
 from contextlib import contextmanager

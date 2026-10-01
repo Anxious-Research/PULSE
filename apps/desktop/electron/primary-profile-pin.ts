@@ -20,7 +20,7 @@
 export class PrimaryProfilePin {
   #booted: null | string = null
 
-  /** Called by startPulse() with the profile the primary is launching as. */
+  /** Called by startPULSE() with the profile the primary is launching as. */
   pin(profile: null | string | undefined): string {
     const value = String(profile ?? '').trim() || 'default'
     this.#booted = value

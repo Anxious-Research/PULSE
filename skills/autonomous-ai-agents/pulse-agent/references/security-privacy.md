@@ -1,6 +1,6 @@
 # Security & Privacy Toggles
 
-Common "why is Pulse doing X to my output / tool calls / commands?" toggles — and the exact commands to change them. Most of these need a fresh session (`/reset` in chat, or start a new `pulse` invocation) because they're read once at startup.
+Common "why is PULSE doing X to my output / tool calls / commands?" toggles — and the exact commands to change them. Most of these need a fresh session (`/reset` in chat, or start a new `pulse` invocation) because they're read once at startup.
 
 ### Secret redaction in tool output
 
@@ -28,7 +28,7 @@ pulse config set privacy.redact_pii false   # disable (default)
 
 ### Command approval prompts
 
-By default (`approvals.mode: smart`), Pulse asks an auxiliary LLM to assess shell commands flagged as destructive (`rm -rf`, `git reset --hard`, etc.). The modes are:
+By default (`approvals.mode: smart`), PULSE asks an auxiliary LLM to assess shell commands flagged as destructive (`rm -rf`, `git reset --hard`, etc.). The modes are:
 
 - `smart` — auto-approve a low-risk command once, deny high-risk commands, and prompt when uncertain (default)
 - `manual` — always prompt
@@ -45,7 +45,7 @@ Per-invocation bypass without changing config:
 
 Note: YOLO / `approvals.mode: off` does NOT turn off secret redaction. They are independent.
 
-### "Reset permissions" / "make Pulse ask again"
+### "Reset permissions" / "make PULSE ask again"
 
 The user usually means: wipe the accumulated "Always allow" state — NOT yolo
 mode, and NOT a per-edit diff prompt (which doesn't exist; file writes never

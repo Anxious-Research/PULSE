@@ -1,7 +1,7 @@
 """Shared constants, the lazy ``httpx`` proxy and :class:`AuthError` for the auth package.
 
 Pure leaf: imports nothing from ``pulse_cli.auth`` so the per-provider modules
-(``auth_anxious``, ``auth_codex``, ...) can import it at module scope without cycles."""
+(``auth_nous``, ``auth_codex``, ...) can import it at module scope without cycles."""
 
 from __future__ import annotations
 
@@ -51,21 +51,21 @@ else:
 AUTH_STORE_VERSION = 1
 AUTH_LOCK_TIMEOUT_SECONDS = 15.0
 
-# Anxious Portal defaults
-DEFAULT_ANXIOUS_PORTAL_URL = "https://portal.anxiousresearchlab.com"
-DEFAULT_ANXIOUS_INFERENCE_URL = "https://inference-api.anxiousresearchlab.com/v1"
+# Nous Portal defaults
+DEFAULT_NOUS_PORTAL_URL = "https://portal.anxious-research.com"
+DEFAULT_NOUS_INFERENCE_URL = "https://inference-api.anxious-research.com/v1"
 # The free tier's (anonymous account) inference host. NAS hands it to the client on every token
 # exchange (``inference_base_url``); this literal is the fallback when that field is absent or fails
 # the host allowlist, because the paid host cross-refuses an anonymous JWT with a 400.
-DEFAULT_ANXIOUS_WELCOME_URL = "https://welcome-api.anxiousresearchlab.com/v1"
-DEFAULT_ANXIOUS_CLIENT_ID = "pulse-cli"
-ANXIOUS_INFERENCE_INVOKE_SCOPE = "inference:invoke"
-ANXIOUS_BILLING_MANAGE_SCOPE = "billing:manage"
-DEFAULT_ANXIOUS_SCOPE = ANXIOUS_INFERENCE_INVOKE_SCOPE
-ANXIOUS_DEVICE_CODE_SOURCE = "device_code"
-ANXIOUS_AUTH_PATH_INVOKE_JWT = "invoke_jwt"
+DEFAULT_NOUS_WELCOME_URL = "https://welcome-api.anxious-research.com/v1"
+DEFAULT_NOUS_CLIENT_ID = "pulse-cli"
+NOUS_INFERENCE_INVOKE_SCOPE = "inference:invoke"
+NOUS_BILLING_MANAGE_SCOPE = "billing:manage"
+DEFAULT_NOUS_SCOPE = NOUS_INFERENCE_INVOKE_SCOPE
+NOUS_DEVICE_CODE_SOURCE = "device_code"
+NOUS_AUTH_PATH_INVOKE_JWT = "invoke_jwt"
 ACCESS_TOKEN_REFRESH_SKEW_SECONDS = 120       # refresh 2 min before expiry
-ANXIOUS_INVOKE_JWT_MIN_TTL_SECONDS = ACCESS_TOKEN_REFRESH_SKEW_SECONDS
+NOUS_INVOKE_JWT_MIN_TTL_SECONDS = ACCESS_TOKEN_REFRESH_SKEW_SECONDS
 DEVICE_AUTH_POLL_INTERVAL_CAP_SECONDS = 1     # poll at most every 1s
 DEVICE_CODE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
 _FORM_JSON_HEADERS = {"Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json"}
@@ -106,7 +106,7 @@ QWEN_ACCESS_TOKEN_REFRESH_SKEW_SECONDS = 120
 DEFAULT_SPOTIFY_ACCOUNTS_BASE_URL = "https://accounts.spotify.com"
 DEFAULT_SPOTIFY_API_BASE_URL = "https://api.spotify.com/v1"
 DEFAULT_SPOTIFY_REDIRECT_URI = "http://127.0.0.1:43827/spotify/callback"
-SPOTIFY_DOCS_URL = "https://pulse-agent.anxiousresearchlab.com/docs/user-guide/features/spotify"
+SPOTIFY_DOCS_URL = "https://pulse-agent.anxious-research.com/docs/user-guide/features/spotify"
 SPOTIFY_DASHBOARD_URL = "https://developer.spotify.com/dashboard"
 SPOTIFY_ACCESS_TOKEN_REFRESH_SKEW_SECONDS = 120
 # OpenRouter PKCE (https://openrouter.ai/docs/guides/overview/auth/oauth): the "token" endpoint
@@ -115,7 +115,7 @@ OPENROUTER_AUTH_URL = "https://openrouter.ai/auth"
 OPENROUTER_AUTH_KEYS_URL = "https://openrouter.ai/api/v1/auth/keys"
 OPENROUTER_OAUTH_DOCS_URL = "https://openrouter.ai/docs/guides/overview/auth/oauth"
 
-OAUTH_OVER_SSH_DOCS_URL = "https://pulse-agent.anxiousresearchlab.com/docs/guides/oauth-over-ssh"
+OAUTH_OVER_SSH_DOCS_URL = "https://pulse-agent.anxious-research.com/docs/guides/oauth-over-ssh"
 DEFAULT_SPOTIFY_SCOPE = " ".join((
     "user-modify-playback-state", "user-read-playback-state", "user-read-currently-playing",
     "user-read-recently-played", "playlist-read-private", "playlist-read-collaborative",
@@ -159,7 +159,7 @@ def _provider_error_factory(provider: str) -> Callable[..., AuthError]:
 
 
 # Per-provider AuthError constructors: ``_xai_err(message, code, relogin=True)``.
-_anxious_err = _provider_error_factory("anxious")
+_nous_err = _provider_error_factory("nous")
 _xai_err = _provider_error_factory("xai-oauth")
 _codex_err = _provider_error_factory("openai-codex")
 _spotify_err = _provider_error_factory("spotify")

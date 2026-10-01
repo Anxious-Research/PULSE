@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { PulseRepoStatus } from '@/global'
+import type { PULSERepoStatus } from '@/global'
 
 import {
   $repoStatus,
@@ -15,7 +15,7 @@ import {
 } from './coding-status'
 import { $currentCwd, $selectedStoredSessionId } from './session'
 
-const sampleStatus: PulseRepoStatus = {
+const sampleStatus: PULSERepoStatus = {
   branch: 'feature/login',
   defaultBranch: 'main',
   detached: false,
@@ -31,7 +31,7 @@ const sampleStatus: PulseRepoStatus = {
   files: []
 }
 
-const otherStatus: PulseRepoStatus = {
+const otherStatus: PULSERepoStatus = {
   ...sampleStatus,
   branch: 'bb/other-worktree',
   added: 3,
@@ -41,7 +41,7 @@ const otherStatus: PulseRepoStatus = {
   unstaged: 1
 }
 
-function stubProbe(impl: (cwd: string) => Promise<PulseRepoStatus | null>) {
+function stubProbe(impl: (cwd: string) => Promise<PULSERepoStatus | null>) {
   ;(window as unknown as { pulseDesktop?: unknown }).pulseDesktop = { git: { repoStatus: impl } }
 }
 
@@ -119,7 +119,7 @@ describe('refreshRepoStatus', () => {
   })
 
   it('never publishes an old worktree status onto the primary after the active cwd moves', async () => {
-    let resolveOld!: (status: PulseRepoStatus | null) => void
+    let resolveOld!: (status: PULSERepoStatus | null) => void
     stubProbe(
       () =>
         new Promise(resolve => {
@@ -161,7 +161,7 @@ describe('refreshRepoStatus', () => {
   })
 
   it('runs one probe at a time and coalesces overlap into one trailing refresh per drain', async () => {
-    const resolvers: Array<(status: PulseRepoStatus | null) => void> = []
+    const resolvers: Array<(status: PULSERepoStatus | null) => void> = []
     const calls: string[] = []
     let active = 0
     let maxActive = 0
@@ -268,7 +268,7 @@ describe('repoChangeKindForPath', () => {
     $repoStatusByCwd.set({
       '/repo': {
         ...sampleStatus,
-        files: [{ path: 'b.ts', untracked: true } as PulseRepoStatus['files'][number]]
+        files: [{ path: 'b.ts', untracked: true } as PULSERepoStatus['files'][number]]
       }
     })
     expect(listener).toHaveBeenCalledTimes(1)
@@ -276,12 +276,43 @@ describe('repoChangeKindForPath', () => {
     $repoStatusByCwd.set({
       '/repo': {
         ...sampleStatus,
-        files: [{ path: 'a.ts', untracked: true } as PulseRepoStatus['files'][number]]
+        files: [{ path: 'a.ts', untracked: true } as PULSERepoStatus['files'][number]]
       }
     })
     expect(listener).toHaveBeenCalledTimes(2)
     expect(listener.mock.calls.at(-1)?.[0]).toBe('added')
 
     unsubscribe()
+  })
+
+  it('maps changes across multiple probed CWDs independently of active session ownership', () => {
+    $repoStatusByCwd.set({
+      '/repo-a': {
+        ...sampleStatus,
+        files: [{ path: 'src/file1.ts', untracked: false, conflicted: false } as PULSERepoStatus['files'][number]]
+      },
+      '/repo-b': {
+        ...otherStatus,
+        files: [{ path: 'src/file2.ts', untracked: true, conflicted: false } as PULSERepoStatus['files'][number]]
+      }
+    })
+
+    expect(repoChangeKindForPath('/repo-a/src/file1.ts').get()).toBe('modified')
+    expect(repoChangeKindForPath('/repo-b/src/file2.ts').get()).toBe('added')
+    expect(repoChangeKindForPath('/repo-a/src/clean.ts').get()).toBeUndefined()
+  })
+
+  it('inherits added kind for nested files inside untracked directories', () => {
+    $repoStatusByCwd.set({
+      '/repo': {
+        ...sampleStatus,
+        files: [{ path: 'brand_new_dir', untracked: true, conflicted: false } as PULSERepoStatus['files'][number]]
+      }
+    })
+
+    expect(repoChangeKindForPath('/repo/brand_new_dir').get()).toBe('added')
+    expect(repoChangeKindForPath('/repo/brand_new_dir/nested.ts').get()).toBe('added')
+    expect(repoChangeKindForPath('/repo/brand_new_dir/deep/nested/sub.ts').get()).toBe('added')
+    expect(repoChangeKindForPath('/repo/other_dir/file.ts').get()).toBeUndefined()
   })
 })

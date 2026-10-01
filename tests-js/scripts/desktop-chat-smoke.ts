@@ -24,7 +24,7 @@ export interface ChatIdentity {
   commit: string | null
   pulseRoot: string
   platform: string
-  /** The resolved Pulse home (newer desktops report it; absent on older ones). */
+  /** The resolved PULSE home (newer desktops report it; absent on older ones). */
   pulseHome?: string
 }
 

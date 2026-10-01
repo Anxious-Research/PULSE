@@ -44,7 +44,7 @@ DEFAULT_ENVELOPE_TTL_SECONDS = 900  # older envelopes are refused at drain with 
 # Per-attempt turn timeout and attempt ceiling for bot_relay.deliver (tui_gateway/methods_bot_relay.py).
 TURN_ATTEMPT_TIMEOUT_SECONDS = 600
 TURN_MAX_ATTEMPTS = 2  # first attempt + the policy-gated re-run
-# Mirrors RELAY_DELIVER_TIMEOUT_MS in apps/desktop/src/plugins/pulse-bots/relay.ts; both test suites pin it.
+# Mirrors RELAY_DELIVER_TIMEOUT_MS in apps/desktop/src/plugins/pulse-bots/relay-budget.ts; both test suites pin it.
 DESKTOP_DELIVER_SETTLEMENT_MARGIN_SECONDS = 180
 DESKTOP_DELIVER_TIMEOUT_SECONDS = (
     TURN_WAIT_SECONDS_FALLBACK + TURN_ATTEMPT_TIMEOUT_SECONDS * TURN_MAX_ATTEMPTS + DESKTOP_DELIVER_SETTLEMENT_MARGIN_SECONDS
@@ -205,7 +205,7 @@ def resolve_remote_target(raw_target: str, roster: list[dict]) -> Any:
 
 def _title_slug(row: dict) -> str:
     """The Bot Mode title's slug form (``"CoS Bot"`` → ``cos-bot``, what the picker inserts); "" when the
-    title is empty, reserved (a bot titled "Pulse") or not a valid handle."""
+    title is empty, reserved (a bot titled "PULSE") or not a valid handle."""
     title = str(row.get("title") or "")
     slug = re.sub(r"[^a-z0-9_-]+", "-", title.strip().lower()).strip("-")
     return slug if slug in alias_forms(title) else ""
@@ -586,11 +586,23 @@ def delivery_env(author: Optional[dict], profile_home: "str | Path | None" = Non
     profile's Bot Chat turn, so it starts from THAT profile's env (``served_profile_child_env``: launch
     profile ``.env`` / TERMINAL_* residue dropped, target secrets overlaid), never the multiplexer's raw
     ``os.environ``; ``-p`` alone only pinned PULSE_HOME. ``profile_home`` is the target's home when the
-    caller knows it (relay RPC, roster); otherwise the active override."""
+    caller knows it (relay RPC, roster); otherwise the active override, and under multiplex the launch
+    home."""
+    from agent.secret_scope import current_secret_scope, is_multiplex_active
     from agent.turn_author import TURN_AUTHOR_ENV, turn_author_env
+    from pulse_constants import get_pulse_home_override, get_routing_process_pulse_home
     from tools.environments.local import served_profile_child_env
 
-    env = served_profile_child_env(base=os.environ, target_home=profile_home, inherit_credentials=True)
+    # ``_profile_home`` answers None for the launch profile by design and a relay RPC binds no scope,
+    # so under multiplex an empty target means the launch profile, not "unknown" (the fail-closed
+    # raise; cf. the slash-worker spawn, #115427). An explicit target beats an override or bound scope
+    # inside ``served_profile_child_env``, so fill it only when both are absent; a single-profile host
+    # keeps its pass-through env.
+    target_home = profile_home
+    if (not target_home and is_multiplex_active() and not get_pulse_home_override()
+            and current_secret_scope() is None):
+        target_home = get_routing_process_pulse_home()
+    env = served_profile_child_env(base=os.environ, target_home=target_home, inherit_credentials=True)
     env.pop(TURN_AUTHOR_ENV, None)
     for name in _delivery_child_session_env_names():
         env.pop(name, None)

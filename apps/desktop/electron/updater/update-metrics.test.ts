@@ -80,7 +80,7 @@ test('a hand-off run is reported once as success after the restart, and deleted 
 
 test('a failed run reports only a bucketed stage, never error text', async (): Promise<void> => {
   const allowed = new Set(['download', 'verify', 'apply', 'restart', 'other'])
-  const secret = 'ENOENT /Users/alice/Pulse.app https://feed.example/v9.9.9'
+  const secret = 'ENOENT /Users/alice/PULSE.app https://feed.example/v9.9.9'
 
   for (const stages of [[], ['fetch'], ['fetch', 'prepare'], ['fetch', 'prepare', 'restart', 'error'], ['weird']]) {
     const dir = tempDir()

@@ -199,21 +199,21 @@ def _available_slug(preferred: str) -> str:
 def _read_manifest(root: Path) -> dict[str, Any]:
     path = root / "manifest.json"
     if not path.exists():
-        raise ValueError("archive is not a Pulse kanban board export (no manifest.json)")
+        raise ValueError("archive is not a PULSE kanban board export (no manifest.json)")
     try:
         manifest = json.loads(path.read_text(encoding="utf-8-sig"))
     except json.JSONDecodeError as exc:
         raise ValueError(f"archive manifest is not valid JSON: {exc}") from exc
     if not isinstance(manifest, dict) or manifest.get("format") != ARCHIVE_FORMAT:
         raise ValueError(
-            "archive is not a Pulse kanban board export "
+            "archive is not a PULSE kanban board export "
             f"(format={manifest.get('format') if isinstance(manifest, dict) else None!r})"
         )
     version = manifest.get("format_version")
     if not isinstance(version, int) or version > ARCHIVE_FORMAT_VERSION:
         raise ValueError(
-            f"archive format version {version!r} is newer than this Pulse "
-            f"understands (max {ARCHIVE_FORMAT_VERSION}) — update Pulse and retry"
+            f"archive format version {version!r} is newer than this PULSE "
+            f"understands (max {ARCHIVE_FORMAT_VERSION}) — update PULSE and retry"
         )
     return manifest
 

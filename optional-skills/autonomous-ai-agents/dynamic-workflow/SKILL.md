@@ -2,7 +2,7 @@
 name: dynamic-workflow
 description: Plan-in-code fan-outs, adversarial verification, waves.
 version: 2.0.0
-author: Teknium + Pulse Agent
+author: Teknium + PULSE Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

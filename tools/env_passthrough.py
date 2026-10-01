@@ -28,19 +28,19 @@ def _get_allowed() -> set[str]:
         return val
 
 
-# Config-based allowlist, keyed by Pulse home: under gateway.multiplex_profiles one process serves
+# Config-based allowlist, keyed by PULSE home: under gateway.multiplex_profiles one process serves
 # many profiles, and a single slot would let the first profile's operator allowlist decide which env
 # vars tunnel into every other profile's sandbox children.
 _config_passthrough: dict[str, frozenset[str]] = {}
 
 
 def _is_pulse_provider_credential(name: str) -> bool:
-    """True if ``name`` is a Pulse-managed provider credential per
-    ``_PULSE_PROVIDER_ENV_BLOCKLIST`` or a dynamic Pulse-internal secret
+    """True if ``name`` is a PULSE-managed provider credential per
+    ``_PULSE_PROVIDER_ENV_BLOCKLIST`` or a dynamic PULSE-internal secret
     (AUXILIARY_*_API_KEY / _BASE_URL, GATEWAY_RELAY_*). Skill-declared
     ``required_environment_variables`` must not override this — that was the
     GHSA-rhgp-j443-p4rf bypass (a skill registered ``OPENAI_API_KEY`` and received it
-    in the ``execute_code`` child); non-Pulse keys (TENOR_API_KEY, …) stay
+    in the ``execute_code`` child); non-PULSE keys (TENOR_API_KEY, …) stay
     registerable. Fails closed when the blocklist cannot be imported."""
     try:
         from tools.environments.local_env_policy import (
@@ -58,11 +58,11 @@ def _is_pulse_provider_credential(name: str) -> bool:
 
 def register_env_passthrough(var_names: Iterable[str]) -> None:
     """Register env var names as allowed in sandboxed environments (typically a
-    skill's ``required_environment_variables``). Pulse-managed provider credentials
+    skill's ``required_environment_variables``). PULSE-managed provider credentials
     are rejected (GHSA-rhgp-j443-p4rf) — such skills should use the main-process tools
     (web_search, web_extract, …); third-party keys pass normally."""
     for name in _accepted((n.strip() for n in var_names), (
-        "env passthrough: refusing to register Pulse provider "
+        "env passthrough: refusing to register PULSE provider "
         "credential %r (blocked by _PULSE_PROVIDER_ENV_BLOCKLIST). "
         "Skills must not override the execute_code sandbox's "
         "credential scrubbing; see GHSA-rhgp-j443-p4rf."
@@ -72,7 +72,7 @@ def register_env_passthrough(var_names: Iterable[str]) -> None:
 
 
 def _accepted(names, refusal_msg: str):
-    """Yield non-empty *names* that are not Pulse provider credentials; refused
+    """Yield non-empty *names* that are not PULSE provider credentials; refused
     names are logged with *refusal_msg* (``%r`` = name)."""
     for name in names:
         if not name:
@@ -102,7 +102,7 @@ def _load_config_passthrough() -> frozenset[str]:
         passthrough = cfg_get(read_raw_config(), "terminal", "env_passthrough")
         items = passthrough if isinstance(passthrough, list) else ()
         result.update(_accepted((i.strip() for i in items if isinstance(i, str)), (
-            "env passthrough: refusing to register Pulse "
+            "env passthrough: refusing to register PULSE "
             "provider credential %r from config.yaml (blocked "
             "by _PULSE_PROVIDER_ENV_BLOCKLIST). Operator "
             "configuration must not override the execute_code "
@@ -116,13 +116,19 @@ def _load_config_passthrough() -> frozenset[str]:
 
 
 def is_env_passthrough(var_name: str) -> bool:
-    """True if *var_name* was registered by a skill or listed in config."""
-    return var_name in _get_allowed() or var_name in _load_config_passthrough()
+    """True if *var_name* was registered by a skill or listed in config and is not a
+    PULSE-managed credential NOW. Ownership changes after acceptance (a platform plugin
+    registered later declares the name in its ``required_env`` or manifest), so the refusal applied at registration
+    is re-applied here, where every child builder consumes the allowlist."""
+    return ((var_name in _get_allowed() or var_name in _load_config_passthrough())
+            and not _is_pulse_provider_credential(var_name))
 
 
 def get_all_passthrough() -> frozenset[str]:
-    """Return the union of skill-registered and config-based passthrough vars."""
-    return frozenset(_get_allowed()) | _load_config_passthrough()
+    """Return the union of skill-registered and config-based passthrough vars, minus names
+    that have become PULSE-managed credentials since they were accepted."""
+    return frozenset(name for name in frozenset(_get_allowed()) | _load_config_passthrough()
+                     if not _is_pulse_provider_credential(name))
 
 
 def resolve_passthrough_value(name: str, fallback: str | None = None) -> str | None:

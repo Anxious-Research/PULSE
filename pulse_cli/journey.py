@@ -1,4 +1,4 @@
-"""``pulse journey`` — what Pulse has learned, on a timeline."""
+"""``pulse journey`` — what PULSE has learned, on a timeline."""
 
 from __future__ import annotations
 
@@ -222,7 +222,7 @@ def _cmd_show(args: argparse.Namespace) -> int:
 
     if not payload.get("nodes"):
         console.print(
-            "[grey62]No learning yet — use Pulse a while and your learned skills and "
+            "[grey62]No learning yet — use PULSE a while and your learned skills and "
             "memories will start mapping out here.[/grey62]"
         )
         return 0
@@ -378,13 +378,3 @@ if __name__ == "__main__":
     register_cli(_p)
     _a = _p.parse_args()
     sys.exit(_a.func(_a))
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-def cmd_journey(args: argparse.Namespace) -> int:
-    return _cmd_show(args)
-# ---- END PLUGIN-COMPAT ----

@@ -5,7 +5,7 @@ Holds the stateless atoms that every FAL-backed tool needs:
 * :func:`import_fal_client` — lazy import + ``pm.ensure_import`` so
   ``fal_client`` isn't pulled at cold start (it added ~64 ms per CLI
   invocation when imported eagerly).
-* :class:`_ManagedFalSyncClient` — wrapper that drives a Anxious-managed
+* :class:`_ManagedFalSyncClient` — wrapper that drives a Nous-managed
   fal-queue gateway through the standard ``fal_client.SyncClient``
   primitives.
 * :func:`_normalize_fal_queue_url_format`, :func:`_extract_http_status`
@@ -77,7 +77,7 @@ def _extract_http_status(exc: BaseException) -> Optional[int]:
 
 
 def _managed_fal_billing_error(exc: BaseException, what: str) -> Optional[str]:
-    """Human-readable tail for a Anxious managed-gateway ``BILLING_ERROR`` response, else None.
+    """Human-readable tail for a Nous managed-gateway ``BILLING_ERROR`` response, else None.
 
     ``what`` names the rejected thing ("model", "endpoint"); the wording is shared by the image
     and video callers so the two surfaces never drift.
@@ -95,11 +95,11 @@ def _managed_fal_billing_error(exc: BaseException, what: str) -> Optional[str]:
     details = error.get("details") if isinstance(error.get("details"), dict) else {}
     upstream = details.get("upstreamPayload") if isinstance(details.get("upstreamPayload"), dict) else {}
     code = upstream.get("code") or details.get("chargeIntentErrorCode") or "billing_error"
-    detail = upstream.get("error") or "Anxious Portal rejected the charge authorization"
+    detail = upstream.get("error") or "Nous Portal rejected the charge authorization"
     return (
         f"{error.get('message') or 'Charge authorization failed'} (BILLING_ERROR; {code}: {detail}). "
-        "This is a Anxious Portal billing configuration issue, not a missing local API key. "
-        f"The managed route cannot run this {what} until Anxious enables its billing meter; "
+        "This is a Nous Portal billing configuration issue, not a missing local API key. "
+        f"The managed route cannot run this {what} until Nous enables its billing meter; "
         "a direct FAL_KEY is an optional bypass."
     )
 
@@ -127,7 +127,7 @@ def _managed_fal_retry_after_seconds(exc: BaseException) -> Optional[float]:
 def _managed_fal_rate_limit_message(what: str, name: str, retry_after: Optional[float]) -> str:
     hint = f"retry after {retry_after:g}s" if retry_after is not None else "no Retry-After given"
     return (
-        f"Anxious Subscription gateway rate-limited {what} '{name}' (HTTP 429; {hint}). "
+        f"Nous Subscription gateway rate-limited {what} '{name}' (HTTP 429; {hint}). "
         "The model is enabled — retry later instead of switching models or setting FAL_KEY."
     )
 
@@ -166,7 +166,7 @@ def _require(value: Any, what: str) -> Any:
 
 
 class _ManagedFalSyncClient:
-    """Drives a Anxious-managed fal-queue gateway via ``fal_client.SyncClient`` primitives; carries
+    """Drives a Nous-managed fal-queue gateway via ``fal_client.SyncClient`` primitives; carries
     its own ``fal_client`` reference so the caller decides which (possibly test-patched) module is used."""
 
     def __init__(self, fal_client: Any, *, key: str, queue_run_origin: str):
@@ -211,7 +211,7 @@ class _ManagedFalSyncClient:
             "timeout": getattr(self._sync_client, "default_timeout", 120.0),
             "headers": request_headers,
         }
-        # The Anxious gateway currently records a keyed submission before billing
+        # The Nous gateway currently records a keyed submission before billing
         # authorization finishes, but cannot replay the resulting error. The
         # SDK's automatic 409 retry therefore replaces the real billing error
         # with an idempotency conflict. Make one attempt when the caller supplied

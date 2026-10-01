@@ -1,4 +1,4 @@
-"""Pulse update pipeline: dispatchers (``_cmd_update_impl``/``_cmd_update_check``) + git plumbing.
+"""PULSE update pipeline: dispatchers (``_cmd_update_impl``/``_cmd_update_check``) + git plumbing.
 
 Each concern lives in ``update_cmd_<concern>.py`` and is re-imported here so
 ``pulse_cli.update_cmd.<name>`` keeps resolving (and stays monkeypatchable). Imports are one-way:
@@ -206,7 +206,10 @@ def _no_prompt_git_kwargs() -> dict:
     env = dict(os.environ)
     env["GIT_TERMINAL_PROMPT"] = "0"
     env["GCM_INTERACTIVE"] = "Never"
-    return {"stdin": subprocess.DEVNULL, "env": env}
+    # Every network git spawn (fetch/pull/shallow heal) runs under a console-less
+    # desktop backend on Windows; hide the per-spawn console (#117781).
+    from pulse_cli._subprocess_compat import windows_hide_flags
+    return {"stdin": subprocess.DEVNULL, "env": env, "creationflags": windows_hide_flags()}
 
 
 _UPDATE_CRITICAL_FILES = (
@@ -256,15 +259,28 @@ def _record_pre_update_backup_outcome(args, snapshot_id) -> None:
     _record_update_step("pre_update_backup", False, "no snapshot captured")
 
 
+def _record_snapshot_stage(args, snapshot_id) -> None:
+    skipped = not snapshot_id and _resolve_pre_update_backup_mode(args) == "off"
+    _completion_receipt.record_stage("snapshot", "success" if snapshot_id else "skipped" if skipped else "failed")
+
+
 
 def _git_run(git_cmd, args, cwd=None, *, check=False, network=False):
     """Run git capturing utf-8 text (default cwd: checkout); ``network=True`` disables the
-    terminal prompt so an HTTP 401 fails fast instead of hanging, and bounds the wait."""
+    terminal prompt so an HTTP 401 fails fast instead of hanging, and bounds the wait.
+
+    Every spawn carries ``windows_hide_flags()``: the updater's git children run under the
+    console-less desktop backend, and a bare spawn flashes a console window each (#117781)."""
+    from pulse_cli._subprocess_compat import windows_hide_flags
+    # ``_no_prompt_git_kwargs()`` already carries the hide flags for network
+    # calls, so layer them instead of passing the keyword twice.
+    spawn_kwargs = {"timeout": NETWORK_GIT_TIMEOUT_SECONDS, **_no_prompt_git_kwargs()} if network else {}
+    spawn_kwargs.setdefault("creationflags", windows_hide_flags())
     try:
         return subprocess.run(
             git_cmd + args, cwd=_m().PROJECT_ROOT if cwd is None else cwd, capture_output=True,
             text=True, encoding="utf-8", errors="replace", check=check,
-            **({"timeout": NETWORK_GIT_TIMEOUT_SECONDS, **_no_prompt_git_kwargs()} if network else {}))
+            **spawn_kwargs)
     except subprocess.TimeoutExpired as exc:
         # subprocess.run already killed the child; the checkout stays consistent because
         # fetch writes to tmp_pack_* and only renames on success. Report as a failed run
@@ -729,6 +745,8 @@ def _complete_source_update(request: dict | None) -> None:
     if unrestored:
         request["completion_message"] = unrestored
     from copy import deepcopy
+    _completion_receipt.record_stage(
+        "apply", "skipped" if request.get("completion_message") else "success", mode=request.get("apply_mode", "git"))
     current = _completion_receipt._current.get()
     if current is not None:
         request["receipt"] = deepcopy(current.data)
@@ -1198,10 +1216,11 @@ def _begin_update_receipt_and_plan(args):
         # See #74973, #81193, #85753, #88848, #91277.
         from pulse_cli.update_receipt import begin_update_receipt
         begin_update_receipt()
+        _record_update_initiator()
 
     # Plan phase: snapshot runtimes/supervisors/version (read-only; probe failure records
     # nothing). Re-read AFTER the restart phase to reconcile — the plan is the worklist.
-    # Plan phase (#91277 Phase 2): snapshot the pre-update fleet — every running Pulse runtime, its
+    # Plan phase (#91277 Phase 2): snapshot the pre-update fleet — every running PULSE runtime, its
     # supervisor, and its running code version — into the receipt, so a post-mortem can compare what the
     # update SAW against what it did. ``_pre_update_plan`` is read again AFTER the restart phase to
     # reconcile every planned runtime against the phase's bookkeeping (restart via declared mechanism — the
@@ -1215,8 +1234,19 @@ def _begin_update_receipt_and_plan(args):
             _n = len(_pre_update_plan.runtimes)
             _profiles = ", ".join(sorted({r.profile for r in _pre_update_plan.runtimes}))
             print(f"→ Fleet: {_n} running service(s) across profiles: {_profiles}")
-
+    _completion_receipt.record_stage("plan", "failed" if _pre_update_plan is None else "success")
     return _pre_update_plan
+
+
+def _record_update_initiator() -> None:
+    """We hold the update lock, so a claim naming another pid is our orchestrator's: the Desktop
+    hand-off (posix shim, windows script, Tauri updater) — the metric's ``kind``. Read the marker
+    raw: a liveness probe or stale-marker cleanup is lock policy, not a metrics side effect."""
+    with _best_effort('Update initiator unavailable: %s'):
+        from pulse_cli.update_lock import update_marker_path
+        first = update_marker_path().read_text(encoding="utf-8-sig").partition("\n")[0].strip()
+        if first.isdigit() and int(first) != os.getpid():
+            _completion_receipt.record_fact("initiator", "desktop")
 
 
 def _prepare_git_command() -> tuple[bool, list, bool]:
@@ -1226,7 +1256,7 @@ def _prepare_git_command() -> tuple[bool, list, bool]:
     use_zip_update = not git_dir.exists()
     if use_zip_update and sys.platform != "win32":
         print("✗ Not a git repository. Please reinstall:")
-        print("  curl -fsSL https://pulse-agent.anxiousresearchlab.com/install.sh | bash")
+        print("  curl -fsSL https://pulse-agent.anxious-research.com/install.sh | bash")
         sys.exit(1)
 
     from pulse_cli._subprocess_compat import expose_pm_git
@@ -1327,7 +1357,7 @@ def _handle_update_called_process_error(
             print(f"✗ {stage} (the code update itself succeeded).")
             _print_called_process_error_tail(e)
             print()
-            print("  Pulse may not start until the dependencies are installed. Fix the error above")
+            print("  PULSE may not start until the dependencies are installed. Fix the error above")
             print("  (usually network or disk space), then run `pulse update` again.")
             if _m()._is_windows():
                 print("  If `pulse update` itself will not start, retry through the venv interpreter:")
@@ -1402,6 +1432,10 @@ def _apply_pulled_update(
 
 def _cmd_update_impl(args, gateway_mode: bool):
     """Apply the update; the command boundary owns errors, receipts and stdio."""
+    # Marks this frame as the CURRENT updater for
+    # _old_updater.in_historical_update(); historical on-disk updaters do not
+    # declare this local, so only they hand off through retired shims.
+    _pulse_current_updater_frame = True
     git_operation = git_operation_in_progress(_m().PROJECT_ROOT)
     if git_operation:
         root = _m().PROJECT_ROOT
@@ -1412,7 +1446,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
     opts = _resolve_update_options(args, gateway_mode)
     gw_input_fn, assume_yes = opts.gw_input_fn, opts.assume_yes
 
-    print("☤ Updating Pulse Agent...")
+    print("☤ Updating PULSE Agent...")
     print()
 
     _pre_update_plan = _begin_update_receipt_and_plan(args)
@@ -1422,6 +1456,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
     # reason, not as a failed step (see _record_pre_update_backup_outcome).
     pre_update_snapshot_id = _m()._run_pre_update_backup(args)
     _record_pre_update_backup_outcome(args, pre_update_snapshot_id)
+    _record_snapshot_stage(args, pre_update_snapshot_id)
 
     _windows_gateway_resume = _m()._pause_windows_gateways_for_update()
     if _windows_gateway_resume:
@@ -1430,7 +1465,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
 
 
     desktop_dir = _m().PROJECT_ROOT / "apps" / "desktop"
-    # An installed Pulse.app only this update refreshes counts even with no release/ build
+    # An installed PULSE.app only this update refreshes counts even with no release/ build
     # beside it: without one it was never rebuilt, so it never got newer (#52339).
     had_desktop_app_before_update = (
         _m()._desktop_packaged_executable(desktop_dir) is not None
@@ -1532,14 +1567,13 @@ def _cmd_update_impl(args, gateway_mode: bool):
         else:
             fetch_args = ["fetch", "origin", _check.tracking_refspec("origin", branch)]
         from pulse_cli.gitlock import fetch_with_partial_clone_recovery, is_partial_clone_pack_objects_crash
-        # One retry with the promisor machinery disabled clears the git 2.53/2.54
-        # partial-clone pack-objects crash (#124272).
+        # Marking the unmarked packs clears the git 2.53+ partial-clone pack-objects crash (#124272).
         fetch_result = fetch_with_partial_clone_recovery(
-            lambda gc, a: _git_run(gc, a, network=True), git_cmd, fetch_args)
+            lambda gc, a: _git_run(gc, a, network=True), git_cmd, fetch_args, _m().PROJECT_ROOT)
         if fetch_result.returncode != 0:
             if is_partial_clone_pack_objects_crash(fetch_result.stderr or ""):
-                print("✗ git still crashed after the partial-clone retry. Heal the checkout once manually:")
-                print("  git -c remote.origin.promisor= fetch origin && git fetch origin")
+                print("✗ git still crashed after marking this checkout's packs. See 'Fetch fails with"
+                      " should_include_obj' in https://pulse-agent.anxious-research.com/docs/getting-started/updating")
             _print_fetch_failure(fetch_result.stderr)
             _m()._resume_windows_gateways_after_update(_windows_gateway_resume)
             sys.exit(1)
@@ -1586,14 +1620,3 @@ def _cmd_update_impl(args, gateway_mode: bool):
         finally:
             if _windows_gateway_resume and _windows_gateway_resume.get("resume_needed"):
                 _m()._resume_windows_gateways_after_update(_windows_gateway_resume)
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from typing import Optional  # noqa: F401,E402
-from datetime import datetime  # noqa: F401,E402
-import hashlib  # noqa: F401,E402
-import json  # noqa: F401,E402
-# ---- END PLUGIN-COMPAT ----

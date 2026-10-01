@@ -7,7 +7,7 @@ import type { SessionInfo } from '@/types/pulse'
 import { $hudActive, $hudSession, openHud } from './hud'
 
 const desktopWindow = window as unknown as { pulseDesktop?: Window['pulseDesktop'] }
-const initialPulseDesktop = desktopWindow.pulseDesktop
+const initialPULSEDesktop = desktopWindow.pulseDesktop
 
 const open = vi.fn().mockResolvedValue({ ok: true })
 
@@ -31,8 +31,8 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  if (initialPulseDesktop) {
-    desktopWindow.pulseDesktop = initialPulseDesktop
+  if (initialPULSEDesktop) {
+    desktopWindow.pulseDesktop = initialPULSEDesktop
   } else {
     delete desktopWindow.pulseDesktop
   }

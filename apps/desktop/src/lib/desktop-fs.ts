@@ -1,15 +1,16 @@
 import { pulseApi } from '@/api/client'
 import type {
-  PulseConnection,
-  PulseReadDirResult,
-  PulseReadFileTextResult,
-  PulseSelectPathsOptions
+  PULSEConnection,
+  PULSEReadDirResult,
+  PULSEReadFileErrorResult,
+  PULSEReadFileTextResult,
+  PULSESelectPathsOptions
 } from '@/global'
 import { translateNow } from '@/i18n'
 import { $connection } from '@/store/session'
 
 export interface DesktopFsRemotePicker {
-  selectPaths: (options?: PulseSelectPathsOptions) => Promise<string[]>
+  selectPaths: (options?: PULSESelectPathsOptions) => Promise<string[]>
 }
 
 let remotePicker: DesktopFsRemotePicker | null = null
@@ -18,7 +19,7 @@ export function setDesktopFsRemotePicker(next: DesktopFsRemotePicker | null) {
   remotePicker = next
 }
 
-function connectionCacheKey(connection: PulseConnection | null) {
+function connectionCacheKey(connection: PULSEConnection | null) {
   if (!connection) {
     return 'local:'
   }
@@ -38,7 +39,7 @@ function connectionCacheKey(connection: PulseConnection | null) {
   return `${connection.mode || 'local'}:${connection.remoteKind || ''}:${connection.profile || ''}:${target}`
 }
 
-export function desktopFsCacheKey(connection: PulseConnection | null = $connection.get()) {
+export function desktopFsCacheKey(connection: PULSEConnection | null = $connection.get()) {
   return connectionCacheKey(connection)
 }
 
@@ -60,7 +61,7 @@ function bridge() {
   const desktop = window.pulseDesktop
 
   if (!desktop) {
-    throw new Error('Pulse Desktop bridge is unavailable')
+    throw new Error('PULSE Desktop bridge is unavailable')
   }
 
   return desktop
@@ -72,20 +73,54 @@ function remoteFsApi<T>(path: string, body?: Record<string, unknown>): Promise<T
   )
 }
 
-export async function readDesktopDir(path: string): Promise<PulseReadDirResult> {
+/** True when a bridge read returned the main process's structured "file is not
+ *  on disk" answer (the main process returns this instead of rejecting, so a
+ *  restored preview tab or transcript reference to a deleted/moved file does
+ *  not spam Electron's console with a stack trace per probe). Callers that
+ *  already try/catch their read get the same behavior as a rejection: throw
+ *  with the original message. */
+export function isReadFileErrorResult(value: unknown): value is PULSEReadFileErrorResult {
+  return !!value && typeof value === 'object' && (value as { ok?: unknown }).ok === false
+}
+
+function throwForReadErrorResult(result: PULSEReadFileErrorResult): never {
+  throw new DesktopFileMissingError(result)
+}
+
+/** Thrown by the facade when the main process answered that the file is simply
+ *  not on disk (the structured `{ ok:false }` result). Callers that need to
+ *  tell expected absence apart from real failures check `instanceof`; everyone
+ *  else sees an ordinary error whose message matches the old rejection. */
+export class DesktopFileMissingError extends Error {
+  readonly code: string
+
+  constructor(result: PULSEReadFileErrorResult) {
+    super(result.message || `File read failed: ${result.error}`)
+    this.name = 'DesktopFileMissingError'
+    this.code = result.error
+  }
+}
+
+export async function readDesktopDir(path: string): Promise<PULSEReadDirResult> {
   if (!isDesktopFsRemoteMode()) {
     return bridge().readDir(path)
   }
 
-  return remoteFsApi<PulseReadDirResult>(fsPath('list', path))
+  return remoteFsApi<PULSEReadDirResult>(fsPath('list', path))
 }
 
-export async function readDesktopFileText(path: string): Promise<PulseReadFileTextResult> {
+export async function readDesktopFileText(path: string): Promise<PULSEReadFileTextResult> {
   if (!isDesktopFsRemoteMode()) {
-    return bridge().readFileText(path)
+    const result = await bridge().readFileText(path)
+
+    if (isReadFileErrorResult(result)) {
+      throwForReadErrorResult(result)
+    }
+
+    return result
   }
 
-  return remoteFsApi<PulseReadFileTextResult>(fsPath('read-text', path))
+  return remoteFsApi<PULSEReadFileTextResult>(fsPath('read-text', path))
 }
 
 // Save UTF-8 text back to a file. Local writes go through the hardened Electron
@@ -118,7 +153,13 @@ export async function createRemoteDir(path: string): Promise<string> {
 
 export async function readDesktopFileDataUrl(path: string): Promise<string> {
   if (!isDesktopFsRemoteMode()) {
-    return bridge().readFileDataUrl(path)
+    const result = await bridge().readFileDataUrl(path)
+
+    if (isReadFileErrorResult(result)) {
+      throwForReadErrorResult(result)
+    }
+
+    return result
   }
 
   const result = await remoteFsApi<string | { dataUrl?: string }>(fsPath('read-data-url', path))
@@ -135,9 +176,13 @@ export async function readDesktopFileDataUrlLocalFirst(path: string): Promise<st
   try {
     const local = await window.pulseDesktop?.readFileDataUrl?.(path)
 
-    if (local) {
+    if (local && !isReadFileErrorResult(local)) {
       return local
     }
+
+    // A structured missing-file result from local is the same outcome as a
+    // rejection: fall through to the remote fallback below (or throw in local
+    // mode via readDesktopFileDataUrl's own guard).
   } catch (error) {
     if (!isDesktopFsRemoteMode()) {
       throw error
@@ -222,7 +267,7 @@ export async function desktopFileDiff(repoRoot: string, filePath: string): Promi
   return git?.fileDiff ? git.fileDiff(repoRoot, filePath) : ''
 }
 
-export async function selectDesktopPaths(options?: PulseSelectPathsOptions): Promise<string[]> {
+export async function selectDesktopPaths(options?: PULSESelectPathsOptions): Promise<string[]> {
   const desktop = bridge()
   const profile = desktopFsProfile()
   const localOptions = profile ? { ...options, profile } : options

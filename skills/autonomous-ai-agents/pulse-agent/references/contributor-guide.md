@@ -1,6 +1,6 @@
 # Contributor Quick Reference
 
-For occasional contributors and PR authors. Full developer docs: https://github.com/Anxious-Research/PULSE/developer-guide/
+For occasional contributors and PR authors. Full developer docs: https://pulse-agent.anxious-research.com/docs/developer-guide/
 
 ### Project Layout
 
@@ -9,7 +9,7 @@ pulse-agent/
 ├── run_agent.py          # AIAgent — core conversation loop
 ├── model_tools.py        # Tool discovery and dispatch
 ├── toolsets.py           # Toolset definitions
-├── cli.py                # Interactive CLI (PulseCLI)
+├── cli.py                # Interactive CLI (PULSECLI)
 ├── pulse_state.py       # SQLite session store
 ├── agent/                # Prompt builder, context compression, memory, model routing, credential pooling, skill dispatch
 ├── pulse_cli/           # CLI subcommands, config, setup, commands
@@ -105,7 +105,7 @@ scripts/run_tests.sh -v --tb=long             # pass-through pytest flags
 - **Windows:** run the same wrapper through Git Bash. See `references/windows-quirks.md`.
 - After editing `pyproject.toml`, run `pulse pm lock`, re-source `./activate`, and
   commit `pyproject.toml` with `uv.lock`.
-  Do not mutate Pulse environments with raw pip or uv commands.
+  Do not mutate PULSE environments with raw pip or uv commands.
 
 Host-specific tests run on the real host. Use one `@pytest.mark.platforms(...)`
 marker per test, such as `@pytest.mark.platforms("windows", arch="arm64")`.

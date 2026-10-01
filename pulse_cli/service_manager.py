@@ -88,7 +88,7 @@ def _s6_running() -> bool:
 
     The obvious probe — ``Path('/proc/1/exe').resolve()`` — only works as root: for any other UID, the
     symlink at ``/proc/1/exe`` is unreadable and ``resolve()`` silently returns the path unchanged, so the
-    resolved name is the literal ``"exe"`` and detection always fails. Since every Pulse runtime call
+    resolved name is the literal ``"exe"`` and detection always fails. Since every PULSE runtime call
     inside the container drops to pulse via ``s6-setuidgid``, that silent failure made the entire
     service-manager runtime-registration path inert in production (PR #30136 review).
     """

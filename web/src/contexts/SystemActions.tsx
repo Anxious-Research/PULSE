@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { ActionStatusResponse } from "@/lib/api";
-import { Toast } from "@anxious-research/ui/ui/components/toast";
+import { Toast } from "@nous-research/ui/ui/components/toast";
 import { sharedGatewayProfiles, sharedGatewayRestartedMessage } from "@/lib/shared-gateway";
 import { useI18n } from "@/i18n";
 import {
@@ -82,7 +82,7 @@ export function SystemActionsProvider({
           await api.restartGateway();
           setActiveAction(action);
         } else {
-          const resp = await api.updatePulse();
+          const resp = await api.updatePULSE();
           // Some installs cannot apply updates from inside the dashboard. The
           // endpoint returns a structured {ok:false, message, update_command}
           // envelope instead of spawning the action; surface that guidance

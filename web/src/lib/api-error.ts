@@ -10,7 +10,7 @@
 
 /** The dashboard's own backend could not be reached at all (fetch rejected). */
 export const API_UNREACHABLE_MESSAGE =
-  "Pulse dashboard cannot reach the Pulse service. Is `pulse dashboard` still running?";
+  "PULSE dashboard cannot reach the PULSE service. Is `pulse dashboard` still running?";
 
 /** Status → plain sentence, used when the body carries no usable `detail`. */
 const STATUS_COPY: Record<number, string> = {
@@ -22,14 +22,14 @@ const STATUS_COPY: Record<number, string> = {
   413: "That upload is too large for the server to accept.",
   422: "Some of the entered values are not valid.",
   429: "Too many requests. Wait a moment and try again.",
-  500: "The Pulse service hit an internal error.",
-  502: "The dashboard proxy could not reach the Pulse service.",
-  503: "The Pulse service is not ready yet. Try again in a moment.",
-  504: "The Pulse service took too long to respond.",
+  500: "The PULSE service hit an internal error.",
+  502: "The dashboard proxy could not reach the PULSE service.",
+  503: "The PULSE service is not ready yet. Try again in a moment.",
+  504: "The PULSE service took too long to respond.",
 };
 
 export function humanizeStatus(status: number): string {
-  return STATUS_COPY[status] ?? `The Pulse service answered with an unexpected error (${status}).`;
+  return STATUS_COPY[status] ?? `The PULSE service answered with an unexpected error (${status}).`;
 }
 
 /** Pull a human sentence out of a FastAPI-style error body, or null. */

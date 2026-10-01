@@ -127,7 +127,7 @@ def installed_engine(backend: str = "auto", *, allow_outdated: bool = True) -> E
     return engine
 
 
-# Before PM owned binaries, Pulse installed each engine to runtimes/llamacpp/b<tag>/<backend>/
+# Before PM owned binaries, PULSE installed each engine to runtimes/llamacpp/b<tag>/<backend>/
 # and wrote a manifest.json with the archive digests and the llama-server --version it saw.
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _ADOPTION_LOCK = threading.Lock()
@@ -176,7 +176,7 @@ def _store_lock(root: Path) -> Iterator[bool]:
 def adopt_legacy_engine(backend: str) -> bool:
     """Move the newest pre-PM install of ``backend`` into PM's store and record it as installed.
 
-    A machine that already ran a Pulse-installed engine keeps it across the update to PM. The
+    A machine that already ran a PULSE-installed engine keeps it across the update to PM. The
     manifest's archive digests become the PM identity, so a tag that matches the pin counts as
     current and an older tag counts as outdated, which offers the update. ``os.rename`` only:
     instant on one volume, and a store on another volume leaves the engine where it is. Never
@@ -247,25 +247,3 @@ def ensure_engine(backend: str, *, progress: Callable[[str, int, int, str], None
     if engine is None:
         raise BinaryResolutionError(f"llama.cpp {resolved} install has no usable pinned binary")
     return engine
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'get_pulse_home': ('pulse_constants', 'get_pulse_home'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

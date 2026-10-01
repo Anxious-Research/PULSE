@@ -1,7 +1,24 @@
-"""``pulse logs`` — view and filter Pulse log files.
+"""``pulse logs`` — view and filter PULSE log files.
 
-``pulse logs [name] [-n N] [-f] [--level L] [--session S] [--component C] [--since 1h]``;
-``pulse logs list`` shows the available files.
+Supports tailing, following, session filtering, level filtering,
+component filtering, and relative time ranges.  All log files live
+under ``~/.pulse/logs/``.
+
+Usage examples::
+
+    pulse logs                    # last 50 lines of agent.log
+    pulse logs -f                 # follow agent.log in real time
+    pulse logs errors             # last 50 lines of errors.log
+    pulse logs gateway -n 100    # last 100 lines of gateway.log
+    pulse logs gui -f            # follow gui.log (dashboard/pty/ws)
+    pulse logs desktop -f        # follow desktop.log (Electron app boot/backend)
+    pulse logs update            # last 50 lines of update.log (pulse update mirror)
+    pulse logs handoff           # last 50 lines of desktop-update-handoff.log
+    pulse logs --level WARNING    # only WARNING+ lines
+    pulse logs --session abc123   # filter by session ID substring
+    pulse logs --component tools  # only tool-related lines
+    pulse logs --since 1h         # lines from the last hour
+    pulse logs --since 30m -f     # follow, starting 30 min ago
 """
 
 import re
@@ -20,13 +37,26 @@ LOG_FILES = {
     "gateway": "gateway.log",
     "gui": "gui.log",
     "desktop": "desktop.log",
+    # Full stdout/stderr mirror of the last `pulse update` runs (written by
+    # pulse_cli.main's _UpdateOutputStream; append-only across runs). When a
+    # Desktop-driven update fails at the Electron rebuild the ONLY artifacts
+    # holding the root cause are this file and the hand-off log below, so
+    # `pulse logs list` (a directory scan) showing them without readable
+    # keys was an inconsistency of its own.
+    "update": "update.log",
+    # Desktop-driven update hand-off (scripts/desktop-update/windows.ps1 +
+    # posix.sh): stage log including the `desktop --force-build --build-only`
+    # retry stderr.
+    "handoff": "desktop-update-handoff.log",
     # Every stdio MCP subprocess's stderr (tools/mcp_tool.py redirects it
     # here, with per-server session markers) — the "MCP output channel".
     "mcp": "mcp-stderr.log",
 }
 
-# "2026-04-05 22:35:00[,123]" at the start of a line.
-_TS_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})")
+# "2026-04-05 22:35:00[,123]" at the start of a line; update.log /
+# desktop-update-handoff.log stamp with the shell's ISO-8601 "T" shape
+# ("2026-09-29T21:36:18+08:00", "=== pulse update started 2026-09-29T21:36:18 ===").
+_TS_RE = re.compile(r"(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2})")
 _LEVEL_RE = re.compile(r"\s(DEBUG|INFO|WARNING|ERROR|CRITICAL)\s")
 # Logger name: the token before ":" after the level and optional "[session]" tag,
 # e.g. "INFO gateway.run:" or "INFO [sess_abc] tools.terminal_tool:".
@@ -44,11 +74,11 @@ def _parse_since(since_str: str) -> Optional[datetime]:
 
 
 def _parse_line_timestamp(line: str) -> Optional[datetime]:
-    m = _TS_RE.match(line)
+    m = _TS_RE.search(line)
     if not m:
         return None
     try:
-        return datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
+        return datetime.strptime(m.group(1).replace("T", " "), "%Y-%m-%d %H:%M:%S")
     except ValueError:
         return None
 
@@ -119,7 +149,26 @@ def tail_log(
     since: Optional[str] = None,
     component: Optional[str] = None,
 ) -> None:
-    """Print the filtered tail of a log, optionally following in real time."""
+    """Read and display log lines, optionally following in real time.
+
+    Parameters
+    ----------
+    log_name
+        Which log to read: ``"agent"``, ``"errors"``, ``"gateway"``, ``"gui"``,
+        ``"desktop"``, ``"update"``, ``"handoff"``.
+    num_lines
+        Number of recent lines to show (before follow starts).
+    follow
+        If True, keep watching for new lines (Ctrl+C to stop).
+    level
+        Minimum log level to show (e.g. ``"WARNING"``).
+    session
+        Session ID substring to filter on.
+    since
+        Relative time string (e.g. ``"1h"``, ``"30m"``).
+    component
+        Component name to filter by (e.g. ``"gateway"``, ``"tools"``).
+    """
     filename = LOG_FILES.get(log_name)
     if filename is None:
         print(f"Unknown log: {log_name!r}. Available: {', '.join(sorted(LOG_FILES))}")
@@ -128,7 +177,7 @@ def tail_log(
     log_path = get_pulse_home() / "logs" / filename
     if not log_path.exists():
         print(f"Log file not found: {log_path}")
-        print("(Logs are created when Pulse runs — try 'pulse chat' first)")
+        print("(Logs are created when PULSE runs — try 'pulse chat' first)")
         sys.exit(1)
 
     since_dt = None

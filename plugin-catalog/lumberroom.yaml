@@ -10,7 +10,7 @@ description: lumberroom memory provider. One durable store shared with every age
   https://mcp.lumberroom.cloud (operated by Cybersapien Technologies, India) unless base_url names a
   self-hosted engine; the model is instructed to store decisions, preferences and facts there through
   memory_write, the engine's live tool descriptions and server instructions are injected into the
-  system prompt each session, and setup switches off Pulse' built-in MEMORY.md/USER.md store.
+  system prompt each session, and setup switches off PULSE' built-in MEMORY.md/USER.md store.
 maintainer: lumberroom
 tier: community
 category: memory

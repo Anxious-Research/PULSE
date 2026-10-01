@@ -8,7 +8,7 @@ name: Live provider canaries
 #
 # Each case skips cleanly when its secret is absent, so the job is safe to run
 # with any subset configured. Use dedicated, spend-capped keys:
-#   LIVE_OPENROUTER_API_KEY, LIVE_ANTHROPIC_API_KEY, LIVE_ANXIOUS_API_KEY,
+#   LIVE_OPENROUTER_API_KEY, LIVE_ANTHROPIC_API_KEY, LIVE_NOUS_API_KEY,
 #   LIVE_OPENAI_API_KEY, LIVE_GEMINI_API_KEY, LIVE_XAI_API_KEY
 
 on:
@@ -45,7 +45,7 @@ jobs:
     env:
       HAS_OPENROUTER: ${{ secrets.LIVE_OPENROUTER_API_KEY != '' }}
       HAS_ANTHROPIC: ${{ secrets.LIVE_ANTHROPIC_API_KEY != '' }}
-      HAS_ANXIOUS: ${{ secrets.LIVE_ANXIOUS_API_KEY != '' }}
+      HAS_NOUS: ${{ secrets.LIVE_NOUS_API_KEY != '' }}
       HAS_OPENAI: ${{ secrets.LIVE_OPENAI_API_KEY != '' }}
       HAS_GEMINI: ${{ secrets.LIVE_GEMINI_API_KEY != '' }}
       HAS_XAI: ${{ secrets.LIVE_XAI_API_KEY != '' }}
@@ -55,7 +55,7 @@ jobs:
         id: gate
         run: |
           n=0
-          for v in HAS_OPENROUTER HAS_ANTHROPIC HAS_ANXIOUS HAS_OPENAI HAS_GEMINI HAS_XAI; do
+          for v in HAS_OPENROUTER HAS_ANTHROPIC HAS_NOUS HAS_OPENAI HAS_GEMINI HAS_XAI; do
             if [ "${!v}" = "true" ]; then n=$((n+1)); echo "configured: ${v#HAS_}"; fi
           done
           echo "configured=$n" >> "$GITHUB_OUTPUT"
@@ -65,7 +65,7 @@ jobs:
 
       - name: Checkout code
         if: steps.gate.outputs.configured != '0'
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # v7.0.1
 
       - name: Install uv
         if: steps.gate.outputs.configured != '0'
@@ -98,7 +98,7 @@ jobs:
           LIVE_FILTER: ${{ inputs.filter }}
           OPENROUTER_API_KEY: ${{ secrets.LIVE_OPENROUTER_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.LIVE_ANTHROPIC_API_KEY }}
-          ANXIOUS_API_KEY: ${{ secrets.LIVE_ANXIOUS_API_KEY }}
+          NOUS_API_KEY: ${{ secrets.LIVE_NOUS_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.LIVE_OPENAI_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.LIVE_GEMINI_API_KEY }}
           XAI_API_KEY: ${{ secrets.LIVE_XAI_API_KEY }}
@@ -127,7 +127,7 @@ jobs:
 
       - name: Upload results
         if: always() && steps.gate.outputs.configured != '0'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: live-provider-canaries
           path: |

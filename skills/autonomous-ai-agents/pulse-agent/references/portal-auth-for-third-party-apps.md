@@ -1,7 +1,7 @@
-# Anxious Portal — authenticating third-party apps against the subscription
+# Nous Portal — authenticating third-party apps against the subscription
 
 Recurring user question: "Can app X (Karakeep, OpenWebUI, LibreChat, OpenViking,
-LangChain pipeline, n8n flow, etc.) use my Anxious Portal subscription without me
+LangChain pipeline, n8n flow, etc.) use my Nous Portal subscription without me
 copy-pasting an API key — ideally via the Portal login I already have?"
 
 The honest answer has three architectural layers people conflate. Walk through
@@ -9,20 +9,20 @@ them in order before proposing solutions.
 
 ---
 
-## Layer 1 — Is this thing a Pulse plugin, or a separate app?
+## Layer 1 — Is this thing a PULSE plugin, or a separate app?
 
 This is the question to answer FIRST. The "OpenViking" case in particular
 trips agents up.
 
 | Surface | What it actually is | Auth path |
 |---|---|---|
-| **OpenViking memory plugin** (`plugins/memory/openviking/`) | Code that runs **inside the Pulse process**. Its LLM calls go through Pulse's already-configured provider. | Already uses Portal if user's Pulse is configured for Portal. Nothing extra needed. `OPENVIKING_API_KEY` is the OpenViking *server's* own auth, not LLM auth. |
+| **OpenViking memory plugin** (`plugins/memory/openviking/`) | Code that runs **inside the PULSE process**. Its LLM calls go through PULSE's already-configured provider. | Already uses Portal if user's PULSE is configured for Portal. Nothing extra needed. `OPENVIKING_API_KEY` is the OpenViking *server's* own auth, not LLM auth. |
 | **OpenViking the standalone server** (separate container) | A separate context-DB service. If it ever calls an LLM on its own, that's a separate HTTP client. | Same as any external app — Layer 2/3 below. |
-| **Karakeep, n8n, LibreChat, OpenWebUI, any self-hosted app** | Different process, often different machine. Makes its own HTTPS calls to `inference-api.anxiousresearchlab.com`. | Layer 2/3 below. |
+| **Karakeep, n8n, LibreChat, OpenWebUI, any self-hosted app** | Different process, often different machine. Makes its own HTTPS calls to `inference-api.anxious-research.com`. | Layer 2/3 below. |
 
 **Pitfall to avoid**: do not pitch "OAuth into Portal" as the solution for a
-plugin that already runs inside Pulse. That LLM call is already authenticated
-via Pulse's provider config. The plugin's own server auth (e.g.
+plugin that already runs inside PULSE. That LLM call is already authenticated
+via PULSE's provider config. The plugin's own server auth (e.g.
 `OPENVIKING_API_KEY` for talking to the OpenViking REST API) is unrelated to
 Portal.
 
@@ -30,21 +30,21 @@ Portal.
 
 ## Layer 2 — For genuinely external apps, what does Portal actually expose?
 
-Portal at `https://inference-api.anxiousresearchlab.com/v1` is an OpenAI-compatible
+Portal at `https://inference-api.anxious-research.com/v1` is an OpenAI-compatible
 inference endpoint. It accepts **bearer-token authentication only**: either
 
-1. **A static API key** from `GitHub repo → API Keys`, or
+1. **A static API key** from `portal.anxious-research.com → API Keys`, or
 2. **An x402-protocol payment header** (Solana USDC, beta, anonymous, per-request).
 
 There is **no general OAuth 2.0 authorization server**. There is no
-"Sign in with Anxious Portal" SSO that third-party apps can register as clients
+"Sign in with Nous Portal" SSO that third-party apps can register as clients
 against. There is no shared cookie or session that browser-Portal-login
 extends to other apps on the same machine.
 
-What Pulse Agent has that *feels* like OAuth — `pulse login --provider anxious`
+What PULSE Agent has that *feels* like OAuth — `pulse login --provider nous`
 opening a browser, user signs in, token lands in `~/.pulse/auth.json` — is a
-**Pulse-specific browser flow**. Under the hood it produces a credential
-Pulse uses as a bearer. It is not a public OAuth provider that Karakeep et al.
+**PULSE-specific browser flow**. Under the hood it produces a credential
+PULSE uses as a bearer. It is not a public OAuth provider that Karakeep et al.
 can implement a client for, because it isn't an OAuth provider at all from the
 outside.
 
@@ -55,16 +55,16 @@ outside.
 Yes. The pattern is a **local credential-broker proxy**. Even without a public
 OAuth flow, an app on the user's machine can:
 
-1. Read Pulse's existing Portal credential out of `~/.pulse/auth.json`.
+1. Read PULSE's existing Portal credential out of `~/.pulse/auth.json`.
 2. Expose a local OpenAI-compatible endpoint at `http://localhost:NNNN/v1`.
-3. Forward incoming requests to `inference-api.anxiousresearchlab.com/v1` with that
+3. Forward incoming requests to `inference-api.anxious-research.com/v1` with that
    bearer attached.
 
 Karakeep/OpenWebUI/etc. then point at `http://localhost:NNNN/v1` with any
 placeholder key. The user never copies their Portal key around — the proxy
-rides on the credential Pulse already holds.
+rides on the credential PULSE already holds.
 
-Where this could live in Pulse:
+Where this could live in PULSE:
 
 - `gateway/platforms/api_server.py` is the precedent — it exposes the agent
   over a local OpenAI-compatible endpoint, but routes through the full agent
@@ -83,8 +83,8 @@ Portal sub with $external_app without copy-pasting keys."
 
 ## Real OAuth provider on Portal — when is it worth pitching?
 
-Only when the consumer is *another first-party Anxious thing* (a future SDK, a
-Anxious-branded extension, a Discord-bot integration that needs per-user
+Only when the consumer is *another first-party Nous thing* (a future SDK, a
+Nous-branded extension, a Discord-bot integration that needs per-user
 delegation, etc.). Pitching it as the answer to "use my Portal sub with
 Karakeep" is selling the user a thing that won't reach them: even if Portal
 shipped OAuth tomorrow, Karakeep's LLM-provider config UI is `base_url +
@@ -100,7 +100,7 @@ without depending on third-party app changes:
   the sub, scope a key to specific models), in a shape every existing app
   already supports.
 - **Per-key rate limits** so a noisy app can be capped without eating the
-  user's headroom for Pulse itself.
+  user's headroom for PULSE itself.
 
 ---
 
@@ -108,21 +108,21 @@ without depending on third-party app changes:
 
 When the user asks "can $APP use my Portal subscription":
 
-1. First decide: Pulse plugin (runs inside Pulse) or separate app? If plugin,
-   it already uses Portal via Pulse's provider config — done.
+1. First decide: PULSE plugin (runs inside PULSE) or separate app? If plugin,
+   it already uses Portal via PULSE's provider config — done.
 2. If separate app: today, paste the static API key from Portal → API Keys.
-   Base URL `https://inference-api.anxiousresearchlab.com/v1`. Rate limits are
+   Base URL `https://inference-api.anxious-research.com/v1`. Rate limits are
    subscription-tier based, applied per-key.
 3. If the user pushes back with "but I don't want to paste a key" — that's
    the local-broker-proxy answer (Layer 3). Worth building. Not a Portal-side
    OAuth roadmap problem.
 4. Mixed setup ("Portal for some things, OpenRouter/Ollama Cloud for the
-   Pulse agent itself") is fully supported. Pulse treats agent
+   PULSE agent itself") is fully supported. PULSE treats agent
    provider/model and tool-side LLM calls as independent config; you can
    point each at a different endpoint.
 
 **Note on the Tool Gateway**: the "no separate accounts, no API key juggling"
-pitch in the Tool Gateway announcement is specifically about Pulse Agent's
+pitch in the Tool Gateway announcement is specifically about PULSE Agent's
 *tools* (web search, browser, image gen, TTS) flowing through the Portal
-subscription when Pulse is configured to use Portal as its provider. It is
+subscription when PULSE is configured to use Portal as its provider. It is
 **not** a claim that arbitrary third-party apps inherit Portal auth.

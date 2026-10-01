@@ -1,4 +1,4 @@
-"""Pulse lifecycle dispatch for first-party observers and plugins."""
+"""PULSE lifecycle dispatch for first-party observers and plugins."""
 
 from __future__ import annotations
 

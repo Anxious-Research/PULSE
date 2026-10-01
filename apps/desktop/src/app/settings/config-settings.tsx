@@ -6,7 +6,7 @@ import { useSearchParams } from 'react-router'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { getElevenLabsVoices, getPulseConfigSchema, savePulseConfig } from '@/pulse'
+import { getElevenLabsVoices, getPULSEConfigSchema, savePULSEConfig } from '@/pulse'
 import { useI18n } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
 import { isSubmitEnter } from '@/lib/ime'
@@ -28,9 +28,9 @@ import { notify, notifyError } from '@/store/notifications'
 import { normalizeProfileKey } from '@/store/profile'
 import { repoDiscoveryPolicyFromConfig, repoDiscoveryPolicySignature, scanAndRecordRepos } from '@/store/projects'
 import { $settingsRequestProfile } from '@/store/settings-scope'
-import type { ConfigFieldSchema, PulseConfigRecord } from '@/types/pulse'
+import type { ConfigFieldSchema, PULSEConfigRecord } from '@/types/pulse'
 
-import { pulseConfigCacheWriter, usePulseConfigRecord } from '../hooks/use-config-record'
+import { pulseConfigCacheWriter, usePULSEConfigRecord } from '../hooks/use-config-record'
 import { useOnProfileSwitch } from '../hooks/use-on-profile-switch'
 import { PanelEmpty } from '../overlays/panel'
 
@@ -108,14 +108,14 @@ function ConfigSettingsInner({
   // The editable draft is local (debounced autosave watches it), but it's seeded
   // from — and saved back through — the shared config cache, so edits are visible
   // in the MCP/model surfaces and reopening the page doesn't reload-flash.
-  const [config, setConfig] = useState<PulseConfigRecord | null>(null)
+  const [config, setConfig] = useState<PULSEConfigRecord | null>(null)
 
   const {
     data: loadedConfig,
     isError: configLoadFailed,
     refetch: refetchConfig,
     writeScope
-  } = usePulseConfigRecord(scopeProfile)
+  } = usePULSEConfigRecord(scopeProfile)
 
   // Writes land on the same cache key the query above reads (base key when
   // following the active profile, suffixed when a scope override is set).
@@ -130,7 +130,7 @@ function ConfigSettingsInner({
     // consumer); suffixed only for an explicit scope override.
     queryKey:
       scopeProfile == null ? ['pulse-config-schema'] : ['pulse-config-schema', normalizeProfileKey(scopeProfile)],
-    queryFn: () => getPulseConfigSchema(scopeProfile),
+    queryFn: () => getPULSEConfigSchema(scopeProfile),
     staleTime: 5 * 60 * 1000
   })
 
@@ -148,7 +148,7 @@ function ConfigSettingsInner({
   // diffs the draft against this (not against disk) so a field the user
   // never touched — possibly changed out-of-band by `pulse config set`
   // while this page sat open — is never resent with its stale value.
-  const configBaselineRef = useRef<PulseConfigRecord | null>(null)
+  const configBaselineRef = useRef<PULSEConfigRecord | null>(null)
   // Serializes autosave requests so an older save that's still in flight can't
   // resolve after a newer one and re-advance the baseline / cache with stale
   // data — each save's diff+request only starts once the previous one lands.
@@ -218,7 +218,7 @@ function ConfigSettingsInner({
       saveQueueRef.current = saveQueueRef.current.then(async () => {
         try {
           const patch = diffConfig(configBaselineRef.current ?? {}, snapshot)
-          const result = await savePulseConfig(patch, writeScope ?? scopeProfile)
+          const result = await savePULSEConfig(patch, writeScope ?? scopeProfile)
 
           if (!result.ok) {
             throw new Error(c.autosaveFailed)
@@ -263,13 +263,13 @@ function ConfigSettingsInner({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- copy is stable; avoid re-scheduling autosave on locale change
   }, [config, onConfigSaved, saveVersion, writeScope, scopeProfile])
 
-  const applyConfig = (next: PulseConfigRecord) => {
+  const applyConfig = (next: PULSEConfigRecord) => {
     saveVersionRef.current += 1
     setConfig(next)
     setSaveVersion(saveVersionRef.current)
   }
 
-  const updateConfig = (next: PulseConfigRecord) => {
+  const updateConfig = (next: PULSEConfigRecord) => {
     // Guard the single most destructive config edit: clearing the entire
     // "Enabled Toolsets" list silently disables memory, terminal, web search,
     // delegation, and most tools, and a stray select-all + Backspace can do it.

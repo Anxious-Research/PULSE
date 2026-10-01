@@ -23,14 +23,14 @@ def _info_lines(*lines: str) -> None:
 
 def _ensure_browser_use_cli(*, verbose_hints: bool = False) -> None:
     """Confirm the Browser Use CLI engine is runnable. It is browser-harness, a core dependency of
-    Pulse's own venv, so there is nothing to download; a miss means the venv needs a re-sync.
+    PULSE's own venv, so there is nothing to download; a miss means the venv needs a re-sync.
     Primary driver engine for EVERY browser backend except Camofox (Firefox-based, no CDP surface)."""
     from tools.browser_use_cli import _find_cli
 
     if _find_cli() is not None:
-        _print_success("    Browser Use CLI ready (browser-harness, bundled with Pulse)")
+        _print_success("    Browser Use CLI ready (browser-harness, bundled with PULSE)")
     else:
-        _print_warning("    browser-harness is missing from Pulse's Python environment")
+        _print_warning("    browser-harness is missing from PULSE's Python environment")
         _print_info("    Re-sync it with: pulse update")
     if verbose_hints:
         _info_lines("Local Chrome needs remote debugging: chrome://inspect/#remote-debugging",
@@ -49,7 +49,7 @@ def _post_setup_lightpanda() -> None:
         _print_warning("    lightpanda binary not found on PATH, ~/.lightpanda or ~/.local/bin")
         _print_info(f"    {LIGHTPANDA_INSTALL_HINT}")
         if os.name == "nt":
-            _print_info("    Lightpanda has no native Windows build; run Pulse under WSL2.")
+            _print_info("    Lightpanda has no native Windows build; run PULSE under WSL2.")
 
 
 def _post_setup_agent_browser(post_setup_key: str) -> None:
@@ -75,7 +75,7 @@ def _post_setup_agent_browser(post_setup_key: str) -> None:
         if docker and post_setup_key == "agent_browser" and not _chromium_installed():
             _print_warning("    Chromium is missing but you're running in Docker.")
             _info_lines("Pull the latest image to get the bundled Chromium:",
-                        "  docker pull ghcr.io/anxiousresearchlab/pulse-agent:latest")
+                        "  docker pull ghcr.io/nousresearch/pulse-agent:latest")
         return
 
     try:
@@ -102,7 +102,7 @@ def _post_setup_agent_browser(post_setup_key: str) -> None:
 def _post_setup_camofox() -> None:
     from tools.browser_camofox import check_camofox_available
 
-    _info_lines("Camofox is an externally managed server; Pulse does not install or start it.")
+    _info_lines("Camofox is an externally managed server; PULSE does not install or start it.")
     if check_camofox_available():
         _print_success("    Configured Camofox server is reachable")
         return
@@ -149,7 +149,7 @@ def _post_setup_python(spec: dict) -> None:
         _print_warning(f"    {label} install failed: {exc}")
         _info_lines("Retry with: pulse tools")
         return
-    _print_success(f"    {label} dependencies ready. Restart Pulse to use them.")
+    _print_success(f"    {label} dependencies ready. Restart PULSE to use them.")
     _info_lines(*spec["on_install"], *spec["always"])
 
 
@@ -195,7 +195,7 @@ def _post_setup_langfuse() -> None:
         _print_warning(f"    Could not enable plugin automatically: {exc}")
         _info_lines("Run manually: pulse plugins enable observability/langfuse")
         return
-    _info_lines("Restart Pulse for tracing to take effect.", "Verify: pulse plugins list")
+    _info_lines("Restart PULSE for tracing to take effect.", "Verify: pulse plugins list")
 
 
 def _post_setup_xai_grok() -> None:
@@ -398,7 +398,7 @@ def _agent_browser_installed() -> bool:
     """True when everything ``_run_post_setup("agent_browser")`` installs is present: the agent-browser CLI
     *and* the Chromium build it drives (or the Lightpanda engine, which needs no Chromium), so "Run
     setup" flips to installed only when re-running it would be a no-op."""
-    from pulse_cli.anxious_subscription import _local_browser_runnable
+    from pulse_cli.nous_subscription import _local_browser_runnable
 
     return _local_browser_runnable()
 
@@ -421,7 +421,7 @@ def _lightpanda_installed() -> bool:
 def _cloud_agent_browser_installed() -> bool:
     """Installed-check for the ``browserbase`` hook: cloud providers host their own Chromium, so
     presence of the agent-browser CLI is the whole contract."""
-    from pulse_cli.anxious_subscription import _has_agent_browser
+    from pulse_cli.nous_subscription import _has_agent_browser
     return _has_agent_browser()
 
 

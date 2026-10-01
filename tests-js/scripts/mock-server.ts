@@ -269,7 +269,7 @@ const SIDEBAR_CROSS_SCRIPT: ScriptedTurn[] = sidebarCrossScript()
 const QUEUE_STOP_SCRIPT: ScriptedTurn[] = [
   {
     text: 'Starting a task that will keep this turn active.',
-    toolCalls: [{ name: 'clarify', args: { question: 'Keep working?', choices: ['Yes', 'No'] } }],
+    toolCalls: [{ name: 'clarify', args: { questions: [{ question: 'Keep working?', choices: ['Yes', 'No'] }] } }],
   },
   { text: 'The paused task completed.' },
 ]
@@ -288,7 +288,7 @@ const CORRECTION_SWITCH_SCRIPT: ScriptedTurn[] = [
 export const CORRECTION_SWITCH_TRIGGER = 'E2E_CORRECTION_SWITCH_TRIGGER'
 
 /**
- * Drives a real code edit followed by two finish attempts. Pulse should add
+ * Drives a real code edit followed by two finish attempts. PULSE should add
  * its synthetic verify-on-stop continuation after each finish attempt until
  * the bounded verifier gives up. The mock's request capture proves the nudge
  * reached the model; desktop must never render it as chat content.
@@ -379,7 +379,7 @@ const TOOL_THEN_FAILURE_TURN: ScriptedTurn = {
 
 const BLOCKING_CLARIFY_TURN: ScriptedTurn = {
   text: '',
-  toolCalls: [{ name: 'clarify', args: { question: BLOCKING_CLARIFY_QUESTION, choices: ['Yes', 'No'] } }],
+  toolCalls: [{ name: 'clarify', args: { questions: [{ question: BLOCKING_CLARIFY_QUESTION, choices: ['Yes', 'No'] }] } }],
 }
 
 /**
@@ -1424,7 +1424,7 @@ async function runDevLaunch(): Promise<void> {
     PULSE_DESKTOP_USER_DATA_DIR: sandbox.userDataDir,
     PULSE_DESKTOP_IGNORE_EXISTING: '1',
     PULSE_DESKTOP_PULSE_ROOT: repoRoot,
-    PULSE_DESKTOP_APP_NAME: `PulseDevMock-${Date.now()}`,
+    PULSE_DESKTOP_APP_NAME: `PULSEDevMock-${Date.now()}`,
   }
 
   console.log('Launching Electron...')

@@ -360,15 +360,15 @@ def _resolve_direct_command(pulse_path: str) -> list[str]:
     out = subprocess.run([pulse_path, "--print-runtime-command"], capture_output=True,
                          text=True, encoding="utf-8", errors="replace", timeout=30)
     if out.returncode != 0:
-        raise ValueError("could not resolve Pulse runtime; refresh this installation's launcher")
+        raise ValueError("could not resolve PULSE runtime; refresh this installation's launcher")
     try:
         command = json.loads(out.stdout)
     except ValueError as exc:
-        raise ValueError("Pulse launcher did not report a runtime command") from exc
+        raise ValueError("PULSE launcher did not report a runtime command") from exc
     if (not isinstance(command, list) or not command
             or not all(isinstance(part, str) and "\x00" not in part for part in command)
             or not os.path.isabs(command[0]) or not os.path.isfile(command[0])):
-        raise ValueError("Pulse launcher reported an invalid runtime command")
+        raise ValueError("PULSE launcher reported an invalid runtime command")
     return command
 
 
@@ -377,7 +377,7 @@ def spawn_backend(payload: dict[str, Any]) -> dict[str, Any]:
     spawn_nonce = _nonce(str(payload["spawnNonce"]))
     configured_path = str(payload["pulsePath"])
     if not os.path.isabs(configured_path):
-        raise ValueError("Pulse path must be absolute")
+        raise ValueError("PULSE path must be absolute")
     pulse_path = os.path.abspath(configured_path)
     token_path = str(_token_path(ownership_id, spawn_nonce))
     profile = str(payload.get("profile") or "")
@@ -411,7 +411,7 @@ def spawn_backend(payload: dict[str, Any]) -> dict[str, Any]:
 def inspect_pulse(pulse_path: str) -> dict[str, Any]:
     path = os.path.abspath(pulse_path)
     if not os.path.isabs(pulse_path) or not os.path.isfile(path):
-        raise ValueError("Pulse path is not an executable file")
+        raise ValueError("PULSE path is not an executable file")
     version = subprocess.run([path, "--version"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=20)
     help_result = subprocess.run([path, "serve", "--help"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=20)
     help_text = help_result.stdout + help_result.stderr

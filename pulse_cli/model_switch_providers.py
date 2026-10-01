@@ -20,8 +20,10 @@ from utils import base_url_host_matches
 # Log-record parity with the origin module.
 logger = logging.getLogger("pulse_cli.model_switch")
 
-# Aggregators whose full catalogs (70+ models) must stay visible: never capped by max_models.
-_UNCAPPED_PICKER_PROVIDERS: frozenset[str] = frozenset({"opencode-zen", "opencode-go"})
+# Rows never capped by max_models: aggregators whose full catalogs (70+ models) must stay visible, and
+# rows that are already a curated list (Nous = curated + Portal picks, OpenRouter = curated ∩ live),
+# where the cap only cut the bottom "Free tier" block and the Portal's appended recommendations.
+_UNCAPPED_PICKER_PROVIDERS: frozenset[str] = frozenset({"opencode-zen", "opencode-go", "nous", "openrouter"})
 
 
 def _save_discovered_models_to_config(
@@ -70,7 +72,7 @@ def _discovered_catalog_stale(entry: dict, model_ids: list[str]) -> bool:
     """Whether a live probe may overwrite ``entry["models"]``.
 
     A ``models`` mapping or list of dicts is user-curated per-model metadata — never replaced.
-    A mapping Pulse itself discovered (entry flag or legacy in-mapping sentinel) is ours to
+    A mapping PULSE itself discovered (entry flag or legacy in-mapping sentinel) is ours to
     refresh, but only when stale; a legacy-shape entry is always rewritten so the save migrates
     it to the clean entry-level flag."""
     existing = entry.get("models")
@@ -443,48 +445,48 @@ def _aws_live_or_curated_ids(slug: str, curated: dict, *fallback_keys: str,
         return _first_curated(curated, fallback_keys or (slug,)) or []
 
 
-def _anxious_picker_model_ids(curated: dict, force_fresh_anxious_tier: bool) -> list:
-    """Anxious serves a huge live catalog; the picker shows ONLY the curated agentic list, augmented
+def _nous_picker_model_ids(curated: dict, force_fresh_nous_tier: bool) -> list:
+    """Nous serves a huge live catalog; the picker shows ONLY the curated agentic list, augmented
     with the Portal's free/paid recommendations (new models surface without a CLI release) and
-    narrowed by org policy. Mirrors ``_model_flow_anxious`` so GUI pickers match the CLI. A failed
+    narrowed by org policy. Mirrors ``_model_flow_nous`` so GUI pickers match the CLI. A failed
     recommendation fetch still yields a policy-filtered curated list."""
-    model_ids = curated.get("anxious", [])
+    model_ids = curated.get("nous", [])
     try:
         from pulse_cli.models_pricing import get_pricing_for_provider
         from pulse_cli.models import (
-            check_anxious_free_tier,
+            check_nous_free_tier,
             union_with_portal_free_recommendations,
             union_with_portal_paid_recommendations,
         )
         from pulse_cli.auth import get_provider_auth_state
         # Cache-only: both Portal unions below discard the pricing map (``model_ids, _ = ...``);
         # only the appended ids matter, so a live catalog fetch here buys nothing but latency.
-        pricing = get_pricing_for_provider("anxious", cached_only=True) or {}
+        pricing = get_pricing_for_provider("nous", cached_only=True) or {}
         try:
-            portal = (get_provider_auth_state("anxious") or {}).get("portal_base_url", "") or ""
+            portal = (get_provider_auth_state("nous") or {}).get("portal_base_url", "") or ""
         except Exception:
             portal = ""
-        if check_anxious_free_tier(force_fresh=force_fresh_anxious_tier):
+        if check_nous_free_tier(force_fresh=force_fresh_nous_tier):
             model_ids, _ = union_with_portal_free_recommendations(model_ids, pricing, portal)
         else:
             model_ids, _ = union_with_portal_paid_recommendations(model_ids, pricing, portal)
     except Exception:
         pass
     try:
-        from pulse_cli.models_pricing import anxious_policy_allowed_ids, restrict_to_anxious_policy
-        model_ids = restrict_to_anxious_policy(model_ids, anxious_policy_allowed_ids(), rescue_empty=True)
+        from pulse_cli.models_pricing import nous_policy_allowed_ids, restrict_to_nous_policy
+        model_ids = restrict_to_nous_policy(model_ids, nous_policy_allowed_ids(), rescue_empty=True)
     except Exception:
         pass
     return model_ids
 
 
-def _free_tier_anxious_row(row: dict) -> dict | None:
-    """The one free-tier rule for a Anxious picker row, shared by every row builder.
+def _free_tier_nous_row(row: dict) -> dict | None:
+    """The one free-tier rule for a Nous picker row, shared by every row builder.
 
     ``row`` carries at least ``name`` and ``models``. A guest identity carrying inference turns
-    it into "Anxious · free tier" with the single model ``anxious/welcome`` (the welcome host serves
-    nothing else). A guest that ``anxious.guest: false`` has switched off yields ``None``: no Anxious
-    row at all, since there is nothing selectable. A real account (or no Anxious state) passes the
+    it into "Nous · free tier" with the single model ``nous/welcome`` (the welcome host serves
+    nothing else). A guest that ``nous.guest: false`` has switched off yields ``None``: no Nous
+    row at all, since there is nothing selectable. A real account (or no Nous state) passes the
     row through untouched. Builders that compute the full catalog lazily should pass
     ``models=[]`` and only compute when the returned row still has no models."""
     from pulse_cli import anon_auth
@@ -504,8 +506,9 @@ def _free_tier_anxious_row(row: dict) -> dict | None:
 
 
 def _cap_models(model_ids: list, max_models: int | None, slug: str = "") -> list:
-    """Apply ``max_models``; aggregators in ``_UNCAPPED_PICKER_PROVIDERS`` show everything."""
-    if slug in _UNCAPPED_PICKER_PROVIDERS or max_models is None:
+    """Apply ``max_models``; rows in ``_UNCAPPED_PICKER_PROVIDERS`` show everything (``0`` still
+    means slug-only: no models)."""
+    if max_models is None or (max_models and slug in _UNCAPPED_PICKER_PROVIDERS):
         return model_ids
     return model_ids[:max_models]
 
@@ -575,7 +578,7 @@ def _discover_flag(entry: dict):
 
 
 def _display_prefix(name: str) -> str:
-    """Text before the per-model separator Pulse's own writer uses ("—" / " - ")."""
+    """Text before the per-model separator PULSE's own writer uses ("—" / " - ")."""
     return next((name.split(sep)[0].strip() for sep in ("—", " - ") if sep in name), name)
 
 
@@ -674,15 +677,15 @@ def _collect_authed_provider_slugs(
         if has_creds or _auth_store_has_provider(cp.slug) or _pool_usable(cp.slug):
             _emit(cp.slug, cp.slug)
 
-    # Anxious excluded: its picker branch builds from the curated list and never reads the
+    # Nous excluded: its picker branch builds from the curated list and never reads the
     # api_key-only cache entry a prefetch would write.
-    return [s for s in slugs if s != "anxious"]
+    return [s for s in slugs if s != "nous"]
 
 
 @dataclass
 class _PickerBuild:
     """State threaded through the ``list_authenticated_providers`` sections: 1 built-ins mapped to
-    models.dev, 2 Pulse-only overlays, 2b canonical providers missed by 1/2, 3 ``providers:``
+    models.dev, 2 PULSE-only overlays, 2b canonical providers missed by 1/2, 3 ``providers:``
     entries + 3b the bare active custom endpoint, 4 ``custom_providers:`` entries. Row-builder
     imports of ``pulse_cli.auth/models`` stay lazy so tests can patch those modules."""
     current_provider: str
@@ -690,7 +693,7 @@ class _PickerBuild:
     current_model: str
     max_models: int | None
     for_picker: bool
-    force_fresh_anxious_tier: bool
+    force_fresh_nous_tier: bool
     probe_custom_providers: bool
     probe_current_custom_provider: bool
     refresh: bool
@@ -735,10 +738,10 @@ class _PickerBuild:
             "slug": slug, "name": name, "is_current": is_current, "is_user_defined": False,
             "models": _cap_models(model_ids, self.max_models, slug if uncapped_ok else ""),
             "total_models": len(model_ids), "source": source}
-        if slug == "anxious":
-            # Free-tier identity: one row "Anxious · free tier" / anxious/welcome, or no row when
-            # anxious.guest is off. Still marks the slug seen so a later lap cannot re-emit it.
-            row = _free_tier_anxious_row(row)
+        if slug == "nous":
+            # Free-tier identity: one row "Nous · free tier" / nous/welcome, or no row when
+            # nous.guest is off. Still marks the slug seen so a later lap cannot re-emit it.
+            row = _free_tier_nous_row(row)
         if row is not None:
             self.results.append(row)
         self.seen_slugs.add(slug.lower())
@@ -888,13 +891,13 @@ def _overlay_has_creds(b: _PickerBuild, pid: str, pulse_slug: str, overlay) -> b
 
 
 def _lap_overlay_rows(b: _PickerBuild, data: dict, user_providers: dict) -> None:
-    """Section 2: Pulse-only providers (anxious, openai-codex, copilot, opencode-go, ...)."""
+    """Section 2: PULSE-only providers (nous, openai-codex, copilot, opencode-go, ...)."""
     from agent.models_dev import PROVIDER_TO_MODELS_DEV
     from pulse_cli.model_switch import _declared_model_ids
     from pulse_cli.providers import PULSE_OVERLAYS
 
     # PULSE_OVERLAYS keys may be models.dev IDs ("github-copilot") while config.yaml uses
-    # Pulse IDs ("copilot").
+    # PULSE IDs ("copilot").
     mdev_to_pulse = {v: k for k, v in PROVIDER_TO_MODELS_DEV.items()}
     for pid, overlay in PULSE_OVERLAYS.items():
         pulse_slug = mdev_to_pulse.get(pid, pid)
@@ -910,12 +913,12 @@ def _lap_overlay_rows(b: _PickerBuild, data: dict, user_providers: dict) -> None
         elif overlay.auth_type == "aws_sdk":
             model_ids = _aws_live_or_curated_ids(pulse_slug, b.curated, pulse_slug, pid,
                                                  non_blocking=b.non_blocking_catalogs)
-        elif pulse_slug == "anxious":
-            # A guest identity never needs the Portal catalog: add_builtin_row pins anxious/welcome
-            # (or drops the row when anxious.guest is off), so only a real account fetches.
-            tier_row = _free_tier_anxious_row({"name": get_label(pulse_slug), "models": []})
+        elif pulse_slug == "nous":
+            # A guest identity never needs the Portal catalog: add_builtin_row pins nous/welcome
+            # (or drops the row when nous.guest is off), so only a real account fetches.
+            tier_row = _free_tier_nous_row({"name": get_label(pulse_slug), "models": []})
             real_account = tier_row is not None and not tier_row["models"]
-            model_ids = _anxious_picker_model_ids(b.curated, b.force_fresh_anxious_tier) if real_account else []
+            model_ids = _nous_picker_model_ids(b.curated, b.force_fresh_nous_tier) if real_account else []
         else:
             model_ids = _live_or_curated_ids(pulse_slug, b.curated, pulse_slug, pid,
                                              non_blocking=b.non_blocking_catalogs)
@@ -1139,10 +1142,10 @@ def _lap_custom_provider_rows(b: _PickerBuild, custom_providers: list) -> None:
 
 def _build_curated_lists(current_provider: str, current_base_url: str, current_model: str,
                         non_blocking: bool = False) -> dict[str, list[str]]:
-    """Curated model lists keyed by pulse provider id, plus the dynamic ones (anxious manifest,
+    """Curated model lists keyed by pulse provider id, plus the dynamic ones (nous manifest,
     Ollama Cloud, LM Studio live probe). ``non_blocking`` (GUI read path) takes cached Ollama Cloud
     ids and warms them in the background rather than waiting on an 8s probe (#114215)."""
-    from pulse_cli.models import OPENROUTER_MODELS, _PROVIDER_MODELS, get_curated_anxious_model_ids
+    from pulse_cli.models import OPENROUTER_MODELS, _PROVIDER_MODELS, get_curated_nous_model_ids
     curated: dict[str, list[str]] = dict(_PROVIDER_MODELS)
     curated["openrouter"] = [mid for mid, _ in OPENROUTER_MODELS]
     # Plugin profiles without a static row: their fallback_models are the curated floor, so the
@@ -1152,7 +1155,7 @@ def _build_curated_lists(current_provider: str, current_base_url: str, current_m
         if _pp.fallback_models and not curated.get(_pp.name):
             curated[_pp.name] = list(_pp.fallback_models)
     # Remote manifest so new Portal models surface without a release; in-repo snapshot fallback.
-    curated["anxious"] = get_curated_anxious_model_ids()
+    curated["nous"] = get_curated_nous_model_ids()
     if "ollama-cloud" not in curated:
         from pulse_cli.models import fetch_ollama_cloud_models
         # Read path: cache only; the row's own SWR refresh (cached_provider_model_ids) warms it.
@@ -1182,7 +1185,7 @@ def _build_curated_lists(current_provider: str, current_base_url: str, current_m
 
 def list_authenticated_providers(
     current_provider: str = "", current_base_url: str = "", user_providers: dict = None,
-    custom_providers: list | None = None, *, force_fresh_anxious_tier: bool = False,
+    custom_providers: list | None = None, *, force_fresh_nous_tier: bool = False,
     max_models: int | None = None, current_model: str = "", refresh: bool = False,
     probe_custom_providers: bool = True, probe_current_custom_provider: bool = False,
     for_picker: bool = False, excluded_providers: list | None = None,
@@ -1192,7 +1195,7 @@ def list_authenticated_providers(
     Returns dicts with ``slug`` (the --provider value), ``name``, ``is_current``,
     ``is_user_defined``, ``models`` (up to max_models), ``total_models``, ``source``
     ("built-in", "pulse", "canonical", "user-config", "model-config").
-    ``force_fresh_anxious_tier`` bypasses the short Anxious tier cache (account-sensitive flows only);
+    ``force_fresh_nous_tier`` bypasses the short Nous tier cache (account-sensitive flows only);
     ``refresh`` busts the model-id disk cache up front (explicit user action only);
     ``probe_custom_providers`` enables live ``/models`` discovery for saved custom endpoints (CLI
     true, GUI false); ``probe_current_custom_provider`` probes only the selected custom endpoint.
@@ -1228,7 +1231,7 @@ def list_authenticated_providers(
     # as (pulse_id / mdev_id / canonical slug).
     b = _PickerBuild(
         current_provider=current_provider, current_base_url=current_base_url, current_model=current_model,
-        max_models=max_models, for_picker=for_picker, force_fresh_anxious_tier=force_fresh_anxious_tier,
+        max_models=max_models, for_picker=for_picker, force_fresh_nous_tier=force_fresh_nous_tier,
         probe_custom_providers=probe_custom_providers, probe_current_custom_provider=probe_current_custom_provider,
         refresh=refresh, excluded={str(p).strip().lower() for p in (excluded_providers or []) if p},
         non_blocking_catalogs=non_blocking_catalogs,
@@ -1349,7 +1352,7 @@ def list_picker_providers(
             except Exception:
                 live_ids = list(p.get("models", []))
             p = dict(p)
-            p["models"] = live_ids[:max_models] if max_models is not None else live_ids
+            p["models"] = _cap_models(live_ids, max_models, "openrouter")
             p["total_models"] = len(live_ids)
 
         is_custom_endpoint = bool(p.get("is_user_defined")) and bool(p.get("api_url"))

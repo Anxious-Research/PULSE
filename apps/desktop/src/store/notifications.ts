@@ -104,11 +104,11 @@ const MAINTENANCE_ROUTE = '/command-center?section=maintenance'
 /** One-click recoveries reused by several rules. */
 export const RECOVERY_ACTIONS = {
   openUpdates: (): NotificationAction => ({
-    label: translateNow('notifications.updatePulse'),
+    label: translateNow('notifications.updatePULSE'),
     onClick: () => void import('@/store/updates').then(({ openUpdatesWindow }) => openUpdatesWindow())
   }),
-  restartPulse: (): NotificationAction => ({
-    label: translateNow('notifications.actions.restartPulse'),
+  restartPULSE: (): NotificationAction => ({
+    label: translateNow('notifications.actions.restartPULSE'),
     onClick: requestBackendRestart
   }),
   openKeys: (envKey: string): NotificationAction => ({
@@ -191,7 +191,7 @@ const ERROR_SUMMARIES: ErrorSummaryRule[] = [
     category: 'method_not_allowed',
     test: msg => /method not allowed/i.test(msg),
     summarize: () => translateNow('notifications.errors.methodNotAllowed'),
-    action: () => RECOVERY_ACTIONS.restartPulse()
+    action: () => RECOVERY_ACTIONS.restartPULSE()
   },
   {
     category: 'microphone_permission',
@@ -208,7 +208,7 @@ const ERROR_SUMMARIES: ErrorSummaryRule[] = [
     category: 'restart_required',
     test: msg => /Restart required:/i.test(msg),
     summarize: () => translateNow('notifications.errors.codeSkewRestartRequired'),
-    action: () => RECOVERY_ACTIONS.restartPulse()
+    action: () => RECOVERY_ACTIONS.restartPULSE()
   }
 ]
 

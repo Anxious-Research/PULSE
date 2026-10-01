@@ -2,7 +2,7 @@
 name: document-to-action-items
 description: "Extract cited obligations, deadlines, tasks from documents."
 version: 0.1.0
-author: Ben Barclay (benbarclay), Pulse Agent
+author: Ben Barclay (benbarclay), PULSE Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 #: environment variable: AGENTS.md reserves PULSE_* for secrets, and an inherited variable
 #: could silently redirect consented metrics to any host with nothing visible in config.
 #: Tests and the staging E2E write this key into a throwaway profile instead.
-DEFAULT_ENDPOINT = "https://telemetry.anxiousresearchlab.com/v1/telemetry"
+DEFAULT_ENDPOINT = "https://telemetry.anxious-research.com/v1/telemetry"
 
 _LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "[::1]"})
 
@@ -87,9 +87,3 @@ def resolve_send_config(config: dict | None) -> SendConfig:
         return SendConfig(enabled=enabled, send=False, endpoint=endpoint)
 
     return SendConfig(enabled=enabled, send=send_requested, endpoint=endpoint)
-
-
-def reset_warning_latch_for_tests() -> None:
-    """Clear the once-per-process error latch (test support only)."""
-    global _warned_send_without_collection
-    _warned_send_without_collection = False

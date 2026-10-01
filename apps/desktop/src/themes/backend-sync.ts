@@ -1,5 +1,5 @@
 /**
- * Live skin sync from the Pulse backend.
+ * Live skin sync from the PULSE backend.
  *
  * The backend resolves the active skin (built-in or `$PULSE_HOME/skins/*.yaml`)
  * and announces it on `gateway.ready` / `skin.changed`, and answers `config.get
@@ -12,11 +12,11 @@
  *      `$pendingSkinApply`, which the ThemeProvider drains through `setTheme`.
  *
  * `gateway.ready` seeds the baseline WITHOUT applying, so a fresh connect never
- * stomps the user's persisted desktop theme; only a genuine name change (Pulse
+ * stomps the user's persisted desktop theme; only a genuine name change (PULSE
  * authoring/activating a skin from a prompt, or `/skin` elsewhere) repaints.
  */
 
-import type { PulseSkin } from '@pulse/shared/skin'
+import type { PULSESkin } from '@pulse/shared/skin'
 import { atom } from 'nanostores'
 
 import { readJson, writeJson } from '@/lib/storage'
@@ -57,7 +57,7 @@ $backendThemes.listen(themes => writeJson(BACKEND_THEMES_KEY, themes))
  *  built-in. The palette policy keeps built-in palettes (a user `mono.yaml`
  *  must not shadow the desktop's hand-tuned mono), but the user's CSS is still
  *  the skin file's truth — keyed by the name the desktop resolves the skin
- *  under (`default` → `pulse`). Merged into the active theme in context.tsx. */
+ *  under (`default` → `nous`). Merged into the active theme in context.tsx. */
 export const $backendCustomCSS = atom<Record<string, string>>({})
 
 /** One-shot skin name the ThemeProvider should switch to (it clears this). */
@@ -84,31 +84,41 @@ export function __resetBackendSkinSync(): void {
  * records the baseline; `apply: true` (runtime change / poll) repaints on a name
  * change. Built-in names keep the desktop's own palette but can still be applied.
  */
-export function ingestBackendSkin(skin: PulseSkin | undefined | null, { apply }: { apply: boolean }): void {
+export function ingestBackendSkin(skin: PULSESkin | undefined | null, { apply }: { apply: boolean }): void {
   const name = (skin && typeof skin === 'object' ? (skin.name ?? '') : '').trim()
 
   if (!name) {
     return
   }
 
-  // `default` is "no opinion" on the PALETTE — the desktop keeps its own default
-  // (pulse), so we never register a converted theme under `default`. It is still a
-  // valid apply TARGET though: a runtime switch back to `default` must repaint the
-  // desktop to its own default (setTheme normalizes `default` → pulse). So we only
-  // skip the registry step here and let it flow through the apply logic below.
-  // Built-in names (mono/slate/…) already have a hand-tuned desktop palette — we
-  // never shadow it, but the name is still a valid apply target.
-  if (name !== 'default' && !BUILTIN_THEMES[name]) {
-    const theme = skinToDesktopTheme(skin as PulseSkin)
+  // Built-in names (mono/slate/…) already have a hand-tuned desktop palette —
+  // never shadow them, but they remain valid apply targets. The CLI `default`
+  // skin ("Classic PULSE — gold and kawaii") is *not* a desktop built-in, so
+  // we register the converted palette under `default` and let it appear in the
+  // Appearance grid / `/skin list` (#76579). Desktop's own boot default remains
+  // `nous` via DEFAULT_SKIN_NAME; selecting `default` paints the classic gold.
+  if (!BUILTIN_THEMES[name]) {
+    const theme = skinToDesktopTheme(skin as PULSESkin)
 
     if (!theme) {
       return
     }
 
+    // Prefer the CLI description for the classic default skin so the grid
+    // shows "Classic PULSE — gold and kawaii" rather than a bare "Default".
+    const description =
+      name === 'default' && typeof (skin as PULSESkin).description === 'string'
+        ? String((skin as PULSESkin).description).trim() || theme.description
+        : theme.description
+
+    const label = name === 'default' ? 'Classic PULSE' : theme.label
+
+    const registered = { ...theme, description, label }
+
     const current = $backendThemes.get()
 
-    if (JSON.stringify(current[name]) !== JSON.stringify(theme)) {
-      $backendThemes.set({ ...current, [name]: theme })
+    if (JSON.stringify(current[name]) !== JSON.stringify(registered)) {
+      $backendThemes.set({ ...current, [name]: registered })
     }
   } else {
     // Built-in/default-named user skins never shadow the desktop palette, but

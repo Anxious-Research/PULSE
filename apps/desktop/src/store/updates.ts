@@ -13,9 +13,9 @@ import type {
   DesktopUpdateStage,
   DesktopUpdateStatus,
   DesktopVersionInfo,
-  PulseConnection
+  PULSEConnection
 } from '@/global'
-import { checkPulseUpdate, getActionStatus, updatePulse } from '@/pulse'
+import { checkPULSEUpdate, getActionStatus, updatePULSE } from '@/pulse'
 import { translateNow } from '@/i18n'
 import { persistString, storedString } from '@/lib/storage'
 import { $connectionsRegistry, refreshConnectionsRegistry } from '@/store/connections'
@@ -200,7 +200,7 @@ export function reportBackendContract(contract: number | undefined): void {
 
     notify({
       action: {
-        label: translateNow('notifications.updatePulse'),
+        label: translateNow('notifications.updatePULSE'),
         onClick: () => {
           snoozeSkewToast()
           void applyBackendUpdate()
@@ -552,7 +552,7 @@ export async function checkBackendUpdates({
   $backendUpdateChecking.set(true)
 
   try {
-    const status = mapBackendCheck(await checkPulseUpdate(force))
+    const status = mapBackendCheck(await checkPULSEUpdate(force))
 
     if (connectionKey($connection.get()) === requestKey) {
       $backendUpdateStatus.set(status)
@@ -864,7 +864,7 @@ async function runBackendUpdate(): Promise<DesktopUpdateApplyResult> {
       ? previousStatus.targetSha.slice('backend:'.length)
       : undefined
 
-    const started = await updatePulse()
+    const started = await updatePULSE()
     const applyStartedAtMs = Date.now()
 
     if (!started.ok) {
@@ -942,7 +942,7 @@ async function runBackendUpdate(): Promise<DesktopUpdateApplyResult> {
 
       if (!started.action_id && last.exit_code === null) {
         try {
-          const status = await checkPulseUpdate(true)
+          const status = await checkPULSEUpdate(true)
 
           if (legacyBackendReachedTarget(status, requestedTargetSha, previousVersion)) {
             return finishBackendApply(true)
@@ -1186,7 +1186,7 @@ let lastConnectionKey: string | undefined
 // the mode doesn't. Pooled profiles share a baseUrl, so the profile joins
 // the key: the update check is profile-scoped (per-profile overrides can
 // pin a different channel/branch).
-function connectionKey(conn: PulseConnection | null): string {
+function connectionKey(conn: PULSEConnection | null): string {
   if (conn?.mode !== 'remote') {
     return String(conn?.mode)
   }
@@ -1230,7 +1230,7 @@ export function startUpdatePoller(): void {
   // backend check above sees mode≠remote and no-ops. Re-check once the
   // connection resolves to remote, and again whenever the remote target
   // itself changes (switching between two remote profiles).
-  connectionUnsub = $connection.subscribe((conn: PulseConnection | null): void => {
+  connectionUnsub = $connection.subscribe((conn: PULSEConnection | null): void => {
     const key = connectionKey(conn)
 
     if (key === lastConnectionKey) {

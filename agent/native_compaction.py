@@ -102,7 +102,7 @@ def _warn_native_compaction_suppressed_by_checkpoint_gate() -> None:
         logger.warning(
             "compression.checkpoint_required is enabled: server-side native "
             "compaction (context_management) is disabled for this agent so the "
-            "checkpoint-aware Pulse compressor stays authoritative."
+            "checkpoint-aware PULSE compressor stays authoritative."
         )
 
 
@@ -224,7 +224,7 @@ def prune_pre_checkpoint_items(
     so sending pre-checkpoint history is dead weight AND silently erases the user's plaintext asks —
     including any local-compression summary the agent already produced, which previously vanished here
     because it carries ``role="assistant"``, not ``"user"`` (#90975).
-    A summary is never byte/character-sliced: Pulse summaries carry structural framing (handoff prefix, end
+    A summary is never byte/character-sliced: PULSE summaries carry structural framing (handoff prefix, end
     marker, merge-into-tail delimiters) that a blind slice can corrupt, so one that doesn't fit whole is
     dropped instead. A summary already retained once (identical text) is never duplicated, so repeated
     checkpoints stay idempotent. - ``enable_summary_retention`` is a function-level override (used by tests
@@ -273,7 +273,8 @@ def prune_pre_checkpoint_items(
             text = flatten_message_text(source.get("content"))
             _src_role = source.get("role")
             _retain_summary(text if text.strip() else None,
-                            {"role": _src_role if _src_role in ("user", "assistant") else "assistant", "content": text})
+                            {"type": "message", "role": _src_role if _src_role in ("user", "assistant") else "assistant",
+                             "content": text})
             continue
         # Typed non-message items never carry role=user or a summary flag.
         if "type" in item and item.get("type") != "message":

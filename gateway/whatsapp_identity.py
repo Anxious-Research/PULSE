@@ -3,7 +3,7 @@
 The bridge can surface one human as a LID (``999...@lid``) or a phone JID
 (``1555...@s.whatsapp.net``) within one conversation. Authorisation (:mod:`gateway.run`) and
 session keys (:mod:`gateway.session`) both resolve aliases here so they never drift apart;
-plugins should use :func:`canonical_whatsapp_identifier` to line up with Pulse' session keys.
+plugins should use :func:`canonical_whatsapp_identifier` to line up with PULSE' session keys.
 """
 
 from __future__ import annotations

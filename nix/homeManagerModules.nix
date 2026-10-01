@@ -1,6 +1,6 @@
 # nix/homeManagerModules.nix — the Home Manager module for pulse-agent
 #
-# This module is the user-level equivalent of nixosModules.default. Pulse is
+# This module is the user-level equivalent of nixosModules.default. PULSE is
 # an agent for one person. The credentials, the memory, the sessions and the
 # cron jobs all belong to that person. Thus a user-level module is correct on
 # each distribution, and not only on NixOS.
@@ -180,7 +180,7 @@
     {
       # ── programs.pulse-agent — the installation ───────────────────────
       # Home Manager separates "install this application for me" from "run
-      # this daemon". Pulse needs both, and a person can want one without
+      # this daemon". PULSE needs both, and a person can want one without
       # the other: an application with no gateway, or a headless gateway on
       # a machine with no display.
       #
@@ -189,7 +189,7 @@
       # from it, and never the reverse.
       options.programs.pulse-agent = {
         enable = lib.mkEnableOption ''
-          the Pulse Agent command line application.
+          the PULSE Agent command line application.
 
           This adds `pulse` to home.packages, and exports PULSE_HOME with
           home.sessionVariables. An interactive shell then uses the same
@@ -213,18 +213,18 @@
 
         desktop = {
           enable = lib.mkEnableOption ''
-            the Pulse Desktop application (Electron).
+            the PULSE Desktop application (Electron).
 
             This adds `pulse-desktop` to home.packages, with an XDG
-            launcher entry on Linux. The launcher starts the same Pulse
+            launcher entry on Linux. The launcher starts the same PULSE
             runtime that `package` gives, and reads the PULSE_HOME of
             `services.pulse-agent`. Thus the application, the interactive
             shell and the services share one state directory.
 
-            The Electron application carries its own Pulse runtime with
+            The Electron application carries its own PULSE runtime with
             the usual distribution. This module gives it the Nix package
             instead, with PULSE_DESKTOP_PULSE. It installs no second copy
-            of Pulse, and it downloads nothing on the first start
+            of PULSE, and it downloads nothing on the first start
           '';
 
           package = lib.mkOption {
@@ -238,7 +238,7 @@
               `services.pulse-agent.extraPythonPackages` and
               `extraDependencyGroups`, because the desktop application is a
               passthru of the agent package. A package that you set here
-              carries its own Pulse runtime, and this module cannot make
+              carries its own PULSE runtime, and this module cannot make
               it agree with the services.
             '';
           };
@@ -395,7 +395,7 @@
             # ── Linux: systemd user services ───────────────────────────────
             (lib.mkIf (isLinux && cfg.gateway.enable) {
               systemd.user.services.pulse-agent = mkUnit {
-                description = "Pulse Agent Gateway";
+                description = "PULSE Agent Gateway";
                 argv = common.gatewayArgv cfg;
               };
             })

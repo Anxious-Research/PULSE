@@ -115,7 +115,7 @@ export const PULSE_PATHS_MIME = 'application/x-pulse-paths'
 
 /**
  * Eagerly resolve files from a drop event into [File?, path, isDirectory?]
- * triples. Internal Pulse sources (e.g. the project tree) ride on a custom
+ * triples. Internal PULSE sources (e.g. the project tree) ride on a custom
  * MIME and produce path-only entries; OS drops produce File-bearing entries.
  *
  * Must be called synchronously from inside the drop handler — `DataTransfer`
@@ -674,7 +674,7 @@ export function useComposerActions({
   /**
    * Convert a very large plain-text paste into a `.txt` attachment chip.
    * The trimmed, sanitized paste text is written to a
-   * Pulse-managed composer-pastes file via the main process, then attached
+   * PULSE-managed composer-pastes file via the main process, then attached
    * through the same `@file:` pipeline as a manually attached text file.
    * Returns false (paste stays inline) when the desktop bridge is missing
    * or the write fails.

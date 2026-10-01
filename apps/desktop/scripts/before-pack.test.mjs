@@ -58,17 +58,17 @@ test('preserveRollbackBackup moves a working build to .bak', () => {
   try {
     const appOutDir = path.join(tempRoot, 'win-unpacked')
     fs.mkdirSync(appOutDir, { recursive: true })
-    fs.writeFileSync(path.join(appOutDir, 'Pulse.exe'), 'MZ-old-build', 'utf8')
+    fs.writeFileSync(path.join(appOutDir, 'PULSE.exe'), 'MZ-old-build', 'utf8')
     fs.writeFileSync(path.join(appOutDir, 'resources.pak'), 'x', 'utf8')
 
-    const preserved = preserveRollbackBackup(appOutDir, 'Pulse.exe')
+    const preserved = preserveRollbackBackup(appOutDir, 'PULSE.exe')
 
     assert.equal(preserved, true)
     // Original slot vacated so electron-builder stages into a clean tree...
     assert.equal(fs.existsSync(appOutDir), false)
     // ...and the previous working build is intact under .bak for rollback.
     assert.equal(
-      fs.readFileSync(path.join(`${appOutDir}.bak`, 'Pulse.exe'), 'utf8'),
+      fs.readFileSync(path.join(`${appOutDir}.bak`, 'PULSE.exe'), 'utf8'),
       'MZ-old-build'
     )
   } finally {
@@ -81,12 +81,12 @@ test('preserveRollbackBackup replaces a stale .bak from an older update', () => 
   try {
     const appOutDir = path.join(tempRoot, 'win-unpacked')
     fs.mkdirSync(appOutDir, { recursive: true })
-    fs.writeFileSync(path.join(appOutDir, 'Pulse.exe'), 'current', 'utf8')
+    fs.writeFileSync(path.join(appOutDir, 'PULSE.exe'), 'current', 'utf8')
     fs.mkdirSync(`${appOutDir}.bak`, { recursive: true })
-    fs.writeFileSync(path.join(`${appOutDir}.bak`, 'Pulse.exe'), 'two-updates-ago', 'utf8')
+    fs.writeFileSync(path.join(`${appOutDir}.bak`, 'PULSE.exe'), 'two-updates-ago', 'utf8')
 
-    assert.equal(preserveRollbackBackup(appOutDir, 'Pulse.exe'), true)
-    assert.equal(fs.readFileSync(path.join(`${appOutDir}.bak`, 'Pulse.exe'), 'utf8'), 'current')
+    assert.equal(preserveRollbackBackup(appOutDir, 'PULSE.exe'), true)
+    assert.equal(fs.readFileSync(path.join(`${appOutDir}.bak`, 'PULSE.exe'), 'utf8'), 'current')
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true })
   }
@@ -101,7 +101,7 @@ test('preserveRollbackBackup refuses a partial tree missing the product exe', ()
     fs.mkdirSync(appOutDir, { recursive: true })
     fs.writeFileSync(path.join(appOutDir, 'LICENSE.electron.txt'), 'x', 'utf8')
 
-    assert.equal(preserveRollbackBackup(appOutDir, 'Pulse.exe'), false)
+    assert.equal(preserveRollbackBackup(appOutDir, 'PULSE.exe'), false)
     // Tree untouched; the caller's wipe path handles it.
     assert.equal(fs.existsSync(appOutDir), true)
     assert.equal(fs.existsSync(`${appOutDir}.bak`), false)
@@ -122,15 +122,15 @@ test('beforePack on win32 preserves the previous build instead of wiping it', as
   try {
     const appOutDir = path.join(tempRoot, 'win-unpacked')
     fs.mkdirSync(appOutDir, { recursive: true })
-    fs.writeFileSync(path.join(appOutDir, 'Pulse.exe'), 'MZ-working', 'utf8')
+    fs.writeFileSync(path.join(appOutDir, 'PULSE.exe'), 'MZ-working', 'utf8')
 
-    // No packager info in the context → default 'Pulse.exe' product name.
+    // No packager info in the context → default 'PULSE.exe' product name.
     // node-pty staging is skipped because arch is not a number here.
     await beforePack({ appOutDir, electronPlatformName: 'win32' })
 
     assert.equal(fs.existsSync(appOutDir), false)
     assert.equal(
-      fs.readFileSync(path.join(`${appOutDir}.bak`, 'Pulse.exe'), 'utf8'),
+      fs.readFileSync(path.join(`${appOutDir}.bak`, 'PULSE.exe'), 'utf8'),
       'MZ-working'
     )
   } finally {
@@ -143,7 +143,7 @@ test('beforePack on linux keeps the plain wipe (no .bak)', async () => {
   try {
     const appOutDir = path.join(tempRoot, 'linux-unpacked')
     fs.mkdirSync(appOutDir, { recursive: true })
-    fs.writeFileSync(path.join(appOutDir, 'Pulse.exe'), 'x', 'utf8')
+    fs.writeFileSync(path.join(appOutDir, 'PULSE.exe'), 'x', 'utf8')
 
     await beforePack({ appOutDir, electronPlatformName: 'linux' })
 

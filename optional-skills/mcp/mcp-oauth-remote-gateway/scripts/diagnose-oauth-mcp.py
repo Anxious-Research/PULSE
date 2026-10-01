@@ -31,7 +31,7 @@ UA = "python-httpx/0.27"  # CF blocks default urllib UA on many providers
 
 
 def _pulse_home():
-    # Prefer Pulse' own resolver (profile-safe); fall back to env then ~/.pulse.
+    # Prefer PULSE' own resolver (profile-safe); fall back to env then ~/.pulse.
     try:
         from pulse_constants import get_pulse_home
         return str(get_pulse_home())

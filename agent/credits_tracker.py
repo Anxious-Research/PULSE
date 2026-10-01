@@ -1,4 +1,4 @@
-"""Anxious credits: parse ``x-anxious-credits-*`` / ``x-anxious-tool-pool-*`` response
+"""Nous credits: parse ``x-nous-credits-*`` / ``x-nous-tool-pool-*`` response
 headers into a validated CreditsState (depletion = paid_access, subscription-cap
 used_fraction, warn-once schema-version gating) and drive the notice policy.
 Header contract: see ``_HEADER_FIELDS``. Money is micros ints only; ``*_usd``
@@ -36,7 +36,7 @@ def _safe_int(value: Any) -> Any:
 
 @dataclass
 class CreditsState:
-    """Credits state parsed from x-anxious-credits-* response headers."""
+    """Credits state parsed from x-nous-credits-* response headers."""
 
     version: int = 0
     remaining_micros: int = 0
@@ -118,10 +118,10 @@ def _sticky_notice(text: str, level: str, key: str) -> AgentNotice:
     return AgentNotice(text=text, level=level, kind=CREDITS_NOTICE_KIND, key=key, id=key)
 
 
-def _is_anxious_welcome_route(base_url: str) -> bool:
-    """True when *base_url* is the Anxious welcome host, which serves only the free tier. Local data only;
+def _is_nous_welcome_route(base_url: str) -> bool:
+    """True when *base_url* is the Nous welcome host, which serves only the free tier. Local data only;
     False wherever the free tier is not built in. The host is the evidence, not the model name: the paid
-    inference host can serve ``anxious/welcome`` to a named account, and that account's depletion is real."""
+    inference host can serve ``nous/welcome`` to a named account, and that account's depletion is real."""
     try:
         from pulse_cli.anon_auth import route_is_welcome_host
     except ImportError:
@@ -130,8 +130,8 @@ def _is_anxious_welcome_route(base_url: str) -> bool:
 
 
 def is_free_tier_model(model: str, base_url: str = "") -> bool:
-    """True when *model* is a Anxious free-tier model, using ONLY local data: (1) ``:free`` suffix — canonical
-    Anxious free SKU marker; (2) ``stealth/`` prefix — stealth-preview SKUs are free without the suffix
+    """True when *model* is a Nous free-tier model, using ONLY local data: (1) ``:free`` suffix — canonical
+    Nous free SKU marker; (2) ``stealth/`` prefix — stealth-preview SKUs are free without the suffix
     (naming-convention trust: a PAID ``stealth/`` model would wrongly suppress the banner); (3) a PEEK into
     ``pulse_cli.models``' pricing cache (filled by the model picker; a miss never fetches). Fail-open to
     False (depleted notice still shows): a wrong warning is recoverable noise; hiding it masks a real block."""
@@ -141,10 +141,10 @@ def is_free_tier_model(model: str, base_url: str = "") -> bool:
         return True
     if not base_url:
         return False
-    # (4) the Anxious free tier: the welcome host serves only the free tier. A free-tier identity carries $0
+    # (4) the Nous free tier: the welcome host serves only the free tier. A free-tier identity carries $0
     # by design, so the portal seed reports paid_access=False for it; that is not a depleted account, and
     # "run /topup" means nothing to it. Local data only, same as the rules above.
-    if _is_anxious_welcome_route(base_url):
+    if _is_nous_welcome_route(base_url):
         return True
     try:
         from pulse_cli.models import _is_model_free
@@ -192,7 +192,7 @@ def evaluate_credits_notices(state: CreditsState, latch: dict, *, model_is_free:
             to_clear.append(CREDITS_USAGE_KEY)
             active.discard(CREDITS_USAGE_KEY)
         if target_band is not None:
-            # Absolute dollars used (a bare "N%" is only meaningful against a Anxious cap): cap − remaining,
+            # Absolute dollars used (a bare "N%" is only meaningful against a Nous cap): cap − remaining,
             # clamped [0, cap]; "$?" if a producer set the limit without its *_usd. Re-emits on band change only.
             level = current_band[1]  # type: ignore[index]  (current_band set when target_band set)
             lim = state.subscription_limit_micros or 0
@@ -235,7 +235,7 @@ def evaluate_credits_notices(state: CreditsState, latch: dict, *, model_is_free:
 
 
 # Header contract: (field, kind[, default-when-absent]); a field is REQUIRED unless it has a default.
-# Header name = ``x-anxious-credits-<field>`` (``x-anxious-<field>`` for tool_pool_*), underscores → dashes.
+# Header name = ``x-nous-credits-<field>`` (``x-nous-<field>`` for tool_pool_*), underscores → dashes.
 # micros: int >= 0 ("signed": may be negative); usd: the server's formatted string ^-?\d+\.\d{2}$
 # (never re-parsed); bool: "true"/"false" STRING. Handled inline: subscription-limit-* (PAIRED/optional),
 # denominator-kind ("subscription_cap" | "none"), disabled-reason (omitted when null).
@@ -249,7 +249,7 @@ _HEADER_FIELDS: tuple[tuple, ...] = (
 
 
 def _header_name(field: str) -> str:
-    return "x-anxious-" + ("" if field.startswith("tool_pool_") else "credits-") + field.replace("_", "-")
+    return "x-nous-" + ("" if field.startswith("tool_pool_") else "credits-") + field.replace("_", "-")
 
 
 def _parse_field(kind: str, raw: Optional[str], default: Any = _SENTINEL) -> Any:
@@ -266,7 +266,7 @@ def _parse_field(kind: str, raw: Optional[str], default: Any = _SENTINEL) -> Any
 
 
 def parse_credits_headers(headers: Mapping[str, str], provider: str = "") -> Optional[CreditsState]:
-    """Parse x-anxious-credits-* (and x-anxious-tool-pool-*) headers into a CreditsState.
+    """Parse x-nous-credits-* (and x-nous-tool-pool-*) headers into a CreditsState.
     None (miss) on ANY of: no version header; version != 1 (> 1 also warns once);
     a required field violating ``_HEADER_FIELDS``; unknown ``denominator_kind``;
     any unexpected exception. Fail-open on the subscription_limit pair: a
@@ -274,30 +274,30 @@ def parse_credits_headers(headers: Mapping[str, str], provider: str = "") -> Opt
     global _version_warning_emitted
     try:
         # Cheap probe before the lowercase copy (header names are case-insensitive): bail when the
-        # version header is absent — the hot path for non-Anxious providers.
-        if not any(k.lower() == "x-anxious-credits-version" for k in headers):
+        # version header is absent — the hot path for non-Nous providers.
+        if not any(k.lower() == "x-nous-credits-version" for k in headers):
             return None
         lowered = {k.lower(): v for k, v in headers.items()}
-        version_val = _safe_int(lowered.get("x-anxious-credits-version"))
+        version_val = _safe_int(lowered.get("x-nous-credits-version"))
         if version_val is _SENTINEL:
             return None
         if version_val != 1:
             if version_val > 1 and not _version_warning_emitted:
                 _version_warning_emitted = True
-                logger.warning("credits header version %d unsupported, ignoring — update Pulse", version_val)
+                logger.warning("credits header version %d unsupported, ignoring — update PULSE", version_val)
             return None
         fields: dict[str, Any] = {
             name: _parse_field(kind, lowered.get(_header_name(name)), *default) for name, kind, *default in _HEADER_FIELDS
         }
-        lim_micros_raw = lowered.get("x-anxious-credits-subscription-limit-micros")
-        lim_usd_raw = lowered.get("x-anxious-credits-subscription-limit-usd")
+        lim_micros_raw = lowered.get("x-nous-credits-subscription-limit-micros")
+        lim_usd_raw = lowered.get("x-nous-credits-subscription-limit-usd")
         if lim_micros_raw is not None and lim_usd_raw is not None:
             fields["subscription_limit_micros"] = _parse_field("micros", lim_micros_raw)
             fields["subscription_limit_usd"] = _parse_field("usd", lim_usd_raw)
-        denominator_kind = lowered.get("x-anxious-credits-denominator-kind", "none")
+        denominator_kind = lowered.get("x-nous-credits-denominator-kind", "none")
         if _SENTINEL in fields.values() or denominator_kind not in _VALID_DENOMINATOR_KINDS:
             return None
-        disabled_reason = lowered.get("x-anxious-credits-disabled-reason")  # None if absent (omitted when null)
+        disabled_reason = lowered.get("x-nous-credits-disabled-reason")  # None if absent (omitted when null)
         return CreditsState(version=version_val, denominator_kind=denominator_kind, disabled_reason=disabled_reason,
                             captured_at=time.time(), from_header=True, **fields)
     except Exception:  # fail-open → miss; the breadcrumb distinguishes a parser regression from a no-headers response
@@ -355,7 +355,7 @@ def dev_fixture_credits_state() -> Optional[CreditsState]:
 
 
 def _credits_state_from_account(info) -> Optional[CreditsState]:
-    """Map a AnxiousPortalAccountInfo into a header-shaped CreditsState for the seed. Float account dollars →
+    """Map a NousPortalAccountInfo into a header-shaped CreditsState for the seed. Float account dollars →
     micros plus a DISPLAY *_usd (formatting account floats is allowed; parsing a server *_usd is not). Fail-open → None."""
     try:
         acc = getattr(info, "paid_service_access_info", None)
@@ -427,30 +427,30 @@ def _rerun_notice_policy(agent) -> None:
         emit()
 
 
-def _warm_anxious_pricing_cache() -> None:
-    """Fill the in-process Anxious pricing catalog so :func:`is_free_tier_model`'s peek can answer.
+def _warm_nous_pricing_cache() -> None:
+    """Fill the in-process Nous pricing catalog so :func:`is_free_tier_model`'s peek can answer.
     The peek never fetches and nothing else warms it during session start, so a cold process reads
     an EMPTY catalog and a subscription-billed model — which spends no credits — still draws the
     depleted banner. Fail-open: a miss leaves the peek exactly as it was."""
     try:
         from pulse_cli.models_pricing import get_pricing_for_provider
 
-        get_pricing_for_provider("anxious")
+        get_pricing_for_provider("nous")
     except Exception:
-        logger.debug("credits ▸ anxious pricing warm failed", exc_info=True)
+        logger.debug("credits ▸ nous pricing warm failed", exc_info=True)
 
 
 def rewarm_pricing_before_depleted_notice(agent) -> bool:
-    """Depleted account, model the peek cannot vouch for, Anxious catalog cold: start a background warm
+    """Depleted account, model the peek cannot vouch for, Nous catalog cold: start a background warm
     whose completion re-runs the policy and return True so the caller defers the depleted decision
     to it — the session-start warm is one-shot but the catalog expires after
-    ``_ANXIOUS_CATALOG_TTL_SECONDS``, and a cold peek would bring the banner back for a
-    subscription-billed model. False = decide now: peek warm, not on Anxious, a warm in flight (the
+    ``_NOUS_CATALOG_TTL_SECONDS``, and a cold peek would bring the banner back for a
+    subscription-billed model. False = decide now: peek warm, not on Nous, a warm in flight (the
     warm's own re-run included — fail-open, a failed fetch leaves the peek cold and the banner
     shows), or a fetch already failed and the cache is still refusing to dial. May raise; the notice
     path that calls it catches."""
     base_url = getattr(agent, "base_url", "") or ""
-    if getattr(agent, "provider", "") != "anxious" or not base_url:
+    if getattr(agent, "provider", "") != "nous" or not base_url:
         return False
     from pulse_cli.models_pricing import peek_cached_pricing, pricing_fetch_suppressed
 
@@ -461,7 +461,7 @@ def rewarm_pricing_before_depleted_notice(agent) -> bool:
         return False
 
     def _warm_then_rerun() -> None:
-        _warm_anxious_pricing_cache()
+        _warm_nous_pricing_cache()
         _rerun_notice_policy(agent)
 
     from agent.memory_provider import spawn_context_thread
@@ -476,7 +476,7 @@ def seed_credits_at_session_start(agent) -> bool:
     warnings show at session OPEN (TUI/desktop "ready" and plain-CLI first-turn setup). Idempotent once a seed
     or real header populated _credits_state. Returns True iff it seeded this call. Never raises."""
     try:
-        if getattr(agent, "provider", "") != "anxious" or getattr(agent, "_credits_state", None) is not None:
+        if getattr(agent, "provider", "") != "nous" or getattr(agent, "_credits_state", None) is not None:
             return False
         try:
             fixture = dev_fixture_credits_state()
@@ -488,12 +488,12 @@ def seed_credits_at_session_start(agent) -> bool:
 
         def _bg_seed() -> None:  # FIRE-AND-FORGET: a slow portal must never delay "ready"
             try:
-                from pulse_cli.anxious_account import get_anxious_portal_account_info
+                from pulse_cli.nous_account import get_nous_portal_account_info
                 # BEFORE the policy runs (either branch below): the free-model gate only PEEKS the
                 # pricing cache, and this thread is the first thing a chat session runs that can
                 # afford to fill it.
-                _warm_anxious_pricing_cache()
-                info = get_anxious_portal_account_info(force_fresh=True)
+                _warm_nous_pricing_cache()
+                info = get_nous_portal_account_info(force_fresh=True)
                 if getattr(agent, "_credits_state", None) is not None:
                     # A live inference header beat us — don't clobber it, but DO re-run the policy:
                     # it evaluated against the cold cache and may be showing a banner the warm

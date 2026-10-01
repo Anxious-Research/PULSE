@@ -295,7 +295,7 @@ def _probe_models_dev(provider: str, model: str, cfg: Optional[Dict[str, Any]]) 
     # historical network-on-cold-cache behavior for this one path; the fetch is cached (4h TTL) and
     # backoff-limited after failures.
     if (provider or "").strip().lower() == "openai-codex":
-        # A VALID Codex ``-900k`` picker variant is a Pulse-side alias of its base slug; the catalog
+        # A VALID Codex ``-900k`` picker variant is a PULSE-side alias of its base slug; the catalog
         # only knows the base, so look that up. The runtime model id stays untouched (the transport
         # owns wire normalization) and ineligible ``-900k`` strings pass through unchanged (#102189).
         from agent.model_metadata import strip_codex_context_variant_suffix

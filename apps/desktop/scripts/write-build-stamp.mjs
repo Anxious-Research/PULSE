@@ -217,7 +217,7 @@ export function buildStampPayload(stamp, env = process.env, platform = process.p
   }
   const version = env.PULSE_PAYLOAD_VERSION || (env.PULSE_PAYLOAD_TAG || '').replace(/^v/, '') || null
   // The bundle's baked runtime defaults/clears, recorded as data so the smoke
-  // driver can predict the app's resolved Pulse home without reimplementing
+  // driver can predict the app's resolved PULSE home without reimplementing
   // the banner. Only commit bundles carry one, but the field is harmless when
   // absent elsewhere.
   const bundleEnv = env.PULSE_BUNDLE_ENV_JSON ? validateBundleEnvironment(JSON.parse(env.PULSE_BUNDLE_ENV_JSON)) : undefined

@@ -4,7 +4,7 @@ import logging
 from typing import Callable, Optional
 from urllib.parse import urlsplit
 
-from tools.managed_tool_gateway import build_vendor_gateway_url, read_anxious_access_token
+from tools.managed_tool_gateway import build_vendor_gateway_url, read_nous_access_token
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ def connector_gateway_origin() -> str:
     return build_vendor_gateway_url("connector")
 
 
-def is_managed_anxious_gateway_url(
+def is_managed_nous_gateway_url(
     url: object,
     gateway_builder: Optional[Callable[[str], str]] = None,
 ) -> bool:
@@ -29,7 +29,7 @@ def is_managed_anxious_gateway_url(
     (:func:`managed_gateway_origin`) and the connectors host
     (:func:`connector_gateway_origin`). Each is compared as an exact
     ``(scheme, netloc)`` pair — never as a name or a domain suffix — so
-    ``evil-connector-gateway.anxiousresearchlab.com.attacker.dev`` and an ``http``
+    ``evil-connector-gateway.anxious-research.com.attacker.dev`` and an ``http``
     downgrade of a real host both stay outside the set.
 
     Anything granting a URL extra trust — our bearer, reading files off disk to
@@ -58,15 +58,15 @@ def managed_gateway_auth_headers(
 ) -> dict:
     """Live auth headers for a managed gateway URL, or ``{}`` when not managed.
 
-    Read fresh on every call rather than cached: a Anxious access token expires
+    Read fresh on every call rather than cached: a Nous access token expires
     within the hour, and a long session would otherwise keep presenting a dead
     bearer. Returns ``{}`` rather than raising when no token is available, so a
     caller can report "sign in" instead of sending an unauthenticated request.
     """
-    if not is_managed_anxious_gateway_url(url, gateway_builder):
+    if not is_managed_nous_gateway_url(url, gateway_builder):
         return {}
 
-    resolved_token_reader = token_reader or read_anxious_access_token
+    resolved_token_reader = token_reader or read_nous_access_token
     try:
         token = resolved_token_reader()
     except Exception as exc:  # pragma: no cover — defensive

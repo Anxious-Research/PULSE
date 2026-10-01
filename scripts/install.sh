@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Pulse Agent bootstrap: clone, acquire uv/Python, then hand the checkout to
+# PULSE Agent bootstrap: clone, acquire uv/Python, then hand the checkout to
 # the same completion an update runs -- command publication, product builds and
 # post-build maintenance -- so a fresh install and a finished update land in one
 # state. Heavy dependencies (tool binaries, browsers, node) are pm's job:
 # `pulse pm install`.
 #
-# Stage protocol kept for Pulse-Setup:
+# Stage protocol kept for PULSE-Setup:
 #   --manifest            print the stage list as JSON
 #   --stage NAME [--json] run one stage
 #   --non-interactive     skip stages that need input
@@ -36,7 +36,7 @@ SKIP_COMPUTER_USE=false
 
 while [ $# -gt 0 ]; do
     case "$1" in
-        --branch|-Branch|--commit|-Commit|--dir|--pulse-home|-PulseHome|--stage|-Stage)
+        --branch|-Branch|--commit|-Commit|--dir|--pulse-home|-PULSEHome|--stage|-Stage)
             option="$1"
             if [ $# -lt 2 ] || [ -z "$2" ] || [[ "$2" == -* ]]; then
                 printf '%s needs a value\n' "$option" >&2
@@ -46,7 +46,7 @@ while [ $# -gt 0 ]; do
                 --branch|-Branch) BRANCH="$2" ;;
                 --commit|-Commit) INSTALL_COMMIT="$2" ;;
                 --dir) INSTALL_DIR="$2" ;;
-                --pulse-home|-PulseHome) PULSE_HOME="$2" ;;
+                --pulse-home|-PULSEHome) PULSE_HOME="$2" ;;
                 --stage|-Stage) STAGE="$2" ;;
             esac
             shift 2 ;;
@@ -82,7 +82,7 @@ export PULSE_HOME
 INSTALL_LOG="$PULSE_HOME/logs/install.log"
 
 # Same glyphs as the pre-pm installer. Colour only on a terminal, so CI
-# transcripts and the Pulse-Setup driver read plain text.
+# transcripts and the PULSE-Setup driver read plain text.
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
     C_RED=$'\033[0;31m' C_GREEN=$'\033[0;32m' C_YELLOW=$'\033[0;33m'
     C_CYAN=$'\033[0;36m' C_MAGENTA=$'\033[0;35m' C_BOLD=$'\033[1m'
@@ -100,16 +100,16 @@ fail() { STAGE_REASON="$1"; log_error "$1"; exit 1; }
 print_banner() {
     printf '\n%s%s' "$C_MAGENTA" "$C_BOLD"
     printf '%s\n' "┌─────────────────────────────────────────────────────────┐"
-    printf '%s\n' "│             ☤ Pulse Agent Installer                    │"
+    printf '%s\n' "│             ☤ PULSE Agent Installer                    │"
     printf '%s\n' "├─────────────────────────────────────────────────────────┤"
-    printf '%s\n' "│  An open source AI agent by Anxious Research Lab.              │"
+    printf '%s\n' "│  An open source AI agent by Nous Research.              │"
     printf '%s\n' "└─────────────────────────────────────────────────────────┘"
     printf '%s\n' "$C_NC"
 }
 
 # Interactive runs collapse child-process output (git, uv, pm, the builds)
 # into one status line. CI, --verbose and a non-terminal stdout -- the
-# Pulse-Setup --json driver, E2E transcripts -- keep the full stream those
+# PULSE-Setup --json driver, E2E transcripts -- keep the full stream those
 # readers parse.
 quiet_output() {
     [ "$VERBOSE" = true ] && return 1
@@ -176,32 +176,32 @@ uv_bootstrap_pin() {
     case "$1" in
         linux-x64)
             UV_PIN_URL="https://github.com/astral-sh/uv/releases/download/0.12.3/uv-x86_64-unknown-linux-gnu.tar.gz"
-            UV_PIN_MIRROR="https://pulse-assets.anxiousresearchlab.com/upstream/sha256/600cf9a742aca00d292673b16b5acffaa7b8c269a364ad0c2e79498dcb1fe101"
+            UV_PIN_MIRROR="https://pulse-assets.anxious-research.com/upstream/sha256/600cf9a742aca00d292673b16b5acffaa7b8c269a364ad0c2e79498dcb1fe101"
             UV_PIN_SHA256="600cf9a742aca00d292673b16b5acffaa7b8c269a364ad0c2e79498dcb1fe101"
             ;;
         linux-arm64)
             UV_PIN_URL="https://github.com/astral-sh/uv/releases/download/0.12.3/uv-aarch64-unknown-linux-gnu.tar.gz"
-            UV_PIN_MIRROR="https://pulse-assets.anxiousresearchlab.com/upstream/sha256/bb66cb52e7b1823aed1183630d8d8e5c958840d584a4c55ec10a4cfc168dcca2"
+            UV_PIN_MIRROR="https://pulse-assets.anxious-research.com/upstream/sha256/bb66cb52e7b1823aed1183630d8d8e5c958840d584a4c55ec10a4cfc168dcca2"
             UV_PIN_SHA256="bb66cb52e7b1823aed1183630d8d8e5c958840d584a4c55ec10a4cfc168dcca2"
             ;;
         linux-x64-musl)
             UV_PIN_URL="https://github.com/astral-sh/uv/releases/download/0.12.3/uv-x86_64-unknown-linux-musl.tar.gz"
-            UV_PIN_MIRROR="https://pulse-assets.anxiousresearchlab.com/upstream/sha256/0643b9fb8c9fb27458e709ce6ff939695013c41975ff7b02d3f3b138d8d4bdb3"
+            UV_PIN_MIRROR="https://pulse-assets.anxious-research.com/upstream/sha256/0643b9fb8c9fb27458e709ce6ff939695013c41975ff7b02d3f3b138d8d4bdb3"
             UV_PIN_SHA256="0643b9fb8c9fb27458e709ce6ff939695013c41975ff7b02d3f3b138d8d4bdb3"
             ;;
         linux-arm64-musl)
             UV_PIN_URL="https://github.com/astral-sh/uv/releases/download/0.12.3/uv-aarch64-unknown-linux-musl.tar.gz"
-            UV_PIN_MIRROR="https://pulse-assets.anxiousresearchlab.com/upstream/sha256/fa513fca1eb2913334c944fe9adbdd410274a1cbe8dd05d03699a9eb85311d4e"
+            UV_PIN_MIRROR="https://pulse-assets.anxious-research.com/upstream/sha256/fa513fca1eb2913334c944fe9adbdd410274a1cbe8dd05d03699a9eb85311d4e"
             UV_PIN_SHA256="fa513fca1eb2913334c944fe9adbdd410274a1cbe8dd05d03699a9eb85311d4e"
             ;;
         darwin-x64)
             UV_PIN_URL="https://github.com/astral-sh/uv/releases/download/0.12.3/uv-x86_64-apple-darwin.tar.gz"
-            UV_PIN_MIRROR="https://pulse-assets.anxiousresearchlab.com/upstream/sha256/4c9f52262a14da336e4a42ed24992d12d0c956acde87619e4611d321dffa602b"
+            UV_PIN_MIRROR="https://pulse-assets.anxious-research.com/upstream/sha256/4c9f52262a14da336e4a42ed24992d12d0c956acde87619e4611d321dffa602b"
             UV_PIN_SHA256="4c9f52262a14da336e4a42ed24992d12d0c956acde87619e4611d321dffa602b"
             ;;
         darwin-arm64)
             UV_PIN_URL="https://github.com/astral-sh/uv/releases/download/0.12.3/uv-aarch64-apple-darwin.tar.gz"
-            UV_PIN_MIRROR="https://pulse-assets.anxiousresearchlab.com/upstream/sha256/546f7f8a6c70ff13a3a9d2bc958db3427298cebf3e0cb756f9177133b7068843"
+            UV_PIN_MIRROR="https://pulse-assets.anxious-research.com/upstream/sha256/546f7f8a6c70ff13a3a9d2bc958db3427298cebf3e0cb756f9177133b7068843"
             UV_PIN_SHA256="546f7f8a6c70ff13a3a9d2bc958db3427298cebf3e0cb756f9177133b7068843"
             ;;
         *)
@@ -263,14 +263,14 @@ uv_bootstrap_target() {
 UV_CMD=""
 ensure_uv() {
     [ -n "$UV_CMD" ] && return 0
-    # Always the pinned artifact, never a uv already on PATH: Pulse runs only
+    # Always the pinned artifact, never a uv already on PATH: PULSE runs only
     # its own packaged toolchain.
     local _target
     if ! _target="$(uv_bootstrap_target)"; then
-        fail "no pinned uv build for this platform ($(uname -s) $(uname -m)); Pulse does not support this host"
+        fail "no pinned uv build for this platform ($(uname -s) $(uname -m)); PULSE does not support this host"
     fi
     if ! uv_bootstrap_pin "$_target"; then
-        fail "no pinned uv artifact for $_target; Pulse does not support this host"
+        fail "no pinned uv artifact for $_target; PULSE does not support this host"
     fi
     local _store="${PULSE_RUNTIME_DIR:-$PULSE_HOME/tools}"
     local _entry="$_store/uv-$UV_PIN_VERSION-$_target"
@@ -337,7 +337,7 @@ check_platform() {
     # install the phone cannot run (no Android wheels in the lock). The
     # signed APT package is the only supported shape there.
     if [ -n "${TERMUX_VERSION:-}" ] || case "${PREFIX:-}" in *com.termux/files/usr*) true ;; *) false ;; esac; then
-        fail "Termux is installed from its APT repository, not install.sh: pkg install pulse-agent (setup: https://pulse-agent.anxiousresearchlab.com/docs/getting-started/termux)"
+        fail "Termux is installed from its APT repository, not install.sh: pkg install pulse-agent (setup: https://pulse-agent.anxious-research.com/docs/getting-started/termux)"
     fi
     case "$(uname -s 2>/dev/null)" in
         Linux*) : ;;
@@ -403,7 +403,7 @@ products_record() {
 stage_record() {
     case "$1" in
         prerequisites) echo "System prerequisites|runtime|false" ;;
-        repository)    echo "Download Pulse Agent|runtime|false" ;;
+        repository)    echo "Download PULSE Agent|runtime|false" ;;
         venv)          echo "Create Python environment|runtime|false" ;;
         python-deps)   echo "Install Python dependencies|runtime|false" ;;
         config)        echo "Prepare config and skills|configuration|false" ;;
@@ -463,6 +463,17 @@ stage_repository() {
         # Explicit refspec: a tag-pinned --single-branch checkout from an older
         # installer maps only the tag, so a by-name fetch writes FETCH_HEAD and
         # never the origin/$BRANCH everything below resolves (#125112).
+        # git 2.53+ aborts fetches into a partial clone whose packs lack a .promisor
+        # marker (#124272), and an install stuck there never fetches the updater that
+        # heals it. Marking is idempotent and never rewrites objects.
+        if [ "$(git -C "$INSTALL_DIR" config --bool --get remote.origin.promisor)" = true ]; then
+            local pack
+            for pack in "$INSTALL_DIR"/.git/objects/pack/pack-*.pack; do
+                if [ -f "$pack" ] && [ ! -e "${pack%.pack}.promisor" ]; then
+                    : > "${pack%.pack}.promisor" || log_warn "could not mark $pack as a partial-clone pack"
+                fi
+            done
+        fi
         run_logged "Fetching origin/$BRANCH" git -C "$INSTALL_DIR" fetch origin "+refs/heads/$BRANCH:refs/remotes/origin/$BRANCH" \
             || fail "git fetch failed"
         local stamp
@@ -529,7 +540,7 @@ stage_repository() {
             if [ -d "$INSTALL_DIR" ] && [ ! -L "$INSTALL_DIR" ] && [ -z "$(ls -A "$INSTALL_DIR")" ]; then
                 rmdir "$INSTALL_DIR" || fail "cannot replace empty $INSTALL_DIR"
             else
-                fail "$INSTALL_DIR exists and is not a Pulse git checkout. Move it aside, or install elsewhere with --dir <path>."
+                fail "$INSTALL_DIR exists and is not a PULSE git checkout. Move it aside, or install elsewhere with --dir <path>."
             fi
         fi
         mkdir -p "$(dirname "$INSTALL_DIR")"
@@ -578,7 +589,7 @@ stage_repository() {
             fail "cannot publish cloned checkout"
         fi
         rmdir "$staged"
-        log_success "Pulse Agent cloned"
+        log_success "PULSE Agent cloned"
     fi
     if [ -n "$INSTALL_COMMIT" ]; then
         # A pin must come from the branch being installed: the complete
@@ -602,16 +613,14 @@ stage_venv() {
 # The application dependency graph is never installed in this interpreter.
 bootstrap_python() {
     ensure_uv
-    local _py=""
+    local _py
     # Read packages.python.version by following object names and braces, not
     # indentation — same pre-Python reader contract as setup-pulse.sh's pin().
-    if [ -f "$INSTALL_DIR/pm/lock.json" ]; then
-        _py="$(awk -F '"' '
-            /^[[:space:]]*("[^"]+"[[:space:]]*:[[:space:]]*)?\{/ { path[++depth] = $2; next }
-            /^[[:space:]]*\}[[:space:]]*,?[[:space:]]*$/ { delete path[depth--]; next }
-            path[2] == "packages" && path[3] == "python" && $2 == "version" && depth == 3 { print $4; exit }
-        ' "$INSTALL_DIR/pm/lock.json" 2>/dev/null | cut -d+ -f1 | cut -d. -f1,2)"
-    fi
+    _py="$(awk -F '"' '
+        /^[[:space:]]*("[^"]+"[[:space:]]*:[[:space:]]*)?\{/ { path[++depth] = $2; next }
+        /^[[:space:]]*\}[[:space:]]*,?[[:space:]]*$/ { delete path[depth--]; next }
+        path[2] == "packages" && path[3] == "python" && $2 == "version" && depth == 3 { print $4; exit }
+    ' "$INSTALL_DIR/pm/lock.json" | cut -d+ -f1 | cut -d. -f1,2)"
     [ -n "$_py" ] || _py="3.14"
     # Only base interpreters qualify: an activated app venv must not become
     # PM's bootstrap parent. Prefer the existing managed Python, then a host
@@ -676,7 +685,7 @@ append_shell_path() {
         return 0
     fi
     mkdir -p "$(dirname "$rc")"
-    printf '\n# Pulse Agent command\n%s\n' "$line" >> "$rc" || fail "cannot update PATH in $rc"
+    printf '\n# PULSE Agent command\n%s\n' "$line" >> "$rc" || fail "cannot update PATH in $rc"
     log_success "added ~/.local/bin to PATH in $rc"
 }
 
@@ -778,9 +787,8 @@ stage_complete() {
         printf '{\n  "schemaVersion": 1,\n  "pinnedCommit": "%s",\n  "pinnedBranch": "%s",\n  "completedAt": "%s"\n}\n' \
             "$commit" "$BRANCH" "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" > "$INSTALL_DIR/.pulse-bootstrap-complete.tmp"
         mv -f "$INSTALL_DIR/.pulse-bootstrap-complete.tmp" "$INSTALL_DIR/.pulse-bootstrap-complete"
-        cp -f "$INSTALL_DIR/.pulse-bootstrap-complete" "$INSTALL_DIR/.pulse_bootstrap-complete" 2>/dev/null || true
     fi
-    log_success "Pulse Agent install complete. Run: pulse"
+    log_success "PULSE Agent install complete. Run: pulse"
 }
 
 print_path_reload_hint() {

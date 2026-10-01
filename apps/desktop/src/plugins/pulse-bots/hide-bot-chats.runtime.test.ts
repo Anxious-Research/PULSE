@@ -1,4 +1,4 @@
-import type * as PulseSdk from '@pulse/plugin-sdk'
+import type * as PULSESdk from '@pulse/plugin-sdk'
 import { atom } from 'nanostores'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -20,7 +20,7 @@ const request = vi.fn(async (method: string) =>
 )
 
 vi.mock('@pulse/plugin-sdk', async importOriginal => {
-  const sdk = await importOriginal<typeof PulseSdk>()
+  const sdk = await importOriginal<typeof PULSESdk>()
 
   return {
     ...sdk,

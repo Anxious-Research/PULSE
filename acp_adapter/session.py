@@ -1,4 +1,4 @@
-"""ACP session manager — maps ACP sessions to Pulse AIAgent instances.
+"""ACP session manager — maps ACP sessions to PULSE AIAgent instances.
 
 Sessions are persisted to the shared SessionDB (``~/.pulse/state.db``) so they
 survive process restarts and appear in ``session_search``; ``load_session`` /
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 def _translate_acp_cwd(cwd: str) -> str:
     """Translate Windows ACP cwd values (``E:\\Projects``, ``\\\\wsl.localhost\\``) to POSIX form
-    when Pulse runs in WSL so agents, tools, and persisted sessions agree; no-op elsewhere."""
+    when PULSE runs in WSL so agents, tools, and persisted sessions agree; no-op elsewhere."""
     return translate_cwd_for_wsl_backend(str(cwd))
 
 
@@ -130,7 +130,7 @@ def _first_user_preview(history: List[Dict[str, Any]], default: str) -> str:
 
 @dataclass
 class SessionState:
-    """Tracks per-session state for an ACP-managed Pulse agent."""
+    """Tracks per-session state for an ACP-managed PULSE agent."""
 
     session_id: str
     agent: Any  # AIAgent instance
@@ -154,7 +154,7 @@ class SessionState:
 
 
 class SessionManager:
-    """Thread-safe manager for ACP sessions backed by Pulse AIAgent instances.
+    """Thread-safe manager for ACP sessions backed by PULSE AIAgent instances.
 
     Sessions are held in-memory for fast access **and** persisted to the shared
     SessionDB so they survive restarts and are searchable via ``session_search``."""
@@ -544,6 +544,10 @@ class SessionManager:
                 "credential_pool": runtime.get("credential_pool"),
                 "command": runtime.get("command"), "args": list(runtime.get("args") or []),
             })
+            # The resolved provider's request body (a custom entry's extra_body); an explicit base_url pointing
+            # elsewhere is another endpoint, which must not inherit it.
+            if runtime.get("request_overrides") and (not base_url or base_url == runtime.get("base_url")):
+                kwargs["request_overrides"] = runtime["request_overrides"]
         except Exception as exc:
             resolve_error = exc
             logger.debug("ACP session falling back to default provider resolution", exc_info=True)
@@ -555,7 +559,7 @@ class SessionManager:
         # join a slow-but-reachable server would be invisible all session. ensure_* also
         # (re)starts discovery if the entry spawn never ran or connected zero servers.
         # Bounded by ``mcp_discovery_timeout`` (config.yaml, ~1.5s); late servers are
-        # picked up by PulseACPAgent._schedule_mcp_late_refresh.
+        # picked up by PULSEACPAgent._schedule_mcp_late_refresh.
         try:
             from pulse_cli.mcp_startup import ensure_mcp_discovery_before_agent_build
 
@@ -575,11 +579,3 @@ class SessionManager:
         # ACP stdio: stdout is protocol-only JSON-RPC; agent chatter goes to stderr.
         agent._print_fn = _acp_stderr_print
         return agent
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from threading import Lock  # noqa: F401,E402
-# ---- END PLUGIN-COMPAT ----

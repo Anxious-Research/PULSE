@@ -166,13 +166,13 @@ CORRUPT_STORE_DETAIL = {
 # lives would repair the wrong generation in place, so it is deliberately NOT suggested here.
 DELETED_WAL_DETAIL = {
     "error": "state_db_deleted_wal",
-    "message": "another Pulse process still holds an old copy of the session database's write-ahead log — "
-               "quit every Pulse process on this profile, run `pulse doctor` (it names the holders), "
-               "then start Pulse again. Do not run `pulse doctor --fix` while they run.",
+    "message": "another PULSE process still holds an old copy of the session database's write-ahead log — "
+               "quit every PULSE process on this profile, run `pulse doctor` (it names the holders), "
+               "then start PULSE again. Do not run `pulse doctor --fix` while they run.",
 }
 STATE_DB_REPLACED_DETAIL = {
     "error": "state_db_replaced",
-    "message": "state.db was replaced while Pulse was running — stop Pulse, run `pulse doctor`, "
+    "message": "state.db was replaced while PULSE was running — stop PULSE, run `pulse doctor`, "
                "then start it again. Do not run `pulse doctor --fix`, which would repair the wrong file in place.",
 }
 # Every other bucket a malformed image can classify as ("corrupt", "fts_index") is the corrupt payload.

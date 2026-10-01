@@ -287,8 +287,8 @@ class PeerRunsHTTPClient:
             data=None if body is None else json.dumps(body, separators=(",", ":")).encode("utf-8"),
             headers={
                 "Authorization": (
-                    f"PulseRoom {room_grant}" if room_grant else f"Bearer {self.api_key}"),
-                "Content-Type": "application/json", "User-Agent": "Pulse-RoomLink/1.0",
+                    f"PULSERoom {room_grant}" if room_grant else f"Bearer {self.api_key}"),
+                "Content-Type": "application/json", "User-Agent": "PULSE-RoomLink/1.0",
                 **(headers or {})})
         try:
             with open_credentialed_url(request, timeout=self.timeout_seconds) as response:

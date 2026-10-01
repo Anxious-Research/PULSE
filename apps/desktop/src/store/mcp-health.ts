@@ -14,7 +14,7 @@
  * the other just learned.
  */
 
-import { getPulseConfigRecord, type McpTestResult, setMcpServerEnabled, testMcpServer } from '@/pulse'
+import { getPULSEConfigRecord, type McpTestResult, setMcpServerEnabled, testMcpServer } from '@/pulse'
 import { translateNow } from '@/i18n'
 import { classifyProbe, freshProbe, probeCache, probeKey } from '@/lib/mcp-probe-cache'
 import { getServers, serverEnabled } from '@/lib/mcp-servers'
@@ -157,7 +157,7 @@ async function sweep(): Promise<void> {
   let config: Record<string, unknown>
 
   try {
-    config = await getPulseConfigRecord()
+    config = await getPULSEConfigRecord()
   } catch {
     // Backend unreachable / mid-restart — the next interval tick retries.
     return

@@ -45,7 +45,7 @@ class AccountUsageSnapshot:
     details: tuple[str, ...] = ()
     unavailable_reason: Optional[str] = None
     # Exact decoded provider response body (no headers/credentials) for integrations that need
-    # fields Pulse does not normalize yet. Only populated by providers that fetch a JSON body.
+    # fields PULSE does not normalize yet. Only populated by providers that fetch a JSON body.
     raw: Optional[dict] = None
 
     @property
@@ -128,18 +128,18 @@ def _is_finite_num(v: Any) -> TypeGuard[float]:
     return _is_num(v) and not isinstance(v, bool) and math.isfinite(v)
 
 
-def _anxious_snapshot(windows: list, details: list, tail: list, *, source: str, plan: Optional[str] = None) -> Optional[AccountUsageSnapshot]:
-    """Anxious snapshot with *tail* lines appended, or None when there is nothing to show."""
+def _nous_snapshot(windows: list, details: list, tail: list, *, source: str, plan: Optional[str] = None) -> Optional[AccountUsageSnapshot]:
+    """Nous snapshot with *tail* lines appended, or None when there is nothing to show."""
     if not windows and not details:
         return None
-    return _snapshot("anxious", source, windows, details + tail, title="Anxious credits", plan=plan)
+    return _snapshot("nous", source, windows, details + tail, title="Nous credits", plan=plan)
 
 
-def build_anxious_credits_snapshot(account_info) -> Optional[AccountUsageSnapshot]:
-    """AnxiousPortalAccountInfo → /usage snapshot: dollar magnitudes + renewal date + portal CTA, plus a ``% used``
+def build_nous_credits_snapshot(account_info) -> Optional[AccountUsageSnapshot]:
+    """NousPortalAccountInfo → /usage snapshot: dollar magnitudes + renewal date + portal CTA, plus a ``% used``
     gauge when the portal supplies ``monthly_credits``. Fail-open → None."""
     try:
-        from pulse_cli.anxious_account import anxious_portal_topup_url
+        from pulse_cli.nous_account import nous_portal_topup_url
         if account_info is None or not getattr(account_info, "logged_in", False):
             return None
         access = getattr(account_info, "paid_service_access_info", None)
@@ -172,17 +172,17 @@ def build_anxious_credits_snapshot(account_info) -> Optional[AccountUsageSnapsho
                 details.append(f"Renews: {period_end}")
         if getattr(account_info, "paid_service_access", None) is False:
             details.append(_DEPLETED_LINE)
-        return _anxious_snapshot(windows, details, [f"Top up: {anxious_portal_topup_url(account_info)}", "(or run /topup)"],
+        return _nous_snapshot(windows, details, [f"Top up: {nous_portal_topup_url(account_info)}", "(or run /topup)"],
                               source="portal-account", plan=getattr(sub, "plan", None) if sub is not None else None)
     except (AttributeError, TypeError):
         return None
 
 
-def _anxious_logged_in() -> bool:
-    """Cheap local auth-state check: a Anxious access token is present. Fail-open False."""
+def _nous_logged_in() -> bool:
+    """Cheap local auth-state check: a Nous access token is present. Fail-open False."""
     try:
         from pulse_cli.auth import get_provider_auth_state
-        tok = (get_provider_auth_state("anxious") or {}).get("access_token")
+        tok = (get_provider_auth_state("nous") or {}).get("access_token")
         return isinstance(tok, str) and bool(tok.strip())
     except Exception:
         return False
@@ -198,12 +198,12 @@ def _fetch_portal_account(timeout: float):
     and never blocks the caller or process exit; its eventual exception is
     drained so GC never logs "exception was never retrieved"."""
     import contextvars
-    from pulse_cli.anxious_account import get_anxious_portal_account_info
+    from pulse_cli.nous_account import get_nous_portal_account_info
     from tools.daemon_pool import DaemonThreadPoolExecutor
 
     context = contextvars.copy_context()
     pool = DaemonThreadPoolExecutor(max_workers=1)
-    future = pool.submit(context.run, get_anxious_portal_account_info, force_fresh=True)
+    future = pool.submit(context.run, get_nous_portal_account_info, force_fresh=True)
     try:
         return future.result(timeout=timeout)
     except BaseException:
@@ -213,8 +213,8 @@ def _fetch_portal_account(timeout: float):
         pool.shutdown(wait=False)
 
 
-def anxious_credits_lines(*, markdown: bool = False, timeout: float = 10.0) -> list[str]:
-    """Rendered Anxious-credits /usage lines, or [] when there's nothing to show. Independent of any live agent
+def nous_credits_lines(*, markdown: bool = False, timeout: float = 10.0) -> list[str]:
+    """Rendered Nous-credits /usage lines, or [] when there's nothing to show. Independent of any live agent
     (logged-in gate, then a bounded portal fetch); shared by CLI ``_show_usage`` and the TUI ``session.usage`` RPC.
     Fail-open: any hiccup or timeout → []. PULSE_DEV_CREDITS_FIXTURE renders from the fixture instead of the portal."""
     try:
@@ -224,10 +224,10 @@ def anxious_credits_lines(*, markdown: bool = False, timeout: float = 10.0) -> l
         fixture = None
     if fixture is not None:
         return render_account_usage_lines(_snapshot_from_credits_state(fixture), markdown=markdown)
-    if not _anxious_logged_in():
+    if not _nous_logged_in():
         return []
     try:
-        snapshot = build_anxious_credits_snapshot(_fetch_portal_account(timeout))
+        snapshot = build_nous_credits_snapshot(_fetch_portal_account(timeout))
         return render_account_usage_lines(snapshot, markdown=markdown)
     except Exception:
         # Fail-open; breadcrumb so a dead /usage credits block is diagnosable.
@@ -257,7 +257,7 @@ def _snapshot_from_credits_state(state) -> Optional[AccountUsageSnapshot]:
                 details.append(f"{label}: ${value}")
         if getattr(state, "paid_access", True) is False:
             details.append(_DEPLETED_LINE)
-        return _anxious_snapshot(windows, details, ["(dev fixture — PULSE_DEV_CREDITS_FIXTURE)"], source="dev-fixture")
+        return _nous_snapshot(windows, details, ["(dev fixture — PULSE_DEV_CREDITS_FIXTURE)"], source="dev-fixture")
     except (AttributeError, TypeError):
         return None
 
@@ -279,7 +279,7 @@ def build_credits_view(*, markdown: bool = False, timeout: float = 10.0) -> Cred
     match; the balance block drops the trailing top-up/hint lines (/topup has its own affordance).
     Fail-open → ``CreditsView(logged_in=False)``."""
     not_logged_in = CreditsView(logged_in=False)
-    if not _anxious_logged_in():
+    if not _nous_logged_in():
         return not_logged_in
     try:
         account = _fetch_portal_account(timeout)
@@ -288,10 +288,10 @@ def build_credits_view(*, markdown: bool = False, timeout: float = 10.0) -> Cred
         return not_logged_in
     if account is None or not getattr(account, "logged_in", False):
         return not_logged_in
-    from pulse_cli.anxious_account import anxious_portal_topup_url
+    from pulse_cli.nous_account import nous_portal_topup_url
     balance_lines = [
         line
-        for line in render_account_usage_lines(build_anxious_credits_snapshot(account), markdown=markdown)
+        for line in render_account_usage_lines(build_nous_credits_snapshot(account), markdown=markdown)
         if not line.lstrip().startswith(("Top up:", "(or run"))
     ]
     who = [str(v) for v in (getattr(account, "email", None),) if v]
@@ -300,7 +300,7 @@ def build_credits_view(*, markdown: bool = False, timeout: float = 10.0) -> Cred
         who.append(f"org {org_name}")
     return CreditsView(
         logged_in=True, balance_lines=tuple(balance_lines),
-        identity_line=("Topping up as " + " / ".join(who)) if who else None, topup_url=anxious_portal_topup_url(account),
+        identity_line=("Topping up as " + " / ".join(who)) if who else None, topup_url=nous_portal_topup_url(account),
         depleted=getattr(account, "paid_service_access", None) is False,
     )
 

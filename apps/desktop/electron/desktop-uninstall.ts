@@ -174,7 +174,7 @@ function allowedUninstallModes(kind: InstallKind): string[] {
 function nativeRemovalInstructions(kind, platform, appPath = null) {
   if (kind === 'nix') {
     return (
-      'This Pulse desktop app was installed by Nix. Uninstall it the same way you installed it: ' +
+      'This PULSE desktop app was installed by Nix. Uninstall it the same way you installed it: ' +
       'remove pulse-agent from your flake or profile, then rebuild.'
     )
   }
@@ -184,7 +184,7 @@ function nativeRemovalInstructions(kind, platform, appPath = null) {
   }
 
   if (platform === 'darwin') {
-    return 'Quit the app and drag Pulse.app from Applications to the Trash.'
+    return 'Quit the app and drag PULSE.app from Applications to the Trash.'
   }
 
   if (appPath && /\.appimage$/i.test(String(appPath))) {
@@ -195,7 +195,7 @@ function nativeRemovalInstructions(kind, platform, appPath = null) {
     return `Delete the app directory at ${appPath}.`
   }
 
-  return 'Delete the Pulse AppImage (or app directory) from wherever you saved it.'
+  return 'Delete the PULSE AppImage (or app directory) from wherever you saved it.'
 }
 
 /**
@@ -227,8 +227,8 @@ function modeRemovesUserData(mode: string) {
  * Resolve the on-disk app bundle/dir to remove for the running desktop app,
  * given the path to the running executable (`process.execPath`) and platform.
  *
- *   macOS:   …/Pulse.app/Contents/MacOS/Pulse  → …/Pulse.app
- *   Windows: …\Pulse\Pulse.exe                 → …\Pulse  (install dir)
+ *   macOS:   …/PULSE.app/Contents/MacOS/PULSE  → …/PULSE.app
+ *   Windows: …\PULSE\PULSE.exe                 → …\PULSE  (install dir)
  *   Linux:   AppImage → the APPIMAGE env path; unpacked → the *-unpacked dir
  *
  * Returns null when we can't confidently identify a removable bundle (e.g.
@@ -247,10 +247,10 @@ function resolveRemovableAppPath(execPath, platform, env: any = {}) {
   const p = platform === 'win32' ? path.win32 : path.posix
 
   if (platform === 'darwin') {
-    // …/Pulse.app/Contents/MacOS/Pulse → strip 3 segments to the .app
+    // …/PULSE.app/Contents/MacOS/PULSE → strip 3 segments to the .app
     const macOsDir = p.dirname(exe) // …/Contents/MacOS
     const contents = p.dirname(macOsDir) // …/Contents
-    const appBundle = p.dirname(contents) // …/Pulse.app
+    const appBundle = p.dirname(contents) // …/PULSE.app
 
     if (appBundle.endsWith('.app')) {
       return appBundle
@@ -260,10 +260,10 @@ function resolveRemovableAppPath(execPath, platform, env: any = {}) {
   }
 
   if (platform === 'win32') {
-    // NSIS per-user installs Pulse.exe directly in the install dir.
+    // NSIS per-user installs PULSE.exe directly in the install dir.
     const dir = p.dirname(exe)
 
-    if (/[\\/]Pulse$/i.test(dir) || /[\\/]pulse-desktop$/i.test(dir)) {
+    if (/[\\/]PULSE$/i.test(dir) || /[\\/]pulse-desktop$/i.test(dir)) {
       return dir
     }
 
@@ -371,7 +371,7 @@ function buildWindowsCleanupScript({
   const pid = Number(desktopPid) || 0
   // cmd.exe has no string escaping inside quotes; strip embedded quotes (paths
   // under %LOCALAPPDATA% never contain them). `&`/`^` in a path would still be
-  // a problem, but Pulse install paths don't use them.
+  // a problem, but PULSE install paths don't use them.
   const q = s => `"${String(s).replace(/"/g, '')}"`
 
   const lines = [

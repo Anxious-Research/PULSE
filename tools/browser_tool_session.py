@@ -24,7 +24,7 @@ from tools import browser_tool_lightpanda_fallback as _lp
 from tools import browser_tool_real_profile as _real_profile
 from tools import browser_tool_snapshot as _snapshot
 
-_DOCKER_PULL = "docker pull ghcr.io/anxiousresearchlab/pulse-agent:latest"
+_DOCKER_PULL = "docker pull ghcr.io/nousresearch/pulse-agent:latest"
 _CHROMIUM_INSTALL = "pulse pm install chromium (system libraries: npx playwright install-deps chromium)"
 _CHROMIUM_MISSING_DOCKER_HINT = ("Chromium browser is missing. You're running in Docker — pull the latest image "
                                  f"to get the bundled Chromium: {_DOCKER_PULL}")
@@ -261,7 +261,7 @@ def _create_local_session(task_id: str, allow_real_profile: bool = True) -> Dict
             _bt.logger.info("Created real-profile local session %s for task %s", info["session_name"], task_id)
             return info
 
-    # Browser Use mode + ``browser.engine: lightpanda`` drives a Pulse-spawned
+    # Browser Use mode + ``browser.engine: lightpanda`` drives a PULSE-spawned
     # ``lightpanda serve`` (the built-in tools are hidden in that mode).
     if _bt._is_browser_use_cli_mode() and _lp._using_lightpanda_engine():
         return _create_lightpanda_session(task_id)
@@ -625,7 +625,7 @@ def _interpret_browser_command_output(command: str, stdout: str, stderr: str, re
     return parsed
 
 
-_SANDBOX_AGENT_BROWSER = "agent-browser"  # the CLI baked into anxiousresearchlab/pulse-sandbox:desktop
+_SANDBOX_AGENT_BROWSER = "agent-browser"  # the CLI baked into nousresearch/pulse-sandbox:desktop
 _SANDBOX_ENV_KEYS = ("AGENT_BROWSER_SOCKET_DIR", "AGENT_BROWSER_IDLE_TIMEOUT_MS", "AGENT_BROWSER_ARGS",
                      "AGENT_BROWSER_PROFILE", "AGENT_BROWSER_EXECUTABLE_PATH", "AGENT_BROWSER_HEADED",
                      "DISPLAY", "XAUTHORITY", "DBUS_SESSION_BUS_ADDRESS", "ANONYMIZED_TELEMETRY", "TMPDIR")
@@ -801,7 +801,7 @@ def run_fenced_pair(session_info: Dict[str, Any], fn: Callable[[], "tuple[str, D
 
 def _shares_bot_desktop_browser(session_info: Dict[str, Any]) -> bool:
     """Decided by provenance, not transport: every LOCAL session (plain ``--session``, real-profile CDP
-    attach, Lightpanda) is a browser Pulse launched with this profile's Bot Desktop DISPLAY, so it is the
+    attach, Lightpanda) is a browser PULSE launched with this profile's Bot Desktop DISPLAY, so it is the
     screen a human who took over is typing into. Cloud / user-supplied CDP sessions are another browser.
     A human lease with the screen already gone (dead Xvnc) still fences — computer_use does the same."""
     if not (session_info.get("features") or {}).get("local"):
@@ -828,15 +828,16 @@ def _dispatch_browser_command(
     if command != "close" and session_info.get("cdp_url"):
         _cdp._ensure_cdp_supervisor(task_id)
 
-    # Cloud/CDP: ``--cdp <ws_url>`` (NEVER with --session: agent-browser >=0.13
-    # would create a local browser and silently ignore --cdp). Local: ``--session <name>``.
+    # Every backend runs in this task's own daemon (``--session <name>``); Cloud/CDP adds
+    # ``--cdp <ws_url>`` to attach it to the remote browser. Without --session every CDP task
+    # shared agent-browser's default daemon, so one task's snapshot refs or close hit the others.
     # Engine injection keys off the resolved session backend, not global provider
     # state: hybrid routing can create a local sidecar while a cloud provider stays configured.
     engine = _engine_override or _cloud._get_browser_engine()
+    backend_args = ["--session", session_info["session_name"]]
     if session_info.get("cdp_url"):
-        backend_args = ["--cdp", session_info["cdp_url"]]
+        backend_args += ["--cdp", session_info["cdp_url"]]
     else:
-        backend_args = ["--session", session_info["session_name"]]
         if (bd_port := _bot_desktop_attach_port(session_info)) is not None:
             # A Chromium already runs on the Bot Desktop's shared profile (the human clicked the dock's
             # Browser first): a launch would be forwarded into it by Chromium's singleton and die without

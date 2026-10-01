@@ -3,7 +3,7 @@ import { EventEmitter } from 'node:events'
 import type { BrowserWindow, IpcMainInvokeEvent } from 'electron'
 import { beforeEach, expect, it, vi } from 'vitest'
 
-import type { PulseNotification } from './notification-types'
+import type { PULSENotification } from './notification-types'
 
 const host = vi.hoisted(() => ({
   handle: vi.fn(),
@@ -53,7 +53,7 @@ it('returns native clicks and approval actions to the emitting window, not the p
 
   const notify = host.handle.mock.calls[0][1] as (
     event: IpcMainInvokeEvent,
-    payload: PulseNotification
+    payload: PULSENotification
   ) => Promise<boolean>
 
   const payload = {
@@ -101,7 +101,7 @@ it('delivers plugin callbacks to their source and falls back only for navigation
 
   const notify = host.handle.mock.calls[0][1] as (
     event: IpcMainInvokeEvent,
-    payload: PulseNotification
+    payload: PULSENotification
   ) => Promise<boolean>
 
   await notify({ sender: source.webContents } as unknown as IpcMainInvokeEvent, {

@@ -14,7 +14,7 @@ from agent.display import build_tool_preview
 
 logger = logging.getLogger(__name__)
 
-# Pulse tool name -> ACP ToolKind (anything unlisted is "other").
+# PULSE tool name -> ACP ToolKind (anything unlisted is "other").
 TOOL_KIND_MAP: Dict[str, ToolKind] = {
     name: kind
     for kind, names in {
@@ -141,7 +141,7 @@ def _args_json(arguments: Any) -> str:
 def _json_loads_maybe(value: Optional[str]) -> Any:
     """Decode a JSON string; non-strings pass through, undecodable strings yield None.
 
-    Some Pulse tools append a human hint after the payload (``{...}\\n\\n[Hint: ...]``),
+    Some PULSE tools append a human hint after the payload (``{...}\\n\\n[Hint: ...]``),
     so fall back to decoding the first JSON value to keep the structured rendering path."""
     if not isinstance(value, str):
         return value
@@ -167,7 +167,7 @@ def _fenced_text(text: str, language: str = "") -> str:
 
 
 def _tool_result_failed(result: Optional[str], tool_name: str | None = None) -> bool:
-    """Return True when a structured Pulse tool result clearly failed.
+    """Return True when a structured PULSE tool result clearly failed.
 
     Deliberately conservative: plain text may legitimately contain "error", so
     only structured tool-level failures map to ACP failed status."""
@@ -192,7 +192,7 @@ def _tool_result_failed(result: Optional[str], tool_name: str | None = None) -> 
 
 def build_tool_title(tool_name: str, args: Args) -> str:
     """``<tool_name>: <preview>`` using the same per-tool preview (and argument redaction) as
-    every other Pulse surface, so ACP clients never show a different summary than the CLI/TUI;
+    every other PULSE surface, so ACP clients never show a different summary than the CLI/TUI;
     bare tool name when the arguments yield no preview."""
     preview = build_tool_preview(tool_name, args, max_len=80)
     return f"{tool_name}: {preview}" if preview else tool_name

@@ -5,6 +5,7 @@ import React from 'react'
 import { describe, expect, it } from 'vitest'
 
 import { SessionPanel } from '../components/branding.js'
+import { messages } from '../i18n/runtime.js'
 import { DEFAULT_THEME } from '../theme.js'
 import type { McpServerStatus, SessionInfo } from '../types.js'
 
@@ -14,7 +15,7 @@ import type { McpServerStatus, SessionInfo } from '../types.js'
 // pulse_cli/banner.py) and the "connected" label on the MCP collapse toggle.
 //
 // Regression: branding.tsx used the raw `info.mcp_servers.length`, so a
-// disabled `linear` server alongside a connected `anxious-support` server made
+// disabled `linear` server alongside a connected `nous-support` server made
 // the TUI report "2 MCP" while the classic CLI correctly reported "1 MCP".
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
@@ -76,14 +77,14 @@ describe('branding MCP headline count', () => {
   it('counts only connected servers, not configured-but-disabled ones', async () => {
     const frame = await renderFooter(
       baseInfo([
-        mcp({ connected: true, name: 'anxious-support', status: 'connected', tools: 6 }),
+        mcp({ connected: true, name: 'nous-support', status: 'connected', tools: 6 }),
         mcp({ connected: false, disabled: true, name: 'linear', status: 'disabled' })
       ])
     )
 
     // One connected server → "1 MCP", never "2 MCP".
-    expect(frame).toContain('1 MCP')
-    expect(frame).not.toContain('2 MCP')
+    expect(frame).toContain(messages().chatBits.branding.mcpSummary(1))
+    expect(frame).not.toContain(messages().chatBits.branding.mcpSummary(2))
   })
 
   it('drops the MCP segment entirely when no server is connected', async () => {

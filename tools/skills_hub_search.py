@@ -1,4 +1,4 @@
-"""Skills Hub discovery: the centralized Pulse index fetch (cached, stale-
+"""Skills Hub discovery: the centralized PULSE index fetch (cached, stale-
 fallback), the source router, and parallel/unified search across source
 adapters.
 
@@ -17,14 +17,14 @@ from typing import Any, Dict, List, Optional, Tuple
 from tools.skills_hub_clawhub import ClawHubSource
 from tools.skills_hub_github import GitHubAuth, GitHubSource, _filter_results_by_provider, _provider_filter_of
 from tools.skills_hub_models import SkillMeta, SkillSource, TRUST_RANK, _dedupe_by_trust, hub
-from tools.skills_hub_official import PulseIndexSource, OptionalSkillSource
+from tools.skills_hub_official import PULSEIndexSource, OptionalSkillSource
 from tools.skills_hub_skillssh import SkillsShSource
 from tools.skills_hub_sources import BrowseShSource, LobeHubSource, UrlSource, WellKnownSkillSource
 
 # Log-record parity with the origin module.
 logger = logging.getLogger("tools.skills_hub")
 
-PULSE_INDEX_URL = "https://pulse-agent.anxiousresearchlab.com/docs/api/skills-index.json"
+PULSE_INDEX_URL = "https://pulse-agent.anxious-research.com/docs/api/skills-index.json"
 PULSE_INDEX_TTL = 6 * 3600  # 6 hours
 
 
@@ -56,14 +56,14 @@ def _load_pulse_index() -> Optional[dict]:
                 headers={"Accept-Encoding": accept_encoding},
             )
             if resp.status_code != 200:
-                logger.debug("Pulse index fetch returned %d", resp.status_code)
+                logger.debug("PULSE index fetch returned %d", resp.status_code)
                 return _load_stale_index_cache()
             data = resp.json()
             break
         except httpx.DecodingError as e:
-            logger.debug("Pulse index decode failed (Accept-Encoding=%s): %s", accept_encoding, e)
+            logger.debug("PULSE index decode failed (Accept-Encoding=%s): %s", accept_encoding, e)
         except (httpx.HTTPError, json.JSONDecodeError) as e:
-            logger.debug("Pulse index fetch failed: %s", e)
+            logger.debug("PULSE index fetch failed: %s", e)
             return _load_stale_index_cache()
     if not isinstance(data, dict) or "skills" not in data:
         return _load_stale_index_cache()
@@ -103,7 +103,7 @@ def create_source_router(auth: Optional[GitHubAuth] = None) -> List[SkillSource]
         auth = GitHubAuth()
     return [
         OptionalSkillSource(auth=auth),   # official optional skills (highest priority)
-        PulseIndexSource(auth=auth),     # centralized index (search + resolved install paths)
+        PULSEIndexSource(auth=auth),     # centralized index (search + resolved install paths)
         SkillsShSource(auth=auth),
         WellKnownSkillSource(),
         UrlSource(),                      # direct HTTP(S) URL to a SKILL.md
@@ -121,7 +121,7 @@ def _search_one_source(
     try:
         # These sources mix providers in one catalog. Narrow before their top-N
         # cut so another provider cannot crowd every requested match out.
-        if provider_filter and isinstance(src, (PulseIndexSource, GitHubSource)):
+        if provider_filter and isinstance(src, (PULSEIndexSource, GitHubSource)):
             return src.source_id(), src.search(query, limit=limit, provider_filter=provider_filter)
         return src.source_id(), src.search(query, limit=limit)
     except Exception as e:

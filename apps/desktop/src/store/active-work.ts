@@ -11,11 +11,11 @@
 
 import { computed } from 'nanostores'
 
-import type { PulseActiveWork } from '@/global'
+import type { PULSEActiveWork } from '@/global'
 import { $sessions } from '@/store/session'
 import { $workingSessionIds } from '@/store/session-states'
 
-const $activeWork = computed([$workingSessionIds, $sessions], (workingIds, sessions): PulseActiveWork => {
+const $activeWork = computed([$workingSessionIds, $sessions], (workingIds, sessions): PULSEActiveWork => {
   const titleById = new Map(sessions.map(session => [session.id, session.title?.trim() ?? '']))
 
   return {

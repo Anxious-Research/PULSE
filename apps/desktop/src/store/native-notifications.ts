@@ -1,7 +1,7 @@
 import { atom } from 'nanostores'
 
 import { translateNow } from '@/i18n'
-import { type PulseOpenTarget, resolvePulseOpenPath } from '@/lib/pulse-open-target'
+import { type PULSEOpenTarget, resolvePULSEOpenPath } from '@/lib/pulse-open-target'
 import { persistString, storedString } from '@/lib/storage'
 
 import { recordFeatureToggle } from './desktop-metrics'
@@ -18,7 +18,7 @@ import { isSessionGone, isSessionGoneForBackgroundPolling, markSessionGone } fro
 import { $activeSessionId, ownerLookupSessionRows, sessionMatchesStoredId } from './session'
 import { storedSessionIdForRuntimeId } from './session-states'
 
-export type { PulseOpenTarget }
+export type { PULSEOpenTarget }
 
 // Native OS notifications (Electron `Notification`), separate from the in-app
 // toast feed in `notifications.ts`. Each kind toggles independently.
@@ -125,7 +125,7 @@ function throttled(key: string, now: number): boolean {
   return false
 }
 
-// "Backgrounded" = the user isn't on Pulse. `document.hidden` only flips when
+// "Backgrounded" = the user isn't on PULSE. `document.hidden` only flips when
 // minimized/occluded; an alt-tabbed window is visible-but-unfocused, so we also
 // check `document.hasFocus()`.
 function isBackgrounded(): boolean {
@@ -267,7 +267,7 @@ export interface PluginNotificationAction {
   id: string
   label: string
   /** Navigate here on button press (path or `pulse://index-network/intent/1`). */
-  activate?: PulseOpenTarget
+  activate?: PULSEOpenTarget
   /** Renderer callback — only `id` crosses IPC; this stays in-process. */
   onAction?: () => void
 }
@@ -283,7 +283,7 @@ export interface PluginNativeNotificationInput {
    * (`pulse://index-network/intent/1`), a hash path (`/index-network/intent/1`),
    * or `{ path, params }` — all resolve through the same helper as OS deep links.
    */
-  activate?: PulseOpenTarget
+  activate?: PULSEOpenTarget
   /** Extra work on body click (runs in addition to `activate` navigation). */
   onActivate?: () => void
   actions?: PluginNotificationAction[]
@@ -341,14 +341,14 @@ export function clearPluginNotifyHandlers(notifyId?: string): void {
 /** Native OS notification on behalf of a plugin. One "Plugin notifications"
  *  preference gates all plugins; the plugin id keys throttling/dedupe so two
  *  plugins can't collapse each other's notifications. Fires only while the
- *  user is away from Pulse — the in-app toast (`host.notify`) covers the
+ *  user is away from PULSE — the in-app toast (`host.notify`) covers the
  *  foreground case. */
 export function dispatchPluginNativeNotification(pluginId: string, input: PluginNativeNotificationInput): void {
-  const activate = resolvePulseOpenPath(input.activate) ?? undefined
+  const activate = resolvePULSEOpenPath(input.activate) ?? undefined
   const notifyId = input.onActivate || input.actions?.some(a => a.onAction) ? mintNotifyId(pluginId) : undefined
 
   const actions: NativeNotificationAction[] | undefined = input.actions?.map(action => ({
-    activate: resolvePulseOpenPath(action.activate) ?? undefined,
+    activate: resolvePULSEOpenPath(action.activate) ?? undefined,
     id: action.id,
     text: action.label
   }))

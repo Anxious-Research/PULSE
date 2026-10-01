@@ -1,7 +1,7 @@
-name: Pulse Plugin Validate
+name: PULSE Plugin Validate
 description: >-
-  Validate a plugin's manifest and registered capabilities with Pulse at the
-  requested ref. The caller owns its plugin checkout; Pulse and its locked
+  Validate a plugin's manifest and registered capabilities with PULSE at the
+  requested ref. The caller owns its plugin checkout; PULSE and its locked
   runtime are prepared separately under RUNNER_TEMP.
 
 inputs:
@@ -15,7 +15,7 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Prepare an isolated Pulse checkout
+    - name: Prepare an isolated PULSE checkout
       id: source
       shell: bash
       env:

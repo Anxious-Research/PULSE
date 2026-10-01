@@ -2,7 +2,7 @@
 name: teams-meeting-pipeline
 description: Teams meeting summaries, job replay, Graph subscriptions.
 version: 1.1.0
-author: Pulse Agent + Teknium
+author: PULSE Agent + Teknium
 license: MIT
 platforms: [linux, macos, windows]
 prerequisites:

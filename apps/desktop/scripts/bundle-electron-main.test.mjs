@@ -102,7 +102,7 @@ test('the bundled entry lets desktop.electron_flags choose the ozone platform', 
 })
 
 // The bundled entry must read config.yaml from the same home main.ts does
-// (resolveDesktopPulseHome), or desktop.electron_flags set for the real
+// (resolveDesktopPULSEHome), or desktop.electron_flags set for the real
 // profile silently never reaches the relaunch. The two cases below are the
 // ones the inline resolution in configuredElectronFlags() got wrong: the
 // data-dir suffix channel installs rely on, and multiplexed profiles/ homes.

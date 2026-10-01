@@ -53,7 +53,7 @@ export function readInstallationCommit(root: string, origin: 'source' | 'bundled
 const bundleEnvSchema = z.record(z.string(), z.string().nullable())
 
 /** The baked runtime defaults/clears of a bundled artifact, recorded in the
- * install stamp so the smoke driver can predict the app's resolved Pulse home
+ * install stamp so the smoke driver can predict the app's resolved PULSE home
  * without reimplementing the banner. Absent for artifacts built before the
  * stamp carried it, and for source checkpoints. */
 export function readBundledBundleEnv(root: string): Record<string, string | null> | undefined {

@@ -1,6 +1,6 @@
 import { atom, computed, type ReadableAtom } from 'nanostores'
 
-import type { PulseGitWorktree, PulseRepoStatus } from '@/global'
+import type { PULSEGitWorktree, PULSERepoStatus } from '@/global'
 import { desktopGit } from '@/lib/desktop-git'
 
 import { $projectScope, ALL_PROJECTS } from './project-scope'
@@ -29,13 +29,13 @@ const REPO_STATUS_REFRESH_DEBOUNCE_MS = 100
 
 const normalizeCwd = (cwd?: null | string): null | string => cwd?.trim() || null
 
-const EMPTY_WORKTREES: PulseGitWorktree[] = []
+const EMPTY_WORKTREES: PULSEGitWorktree[] = []
 
 // Status + worktrees per normalized cwd. Entries outlive their surface (the
 // map stays bounded by the worktrees touched this run) so re-opening a tile
 // paints its last-known status instantly while the fresh probe runs.
-export const $repoStatusByCwd = atom<Record<string, PulseRepoStatus | null>>({})
-export const $repoWorktreesByCwd = atom<Record<string, PulseGitWorktree[]>>({})
+export const $repoStatusByCwd = atom<Record<string, PULSERepoStatus | null>>({})
+export const $repoWorktreesByCwd = atom<Record<string, PULSEGitWorktree[]>>({})
 
 // The PRIMARY (main pane) view — the active session's slice of the per-cwd
 // truth. Existing consumers (keybind gate, base-branch picker, file tree) keep
@@ -44,7 +44,7 @@ export const $repoWorktreesByCwd = atom<Record<string, PulseGitWorktree[]>>({})
 // can still name the previous conversation's path, so ownership hides only this
 // primary slice; the per-cwd cache stays available to any tile that genuinely
 // owns that worktree (#71254).
-export const $repoStatus: ReadableAtom<PulseRepoStatus | null> = computed(
+export const $repoStatus: ReadableAtom<PULSERepoStatus | null> = computed(
   [$repoStatusByCwd, $currentCwd, $selectedStoredSessionId, $workspaceCwdOwner],
   (byCwd, cwd) => (workspaceCwdBelongsToSelectedSession() ? (byCwd[normalizeCwd(cwd) ?? ''] ?? null) : null)
 )
@@ -53,7 +53,7 @@ export const $repoStatusLoading = atom(false)
 
 // The repo's real worktrees (for the coding rail's "jump to a worktree" menu).
 // Refreshed on the same edges as the status probe; empty off a repo.
-export const $repoWorktrees: ReadableAtom<PulseGitWorktree[]> = computed(
+export const $repoWorktrees: ReadableAtom<PULSEGitWorktree[]> = computed(
   [$repoWorktreesByCwd, $currentCwd, $selectedStoredSessionId, $workspaceCwdOwner],
   (byCwd, cwd) =>
     workspaceCwdBelongsToSelectedSession() ? (byCwd[normalizeCwd(cwd) ?? ''] ?? EMPTY_WORKTREES) : EMPTY_WORKTREES
@@ -61,13 +61,13 @@ export const $repoWorktrees: ReadableAtom<PulseGitWorktree[]> = computed(
 
 // Reference-stable per-cwd slices, so any number of rails can each subscribe
 // to their own worktree's status without re-deriving atoms per render.
-const statusAtomByCwd = new Map<string, ReadableAtom<PulseRepoStatus | null>>()
-const worktreesAtomByCwd = new Map<string, ReadableAtom<PulseGitWorktree[]>>()
-const $noRepoStatus = atom<PulseRepoStatus | null>(null)
-const $noWorktrees = atom<PulseGitWorktree[]>(EMPTY_WORKTREES)
+const statusAtomByCwd = new Map<string, ReadableAtom<PULSERepoStatus | null>>()
+const worktreesAtomByCwd = new Map<string, ReadableAtom<PULSEGitWorktree[]>>()
+const $noRepoStatus = atom<PULSERepoStatus | null>(null)
+const $noWorktrees = atom<PULSEGitWorktree[]>(EMPTY_WORKTREES)
 
 /** Reactive status for one repo cwd (a tile's worktree). Stable per cwd. */
-export function repoStatusForCwd(cwd?: null | string): ReadableAtom<PulseRepoStatus | null> {
+export function repoStatusForCwd(cwd?: null | string): ReadableAtom<PULSERepoStatus | null> {
   const key = normalizeCwd(cwd)
 
   if (!key) {
@@ -113,7 +113,7 @@ export async function isGitRepoPath(cwd: string): Promise<boolean> {
 }
 
 /** Reactive worktree list for one repo cwd. Stable per cwd. */
-export function repoWorktreesForCwd(cwd?: null | string): ReadableAtom<PulseGitWorktree[]> {
+export function repoWorktreesForCwd(cwd?: null | string): ReadableAtom<PULSEGitWorktree[]> {
   const key = normalizeCwd(cwd)
 
   if (!key) {
@@ -133,20 +133,24 @@ export function repoWorktreesForCwd(cwd?: null | string): ReadableAtom<PulseGitW
 export type RepoChangeKind = 'added' | 'conflicted' | 'modified'
 
 // Absolute file path → its git change kind, for VS Code-style file-tree tinting.
-// Reuses the same bounded $repoStatus probe (capped file list); git reports
-// repo-root-relative paths, so we join them onto the active cwd. Deletions never
-// appear — the file is gone from disk, so there's no tree row to tint.
-export const $repoChangeByPath = computed([$repoStatus, $currentCwd], (status, cwd) => {
+// Reuses the bounded per-CWD repo-status probes (capped file list); git reports
+// repo-root-relative paths, so we join them onto their corresponding probed cwd.
+// Deletions never appear — the file is gone from disk, so there's no tree row to tint.
+export const $repoChangeByPath = computed([$repoStatusByCwd], byCwd => {
   const map = new Map<string, RepoChangeKind>()
-  const root = (cwd || '').replace(/[/\\]+$/, '')
 
-  if (!status || !root) {
-    return map
-  }
+  for (const [cwd, status] of Object.entries(byCwd)) {
+    const root = (cwd || '').trim().replace(/[/\\]+$/, '')
 
-  for (const file of status.files) {
-    const kind: RepoChangeKind = file.conflicted ? 'conflicted' : file.untracked ? 'added' : 'modified'
-    map.set(`${root}/${file.path}`, kind)
+    if (!status || !root) {
+      continue
+    }
+
+    for (const file of status.files) {
+      const cleanPath = (file.path || '').replace(/^[/\\]+/, '')
+      const kind: RepoChangeKind = file.conflicted ? 'conflicted' : file.untracked ? 'added' : 'modified'
+      map.set(`${root}/${cleanPath}`, kind)
+    }
   }
 
   return map
@@ -155,9 +159,36 @@ export const $repoChangeByPath = computed([$repoStatus, $currentCwd], (status, c
 /**
  * Per-row Git decoration subscription. A visible file row reads one scalar, so
  * a fresh repo-status map only re-renders that row when its own kind changed.
+ * Supports directory inheritance for untracked folders under `--untracked-files=normal`.
  */
 export function repoChangeKindForPath(path: string): ReadableAtom<RepoChangeKind | undefined> {
-  return computed($repoChangeByPath, changes => changes.get(path))
+  return computed($repoChangeByPath, changes => {
+    const direct = changes.get(path)
+
+    if (direct) {
+      return direct
+    }
+
+    // Check if an ancestor directory is marked 'added' (untracked directory).
+    let parent = path.replace(/[/\\]+$/, '')
+
+    while (true) {
+      const lastSlash = Math.max(parent.lastIndexOf('/'), parent.lastIndexOf('\\'))
+
+      if (lastSlash <= 0) {
+        break
+      }
+
+      parent = parent.slice(0, lastSlash)
+      const parentKind = changes.get(parent)
+
+      if (parentKind === 'added') {
+        return 'added'
+      }
+    }
+
+    return undefined
+  })
 }
 
 // Cwds whose rails are on screen right now (refcounted — two tiles in one
@@ -196,7 +227,7 @@ export function registerRepoStatusCwd(cwd?: null | string): (() => void) | undef
   }
 }
 
-function setRepoStatusEntry(target: string, status: PulseRepoStatus | null): void {
+function setRepoStatusEntry(target: string, status: PULSERepoStatus | null): void {
   const byCwd = $repoStatusByCwd.get()
 
   // Skip the no-op null→null write so a repeated failed probe doesn't churn
@@ -208,7 +239,7 @@ function setRepoStatusEntry(target: string, status: PulseRepoStatus | null): voi
   $repoStatusByCwd.set({ ...byCwd, [target]: status })
 }
 
-function setRepoWorktreesEntry(target: string, worktrees: PulseGitWorktree[]): void {
+function setRepoWorktreesEntry(target: string, worktrees: PULSEGitWorktree[]): void {
   const byCwd = $repoWorktreesByCwd.get()
 
   if (target in byCwd && byCwd[target] === worktrees) {
@@ -219,7 +250,7 @@ function setRepoWorktreesEntry(target: string, worktrees: PulseGitWorktree[]): v
 }
 
 interface RepoStatusRefreshRequest {
-  probe: (cwd: string) => Promise<PulseRepoStatus | null>
+  probe: (cwd: string) => Promise<PULSERepoStatus | null>
   seq: number
   target: string
 }

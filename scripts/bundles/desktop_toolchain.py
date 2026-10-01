@@ -1,4 +1,4 @@
-"""Child-scoped desktop build tools, independent of the invoking Pulse install.
+"""Child-scoped desktop build tools, independent of the invoking PULSE install.
 
 This module is stdlib-only until preparation runs inside the isolated child.
 """

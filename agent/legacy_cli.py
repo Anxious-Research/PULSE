@@ -31,9 +31,9 @@ def _build_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(
         prog="pulse-agent",
-        description="Legacy single-query Pulse Agent runner. For the full CLI use `pulse`.",
+        description="Legacy single-query PULSE Agent runner. For the full CLI use `pulse`.",
     )
-    parser.add_argument("--version", action="version", version=f"Pulse Agent v{__version__} ({__release_date__})")
+    parser.add_argument("--version", action="version", version=f"PULSE Agent v{__version__} ({__release_date__})")
     parser.add_argument("prompt", nargs="*", help="query to run (same as --query)")
     parser.add_argument("--query", "-q", help="natural-language query to run")
     parser.add_argument("--model", default="", help="model id (provider/model)")

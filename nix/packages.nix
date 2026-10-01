@@ -1,4 +1,4 @@
-# nix/packages.nix — Pulse Agent package built with uv2nix
+# nix/packages.nix — PULSE Agent package built with uv2nix
 { inputs, ... }:
 {
   perSystem =

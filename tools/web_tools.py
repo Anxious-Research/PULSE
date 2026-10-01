@@ -18,7 +18,7 @@ _firecrawl_client = _firecrawl_client_config = _parallel_client = _async_paralle
 
 from plugins.web.firecrawl.provider import _is_tool_gateway_ready, check_firecrawl_api_key
 from tools.debug_helpers import DebugSession
-from tools.tool_backend_helpers import ANXIOUS_MANAGED_PROVIDER, read_selection, selection_exists
+from tools.tool_backend_helpers import NOUS_MANAGED_PROVIDER, read_selection, selection_exists
 from tools.url_safety import async_is_safe_url
 from tools.web_tools_rescue import _managed_search_fallback, _rescue_eligible, _rescue_search
 from tools.web_tools_truncate import _effective_char_limit, _trim_results, _truncate_results, convert_base64_images_to_links
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 def _env_value(name: str) -> str:
     """Resolve ``name`` via the config-aware env layer (``pulse config set`` values), then process env.
 
-    Mirrors the SearXNG provider's ``_searxng_url()`` so that values set through Pulse' config/.env layer
+    Mirrors the SearXNG provider's ``_searxng_url()`` so that values set through PULSE' config/.env layer
     (``pulse config set``, ``pulse tools``) are honored here too — not just raw process-env exports.
     Without this, a config-only ``SEARXNG_URL`` (or any provider key) leaves the backend auto-detect cascade
     and ``check_web_api_key()`` blind to it. See #34290.
@@ -105,13 +105,13 @@ def _get_backend() -> str:
     ``web.extract_backend``) name only their own capability and never reroute the other (#113017)."""
     configured = _configured_backend()
     if configured:
-        # "anxious" (managed subscription) is serviced by firecrawl, routed through the managed Tool Gateway.
-        return "firecrawl" if configured == ANXIOUS_MANAGED_PROVIDER else configured
+        # "nous" (managed subscription) is serviced by firecrawl, routed through the managed Tool Gateway.
+        return "firecrawl" if configured == NOUS_MANAGED_PROVIDER else configured
     if read_selection("web") is not None:
         # Shared selection exists (use_gateway) but no shared name: firecrawl, no ladder.
         return "firecrawl"
 
-    # Never-configured install. Explicit user credentials beat the managed-gateway probe (a Anxious OAuth
+    # Never-configured install. Explicit user credentials beat the managed-gateway probe (a Nous OAuth
     # token's tier may not grant web access; the gateway then fails at runtime with no fallback).
     # Free tiers trail paid.
     backend_candidates = (
@@ -152,19 +152,19 @@ def _keyless_backend() -> Optional[str]:
 
 
 def _managed_web_search() -> bool:
-    """True when web_search is on the managed Anxious route: the stored ``anxious`` selection, or a
+    """True when web_search is on the managed Nous route: the stored ``nous`` selection, or a
     never-configured install whose autodetect lands on the gateway. A stored vendor selection never is."""
     if _configured_backend("search_backend"):
         return False
     selected = read_selection("web")
     if selected is not None:
-        return selected == ANXIOUS_MANAGED_PROVIDER
+        return selected == NOUS_MANAGED_PROVIDER
     return _get_backend() == "firecrawl" and not (_has_env("FIRECRAWL_API_KEY") or _has_env("FIRECRAWL_API_URL")) and _is_tool_gateway_ready()
 
 
 def _get_search_backend() -> str:
     """Backend for web_search: ``web.search_backend`` (strict, no probe) > ``web.backend`` > autodetect.
-    The managed Anxious route serves search from Perplexity (extract stays on Firecrawl); managed Firecrawl
+    The managed Nous route serves search from Perplexity (extract stays on Firecrawl); managed Firecrawl
     is the per-call fallback, see ``_memoized_search``."""
     return _configured_backend("search_backend") or ("perplexity" if _managed_web_search() else _get_backend())
 
@@ -235,7 +235,7 @@ def _is_backend_available(backend: str) -> bool:
 # check_firecrawl_api_key() all live in plugins.web.firecrawl.provider.
 def _web_requires_env() -> list[str]:
     """Tool-registry metadata env vars for the web backends. Gateway vars are always listed: gating them
-    on ``managed_anxious_tools_enabled()`` cost a synchronous portal HTTP refresh at every CLI startup.
+    on ``managed_nous_tools_enabled()`` cost a synchronous portal HTTP refresh at every CLI startup.
     Contract: set var -> tool sees it; extras are harmless for the not-logged-in."""
     return [
         "EXA_API_KEY", "PARALLEL_API_KEY", "TAVILY_API_KEY", "PERPLEXITY_API_KEY", "KEENABLE_API_KEY", "FIRECRAWL_API_KEY",
@@ -554,40 +554,3 @@ registry.register(
     check_fn=check_web_api_key, requires_env=_web_requires_env(), is_async=True, emoji="📄",
     max_result_size_chars=100_000,
 )
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from typing import Dict  # noqa: F401,E402
-from typing import TYPE_CHECKING  # noqa: F401,E402
-import asyncio  # noqa: F401,E402
-import httpx  # noqa: F401,E402
-import re  # noqa: F401,E402
-import sys  # noqa: F401,E402
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'DEFAULT_EXTRACT_CHAR_LIMIT': ('tools.web_tools_truncate', 'DEFAULT_EXTRACT_CHAR_LIMIT'),
-    'Firecrawl': ('plugins.web.firecrawl.provider', 'Firecrawl'),
-    'MAX_STORED_TEXT_CHARS': ('tools.web_tools_truncate', 'MAX_STORED_TEXT_CHARS'),
-    'build_vendor_gateway_url': ('tools.managed_tool_gateway', 'build_vendor_gateway_url'),
-    'managed_anxious_tools_enabled': ('tools.tool_backend_helpers', 'managed_anxious_tools_enabled'),
-    'normalize_url_for_request': ('tools.url_safety', 'normalize_url_for_request'),
-    'anxious_tool_gateway_unavailable_message': ('tools.tool_backend_helpers', 'anxious_tool_gateway_unavailable_message'),
-    'prefers_gateway': ('tools.tool_backend_helpers', 'prefers_gateway'),
-    'resolve_managed_tool_gateway': ('tools.managed_tool_gateway', 'resolve_managed_tool_gateway'),
-    'sensitive_query_param_name': ('tools.url_safety', 'sensitive_query_param_name'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

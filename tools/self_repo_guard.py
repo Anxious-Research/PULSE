@@ -557,11 +557,11 @@ def _block_message(operation: str, root: Path) -> str:
     pulse_home = os.environ.get("PULSE_HOME", "").strip()
     scratch = (Path(pulse_home).expanduser() if pulse_home else Path.home() / ".pulse") / "scratch"
     return (
-        f"Blocked: `{operation}` would rewrite Pulse's live source checkout "
+        f"Blocked: `{operation}` would rewrite PULSE's live source checkout "
         f"({root}) and can mix module versions in this running process. "
         f"Use a separate worktree or a shared clone on real disk, e.g. "
         f"`git clone --shared {root} {scratch}/<task>` — avoid /tmp for "  # no-tmp: ok — guidance telling the model to AVOID /tmp
         "clones that install node/python deps: /tmp is usually RAM-backed tmpfs and a few "  # no-tmp: ok — guidance telling the model to AVOID /tmp
         "dependency installs can fill it and ENOSPC other work. Delete the clone when the branch "
-        "is pushed. To change this checkout, stop Pulse, run the command externally, then restart "
-        "Pulse.")
+        "is pushed. To change this checkout, stop PULSE, run the command externally, then restart "
+        "PULSE.")

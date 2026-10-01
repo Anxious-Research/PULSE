@@ -18,7 +18,7 @@ import { useHudHandoff } from './handoff'
 type HudChanged = (state: { open: boolean; sessionId: null | string }) => void
 
 const desktopWindow = window as unknown as { pulseDesktop?: Window['pulseDesktop'] }
-const initialPulseDesktop = desktopWindow.pulseDesktop
+const initialPULSEDesktop = desktopWindow.pulseDesktop
 let emitHudChanged: HudChanged | null = null
 
 beforeEach(() => {
@@ -36,8 +36,8 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  if (initialPulseDesktop) {
-    desktopWindow.pulseDesktop = initialPulseDesktop
+  if (initialPULSEDesktop) {
+    desktopWindow.pulseDesktop = initialPULSEDesktop
   } else {
     delete desktopWindow.pulseDesktop
   }

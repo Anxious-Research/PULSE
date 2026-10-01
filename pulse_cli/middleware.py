@@ -1,4 +1,4 @@
-"""Pulse middleware contract helpers.
+"""PULSE middleware contract helpers.
 
 Observer hooks report what happened. Middleware can change what happens by rewriting a request or
 wrapping the actual execution callback. Agent-loop call sites and plugins share this vocabulary.
@@ -212,29 +212,3 @@ def _run_execution_chain(kind: str, terminal_call: Callable[[Any], Any], **kwarg
             return call_at(index + 1, payload)
 
     return call_at(0, kwargs[payload_key])
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-API_EXECUTION_MIDDLEWARE = LLM_EXECUTION_MIDDLEWARE
-
-API_REQUEST_MIDDLEWARE = LLM_REQUEST_MIDDLEWARE
-
-def apply_api_request_middleware(
-    request: Dict[str, Any],
-    **context: Any,
-) -> RequestMiddlewareResult:
-    """Compatibility wrapper for older ``api_request`` naming."""
-    return apply_llm_request_middleware(request, **context)
-
-def run_api_execution_middleware(
-    request: Dict[str, Any],
-    next_call: Callable[[Dict[str, Any]], Any],
-    **context: Any,
-) -> Any:
-    """Compatibility wrapper for older ``api_execution`` naming."""
-    return run_llm_execution_middleware(request, next_call, **context)
-# ---- END PLUGIN-COMPAT ----

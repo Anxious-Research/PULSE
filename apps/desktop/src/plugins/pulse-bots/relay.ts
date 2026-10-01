@@ -16,7 +16,7 @@ import type { ProfileRoute, RosterRow } from './types'
 
 // ── cross-connection bot relay ────────────────────────────────────────────
 // Connections ARE the peer set: every gateway this Desktop holds a socket
-// to (local, remote URL, SSH, Pulse Cloud, docker) must be able to find
+// to (local, remote URL, SSH, PULSE Cloud, docker) must be able to find
 // every other connection's agents and message them via message_agent. The
 // Desktop is the relay — it owns every socket. Two loops:
 //  - roster loop: pushes each gateway the union roster of agents on the
@@ -131,6 +131,60 @@ interface RelayAgentRow {
   title: string
 }
 
+/** Remove the mandatory local registry source only when Electron identifies
+ * one unambiguous REMOTE primary. Older or inconsistent route inventories
+ * fail open to the prior peer set. Distinct remote peers always remain. */
+function relayEligibleRoutes(routes: ProfileRoute[]): ProfileRoute[] {
+  const routesByConnection = new Map<string, ProfileRoute[]>()
+
+  for (const route of routes) {
+    if (
+      !route ||
+      typeof route.connectionId !== 'string' ||
+      !route.connectionId ||
+      (route.mode !== 'local' && route.mode !== 'remote') ||
+      (route.primary !== undefined && route.primary !== true)
+    ) {
+      return routes
+    }
+
+    const grouped = routesByConnection.get(route.connectionId) || []
+
+    grouped.push(route)
+    routesByConnection.set(route.connectionId, grouped)
+  }
+
+  const primaryGroups = [...routesByConnection.entries()].filter(([, grouped]) =>
+    grouped.some(route => route.primary === true)
+  )
+
+  if (primaryGroups.length !== 1) {
+    return routes
+  }
+
+  const [primaryId, primaryRoutes] = primaryGroups[0]
+
+  if (primaryRoutes.some(route => route.mode !== 'remote' || route.primary !== true)) {
+    return routes
+  }
+
+  const localGroups = [...routesByConnection.entries()].filter(([, grouped]) =>
+    grouped.some(route => route.mode === 'local')
+  )
+
+  if (
+    localGroups.length !== 1 ||
+    localGroups[0][1].some(route => route.mode !== 'local') ||
+    localGroups[0][0] === primaryId
+  ) {
+    return routes
+  }
+
+  const localId = localGroups[0][0]
+
+  return routes.filter(route => route.connectionId !== localId)
+}
+
 /** A queued cross-connection message drained from a gateway's outbox. */
 interface RelayEnvelope {
   id?: string
@@ -193,10 +247,11 @@ async function relayConnections(): Promise<RelayConnection[]> {
   }
 
   try {
-    const routes = await host.profileRoutes()
+    const rawRoutes = await host.profileRoutes()
+    const routes = relayEligibleRoutes(Array.isArray(rawRoutes) ? rawRoutes : [])
     const byConnection = new Map<string, ProfileRoute>()
 
-    for (const route of Array.isArray(routes) ? routes : []) {
+    for (const route of routes) {
       const id = String(route?.connectionId || '')
 
       if (id && !byConnection.has(id)) {

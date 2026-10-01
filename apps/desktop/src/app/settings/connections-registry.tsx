@@ -41,7 +41,7 @@ interface EditorState {
   label: string
   host: string
   keyPath: string
-  remotePulsePath: string
+  remotePULSEPath: string
   // ssh remote profile, hydrated on edit so the duplicate key matches the
   // main-process one (user@host:port + profile); the editor doesn't expose it.
   remoteProfile: string
@@ -65,7 +65,7 @@ function editorFromConnection(conn: DesktopRegistryConnection): EditorState {
     // would silently resurrect the old values.
     host: conn.host ? `${conn.user ? `${conn.user}@` : ''}${conn.host}${conn.port ? `:${conn.port}` : ''}` : '',
     keyPath: conn.keyPath || '',
-    remotePulsePath: conn.remotePulsePath || '',
+    remotePULSEPath: conn.remotePULSEPath || '',
     remoteProfile: conn.remoteProfile || '',
     headers: (conn.headerNames || []).map(name => ({ name, stored: true, value: '' }))
   }
@@ -78,7 +78,7 @@ function emptyEditor(kind: DesktopConnectionKind): EditorState {
     label: '',
     host: '',
     keyPath: '',
-    remotePulsePath: '',
+    remotePULSEPath: '',
     remoteProfile: '',
     headers: []
   }
@@ -212,7 +212,7 @@ function scrollableAncestor(element: HTMLElement): HTMLElement | null {
 
 /**
  * The connections registry section of Settings → Gateways: manage the named
- * agent sources (local runtime + any number of remote gateways / Pulse Cloud
+ * agent sources (local runtime + any number of remote gateways / PULSE Cloud
  * instances / SSH hosts). Storage-level management — the active/primary
  * switchover UX is the connection-mode controls above this section.
  */
@@ -374,7 +374,7 @@ export function ConnectionsRegistrySection() {
           // of truth — never send separate user/port (see editorFromConnection).
           payload.host = editor.host
           payload.keyPath = editor.keyPath || undefined
-          payload.remotePulsePath = editor.remotePulsePath.trim()
+          payload.remotePULSEPath = editor.remotePULSEPath.trim()
         }
 
         const result = await bridge.save(payload)
@@ -849,13 +849,13 @@ export function ConnectionsRegistrySection() {
               <ListRow
                 action={
                   <Input
-                    onChange={e => setEditor({ ...editor, remotePulsePath: e.target.value })}
-                    placeholder={t.settings.gateway.sshPulsePathPlaceholder}
-                    value={editor.remotePulsePath}
+                    onChange={e => setEditor({ ...editor, remotePULSEPath: e.target.value })}
+                    placeholder={t.settings.gateway.sshPULSEPathPlaceholder}
+                    value={editor.remotePULSEPath}
                   />
                 }
-                description={t.settings.gateway.sshPulsePathDesc}
-                title={t.settings.gateway.sshPulsePathTitle}
+                description={t.settings.gateway.sshPULSEPathDesc}
+                title={t.settings.gateway.sshPULSEPathTitle}
               />
             </>
           )}

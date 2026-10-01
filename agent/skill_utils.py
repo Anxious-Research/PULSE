@@ -727,7 +727,7 @@ _HOME_VAR_RE = re.compile(r"\$(?:\{HOME\}|HOME)(?=$|[/\\])")
 
 
 def _expand_skill_config_path(value: str) -> str:
-    """Expand ``~`` / ``$HOME`` against the HOME Pulse injects into tool subprocesses.
+    """Expand ``~`` / ``$HOME`` against the HOME PULSE injects into tool subprocesses.
 
     Skill config defaults describe paths the agent hands to tools, so in a container where the
     control process HOME (``/opt/data``) differs from the tool HOME (``{PULSE_HOME}/home``) a
@@ -812,20 +812,3 @@ def parse_qualified_name(name: str) -> Tuple[Optional[str], str]:
 def is_valid_namespace(candidate: Optional[str]) -> bool:
     """Check whether *candidate* is a valid namespace (``[a-zA-Z0-9_-]+``)."""
     return bool(candidate) and bool(_NAMESPACE_RE.match(candidate))
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-def get_scan_ordered_skills_dirs() -> List[Path]:
-    """All skill dirs in precedence order: project → local → external.
-
-    First-wins name deduplication over this order gives project skills
-    priority over profile-local and external ones.
-    """
-    dirs = list(get_project_skills_dirs())
-    dirs.extend(get_all_skills_dirs())
-    return dirs
-# ---- END PLUGIN-COMPAT ----

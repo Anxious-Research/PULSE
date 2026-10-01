@@ -1,7 +1,6 @@
-import { ArrowRight } from 'lucide-react'
 import { type CSSProperties } from 'react'
 
-import { Button } from '../components/button'
+import { HackeryButton } from '../components/hackery-button'
 import { startInstall } from '../store'
 
 /*
@@ -13,7 +12,7 @@ import { startInstall } from '../store'
  *   - fit-text utility so the wordmark sizes itself to the column
  *
  * No install-path footer. The default install location is correct for
- * 99% of users; the rest will use the CLI installer with a -PulseHome
+ * 99% of users; the rest will use the CLI installer with a -PULSEHome
  * flag. Showing %LOCALAPPDATA% to grandma is developer-brain.
  */
 export default function Welcome() {
@@ -43,14 +42,7 @@ export default function Welcome() {
         </p>
       </div>
 
-      <Button
-        size="lg"
-        className="group inline-flex items-center gap-2 px-6"
-        onClick={() => void startInstall()}
-      >
-        Install Pulse
-        <ArrowRight size={18} className="transition-transform group-hover:translate-x-0.5" />
-      </Button>
+      <HackeryButton label="Install" onClick={() => void startInstall()} />
     </div>
   )
 }

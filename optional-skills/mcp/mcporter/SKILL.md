@@ -71,7 +71,7 @@ mcporter call --stdio "bun run ./server.ts" scrape url=https://example.com
 # JSON payload
 mcporter call <server.tool> --args '{"limit": 5}'
 
-# Machine-readable output (recommended for Pulse)
+# Machine-readable output (recommended for PULSE)
 mcporter call <server.tool> key=value --output json
 ```
 

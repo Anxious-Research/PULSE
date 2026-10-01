@@ -3,13 +3,13 @@ label: Buzz
 kind: platform
 version: 1.0.0
 description: >
-  Buzz gateway adapter for Pulse Agent.
+  Buzz gateway adapter for PULSE Agent.
   Connects to a Buzz community relay (Block's open-source human+agent
   collaboration platform built on Nostr) and relays messages between
-  channels/DMs and the Pulse agent. Relay operations shell out to the
-  buzz CLI binary (JSON in/out); verified inbound media uses Pulse' bundled
+  channels/DMs and the PULSE agent. Relay operations shell out to the
+  buzz CLI binary (JSON in/out); verified inbound media uses PULSE' bundled
   HTTP client.
-author: Anxious Research Lab
+author: Nous Research
 # ``requires_env`` entries are surfaced in ``pulse config`` UI via the
 # platform-plugin env var injector in ``pulse_cli/config.py``.
 requires_env:

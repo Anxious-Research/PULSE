@@ -111,8 +111,8 @@ def _check_frontmatter(frontmatter: Dict[str, Any], skill_dir: Optional[Path]) -
         yield _warn("missing-metadata", "metadata.pulse.tags is missing.")
     author = str(frontmatter.get("author", ""))
     if author and author.strip().lower() in ("pulse", "agent", "pulse agent") and (
-        author != "Pulse Agent"):
-        yield _warn("author-caps", f"author '{author}' should be 'Pulse Agent' (proper caps) "
+        author != "PULSE Agent"):
+        yield _warn("author-caps", f"author '{author}' should be 'PULSE Agent' (proper caps) "
                     f"or a real contributor name.")
     platforms = frontmatter.get("platforms")
     if platforms:
@@ -213,17 +213,3 @@ def lint_skill(skill_md_path: Path) -> List[LintFinding]:
     skill_md_path = Path(skill_md_path)
     content = skill_md_path.read_text(encoding="utf-8-sig", errors="ignore")
     return lint_content(content, skill_dir=skill_md_path.parent)
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-def format_findings(findings: List[LintFinding]) -> str:
-    """Render findings as a newline-joined human-readable block."""
-    return "\n".join(f.format() for f in findings)
-
-def has_errors(findings: List[LintFinding]) -> bool:
-    return any(f.severity == ERROR for f in findings)
-# ---- END PLUGIN-COMPAT ----

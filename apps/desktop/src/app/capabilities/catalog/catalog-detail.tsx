@@ -57,7 +57,7 @@ export function CatalogDetail({
 
   const metadata = [
     [c.platforms, entry.platforms.join(', ')],
-    [c.requires, entry.requiresPulse ? `Pulse ${entry.requiresPulse}` : ''],
+    [c.requires, entry.requiresPULSE ? `PULSE ${entry.requiresPULSE}` : ''],
     [c.pinned, entry.sha ? <code>{entry.sha.slice(0, 8)}</code> : '']
   ] as [string, ReactNode][]
 

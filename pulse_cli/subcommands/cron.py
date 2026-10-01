@@ -71,7 +71,7 @@ def build_cron_parser(subparsers, *, cmd_cron: Callable) -> None:
         help="Lock the CURRENT main agent model (and its provider) onto this job so later "
             "`pulse model` changes never touch it. Ignored when --model is given.")
     cron_create.add_argument("--provider", dest="model_provider",
-        help="Inference provider paired with --model (e.g. 'openrouter', 'anxious').")
+        help="Inference provider paired with --model (e.g. 'openrouter', 'nous').")
     cron_create.add_argument("--reasoning-effort", dest="reasoning_effort",
         help="Pin this job's reasoning (thinking) effort: none, minimal, low, "
             "medium, high, xhigh, max, or ultra. Overrides agent.reasoning_effort "
@@ -79,8 +79,8 @@ def build_cron_parser(subparsers, *, cmd_cron: Callable) -> None:
             "clamped by the provider at request time. Omit to follow config.")
     cron_create.add_argument("--interpreter",
         help="Absolute or ~ path to a Python in your own venv (e.g. ~/venvs/report/bin/python) "
-            "for a .py --script / --monitor-script, so it can import packages Pulse does not "
-            "ship. .sh/.bash still run under bash. Omit to use Pulse' Python.")
+            "for a .py --script / --monitor-script, so it can import packages PULSE does not "
+            "ship. .sh/.bash still run under bash. Omit to use PULSE' Python.")
     cron_create.add_argument(
         "--continuity", dest="continuity", action="store_const", const=True, default=None,
         help="Each run wakes up with the job's own previous output injected "
@@ -150,7 +150,7 @@ def build_cron_parser(subparsers, *, cmd_cron: Callable) -> None:
             "the pin and follow config resolution.")
     cron_edit.add_argument("--interpreter",
         help="Absolute or ~ path to a Python for a .py script / monitor script. "
-            "Pass empty string to clear (back to Pulse' Python).")
+            "Pass empty string to clear (back to PULSE' Python).")
 
     # lifecycle actions
     cron_pause = cron_subparsers.add_parser("pause", help="Pause a scheduled job")

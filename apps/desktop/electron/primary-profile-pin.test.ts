@@ -8,7 +8,7 @@ test('a live primary keeps answering for its booted profile after the preference
   const pin = new PrimaryProfilePin()
   let preference: null | string = 'default'
 
-  // startPulse() boots the primary as the preference at that moment.
+  // startPULSE() boots the primary as the preference at that moment.
   assert.equal(pin.pin(preference), 'default')
   assert.equal(
     pin.resolve(() => preference),
@@ -40,7 +40,7 @@ test('teardown releases the pin so the next start follows the preference', () =>
 })
 
 // #108417: one authoritative launch-profile decision per startup attempt.
-// startPulse used to pin primaryProfileKey() at the top and separately
+// startPULSE used to pin primaryProfileKey() at the top and separately
 // re-read the preference deep inside the connection IIFE for --profile and
 // the child env — two reads that a mid-startup pulse:profile:remember could
 // split into "routing says alpha, argv says beta". resolveLaunchProfile makes

@@ -2,7 +2,7 @@
 name: yuanbao
 description: "Yuanbao (元宝) groups: @mention users, query info/members."
 version: 1.0.0
-author: Teknium (teknium1), Pulse Agent
+author: Teknium (teknium1), PULSE Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

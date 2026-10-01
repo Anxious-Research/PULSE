@@ -81,7 +81,7 @@ export function isWindowsStackCookieExit(exitCode: unknown): boolean {
   return n === WINDOWS_STACK_COOKIE_EXIT || n >>> 0 === 0xc0000409
 }
 
-export function isPulseDesktopGpuOverrideOff(env: NodeJS.ProcessEnv = process.env): boolean {
+export function isPULSEDesktopGpuOverrideOff(env: NodeJS.ProcessEnv = process.env): boolean {
   const override = String(env.PULSE_DESKTOP_DISABLE_GPU || '')
     .trim()
     .toLowerCase()
@@ -287,7 +287,7 @@ export function decideWindowsGpuStackCookieLaunch(
     return { enable: false, reason: null, nextMarker: { state: 'booting' } }
   }
 
-  if (isPulseDesktopGpuOverrideOff(env)) {
+  if (isPULSEDesktopGpuOverrideOff(env)) {
     const nextMarker: GpuStackCookieMarker = marker?.state === 'fallback' ? marker : { state: 'booting' }
 
     return { enable: false, reason: null, nextMarker }

@@ -1,4 +1,4 @@
-"""``pulse gateway restart`` for a gateway whose supervisor Pulse did not install.
+"""``pulse gateway restart`` for a gateway whose supervisor PULSE did not install.
 
 A custom launchd agent / systemd unit / any KeepAlive-style manager running ``gateway run
 --external-supervisor`` owns the respawn. The manual fallback in ``_cmd_restart`` (SIGTERM, then a

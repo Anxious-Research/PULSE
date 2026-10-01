@@ -5,7 +5,7 @@
  * (per-server enable + OAuth + API keys) — pinned to the bot's own profile,
  * instead of bare checkbox stand-ins.
  *
- * All three are optional SDK namespace exports , so every
+ * All three are optional SDK namespace exports (pulse-agent#87317), so every
  * use site is feature-detected and older desktop builds keep the staged
  * checklist UI. The sharp edge is a REMOTE bot on a build whose CapabilitiesView
  * predates `supportsFixedConnection`: rendering the live surface there would
@@ -13,7 +13,7 @@
  * the wrong machine — so those builds must fail closed to "staged only".
  */
 
-import type * as PulseSdk from '@pulse/plugin-sdk'
+import type * as PULSESdk from '@pulse/plugin-sdk'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -59,7 +59,7 @@ const sdk = vi.hoisted(() => {
 // be live at the moment `vi.resetModules()` re-evaluates the editor — a value
 // baked into the factory would freeze the first test's build for the rest.
 vi.mock('@pulse/plugin-sdk', async importOriginal => {
-  const original = await importOriginal<typeof PulseSdk>()
+  const original = await importOriginal<typeof PULSESdk>()
 
   const mocked: Record<string, unknown> = {
     ...original,

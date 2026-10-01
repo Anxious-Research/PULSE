@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
 
-// Pulse Setup — Tauri-targeted Vite config.
+// PULSE Setup — Tauri-targeted Vite config.
 //
 // Port 5175 keeps us out of the way of:
 //   web       (vite default 5173)

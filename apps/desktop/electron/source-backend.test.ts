@@ -161,7 +161,7 @@ test.skipIf(process.platform === 'win32')(
           const port: number = (await waitForDashboardPort(child, 45_000)) as number
 
           const response: Response = await fetch(`http://127.0.0.1:${port}/api/health`, {
-            headers: { 'X-Pulse-Session-Token': token }
+            headers: { 'X-PULSE-Session-Token': token }
           })
 
           assert.equal(response.status, 200, output)
@@ -190,7 +190,7 @@ test.skipIf(process.platform === 'win32')(
               encoding: 'utf8',
               timeout: 15_000
             }),
-            /Pulse/
+            /PULSE/
           )
           assert.equal(fs.existsSync(poison), false)
         }

@@ -105,7 +105,7 @@ _sandbox_dir_name = sanitize_task_id_for_path
 
 
 def _get_active_profile_name() -> str:
-    """Active Pulse profile name, or ``"default"`` on any error. Resolved at container-create
+    """Active PULSE profile name, or ``"default"`` on any error. Resolved at container-create
     time so a container stays tagged with its creator even if the process switches profiles."""
     try:
         from pulse_cli.profiles import get_active_profile_name

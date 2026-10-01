@@ -1,6 +1,6 @@
 @echo off
 REM ============================================================================
-REM Pulse Agent Installer for Windows (CMD wrapper)
+REM PULSE Agent Installer for Windows (CMD wrapper)
 REM ============================================================================
 REM This batch file launches the PowerShell installer for users running CMD.
 REM
@@ -8,20 +8,20 @@ REM Usage:
 REM   curl -fsSL https://raw.githubusercontent.com/Anxious-Research/PULSE/main/scripts/install.cmd -o install.cmd && install.cmd && del install.cmd
 REM
 REM Or if you're already in PowerShell, use the direct command instead:
-REM   iex (irm https://pulse-agent.anxiousresearchlab.com/install.ps1)
+REM   iex (irm https://pulse-agent.anxious-research.com/install.ps1)
 REM ============================================================================
 
 echo.
-echo  Pulse Agent Installer
+echo  PULSE Agent Installer
 echo  Launching PowerShell installer...
 echo.
 
-powershell -ExecutionPolicy ByPass -NoProfile -Command "iex (irm https://pulse-agent.anxiousresearchlab.com/install.ps1)"
+powershell -ExecutionPolicy ByPass -NoProfile -Command "iex (irm https://pulse-agent.anxious-research.com/install.ps1)"
 
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo  Installation failed. Please try running PowerShell directly:
-    echo    powershell -ExecutionPolicy ByPass -c "iex (irm https://pulse-agent.anxiousresearchlab.com/install.ps1)"
+    echo    powershell -ExecutionPolicy ByPass -c "iex (irm https://pulse-agent.anxious-research.com/install.ps1)"
     echo.
     pause
     exit /b 1

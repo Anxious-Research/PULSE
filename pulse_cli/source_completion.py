@@ -42,11 +42,51 @@ def complete_source_checkout(
     Returns the SQLite runtime verdict: a positive unsafe-runtime probe withholds
     success here exactly as it does at the end of an update.
     """
+    from pulse_cli.update_lock import UpdateLock, describe_holder
+
+    root = Path(root)
+    # This tail is the last mutating step of an install or update, and its product
+    # builds run for minutes. A gateway restarted while it runs (launchd KeepAlive,
+    # a service manager, a second `pulse` launch) reaches the same tail through
+    # venv_sync, and `pulse update` runs its own: two completions then build the
+    # same output directories concurrently and race on install-stamp.json (#123376).
+    # Claim the shared update lock so stacked completions serialize. A tail whose
+    # orchestrator already holds the lock (venv_sync's interrupted-update finish,
+    # the updater's completion child) runs under its parent's claim, exactly as
+    # `pulse update` does under the desktop handoff pid.
+    lock = UpdateLock()
+    if not lock.acquire():
+        raise RuntimeError(
+            f"an update is still running ({describe_holder(lock.holder)}); "
+            "wait for it to exit, then relaunch PULSE"
+        )
+    try:
+        return _complete_locked(
+            root, desktop=desktop, assume_yes=assume_yes, gateway_mode=gateway_mode,
+            pre_update_snapshot_id=pre_update_snapshot_id,
+            pre_update_version=pre_update_version,
+            completion_message=completion_message, announce=announce,
+        )
+    finally:
+        lock.release()
+
+
+def _complete_locked(
+    root: Path,
+    *,
+    desktop: bool,
+    assume_yes: bool,
+    gateway_mode: bool,
+    pre_update_snapshot_id: str | None,
+    pre_update_version: str | None,
+    completion_message: str | None,
+    announce: str | None,
+) -> bool:
+    """The completion body; callers hold the update lock already."""
     from pulse_cli.source_build import build_update_products
     from pulse_cli.update_cmd_maint import _run_post_update_maintenance
     from pulse_cli.venv_sync import publish_launchers
 
-    root = Path(root)
     try:
         from pulse_cli._subprocess_compat import expose_pm_git
 
@@ -101,7 +141,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args([argument for argument in argv if argument != _PREPARED])
     root = args.source.resolve()
     if not (root / "pulse_cli/source_completion.py").is_file():
-        print(f"✗ {root} is not a Pulse source checkout", file=sys.stderr)
+        print(f"✗ {root} is not a PULSE source checkout", file=sys.stderr)
         return 1
 
     if prepared:

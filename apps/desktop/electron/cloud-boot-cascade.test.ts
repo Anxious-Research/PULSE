@@ -1,8 +1,8 @@
 /**
  * Regression tests for electron/cloud-boot-cascade.ts.
  *
- * A Pulse Cloud agent whose session cookie had expired failed at boot with
- * "Remote Pulse gateway uses OAuth, but you are not signed in" and latched,
+ * A PULSE Cloud agent whose session cookie had expired failed at boot with
+ * "Remote PULSE gateway uses OAuth, but you are not signed in" and latched,
  * although the portal session needed to silently re-mint it was live. These
  * pin the exact conditions under which boot is allowed to self-heal.
  *

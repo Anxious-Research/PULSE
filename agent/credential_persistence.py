@@ -10,13 +10,13 @@ import re
 from typing import Any, Dict, Mapping
 
 
-# Sources Pulse owns and may persist with secrets.  Any other non-empty,
+# Sources PULSE owns and may persist with secrets.  Any other non-empty,
 # non-manual source is borrowed/reference-only so new external providers fail
 # closed at the disk boundary.
 _PERSISTABLE_PROVIDER_SOURCES = frozenset({
     ("anthropic", "pulse_pkce"),
     ("minimax-oauth", "oauth"),
-    ("anxious", "device_code"),
+    ("nous", "device_code"),
     ("openai-codex", "device_code"),
     ("xai-oauth", "device_code"),
 })

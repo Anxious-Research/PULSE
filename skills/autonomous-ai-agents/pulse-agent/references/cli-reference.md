@@ -1,7 +1,7 @@
-# Pulse CLI Reference
+# PULSE CLI Reference
 
 Live sources when anything looks stale: `pulse --help`, `pulse <command> --help`,
-https://github.com/Anxious-Research/PULSE/reference/cli-commands
+https://pulse-agent.anxious-research.com/docs/reference/cli-commands
 
 ### Global Flags
 
@@ -68,7 +68,7 @@ pulse bundles              Skill bundles (one /<name> alias loads several skills
 pulse mcp add NAME (--url or --command) | remove | list | test NAME
 pulse mcp catalog | install NAME     Curated catalog install
 pulse mcp configure NAME             Toggle tool selection
-pulse mcp serve                      Run Pulse as an MCP server
+pulse mcp serve                      Run PULSE as an MCP server
 ```
 Details (transport, tool discovery, catalog): `references/native-mcp.md`.
 
@@ -79,7 +79,7 @@ pulse gateway run|install|start|stop|restart|status|setup
 ```
 
 20+ platforms: Telegram, Discord, Slack, WhatsApp (Baileys + Business Cloud API), iMessage (Photon — `pulse photon setup`), Signal, Email, SMS, Matrix, Mattermost, Teams, LINE, SimpleX, ntfy, Google Chat, Home Assistant, DingTalk, Feishu, WeCom, Weixin, API Server, Webhooks. Open WebUI connects via the API Server adapter. Most adapters ship under `plugins/platforms/`.
-Docs: https://github.com/Anxious-Research/PULSE/user-guide/messaging/
+Docs: https://pulse-agent.anxious-research.com/docs/user-guide/messaging/
 
 ### Sessions
 
@@ -108,7 +108,7 @@ pulse profile migrate-identity A B   Retry a completed rename's session/routing 
 
 ```
 pulse auth                 Interactive credential manager
-pulse auth add [PROVIDER]  Add OAuth or API-key credential (anxious, openai-codex, qwen-oauth, …)
+pulse auth add [PROVIDER]  Add OAuth or API-key credential (nous, openai-codex, qwen-oauth, …)
 pulse auth list|remove P IDX|reset PROVIDER|status
 ```
 Multiple credentials per provider form a pool that rotates automatically and skips exhausted keys.
@@ -119,7 +119,7 @@ Multiple credentials per provider form a pool that rotates automatically and ski
 pulse desktop / gui        Native desktop app
 pulse dashboard            Web admin panel + embedded chat (--stop / --status)
 pulse proxy                OpenAI-compatible local proxy backed by an OAuth provider
-pulse portal               Quick setup / sign in via Anxious Portal
+pulse portal               Quick setup / sign in via Nous Portal
 pulse kanban <verb>        Multi-agent work-queue board
 pulse project              Named multi-folder workspaces
 pulse skin list|use|set    Switch/tweak skins (see references/themes.md)
@@ -142,10 +142,10 @@ Plugin- and provider-supplied subcommands (e.g. `pulse photon setup`) only appea
 
 | Looking for... | Location |
 |---|---|
-| Config options | `pulse config edit` · Configuration docs |
-| Tools / toolsets | `pulse tools list` · Tools reference |
-| Skills catalog | `pulse skills browse` · Skills catalog |
-| Provider setup | `pulse model` · Providers guide |
-| Env variables | `pulse config env-path` · Env vars reference |
+| Config options | `pulse config edit` · [Configuration docs](https://pulse-agent.anxious-research.com/docs/user-guide/configuration) |
+| Tools / toolsets | `pulse tools list` · [Tools reference](https://pulse-agent.anxious-research.com/docs/reference/tools-reference) |
+| Skills catalog | `pulse skills browse` · [Skills catalog](https://pulse-agent.anxious-research.com/docs/reference/skills-catalog) |
+| Provider setup | `pulse model` · [Providers guide](https://pulse-agent.anxious-research.com/docs/integrations/providers) |
+| Env variables | `pulse config env-path` · [Env vars reference](https://pulse-agent.anxious-research.com/docs/reference/environment-variables) |
 | Gateway logs | `~/.pulse/logs/gateway.log` (or `pulse logs`) |
 | Sessions | `pulse sessions browse` (reads state.db) |

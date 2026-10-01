@@ -50,7 +50,7 @@ export function reconnectGateway(options?: GatewayReconnectOptions): Promise<voi
 }
 
 /** Toast button that re-dials the active connection — attached wherever a
- *  send fails because Pulse is offline (sudo/secret/approval prompts …). */
+ *  send fails because PULSE is offline (sudo/secret/approval prompts …). */
 export function reconnectAction(): { label: string; onClick: () => void } {
   return {
     label: translateNow('prompts.reconnect'),

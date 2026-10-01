@@ -1,4 +1,4 @@
-"""Profile distributions — shareable, packaged Pulse profiles via git.
+"""Profile distributions — shareable, packaged PULSE profiles via git.
 
 Sources: a git URL (``github.com/user/repo``, ``https://...``, ``git@...``, ``ssh://``,
 ``git://``) or a local directory that already contains ``distribution.yaml`` (profile
@@ -50,7 +50,7 @@ def _is_distribution_runtime_path(parts: Tuple[str, ...]) -> bool:
         return False
     if parts[0] == "cron":
         return parts[:2] != _CRON_STORE_REL
-    # Root-level dot entries under skills are Pulse bookkeeping (.hub,
+    # Root-level dot entries under skills are PULSE bookkeeping (.hub,
     # .usage.json, curator state, bundled manifest, locks, archives, ...).
     return parts[0] == "skills" and len(parts) == 2 and parts[1].startswith(".")
 
@@ -194,13 +194,13 @@ def check_pulse_requires(spec: str, current_version: str) -> None:
     m = _VERSION_OP_RE.match(spec)
     op, target = m.groups() if m else (">=", spec.strip())
     if not _VERSION_OPS[op](_parse_semver(current_version), _parse_semver(target)):
-        raise DistributionError(f"This distribution requires Pulse {op}{target}, but you have {current_version}.")
+        raise DistributionError(f"This distribution requires PULSE {op}{target}, but you have {current_version}.")
 
 
 def _env_template_from_manifest(manifest: DistributionManifest) -> str:
     """Generate a ``.env.template`` body from env_requires."""
     lines = [
-        "# Environment variables required by this Pulse distribution.",
+        "# Environment variables required by this PULSE distribution.",
         "# Copy to `.env` and fill in your own values before running.", "",
     ]
     for req in manifest.env_requires:
@@ -256,7 +256,7 @@ def _stage_source(source: str, workdir: Path) -> Tuple[Path, str]:
         rmtree_readonly(staged / ".git")
         missing = (
             f"No {MANIFEST_FILENAME} at the root of {src_str!r}. "
-            "This repository is not a Pulse profile distribution."
+            "This repository is not a PULSE profile distribution."
         )
     elif (path_guess := Path(src_str).expanduser()).is_dir():
         staged = path_guess.resolve()
@@ -314,7 +314,7 @@ def plan_install(source: str, workdir: Path, override_name: Optional[str] = None
     manifest = read_manifest(staged)
     if manifest is None:
         raise DistributionError(
-            f"No {MANIFEST_FILENAME} found at the distribution root — this source is not a Pulse distribution."
+            f"No {MANIFEST_FILENAME} found at the distribution root — this source is not a PULSE distribution."
         )
     check_pulse_requires(manifest.pulse_requires, get_version_info().base_version)  # fail fast
     canon = _canon_valid(override_name or manifest.name)
@@ -619,25 +619,3 @@ def describe_distribution(profile_name: str) -> Dict[str, Any]:
     """Return a structured view of a profile's distribution metadata ({} if not a distribution)."""
     manifest = read_manifest(_existing_profile(profile_name)[1])
     return {} if manifest is None else manifest.to_dict()
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'is_excluded_skill_path': ('agent.skill_utils', 'is_excluded_skill_path'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

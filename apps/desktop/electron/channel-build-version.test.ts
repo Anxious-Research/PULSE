@@ -28,13 +28,13 @@ function request(sequence: number = 65536, token: string = 'ab12cd34ef56ab78'): 
     windowsVersion: `0.${Math.floor(sequence / 65536)}.${sequence % 65536}.0`,
     identity: {
       token,
-      displayName: 'Pulse no-registry-needed',
-      appId: `com.anxious-research.pulse-channel-${token}`,
-      appNamePascal: `PulseChannel${token}`,
-      artifactNamePascal: `PulseChannel${token}`,
+      displayName: 'PULSE no-registry-needed',
+      appId: `com.nousresearch.pulse-channel-${token}`,
+      appNamePascal: `PULSEChannel${token}`,
+      artifactNamePascal: `PULSEChannel${token}`,
       cliName: 'pulse-no-registry-needed',
       windowsExecutableName: 'pulse-no-registry-needed',
-      msixAppIdWithOrg: `Anxious-Research.PulseChannel${token}`
+      msixAppIdWithOrg: `NousResearch.PULSEChannel${token}`
     },
     bundleEnv: { PULSE_GUEST_ONBOARDING: '1' },
     publicBase: 'https://builds.example.test'
@@ -151,6 +151,54 @@ test('channel packaging reuses admitted identity and rejects unsupported or unsa
   assert.throws((): void => {
     load(invalid)
   }, /identity/)
+})
+
+test('a channel that copies the stable identity packages and runs as the regular app', (): void => {
+  process.env.PULSE_DESKTOP_VARIANT = 'bundled'
+
+  for (const file of ['../product-identity.cjs', '../electron-builder.config.cjs']) {
+    delete require.cache[require.resolve(file)]
+  }
+
+  const stable: PackagingFacts = {
+    identity: require('../product-identity.cjs'),
+    config: require('../electron-builder.config.cjs')
+  }
+
+  const { identity: official } = stable
+
+  const branded: PackagingFacts = load({
+    ...request(),
+    identity: {
+      token: 'ab12cd34ef56ab78',
+      displayName: official.displayName,
+      appId: official.appId,
+      appNamePascal: official.appNamePascal,
+      artifactNamePascal: official.artifactNamePascal,
+      cliName: official.cliName,
+      windowsExecutableName: official.windowsExecutableName,
+      msixAppIdWithOrg: official.msixAppIdWithOrg
+    }
+  })
+
+  // A token would make the runtime pin a userData dir that installed stable doesn't use.
+  assert.equal(branded.identity.token, undefined)
+  assert.equal(branded.identity.appId, official.appId)
+  assert.equal(branded.config.extraMetadata?.productName, stable.config.extraMetadata?.productName)
+  assert.equal(branded.config.extraMetadata?.name, stable.config.extraMetadata?.name)
+  assert.equal(branded.config.artifactName, stable.config.artifactName)
+
+  assert.equal(
+    applyDesktopIdentity(
+      {
+        getPath: (): string => assert.fail('stable userData must not be relocated'),
+        setPath: (): void => assert.fail('stable userData must not be relocated'),
+        setName: (): void => assert.fail('stable name must not change')
+      },
+      branded.identity
+    ),
+    null
+  )
 })
 
 test('channel stamps verify the real checkout and retain source version and native ownership', async (): Promise<void> => {
@@ -406,7 +454,7 @@ test('actual MSIX manifest writer consumes the channel quad across rollover inst
       assert.equal(row.semver, build.version)
       assert.match(row.xml, new RegExp(`Version="${build.windowsVersion.replaceAll('.', '\\.')}"`))
       assert.equal((row.xml.match(/Category="windows.appExecutionAlias"/g) || []).length, 2)
-      assert.match(row.xml, /PulseChannelab12cd34ef56ab78Cli1/)
+      assert.match(row.xml, /PULSEChannelab12cd34ef56ab78Cli1/)
 
       const recordScript: string = `
 import json, pathlib, sys, zipfile, xml.etree.ElementTree as ET

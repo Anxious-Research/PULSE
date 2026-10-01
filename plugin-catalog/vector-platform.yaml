@@ -1,7 +1,7 @@
 name: vector-platform
 repo: https://github.com/BonesGit/pulse-vector-platform
 sha: 06276236e03e61f86934b09dbf25f0f53b9a1684
-description: "Vector (vectorapp.io) messaging platform plugin: Pulse becomes a first-class Nostr-based Vector bot (its own nsec/npub identity), relaying DMs through a local Rust sidecar that wraps vector-sdk. First run needs `pulse gateway setup`, which provisions the bot identity (create or import). Disclosure — `pulse gateway setup` downloads a prebuilt vector-bridge binary from github.com/BonesGit/pulse-vector-platform/releases (tag v<version>, sha256 checked against that release's SHA256SUMS; set vector.prebuilt.download: false to build from the bundled Rust source), merges `vector:` settings into ~/.pulse/config.yaml, writes VECTOR_* to ~/.pulse/.env, and publishes a public bot profile (kind-0, bot: true) to Nostr discovery relays."
+description: "Vector (vectorapp.io) messaging platform plugin: PULSE becomes a first-class Nostr-based Vector bot (its own nsec/npub identity), relaying DMs through a local Rust sidecar that wraps vector-sdk. First run needs `pulse gateway setup`, which provisions the bot identity (create or import). Disclosure — `pulse gateway setup` downloads a prebuilt vector-bridge binary from github.com/BonesGit/pulse-vector-platform/releases (tag v<version>, sha256 checked against that release's SHA256SUMS; set vector.prebuilt.download: false to build from the bundled Rust source), merges `vector:` settings into ~/.pulse/config.yaml, writes VECTOR_* to ~/.pulse/.env, and publishes a public bot profile (kind-0, bot: true) to Nostr discovery relays."
 maintainer: BonesGit
 tier: community
 category: platform

@@ -87,7 +87,7 @@ function Harness() {
     ...cache,
     queryClient,
     hydrateFromStoredSession: noop,
-    refreshPulseConfig: noop,
+    refreshPULSEConfig: noop,
     refreshSessions: noop
   })
   refresh = () =>

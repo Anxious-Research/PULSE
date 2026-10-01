@@ -9,13 +9,14 @@
  * frame's contentWindow and the identifier is charset-checked.
  */
 
-import type * as PulseSdk from '@pulse/plugin-sdk'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import type * as PULSESdk from '@pulse/plugin-sdk'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { translateBots } from './i18n-test-helper'
 
 const HUB_ORIGIN = 'https://pulse-agent.anxious-research.com'
+const FALLBACK_HUB_ORIGIN = 'https://nousresearch.github.io'
 
 const mocks = vi.hoisted(() => ({
   notify: vi.fn(),
@@ -25,7 +26,7 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@pulse/plugin-sdk', async importOriginal => {
-  const original = await importOriginal<typeof PulseSdk>()
+  const original = await importOriginal<typeof PULSESdk>()
 
   return {
     ...original,
@@ -81,24 +82,115 @@ function routedInstallCalls() {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  // Opening the hub browser now HEAD-probes the primary picker URL; default to
+  // a healthy probe so every non-fallback test stays hermetic and offline.
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }))
 })
 
 afterEach(() => {
   cleanup()
+  vi.unstubAllGlobals()
 })
 
 describe('hub pick messages', () => {
+  it('uses GitHub Pages when the Vercel hub probe is unavailable', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }))
+
+    const frame = openHubBrowser()
+
+    await waitFor(() =>
+      expect(frame.getAttribute('src')).toBe(`${FALLBACK_HUB_ORIGIN}/pulse-agent/docs/skills?embed=picker`)
+    )
+  })
+
+  it('uses GitHub Pages when the probe request fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('network error')))
+
+    const frame = openHubBrowser()
+
+    await waitFor(() =>
+      expect(frame.getAttribute('src')).toBe(`${FALLBACK_HUB_ORIGIN}/pulse-agent/docs/skills?embed=picker`)
+    )
+  })
+
+  it('uses GitHub Pages when the probe hangs past its deadline', async () => {
+    vi.useFakeTimers()
+    // AbortSignal.timeout's internal timer bypasses vi's fake clock — route it
+    // through setTimeout so the deadline is deterministic here.
+    vi.spyOn(AbortSignal, 'timeout').mockImplementation(ms => {
+      const controller = new AbortController()
+      setTimeout(() => controller.abort(new DOMException('Timed out', 'TimeoutError')), ms)
+
+      return controller.signal
+    })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        (_url: string, options: RequestInit) =>
+          new Promise((_resolve, reject) => {
+            options.signal?.addEventListener('abort', () =>
+              reject(new DOMException('The user aborted a request.', 'AbortError'))
+            )
+          })
+      )
+    )
+
+    try {
+      const frame = openHubBrowser()
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(8_000)
+      })
+
+      expect(frame.getAttribute('src')).toBe(`${FALLBACK_HUB_ORIGIN}/pulse-agent/docs/skills?embed=picker`)
+    } finally {
+      vi.restoreAllMocks()
+      vi.useRealTimers()
+    }
+  })
+
+  it('keeps the Vercel picker when the probe succeeds', async () => {
+    const frame = openHubBrowser()
+
+    await waitFor(() => expect(frame.getAttribute('src')).toBe(`${HUB_ORIGIN}/docs/skills?embed=picker`))
+  })
+
+  it('accepts an install message from the fallback picker frame', () => {
+    const frame = openHubBrowser()
+
+    postPick(
+      { identifier: 'nous/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
+      { origin: FALLBACK_HUB_ORIGIN, source: frame.contentWindow }
+    )
+
+    expect(installCalls()).toEqual([['skills.manage', { action: 'install', query: 'nous/web-research' }]])
+  })
+
+  it('pins the hub frame to the required sandbox and clipboard posture (#91612)', async () => {
+    const frame = openHubBrowser()
+
+    // Same-origin (the hub's own routing), scripts, and popups — external
+    // links then reach the OS browser via the main-process window-open
+    // delegation, never as a popup window.
+    expect(frame.getAttribute('sandbox')).toBe(
+      'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox'
+    )
+    // The Copy controls write to the clipboard; the session permission
+    // handlers grant clipboard-sanitized-write only to the hub origins.
+    expect(frame.getAttribute('allow')).toBe('clipboard-write')
+  })
+
   it('installs the picked skill when it comes from our own frame', () => {
     const frame = openHubBrowser()
 
     postPick(
-      { identifier: 'pulse/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
+      { identifier: 'nous/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
       {
         source: frame.contentWindow
       }
     )
 
-    expect(installCalls()).toEqual([['skills.manage', { action: 'install', query: 'pulse/web-research' }]])
+    expect(installCalls()).toEqual([['skills.manage', { action: 'install', query: 'nous/web-research' }]])
   })
 
   it('routes an existing source-scoped bot install through its owner connection', async () => {
@@ -122,7 +214,7 @@ describe('hub pick messages', () => {
     const frame = container.querySelector('iframe') as HTMLIFrameElement
 
     postPick(
-      { identifier: 'pulse/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
+      { identifier: 'nous/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
       { source: frame.contentWindow }
     )
 
@@ -139,7 +231,7 @@ describe('hub pick messages', () => {
         {
           action: 'install',
           profile: 'backend-worker',
-          query: 'pulse/web-research'
+          query: 'nous/web-research'
         }
       ]
     ])
@@ -151,7 +243,7 @@ describe('hub pick messages', () => {
 
     // Same origin, different window — the OAuth-popup shape of the hole.
     postPick(
-      { identifier: 'pulse/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
+      { identifier: 'nous/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
       {
         source: window
       }
@@ -164,7 +256,7 @@ describe('hub pick messages', () => {
     const frame = openHubBrowser()
 
     postPick(
-      { identifier: 'pulse/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
+      { identifier: 'nous/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
       {
         origin: 'https://evil.example',
         source: frame.contentWindow
@@ -188,8 +280,8 @@ describe('hub pick messages', () => {
   it('ignores messages that are not a skill pick', () => {
     const frame = openHubBrowser()
 
-    postPick({ identifier: 'pulse/web-research', type: 'oauth-callback' }, { source: frame.contentWindow })
-    postPick({ identifier: 'pulse/web-research', type: 'pulse-skill-pick' }, { source: frame.contentWindow })
+    postPick({ identifier: 'nous/web-research', type: 'oauth-callback' }, { source: frame.contentWindow })
+    postPick({ identifier: 'nous/web-research', type: 'pulse-skill-pick' }, { source: frame.contentWindow })
 
     // The second has no `name`, so it is not a complete pick either.
     expect(installCalls()).toEqual([])
@@ -200,7 +292,7 @@ describe('hub pick messages', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /hide the hub browser/i }))
     postPick(
-      { identifier: 'pulse/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
+      { identifier: 'nous/web-research', name: 'Web Research', type: 'pulse-skill-pick' },
       {
         source: frame.contentWindow
       }

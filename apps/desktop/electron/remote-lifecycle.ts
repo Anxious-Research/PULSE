@@ -1,12 +1,12 @@
 /**
  * remote-lifecycle.ts
  *
- * Pure, electron-free remote Pulse dashboard lifecycle over SSH for Desktop
+ * Pure, electron-free remote PULSE dashboard lifecycle over SSH for Desktop
  * SSH remote mode. Composes an SshConnection (injected) with HTTP probes
  * through the established tunnel (injected fetch) and the served-token adoption
  * step (injected). Knows how to:
  *
- *   - locate the Pulse install on the remote (login-shell probe),
+ *   - locate the PULSE install on the remote (login-shell probe),
  *   - gate the remote platform to Linux/macOS via `uname`,
  *   - reuse an existing desktop-dedicated dashboard via a lockfile + an
  *     AUTHENTICATED /api/status probe (pid liveness alone is insufficient),
@@ -16,7 +16,7 @@
  *   - clean up a stale dashboard only when it is provably ours.
  *
  * No `import 'electron'` so it's unit-testable with `node --test`. main.ts wires
- * the real SshConnection, fetch, adoptServedDashboardToken, and waitForPulse in.
+ * the real SshConnection, fetch, adoptServedDashboardToken, and waitForPULSE in.
  *
  * The minted PULSE_DASHBOARD_SESSION_TOKEN is the SPAWN credential. After
  * readiness the caller runs served-token adoption against the tunneled baseUrl
@@ -29,6 +29,7 @@ import crypto from 'node:crypto'
 
 import { READY_IN_MERGED_OUTPUT_RE } from './backend-ready'
 import { parseRemoteProfileListing } from './connection-registry'
+import { backendProfileArg } from './profile-id-guard'
 import { assertBootstrapNotSuperseded, withRemoteTimeout } from './ssh-connection'
 
 const LOCKFILE_SCHEMA_VERSION = 2
@@ -39,7 +40,16 @@ const PROTOCOL_VERSION = 1
 const READY_RE = READY_IN_MERGED_OUTPUT_RE // the remote log is `>> log 2>&1`: merged, not line-accurate
 const REMOTE_LOCK_DIR = '~/.pulse/desktop-ssh'
 const SUPPORTED_REMOTE_OS = new Set(['Linux', 'Darwin'])
-const DEFAULT_READY_TIMEOUT_MS = 45_000
+// On a busy remote host a healthy cold boot can take 60-150s before the
+// freshly spawned `pulse serve --isolated` prints its READY line (event-loop
+// stalls of 5-27s each during spawn storms are routine). The historical 45s
+// budget gave up milliseconds before a healthy backend announced ready and
+// surfaced a timeout toast (issue #94642). A roomier default absorbs the
+// cold-start cost; a warm start still announces in well under a second.
+const DEFAULT_READY_TIMEOUT_MS = 120_000
+// Never trust a deadline tighter than the warm-start path needs; floor at 45s
+// (the historical default) so a malformed override can't reintroduce the loop.
+const MIN_READY_TIMEOUT_MS = 45_000
 const READY_POLL_INTERVAL_MS = 750
 // macOS sshd starts non-interactive shells with a 256-FD soft limit even when
 // the hard limit is unlimited. A Desktop backend can legitimately exceed that
@@ -54,6 +64,22 @@ function classifySshReuseProof(proof, spawnNonce) {
     proof.runtimeIntact !== false
     ? 'authenticated-ok'
     : 'authenticated-stale'
+}
+
+/**
+ * Resolve the remote ready-port deadline. Honors the
+ * PULSE_DESKTOP_REMOTE_READY_TIMEOUT_MS env override (for users on busy
+ * hosts whose cold boots routinely exceed the default), clamped to a sane
+ * floor so a bad value can't make boot flakier than the default.
+ */
+function resolveReadyTimeoutMs(env = process.env) {
+  const parsed = Number(env.PULSE_DESKTOP_REMOTE_READY_TIMEOUT_MS)
+
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return Math.max(MIN_READY_TIMEOUT_MS, Math.round(parsed))
+  }
+
+  return DEFAULT_READY_TIMEOUT_MS
 }
 
 function mintToken() {
@@ -168,14 +194,14 @@ function expandRemotePath(p) {
 // (throws a path-naming error if not executable — never silently falls back to a
 // different install). A BLANK path auto-detects: login-shell `command -v` (a
 // non-login `ssh host cmd` PATH misses user installs), then known install paths.
-async function locatePulse(ssh, remotePulsePath) {
+async function locatePULSE(ssh, remotePULSEPath) {
   const resolveLauncher = async (candidate: string) => {
     // Return the candidate path directly. The pulse binary or wrapper script
     // is executable and handles argument forwarding (e.g. `exec <python> <script> "$@"`)
     // correctly on its own. Previously, this function followed `exec` wrappers and
     // returned only the python interpreter, which broke:
     //   - version checking: `<python> --version` printed "Python x.y.z" instead of
-    //     the Pulse version, and
+    //     the PULSE version, and
     //   - capability probing: `<python> serve --help` failed entirely.
     // See https://github.com/Anxious-Research/PULSE/issues/74411
     return candidate
@@ -192,13 +218,13 @@ async function locatePulse(ssh, remotePulsePath) {
     }
   }
 
-  if (remotePulsePath) {
-    if (await isExecutable(remotePulsePath)) {
-      return resolveLauncher(remotePulsePath)
+  if (remotePULSEPath) {
+    if (await isExecutable(remotePULSEPath)) {
+      return resolveLauncher(remotePULSEPath)
     }
 
     const err: any = new Error(
-      `The Pulse path you set is not an executable on the remote host: "${remotePulsePath}". ` +
+      `The PULSE path you set is not an executable on the remote host: "${remotePULSEPath}". ` +
         'Check the path (it must be the full path to the `pulse` binary on the remote, e.g. ' +
         '~/pulse-agent/.venv/bin/pulse), or clear it to auto-detect.'
     )
@@ -236,9 +262,9 @@ async function locatePulse(ssh, remotePulsePath) {
   }
 
   const err: any = new Error(
-    'Pulse is not installed on the remote host (could not find a `pulse` executable). ' +
-      'Install it on the remote with:  curl -fsSL https://raw.githubusercontent.com/Anxious-Research/PULSE/main/scripts/install.sh | sh  ' +
-      '— or set the Pulse path explicitly in the SSH connection settings.'
+    'PULSE is not installed on the remote host (could not find a `pulse` executable). ' +
+      'Install it on the remote with:  curl -fsSL https://pulse-agent.anxious-research.com/install.sh | sh  ' +
+      '— or set the PULSE path explicitly in the SSH connection settings.'
   )
 
   err.kind = 'pulse-not-found'
@@ -246,9 +272,9 @@ async function locatePulse(ssh, remotePulsePath) {
 }
 
 // Probe the resolved binary's version string (first line of `<pulse> --version`,
-// e.g. "Pulse Agent v0.18.2 ..."), or '' on failure. Surfaces WHICH pulse a
+// e.g. "PULSE Agent v0.18.2 ..."), or '' on failure. Surfaces WHICH pulse a
 // connection uses, so a stale/unexpected install is visible.
-async function probePulseVersion(ssh, pulsePath) {
+async function probePULSEVersion(ssh, pulsePath) {
   try {
     // Watchdogged: a hung remote CLI must die remotely instead of orphaning
     // when the local ssh child is SIGKILLed (#110478).
@@ -267,7 +293,7 @@ async function probeRemotePlatform(ssh) {
 
   if (!SUPPORTED_REMOTE_OS.has(osName)) {
     const err: any = new Error(
-      `Unsupported remote platform "${osName || 'unknown'}". Pulse Desktop SSH mode supports Linux, macOS, and Windows remote hosts.`
+      `Unsupported remote platform "${osName || 'unknown'}". PULSE Desktop SSH mode supports Linux, macOS, and Windows remote hosts.`
     )
 
     err.kind = 'unsupported-platform'
@@ -280,13 +306,13 @@ async function probeRemotePlatform(ssh) {
 // The PULSE_HOME the remote dashboard will use (explicit env wins, else
 // ~/.pulse). Recorded in the lockfile so a future reuse can tell it's the same
 // state store; best-effort.
-async function probeRemotePulseHome(ssh) {
+async function probeRemotePULSEHome(ssh) {
   try {
     const out = (await ssh.exec('echo "${PULSE_HOME:-$HOME/.pulse}"')).trim().split('\n').pop()
 
     return out || '~/.pulse'
   } catch (cause) {
-    const error: any = new Error('Could not resolve the remote Pulse home.')
+    const error: any = new Error('Could not resolve the remote PULSE home.')
     error.kind = 'transient-transport-error'
     error.cause = cause
     throw error
@@ -300,6 +326,11 @@ from pathlib import Path
 home=Path(os.path.expanduser(sys.argv[1]))
 if home.parent.name=='profiles':home=home.parent.parent
 marker=home/'.pulse-update-in-progress'
+def clear():
+    try:marker.unlink()
+    except FileNotFoundError:pass
+    except OSError:pass
+    print('CLEAR');raise SystemExit
 try:
     with marker.open('rb') as stream:raw=stream.read(257)
 except FileNotFoundError:
@@ -319,22 +350,27 @@ except ValueError:
 try:
     os.kill(owner,0)
 except ProcessLookupError:
-    print('CLEAR')
+    clear()
 except PermissionError:
-    print('LIVE:'+str(owner))
+    print('LIVE:'+str(owner));raise SystemExit
 except OSError as error:
-    if error.errno==errno.ESRCH:print('CLEAR')
-    elif error.errno==errno.EPERM:print('LIVE:'+str(owner))
-    else:print('UNCERTAIN')
-else:
-    print('LIVE:'+str(owner))
+    if error.errno==errno.ESRCH:clear()
+    elif error.errno==errno.EPERM:print('LIVE:'+str(owner));raise SystemExit
+    else:print('UNCERTAIN');raise SystemExit
+try:
+    cmd=open('/proc/%d/cmdline'%owner,'rb').read().replace(b'\0',b' ')
+except OSError:
+    cmd=b''
+if cmd and b'update' not in cmd:
+    clear()
+print('LIVE:'+str(owner))
 `
 
 /**
  * Refuse normal SSH reuse/spawn while the remote install is being mutated.
  *
  * This probe intentionally uses only the host's system Python and raw marker
- * bytes; it never imports or executes code from the changing Pulse checkout.
+ * bytes; it never imports or executes code from the changing PULSE checkout.
  * Absence or a well-formed, confirmed-dead owner is clear. Every parse, read,
  * probe, or transport uncertainty fails closed so a Desktop relaunch cannot
  * start `serve` beside an updater that survived the old app process.
@@ -350,7 +386,7 @@ async function assertRemoteInstallUpdateClear(ssh, pulseHome) {
         .split(/\r?\n/)
         .pop() || ''
   } catch (cause) {
-    const error: any = new Error('Could not prove that the remote Pulse install is clear for SSH startup.')
+    const error: any = new Error('Could not prove that the remote PULSE install is clear for SSH startup.')
     error.kind = 'update-in-progress'
     error.cause = cause
     throw error
@@ -364,23 +400,23 @@ async function assertRemoteInstallUpdateClear(ssh, pulseHome) {
 
   const error: any = new Error(
     live
-      ? `Remote Pulse update process ${live[1]} is still running; SSH startup is paused.`
-      : 'The remote Pulse update marker is unreadable or malformed; refusing SSH startup.'
+      ? `Remote PULSE update process ${live[1]} is still running; SSH startup is paused.`
+      : 'The remote PULSE update marker is unreadable or malformed; refusing SSH startup.'
   )
 
   error.kind = 'update-in-progress'
   throw error
 }
 
-async function listRemotePulseProfiles(ssh) {
-  const home = assertSafeRemoteHome(await probeRemotePulseHome(ssh))
+async function listRemotePULSEProfiles(ssh) {
+  const home = assertSafeRemoteHome(await probeRemotePULSEHome(ssh))
   const dir = expandRemotePath(`${home}/profiles`)
   let listing = ''
 
   try {
     listing = await ssh.exec(`if [ -d ${dir} ]; then ls -1 ${dir}; fi`)
   } catch (cause) {
-    const error: any = new Error('Could not list remote Pulse profiles.')
+    const error: any = new Error('Could not list remote PULSE profiles.')
     error.kind = 'transient-transport-error'
     error.cause = cause
     throw error
@@ -395,14 +431,14 @@ async function readRemoteInstallId(ssh) {
   // pinned to `<root>/profiles/<name>` reports the same id as one pointed at the root — they are
   // one backend. Read-only: a missing file is left missing (minting identity is the install's job,
   // never a visiting client's) and simply means "no id", exactly as an older backend reports.
-  const root = remoteInstallRoot(assertSafeRemoteHome(await probeRemotePulseHome(ssh)))
+  const root = remoteInstallRoot(assertSafeRemoteHome(await probeRemotePULSEHome(ssh)))
   const file = expandRemotePath(`${root}/install_id`)
   let out = ''
 
   try {
     out = await ssh.exec(`if [ -f ${file} ]; then cat ${file}; fi`)
   } catch (cause) {
-    const error: any = new Error('Could not read the remote Pulse install id.')
+    const error: any = new Error('Could not read the remote PULSE install id.')
     error.kind = 'transient-transport-error'
     error.cause = cause
     throw error
@@ -424,7 +460,7 @@ function assertSafeRemoteHome(home) {
   const value = String(home || '').trim()
 
   if (!/^(\/|~\/)[A-Za-z0-9._/+-]+$/.test(value) || value.includes('..')) {
-    const error: any = new Error('Unsafe remote Pulse home.')
+    const error: any = new Error('Unsafe remote PULSE home.')
     error.kind = 'unsafe-path'
     throw error
   }
@@ -930,35 +966,35 @@ def owned(args):
 pidfd=None
 if sys.platform.startswith("linux"):
  if not hasattr(os,"pidfd_open") or not hasattr(signal,"pidfd_send_signal"):
-  print("UNAVAILABLE");sys.exit(2)
+  print("UNAVAILABLE");sys.exit(0)
  try:pidfd=os.pidfd_open(pid,0)
  except ProcessLookupError:print("ALREADY_STOPPED");sys.exit(0)
- except (OSError,PermissionError):print("UNAVAILABLE");sys.exit(2)
+ except (OSError,PermissionError):print("UNAVAILABLE");sys.exit(0)
 
 try:
  live_creation,live_args=identity_before_signal()
  if live_creation!=expected_creation or not owned(live_args):
-  print("REFUSED");sys.exit(3)
+  print("REFUSED");sys.exit(0)
  if (sys.platform=="darwin"):
   # Darwin has no pidfd-style signal binding. Refuse instead of accepting the
   # residual PID-reuse window between ps and os.kill; reconnect will surface
   # the still-running remote owner for an explicit retry.
-  print("DARWIN_UNAVAILABLE");sys.exit(2)
+  print("DARWIN_UNAVAILABLE");sys.exit(0)
  try:
   if pidfd is not None:signal.pidfd_send_signal(pidfd,signal.SIGTERM)
   else:os.kill(pid,signal.SIGTERM)
  except ProcessLookupError:print("ALREADY_STOPPED");sys.exit(0)
  if pidfd is not None:
   poller=select.poll();poller.register(pidfd,select.POLLIN)
-  if not poller.poll(10000):print("TIMEOUT");sys.exit(4)
+  if not poller.poll(10000):print("TIMEOUT");sys.exit(0)
  else:
   deadline=time.monotonic()+10
   while time.monotonic()<deadline:
    try:os.kill(pid,0)
    except ProcessLookupError:break
-   except PermissionError:print("UNAVAILABLE");sys.exit(2)
+   except PermissionError:print("UNAVAILABLE");sys.exit(0)
    time.sleep(.1)
-  else:print("TIMEOUT");sys.exit(4)
+  else:print("TIMEOUT");sys.exit(0)
  print("TERMINATED")
 finally:
  if pidfd is not None:os.close(pidfd)
@@ -972,7 +1008,7 @@ finally:
 // the marker check, spawns the backend, and publishes its initial lockfile.
 // Python keeps the descriptor close-on-exec by default and passes it explicitly
 // only to the intended outer shell; each detached child closes it before
-// execing Pulse. mutexPath is expandRemotePath() output — a complete shell
+// execing PULSE. mutexPath is expandRemotePath() output — a complete shell
 // word ("$HOME"'/…' or '/abs/…') embedded raw so $HOME expands remotely; a
 // second shq() would hand python the quote characters as part of the path.
 function withRemoteUpdateMutex(command, mutexPath) {
@@ -1116,7 +1152,20 @@ async function terminateOwnedDashboardForUpdate(ssh, expected) {
 // fd-detachment is already handled by </dev/null + redirect + &).
 function buildSpawnCommand(pulsePath, profile, opts: any = {}) {
   const pulse = expandRemotePath(pulsePath)
-  const profileArgs = profile ? `--profile ${shq(profile)} ` : ''
+  // The roster/SSH bridge hands us the profile verbatim: a non-slug value must never
+  // cross into the remote spawn argv, where the CLI used to str()-coerce it into a
+  // phantom profiles/0/ directory (#88842).
+  const pinned = backendProfileArg(profile)
+  const profileArgs = pinned ? `--profile ${shq(pinned)} ` : ''
+
+  // The lockfile the spawn script publishes must carry the SAME normalized
+  // profile as the argv: pidIsOurDashboard and the managed-update drain both
+  // prove ownership by comparing the live `--profile` value against
+  // lock.profile, and a raw-case record refuses to reap our own backend.
+  if (opts.lockMetadata && opts.lockMetadata.profile !== (pinned ?? '')) {
+    opts.lockMetadata = { ...opts.lockMetadata, profile: pinned ?? '' }
+  }
+
   const logPath = expandRemotePath(opts.logPath)
   const tokenFilePath = opts.tokenFilePath
   const tokenArg = tokenFilePath ? ` --ssh-session-token-file ${expandRemotePath(tokenFilePath)}` : ''
@@ -1144,7 +1193,7 @@ function buildSpawnCommand(pulsePath, profile, opts: any = {}) {
     `exec env PULSE_DESKTOP=1${opts.guestOnboarding === true ? ' PULSE_GUEST_ONBOARDING=1' : ''} ${pulse} ${profileArgs}${subCmd}`
 
   const detachedShell: string = `eval "exec $1>&-"; ${dashCmd} </dev/null >> ${logPath} 2>&1 & echo $!`
-  // The inner shell backgrounds Pulse and reports its PID; backgrounding the
+  // The inner shell backgrounds PULSE and reports its PID; backgrounding the
   // launcher too adds its unrelated PID to the value published in the lock.
   const detachedSpawn: string = `child=$("$(command -v setsid || echo nohup)" sh -c ${shq(detachedShell)} pulse-update-child "$1")`
 
@@ -1216,7 +1265,7 @@ async function remoteSupportsSshOwnership(ssh, pulsePath) {
     .endsWith('YES')
 }
 
-async function scrapeReadyPort(ssh, logPath, { timeoutMs = DEFAULT_READY_TIMEOUT_MS, isAlive, signal }: any = {}) {
+async function scrapeReadyPort(ssh, logPath, { timeoutMs = resolveReadyTimeoutMs(), isAlive, signal }: any = {}) {
   const deadline = Date.now() + timeoutMs
   const remoteLog = expandRemotePath(logPath)
 
@@ -1265,8 +1314,8 @@ async function spawnRemoteDashboard(
 ) {
   if (!(await remoteSupportsSshOwnership(ssh, pulsePath))) {
     const err: any = new Error(
-      'The remote Pulse install does not support --ssh-session-token-file and --ssh-owner-nonce. ' +
-        'Update Pulse on the remote host to continue using Desktop SSH mode.'
+      'The remote PULSE install does not support --ssh-session-token-file and --ssh-owner-nonce. ' +
+        'Update PULSE on the remote host to continue using Desktop SSH mode.'
     )
 
     err.kind = 'update-required'
@@ -1427,7 +1476,7 @@ async function openForward(deps, remotePort, attempts = 3) {
 
 /**
  * Establish (or reuse) a remote dashboard and a tunnel to it. `deps` injects the
- * opened SshConnection, forward/pickLocalPort/waitForPulse, a token-gated
+ * opened SshConnection, forward/pickLocalPort/waitForPULSE, a token-gated
  * probeReuseProof, and adoptServedToken. Returns the connection descriptor
  * { baseUrl, token, tokenFingerprint, remotePort, localPort, pid, reused, platform }.
  */
@@ -1471,30 +1520,37 @@ async function waitForRemoteSpawnCompletion(ssh, ownershipId, timeoutMs) {
 async function connect(deps) {
   const {
     ssh,
-    profile = '',
-    remotePulsePath = '',
+    profile: requestedProfile = '',
+    remotePULSEPath = '',
     ownershipId,
     forward,
     pickLocalPort,
-    waitForPulse,
+    waitForPULSE,
     probeReuseProof,
     adoptServedToken,
     rememberLog = () => {},
-    readyTimeoutMs = DEFAULT_READY_TIMEOUT_MS,
+    readyTimeoutMs = resolveReadyTimeoutMs(),
     guestOnboarding = false,
     signal
   } = deps
+
+  // The profile must be normalized ONCE, before anything derives from it: the
+  // spawn argv (via buildSpawnCommand), the lockfile metadata the spawn script
+  // publishes, the ownedSpawn rewrite, and the reuse check all have to agree,
+  // or the argv-based ownership proof (pidIsOurDashboard) refuses to reap our
+  // own backend after a case-folding change (#88842).
+  const profile = backendProfileArg(requestedProfile) ?? ''
 
   const log = msg => rememberLog(`[ssh-lifecycle] ${msg}`)
 
   assertBootstrapNotSuperseded(signal)
   const platform = deps.platform ?? (await probeRemotePlatform(ssh))
   log(`remote platform ${platform.os}/${platform.arch}`)
-  const pulseHome = await probeRemotePulseHome(ssh)
+  const pulseHome = await probeRemotePULSEHome(ssh)
   await assertRemoteInstallUpdateClear(ssh, pulseHome)
-  const pulsePath = await locatePulse(ssh, remotePulsePath)
+  const pulsePath = await locatePULSE(ssh, remotePULSEPath)
   log(`located pulse at ${pulsePath}`)
-  const pulseVersion = await probePulseVersion(ssh, pulsePath)
+  const pulseVersion = await probePULSEVersion(ssh, pulsePath)
 
   if (pulseVersion) {
     log(`remote pulse version: ${pulseVersion}`)
@@ -1513,7 +1569,7 @@ async function connect(deps) {
     )
 
     const error: any = new Error(
-      `The remote ownership record ${lpath} does not match this Pulse Desktop build (${lock.reason}). ` +
+      `The remote ownership record ${lpath} does not match this PULSE Desktop build (${lock.reason}). ` +
         'It was probably written by a different or modified desktop build sharing this remote, or the file is corrupt. ' +
         'Refusing to reap or overwrite it — that could kill a live SSH backend owned by another build. ' +
         'If nothing else uses this remote, delete that file on the remote host and reconnect.'
@@ -1698,7 +1754,7 @@ async function connect(deps) {
     localPort = await openForward(deps, remotePort)
     assertBootstrapNotSuperseded(signal)
     const baseUrl = `http://127.0.0.1:${localPort}`
-    await waitForPulse(baseUrl, spawnToken)
+    await waitForPULSE(baseUrl, spawnToken)
     assertBootstrapNotSuperseded(signal)
 
     const token = await adoptOwnedServedToken(adoptServedToken, baseUrl, spawnToken, ssh, pid, 'remote dashboard')
@@ -1769,16 +1825,17 @@ export {
   fingerprintToken,
   isForwardBindCollision,
   isLockfileSkew,
-  listRemotePulseProfiles,
-  locatePulse,
+  listRemotePULSEProfiles,
+  locatePULSE,
   LOCKFILE_SCHEMA_VERSION,
   lockfilePath,
+  MIN_READY_TIMEOUT_MS,
   mintToken,
   openForward,
   ownershipDirectory,
   pidIsOurDashboard,
-  probePulseVersion,
-  probeRemotePulseHome,
+  probePULSEVersion,
+  probeRemotePULSEHome,
   probeRemotePlatform,
   PROTOCOL_VERSION,
   readLockfile,
@@ -1789,6 +1846,7 @@ export {
   remoteProcessCreationTime,
   remoteSupportsSshOwnership,
   removeLockfile,
+  resolveReadyTimeoutMs,
   scrapeReadyPort,
   shq,
   spawnLogPath,

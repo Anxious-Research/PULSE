@@ -2,7 +2,7 @@ import { applyDocumentLocale, isRecord } from '@pulse/shared/i18n'
 import { useStore } from '@nanostores/react'
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
-import { getPulseConfigRecord, type PulseConfigRecord, retainConfigReadOrigin, savePulseConfig } from '@/pulse'
+import { getPULSEConfigRecord, type PULSEConfigRecord, retainConfigReadOrigin, savePULSEConfig } from '@/pulse'
 
 import { TRANSLATIONS } from './catalog'
 import {
@@ -18,8 +18,8 @@ import { $requestedLocale, setRuntimeI18nLocale } from './runtime'
 import type { Locale, Translations } from './types'
 
 export interface I18nConfigClient {
-  getConfig: () => Promise<PulseConfigRecord>
-  saveConfig: (config: PulseConfigRecord) => Promise<{ ok: boolean }>
+  getConfig: () => Promise<PULSEConfigRecord>
+  saveConfig: (config: PULSEConfigRecord) => Promise<{ ok: boolean }>
 }
 
 const defaultConfigClient: I18nConfigClient = {
@@ -30,25 +30,25 @@ const defaultConfigClient: I18nConfigClient = {
 
     // Merged defaults make an unset language indistinguishable from saved English.
     // Older backends ignore the option and keep returning English as before.
-    return getPulseConfigRecord(undefined, { includeDefaults: false })
+    return getPULSEConfigRecord(undefined, { includeDefaults: false })
   },
   saveConfig: config => {
     if (typeof window === 'undefined' || !window.pulseDesktop?.api) {
       return Promise.resolve({ ok: true })
     }
 
-    // No explicit scope: savePulseConfig resolves the record's captured read
+    // No explicit scope: savePULSEConfig resolves the record's captured read
     // origin itself (resolveConfigWriteScope), and withConfigDisplayLanguage
     // retains that origin onto the derived record.
-    return savePulseConfig(config, undefined, { preserveLanguage: true })
+    return savePULSEConfig(config, undefined, { preserveLanguage: true })
   }
 }
 
-export function getConfigDisplayLanguage(config: PulseConfigRecord): unknown {
+export function getConfigDisplayLanguage(config: PULSEConfigRecord): unknown {
   return isRecord(config.display) ? config.display.language : undefined
 }
 
-export function withConfigDisplayLanguage(config: PulseConfigRecord, locale: Locale): PulseConfigRecord {
+export function withConfigDisplayLanguage(config: PULSEConfigRecord, locale: Locale): PULSEConfigRecord {
   const display = isRecord(config.display) ? config.display : {}
 
   return retainConfigReadOrigin(

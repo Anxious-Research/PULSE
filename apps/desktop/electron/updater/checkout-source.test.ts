@@ -116,11 +116,11 @@ function channelRecord(channel: 'stable' | 'canary', sequence: number): FixtureR
     nextSequence: sequence + 1,
     identity: {
       token: 'b'.repeat(16),
-      displayName: channel === 'stable' ? 'Pulse Stable' : 'Pulse Canary',
-      appNamePascal: 'Pulse',
-      artifactNamePascal: 'Pulse',
-      appId: 'chat.pulse.pulse',
-      msixAppIdWithOrg: 'Anxious-Research.Pulse',
+      displayName: channel === 'stable' ? 'PULSE Stable' : 'PULSE Canary',
+      appNamePascal: 'PULSE',
+      artifactNamePascal: 'PULSE',
+      appId: 'chat.nous.pulse',
+      msixAppIdWithOrg: 'NousResearch.PULSE',
       cliName: 'pulse',
       windowsExecutableName: 'pulse'
     },
@@ -142,11 +142,11 @@ function buildManifest(
 ): FixtureManifest {
   const identity: FixtureIdentity = {
     token: 'b'.repeat(16),
-    displayName: channel === 'stable' ? 'Pulse Stable' : 'Pulse Canary',
-    appNamePascal: 'Pulse',
-    artifactNamePascal: 'Pulse',
-    appId: 'chat.pulse.pulse',
-    msixAppIdWithOrg: 'Anxious-Research.Pulse',
+    displayName: channel === 'stable' ? 'PULSE Stable' : 'PULSE Canary',
+    appNamePascal: 'PULSE',
+    artifactNamePascal: 'PULSE',
+    appId: 'chat.nous.pulse',
+    msixAppIdWithOrg: 'NousResearch.PULSE',
     cliName: 'pulse',
     windowsExecutableName: 'pulse'
   }
@@ -175,7 +175,7 @@ function buildManifest(
         platform: 'darwin',
         arch: 'arm64',
         variant: 'bundled',
-        identity: 'chat.pulse.pulse',
+        identity: 'chat.nous.pulse',
         version: tag.replace(/^v/, ''),
         teamId: 'TESTTEAM12',
         artifact: {
@@ -380,7 +380,7 @@ urllib.request.build_opener = local_build
 
       emitUpdateProgress: vi.fn(),
       rememberLog: vi.fn(),
-      startPulse: async (): Promise<void> => {},
+      startPULSE: async (): Promise<void> => {},
 
       stopBackendsForUpdate: vi.fn(async (): Promise<void> => {}),
       repairMacUpdaterHelper: (): void => {},

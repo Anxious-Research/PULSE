@@ -51,11 +51,11 @@ test('redactSecrets scrubs ?token= and ?ticket= URL params', () => {
   assert.ok(!redactSecrets('?token=supersecret').includes('supersecret'))
 })
 
-test('redactSecrets scrubs Authorization and X-Pulse-Session-Token headers', () => {
+test('redactSecrets scrubs Authorization and X-PULSE-Session-Token headers', () => {
   assert.match(redactSecrets('Authorization: Bearer tok_9999'), /Authorization: Bearer <redacted>/)
   assert.ok(!redactSecrets('Authorization: Bearer tok_9999').includes('tok_9999'))
-  assert.match(redactSecrets('X-Pulse-Session-Token: hdr_888'), /X-Pulse-Session-Token: ?<redacted>/)
-  assert.ok(!redactSecrets('X-Pulse-Session-Token: hdr_888').includes('hdr_888'))
+  assert.match(redactSecrets('X-PULSE-Session-Token: hdr_888'), /X-PULSE-Session-Token: ?<redacted>/)
+  assert.ok(!redactSecrets('X-PULSE-Session-Token: hdr_888').includes('hdr_888'))
 })
 
 test('redactSecrets handles null/undefined and non-secret text untouched', () => {
@@ -161,6 +161,9 @@ test('baseSshOptions carries the house ControlMaster/BatchMode/accept-new policy
   assert.match(joined, /StrictHostKeyChecking=accept-new/)
   assert.match(joined, /ExitOnForwardFailure=yes/)
   assert.match(joined, /ConnectTimeout=15/)
+  assert.match(joined, /ServerAliveInterval=15/)
+  assert.match(joined, /ServerAliveCountMax=3/)
+  assert.match(joined, /TCPKeepAlive=yes/)
   assert.ok(!joined.includes('StrictHostKeyChecking=no'), 'never disables host-key checking')
 })
 
@@ -1596,4 +1599,29 @@ test('a failed open releases its claim so the remaining holder can still close t
   await assert.rejects(() => broken.open())
   await live.close()
   assert.equal(state.exits, 1, 'the failed opener left no phantom claim behind')
+})
+
+test('#103288: every spawn uses the injected sshBinary; the default stays bare ssh', async () => {
+  const commands: string[] = []
+
+  const spawnFn: any = (cmd: string) => {
+    commands.push(cmd)
+
+    return fakeChild({ code: 0 })
+  }
+
+  const custom = createSshProbeConnection(
+    { host: 'box', user: 'me' },
+    { spawnFn, sshBinary: 'C:\\Program Files\\Git\\usr\\bin\\ssh.exe' }
+  )
+
+  await custom.open()
+  await custom.exec('true')
+  assert.ok(commands.length >= 2, 'open + exec both spawned')
+  assert.deepEqual([...new Set(commands)], ['C:\\Program Files\\Git\\usr\\bin\\ssh.exe'])
+
+  commands.length = 0
+  const plain = createSshProbeConnection({ host: 'box', user: 'me' }, { spawnFn })
+  await plain.open()
+  assert.deepEqual([...new Set(commands)], ['ssh'])
 })

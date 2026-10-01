@@ -1,6 +1,6 @@
-"""MCP catalog — curated, Anxious-approved MCP servers shipped with the repo.
+"""MCP catalog — curated, Nous-approved MCP servers shipped with the repo.
 
-Entries are added only by merging a PR into pulse-agent; presence in ``optional-mcps/`` = Anxious
+Entries are added only by merging a PR into pulse-agent; presence in ``optional-mcps/`` = Nous
 approval (no community tier, no other trust signals). Manifests pin transport details.
 """
 
@@ -9,9 +9,10 @@ from __future__ import annotations
 import re
 import shutil
 import subprocess
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 import pulse_yaml as yaml
 
@@ -296,7 +297,7 @@ def _parse_manifest(path: Path) -> CatalogEntry:
     if mv != _MANIFEST_VERSION:
         raise CatalogError(
             f"{path}: manifest_version {mv!r} unsupported "
-            f"(this Pulse understands version {_MANIFEST_VERSION})"
+            f"(this PULSE understands version {_MANIFEST_VERSION})"
         )
     name = data.get("name") or ""
     if not name or not re.match(r"^[A-Za-z0-9_-]+$", name):
@@ -328,7 +329,7 @@ def list_catalog() -> List[CatalogEntry]:
     """Return all valid catalog entries, sorted by name.
 
     Invalid manifests are skipped silently (CI catches them); future ``manifest_version`` ones are
-    skipped too but surfaced via :func:`catalog_diagnostics` so UIs can say "update Pulse".
+    skipped too but surfaced via :func:`catalog_diagnostics` so UIs can say "update PULSE".
     """
     root = _catalog_root()
     if not root.exists():
@@ -350,7 +351,7 @@ def list_catalog() -> List[CatalogEntry]:
 
 def catalog_diagnostics() -> List[tuple]:
     """``(entry_name, kind, message)`` tuples from the most recent :func:`list_catalog` call;
-    ``kind`` is ``future_manifest`` (newer than this Pulse) or ``invalid`` (malformed)."""
+    ``kind`` is ``future_manifest`` (newer than this PULSE) or ``invalid`` (malformed)."""
     return list(_CATALOG_DIAGNOSTICS)
 
 
@@ -718,7 +719,34 @@ def card_install_config(entry: CatalogEntry) -> dict:
     return cfg
 
 
+def record_mcp_install(source: str, name: Optional[str], outcome: str) -> None:
+    """One shared-metrics extension install for an MCP server (catalog entry name, or None when custom)."""
+    from pulse_cli.observability.shared_metrics_events import record_extension_install
+
+    record_extension_install(kind="mcp_server", source=source, name=name, outcome=outcome)
+
+
+@contextmanager
+def recorded_catalog_install(name: str) -> Iterator[None]:
+    """Record a first install of catalog entry *name* once: failed when the body raises, else
+    success. A reinstall over an existing ``mcp_servers`` block is not an install."""
+    fresh = not is_installed(name)
+    try:
+        yield
+    except Exception:
+        if fresh:
+            record_mcp_install("catalog", name, "failed")
+        raise
+    if fresh:
+        record_mcp_install("catalog", name, "success")
+
+
 def install_entry(entry: CatalogEntry, *, enable: bool = True, preloaded_env: Optional[Dict[str, str]] = None) -> None:
+    with recorded_catalog_install(entry.name):
+        _install_entry(entry, enable=enable, preloaded_env=preloaded_env)
+
+
+def _install_entry(entry: CatalogEntry, *, enable: bool, preloaded_env: Optional[Dict[str, str]]) -> None:
     """Install a catalog entry end-to-end.
 
     Order: git clone + bootstrap (if any); credential prompts (``auth.env``) to .env; write
@@ -781,7 +809,7 @@ def install_entry(entry: CatalogEntry, *, enable: bool = True, preloaded_env: Op
     _say(
         f"  ✓ Installed '{entry.name}' "
         f"({'enabled' if enable else 'disabled'}). "
-        f"Start a new Pulse session to load its tools."
+        f"Start a new PULSE session to load its tools."
     )
     if entry.post_install:
         print()

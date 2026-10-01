@@ -144,20 +144,20 @@ notify_fallback() { # status message — renderer-free recovery surface.
   # boot surfaces it in a dialog (handoff-result.ts + main.ts).
   case "$1" in manual|error) ;; *) return 0 ;; esac
   if [ "$(uname)" = "Darwin" ]; then
-    /usr/bin/osascript -e "display notification \"$(printf '%s' "$2" | sed 's/"/\\"/g')\" with title \"Pulse update\"" 2>/dev/null && return 0
+    /usr/bin/osascript -e "display notification \"$(printf '%s' "$2" | sed 's/"/\\"/g')\" with title \"PULSE update\"" 2>/dev/null && return 0
   else
     if command -v notify-send >/dev/null 2>&1; then
-      notify-send -u critical "Pulse update" "$2" 2>/dev/null && return 0
+      notify-send -u critical "PULSE update" "$2" 2>/dev/null && return 0
     fi
     local p
     if command -v zenity >/dev/null 2>&1; then
-      zenity --warning --title="Pulse update" --text="$2" 2>/dev/null &
+      zenity --warning --title="PULSE update" --text="$2" 2>/dev/null &
       p=$!; sleep 1
       kill -0 "$p" 2>/dev/null && return 0
       wait "$p" 2>/dev/null
     fi
     if command -v kdialog >/dev/null 2>&1; then
-      kdialog --title "Pulse update" --sorry "$2" 2>/dev/null &
+      kdialog --title "PULSE update" --sorry "$2" 2>/dev/null &
       p=$!; sleep 1
       kill -0 "$p" 2>/dev/null && return 0
       wait "$p" 2>/dev/null
@@ -190,7 +190,7 @@ find_browser() {
   # No Microsoft Edge and no Brave, on purpose. Edge's OS-level
   # Microsoft-account integration signs a fresh throwaway profile into the
   # user's MSA and renders its own "syncing your data" notification — MSA
-  # email included — inside this window that is titled "Pulse" (#88410).
+  # email included — inside this window that is titled "PULSE" (#88410).
   # Brave paints its own P3A privacy-notice bar over the progress page in
   # the same window — cramped to unreadability at the shim's small size
   # (#88682). The throwaway --user-data-dir below cannot block either; the
@@ -387,13 +387,13 @@ linux_gate() {
     [ "$arg" = "--no-sandbox" ] && { GATE=relaunch; return; }
   done
 
-  GATE=manual GATE_MSG="Update complete, but the rebuilt app can't relaunch itself (its sandbox helper needs root ownership). Reopen Pulse to finish."
+  GATE=manual GATE_MSG="Update complete, but the rebuilt app can't relaunch itself (its sandbox helper needs root ownership). Reopen PULSE to finish."
 }
 
 mac_swap() {
   local rebuilt="" c
-  for c in "$INSTALL_ROOT/apps/desktop/release/mac-arm64/Pulse.app" \
-           "$INSTALL_ROOT/apps/desktop/release/mac/Pulse.app"; do
+  for c in "$INSTALL_ROOT/apps/desktop/release/mac-arm64/PULSE.app" \
+           "$INSTALL_ROOT/apps/desktop/release/mac/PULSE.app"; do
     [ -d "$c" ] && { rebuilt="$c"; break; }
   done
 
@@ -417,7 +417,7 @@ mac_swap() {
         DONE_NOTE="Update complete, but the new app could not be installed; the previous version was restored. Run the update again."
         log "WARNING: bundle install failed; rolled back to the previous app"
       else
-        FINAL_CODE=7 FINAL_MSG="The update finished but installing the new app failed and the previous app could not be restored. Reinstall Pulse (the rebuilt app is at $rebuilt)."
+        FINAL_CODE=7 FINAL_MSG="The update finished but installing the new app failed and the previous app could not be restored. Reinstall PULSE (the rebuilt app is at $rebuilt)."
         log "ERROR: bundle install failed AND rollback failed"
       fi
     else
@@ -512,7 +512,7 @@ finish() {
       if ! launch_app; then
         # Even the kept bundle didn't come back: the durable message must
         # carry BOTH facts (update ok, previous app not reopened).
-        FINAL_MSG="$DONE_NOTE Pulse also could not reopen itself - open it manually."
+        FINAL_MSG="$DONE_NOTE PULSE also could not reopen itself - open it manually."
         write_result
       fi
     fi
@@ -522,7 +522,7 @@ finish() {
   else
     # Launch was due and did not land. Downgrade: truthful result for the
     # next boot, manual state held on screen now.
-    FINAL_MSG="Update complete. Reopen Pulse to finish (it could not restart itself)."
+    FINAL_MSG="Update complete. Reopen PULSE to finish (it could not restart itself)."
     MANUAL=1
     write_result
     publish "manual" "$FINAL_MSG"; stop_ui leave-window
@@ -705,7 +705,7 @@ fi
 # teardown, while retaining the same marker/result protocol.
 if [ "$HANDOFF_DAEMONIZED" -ne 1 ]; then
   # This launcher is disposable. In particular it must not run finish() on
-  # EXIT: that would publish a false failure and relaunch Pulse while the
+  # EXIT: that would publish a false failure and relaunch PULSE while the
   # re-parented orchestrator is only just starting.
   trap - EXIT HUP INT QUIT TERM
   # --daemonized must precede ORIGINAL_ARGS, not follow it: ORIGINAL_ARGS may
@@ -757,7 +757,7 @@ fi
 if [ "$DESKTOP_PID" -gt 0 ] 2>/dev/null; then
   for _ in $(seq 1 100); do kill -0 "$DESKTOP_PID" 2>/dev/null || break; sleep 0.3; done
   if kill -0 "$DESKTOP_PID" 2>/dev/null; then
-    FINAL_CODE=4 FINAL_MSG="Update aborted: the Pulse window (pid $DESKTOP_PID) did not exit within 30s. Nothing was changed. Close Pulse fully and try again."
+    FINAL_CODE=4 FINAL_MSG="Update aborted: the PULSE window (pid $DESKTOP_PID) did not exit within 30s. Nothing was changed. Close PULSE fully and try again."
     log "$FINAL_MSG"; exit "$FINAL_CODE"
   fi
 fi
@@ -825,7 +825,7 @@ export PULSE_UPDATE_STATUS_FILE="$STATUS"
 # --keep-stash: never re-apply local source edits after the update (they stay
 # parked in git stash). Probe --help first: older installed backends don't
 # know the flag and argparse would abort with exit 2, which collides with the
-# "close all Pulse windows" sentinel.
+# "close all PULSE windows" sentinel.
 KEEP_STASH=""
 if "${UPDATE_INVOKE[@]}" update --help 2>/dev/null | grep -q -- '--keep-stash'; then
   KEEP_STASH="--keep-stash"
@@ -850,7 +850,7 @@ log "pulse update exit code: $CODE"
 
 if [ "$LEGACY_INSTALL" -eq 1 ] && [ "$CODE" -ne 0 ] && [ "$CODE" -ne 2 ]; then
   # Retry once: update-boundary class (fresh code on disk, stale in memory).
-  # Exit 2 ("close all Pulse windows") is not retryable.
+  # Exit 2 ("close all PULSE windows") is not retryable.
   #
   # A parked-branch SKIP (checkout on a feature branch with unmerged
   # commits) is also deterministic — the retry would hit the exact same
@@ -892,7 +892,7 @@ else
   # succeed — tell the user what is actually wrong (#95759).
   if [ "$LEGACY_INSTALL" -eq 1 ] && ! tcc_probe_python "$INSTALL_ROOT/venv/bin/python3" \
       && ! tcc_probe_python "$INSTALL_ROOT/venv/bin/python"; then
-    FINAL_MSG="Update failed: the Python interpreter inside $INSTALL_ROOT/venv cannot start (heal state: $TCC_HEAL_STATE). Reinstall the runtime with the Pulse installer, or run pulse doctor --fix from a terminal if any pulse command still works."
+    FINAL_MSG="Update failed: the Python interpreter inside $INSTALL_ROOT/venv cannot start (heal state: $TCC_HEAL_STATE). Reinstall the runtime with the PULSE installer, or run pulse doctor --fix from a terminal if any pulse command still works."
   fi
 fi
 exit "$FINAL_CODE"

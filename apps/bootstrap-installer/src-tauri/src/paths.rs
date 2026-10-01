@@ -6,7 +6,7 @@
 //!   Linux:   ~/.pulse  (override via $PULSE_HOME)
 //!
 //! NOTE (macOS): Python's get_pulse_home(), scripts/install.sh, and the
-//! Electron desktop's resolvePulseHome() ALL use ~/.pulse on macOS — there
+//! Electron desktop's resolvePULSEHome() ALL use ~/.pulse on macOS — there
 //! is no ~/Library/Application Support branch anywhere else. An earlier
 //! version of this file used Application Support, which drifted from every
 //! other component: the installer wrote the install to one dir and the
@@ -21,7 +21,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use tracing_appender::non_blocking::WorkerGuard;
 
-/// Returns the canonical Pulse home directory, respecting $PULSE_HOME if set.
+/// Returns the canonical PULSE home directory, respecting $PULSE_HOME if set.
 pub fn pulse_home() -> PathBuf {
     if let Ok(override_path) = std::env::var("PULSE_HOME") {
         if !override_path.trim().is_empty() {
@@ -31,14 +31,14 @@ pub fn pulse_home() -> PathBuf {
 
     #[cfg(target_os = "windows")]
     {
-        // %LOCALAPPDATA%\pulse — matches scripts/install.ps1's $PulseHome.
+        // %LOCALAPPDATA%\pulse — matches scripts/install.ps1's $PULSEHome.
         if let Some(local_app_data) = dirs::data_local_dir() {
             return local_app_data.join("pulse");
         }
     }
 
     // macOS + Linux + fallback: ~/.pulse (matches Python get_pulse_home(),
-    // install.sh, and the Electron desktop's resolvePulseHome()).
+    // install.sh, and the Electron desktop's resolvePULSEHome()).
     if let Some(home) = dirs::home_dir() {
         return home.join(".pulse");
     }

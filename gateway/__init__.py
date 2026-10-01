@@ -1,4 +1,4 @@
-"""Pulse Gateway - multi-platform messaging integration (sessions, context
+"""PULSE Gateway - multi-platform messaging integration (sessions, context
 injection, delivery routing, platform-specific toolsets)."""
 
 from importlib import import_module

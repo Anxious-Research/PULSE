@@ -29,7 +29,7 @@ def _pulse_home_path() -> Path:
 
 
 def _pulse_root_path() -> Path:
-    """Pulse root dir (parent of any profile, never per-profile)."""
+    """PULSE root dir (parent of any profile, never per-profile)."""
     return _constants_path("get_default_pulse_root")
 
 
@@ -350,20 +350,20 @@ _CREDENTIAL_FILE_NAMES = (
 # of the user's Cookies / Login Data — the same credential class as auth.json.
 _READ_DENIED_DIRS = (
     ("mcp-tokens",
-     "is the Pulse MCP token directory and cannot be read directly.",
-     "is a Pulse MCP token file and cannot be read directly."),
+     "is the PULSE MCP token directory and cannot be read directly.",
+     "is a PULSE MCP token file and cannot be read directly."),
     ("browser-profile",
-     "is the Pulse real-profile browser snapshot directory (copied cookies/logins) and cannot be read directly.",
-     "is inside the Pulse real-profile browser snapshot (copied cookies/logins) and cannot be read directly."),
+     "is the PULSE real-profile browser snapshot directory (copied cookies/logins) and cannot be read directly.",
+     "is inside the PULSE real-profile browser snapshot (copied cookies/logins) and cannot be read directly."),
     # vault.key + vault.json.enc sit side by side; key + ciphertext = plaintext, so the whole dir is one credential.
     ("vault",
-     "is the Pulse credential vault directory and cannot be read directly (secrets are filled server-side by browser_vault_fill).",
-     "is inside the Pulse credential vault (encrypted secrets + local key) and cannot be read directly (browser_vault_fill resolves them server-side)."),
+     "is the PULSE credential vault directory and cannot be read directly (secrets are filled server-side by browser_vault_fill).",
+     "is inside the PULSE credential vault (encrypted secrets + local key) and cannot be read directly (browser_vault_fill resolves them server-side)."),
 )
 
 
 def get_read_block_error(path: str) -> Optional[str]:
-    """Return an error message when a read targets a denied Pulse path.
+    """Return an error message when a read targets a denied PULSE path.
 
     Blocked: internal skill-hub caches (prompt-injection carriers), credential
     stores under PULSE_HOME and the global root (exact files, plus anything
@@ -387,12 +387,12 @@ def get_read_block_error(path: str) -> Optional[str]:
     reason = None
     if any(_is_under(resolved, hd / "skills" / ".hub") for hd in pulse_dirs):
         reason = (
-            "is an internal Pulse cache file and cannot be read directly to prevent "
+            "is an internal PULSE cache file and cannot be read directly to prevent "
             "prompt injection. Use the skills_list or skill_view tools instead."
         )
     elif any(resolved in _resolve_each(hd / name for hd in pulse_dirs) for name in _CREDENTIAL_FILE_NAMES):
         reason = (
-            "is a Pulse credential store and cannot be read directly. Provider tools "
+            "is a PULSE credential store and cannot be read directly. Provider tools "
             "consume these credentials through internal channels." + _DID_SUFFIX
         )
     else:
@@ -412,7 +412,7 @@ def get_read_block_error(path: str) -> Optional[str]:
 
 
 def raise_if_read_blocked(path: str) -> None:
-    """Raise ``ValueError`` if ``path`` is a denied Pulse read (see ``get_read_block_error``).
+    """Raise ``ValueError`` if ``path`` is a denied PULSE read (see ``get_read_block_error``).
 
     Shared chokepoint for provider input-loading sites (e.g. image-gen local
     paths). Best-effort: unexpected internal errors no-op rather than break
@@ -458,7 +458,7 @@ def _mirror_info(target: Path, mirror_root: Path, inner_path: str) -> dict:
 
 
 def classify_sandbox_mirror_target(path: str) -> Optional[dict]:
-    """Classify a write target as a sandbox-mirror of authoritative Pulse state: ``None``
+    """Classify a write target as a sandbox-mirror of authoritative PULSE state: ``None``
     for non-mirror paths, else ``target_path`` (resolved), ``mirror_root`` (the
     ``…/home/.pulse`` prefix) and ``inner_path`` (what the agent meant on the host)."""
     target = _resolve_target(path)
@@ -488,7 +488,7 @@ def get_sandbox_mirror_warning(path: str) -> Optional[str]:
     return _mirror_warning(
         classify_sandbox_mirror_target(path),
         "a per-task mirror created by a non-local terminal backend (docker/daytona/etc.). "
-        "Writes here land on a copy that the host Pulse process never reads — the "
+        "Writes here land on a copy that the host PULSE process never reads — the "
         "authoritative file is likely {inner_path!r} under the real PULSE_HOME.",
         "this guard after explicit user direction, retry the call",
     )
@@ -509,91 +509,8 @@ def get_container_mirror_warning(path: str, mirror_prefix: str | None = None) ->
     """Model-facing soft-guard warning when ``path`` lands in the container's mirror, else ``None``."""
     return _mirror_warning(
         classify_container_mirror_target(path, mirror_prefix),
-        "the container's bind-mounted home — a per-task mirror that the host Pulse "
+        "the container's bind-mounted home — a per-task mirror that the host PULSE "
         "process never reads. The authoritative file is {inner_path!r} under "
         "the real PULSE_HOME.",
         "after explicit user direction, retry",
     )
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-PROFILE_SCOPED_AREAS = ("skills", "plugins", "cron", "memories")
-
-def classify_cross_profile_target(path: str) -> Optional[dict]:
-    """Classify a write target as cross-profile if it lands in another
-    profile's scoped area (skills/plugins/cron/memories).
-
-    Returns ``None`` when the target is outside Pulse scope, or is inside
-    the ACTIVE profile, or doesn't hit a profile-scoped area. Otherwise
-    returns a dict with:
-
-      * ``active_profile``: name of the profile the agent is running as
-      * ``target_profile``: name of the profile the path belongs to
-      * ``area``: which scoped area (``"skills"``, ``"plugins"``, etc.)
-      * ``target_path``: the resolved path string
-
-    The caller decides what to do with the result — surface a warning to
-    the model, prompt the user, or (with explicit consent /
-    ``cross_profile=True``) proceed anyway.
-    """
-    try:
-        target = Path(os.path.expanduser(str(path))).resolve()
-        root_real = _pulse_root_path().resolve()
-    except (OSError, RuntimeError):
-        return None
-
-    target_profile: Optional[str] = None
-    area: Optional[str] = None
-
-    try:
-        rel = target.relative_to(root_real)
-    except ValueError:
-        return None
-
-    parts = rel.parts
-    if not parts:
-        return None
-
-    if parts[0] in PROFILE_SCOPED_AREAS:
-        # ``<root>/<area>/...`` → default profile.
-        target_profile = "default"
-        area = parts[0]
-    elif (
-        parts[0] == "profiles"
-        and len(parts) >= 3
-        and parts[2] in PROFILE_SCOPED_AREAS
-    ):
-        # ``<root>/profiles/<name>/<area>/...`` → named profile.
-        target_profile = parts[1]
-        area = parts[2]
-    else:
-        return None
-
-    active_profile = _resolve_active_profile_name()
-    if target_profile == active_profile:
-        # In-profile write — not a cross-profile event.
-        return None
-
-    return {
-        "active_profile": active_profile,
-        "target_profile": target_profile,
-        "area": area,
-        "target_path": str(target),
-    }
-
-def get_cross_profile_warning(path: str) -> Optional[str]:
-    """RETIRED (maintainer decision): always returns ``None``.
-
-    The cross-profile write guard was removed — profiles were never
-    isolated (same OS user; the terminal tool writes anywhere), so the
-    block was ceremony that cost every schema real tokens and taught a
-    bypass arg. The system prompt's active-profile hint remains the only
-    steering; the classifier below survives for that hint and for
-    diagnostics. Kept as a stub so external callers/plugins fail soft.
-    """
-    return None
-# ---- END PLUGIN-COMPAT ----

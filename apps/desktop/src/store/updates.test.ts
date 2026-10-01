@@ -61,13 +61,13 @@ vi.mock('@/store/connections', () => ({
   refreshConnectionsRegistry: () => Promise.resolve($mockConnectionsRegistry.get())
 }))
 
-const checkPulseUpdateSpy = vi.fn()
-const updatePulseSpy = vi.fn()
+const checkPULSEUpdateSpy = vi.fn()
+const updatePULSESpy = vi.fn()
 const getActionStatusSpy = vi.fn()
 
 vi.mock('@/pulse', () => ({
-  checkPulseUpdate: (...args: unknown[]) => checkPulseUpdateSpy(...args),
-  updatePulse: (...args: unknown[]) => updatePulseSpy(...args),
+  checkPULSEUpdate: (...args: unknown[]) => checkPULSEUpdateSpy(...args),
+  updatePULSE: (...args: unknown[]) => updatePULSESpy(...args),
   getActionStatus: (...args: unknown[]) => getActionStatusSpy(...args)
 }))
 
@@ -393,14 +393,14 @@ describe('checkBackendUpdates', () => {
   beforeEach(() => {
     storage.clear()
     notifySpy.mockClear()
-    checkPulseUpdateSpy.mockReset()
+    checkPULSEUpdateSpy.mockReset()
     $backendUpdateStatus.set(null)
     vi.useRealTimers()
   })
 
   it('maps the backend /update/check onto the backend status, including commits', async (): Promise<void> => {
     setRemote(true)
-    checkPulseUpdateSpy.mockResolvedValue({
+    checkPULSEUpdateSpy.mockResolvedValue({
       install_method: 'git',
       current_version: '0.16.0',
       behind: 2,
@@ -413,7 +413,7 @@ describe('checkBackendUpdates', () => {
 
     const result = await checkBackendUpdates()
 
-    expect(checkPulseUpdateSpy).toHaveBeenCalledWith(false)
+    expect(checkPULSEUpdateSpy).toHaveBeenCalledWith(false)
     expect(result?.behind).toBe(2)
     expect(result?.updateAvailable).toBe(true)
     expect(result?.commits?.[0]?.sha).toBe('abc1234')
@@ -421,12 +421,12 @@ describe('checkBackendUpdates', () => {
     expect($backendUpdateStatus.get()?.commits?.[0]?.summary).toBe('feat: x')
 
     await checkBackendUpdates({ force: true })
-    expect(checkPulseUpdateSpy).toHaveBeenLastCalledWith(true)
+    expect(checkPULSEUpdateSpy).toHaveBeenLastCalledWith(true)
   })
 
   it('preserves backend update_available when the backend cannot count commits', async () => {
     setRemote(true)
-    checkPulseUpdateSpy.mockResolvedValue({
+    checkPULSEUpdateSpy.mockResolvedValue({
       install_method: 'nixos',
       current_version: '0.16.0',
       behind: -1,
@@ -447,7 +447,7 @@ describe('checkBackendUpdates', () => {
 
   it('honours can_apply=false (docker/nix): not supported, carries message', async () => {
     setRemote(true)
-    checkPulseUpdateSpy.mockResolvedValue({
+    checkPULSEUpdateSpy.mockResolvedValue({
       install_method: 'docker',
       current_version: '0.16.0',
       behind: null,
@@ -466,11 +466,11 @@ describe('checkBackendUpdates', () => {
   it('is a no-op in local mode (backend check only runs when remote)', async () => {
     setRemote(false)
     await checkBackendUpdates()
-    expect(checkPulseUpdateSpy).not.toHaveBeenCalled()
+    expect(checkPULSEUpdateSpy).not.toHaveBeenCalled()
   })
 })
 
-// The ⌘K "Update Pulse" row. It used to call applyBackendUpdate() flat, which
+// The ⌘K "Update PULSE" row. It used to call applyBackendUpdate() flat, which
 // in local mode aimed at the backend checkout instead of the client and, with
 // no overlay open, showed nothing at all.
 describe('requestActiveUpdate', () => {
@@ -483,8 +483,8 @@ describe('requestActiveUpdate', () => {
     dismissSpy.mockClear()
     applyClientMock.mockReset().mockResolvedValue({ ok: true, handedOff: true })
     checkClientMock.mockReset().mockResolvedValue(status({ behind: 0 }))
-    updatePulseSpy.mockReset().mockResolvedValue({ ok: true, name: 'update' })
-    checkPulseUpdateSpy.mockReset().mockResolvedValue({
+    updatePULSESpy.mockReset().mockResolvedValue({ ok: true, name: 'update' })
+    checkPULSEUpdateSpy.mockReset().mockResolvedValue({
       install_method: 'git',
       current_version: '0.4.2',
       behind: 0,
@@ -523,7 +523,7 @@ describe('requestActiveUpdate', () => {
     requestActiveUpdate()
     await vi.waitFor(() => expect(applyClientMock).toHaveBeenCalled())
 
-    expect(updatePulseSpy).not.toHaveBeenCalled()
+    expect(updatePULSESpy).not.toHaveBeenCalled()
     expect($updateOverlayTarget.get()).toBe('client')
   })
 
@@ -532,7 +532,7 @@ describe('requestActiveUpdate', () => {
     $backendUpdateStatus.set(status({ behind: 3 }))
 
     requestActiveUpdate()
-    await vi.waitFor(() => expect(updatePulseSpy).toHaveBeenCalled())
+    await vi.waitFor(() => expect(updatePULSESpy).toHaveBeenCalled())
 
     expect(applyClientMock).not.toHaveBeenCalled()
     expect($updateOverlayTarget.get()).toBe('backend')
@@ -555,7 +555,7 @@ describe('requestActiveUpdate', () => {
 
     expect($updateOverlayOpen.get()).toBe(true)
     expect(applyClientMock).not.toHaveBeenCalled()
-    expect(updatePulseSpy).not.toHaveBeenCalled()
+    expect(updatePULSESpy).not.toHaveBeenCalled()
   })
 
   it('applies on a backend that reports an update it cannot count commits for', async () => {
@@ -563,16 +563,16 @@ describe('requestActiveUpdate', () => {
     $backendUpdateStatus.set(status({ behind: 0, updateAvailable: true }))
 
     requestActiveUpdate()
-    await vi.waitFor(() => expect(updatePulseSpy).toHaveBeenCalled())
+    await vi.waitFor(() => expect(updatePULSESpy).toHaveBeenCalled())
   })
 
   it('shows the refusal message, not a fake command, when the backend has no command to run', async () => {
     setRemote(true)
-    updatePulseSpy.mockResolvedValue({
+    updatePULSESpy.mockResolvedValue({
       ok: false,
       name: 'pulse-update',
       error: 'dashboard_update_managed_externally',
-      message: 'Pulse updates are managed outside this dashboard in containerized environments.',
+      message: 'PULSE updates are managed outside this dashboard in containerized environments.',
       update_command: ''
     })
 
@@ -587,7 +587,7 @@ describe('requestActiveUpdate', () => {
 
   it('falls back to `pulse update` only when an older backend omits update_command', async () => {
     setRemote(true)
-    updatePulseSpy.mockResolvedValue({ ok: false, name: 'pulse-update', message: 'Run it yourself.' })
+    updatePULSESpy.mockResolvedValue({ ok: false, name: 'pulse-update', message: 'Run it yourself.' })
 
     await applyBackendUpdate()
 
@@ -610,8 +610,8 @@ describe('explicit update targets', () => {
     dismissSpy.mockClear()
     applyClientMock.mockReset().mockResolvedValue({ ok: true, handedOff: true })
     checkClientMock.mockReset().mockResolvedValue(status({ behind: 4, updateAvailable: true }))
-    updatePulseSpy.mockReset().mockResolvedValue({ ok: true, name: 'update' })
-    checkPulseUpdateSpy.mockReset().mockResolvedValue({
+    updatePULSESpy.mockReset().mockResolvedValue({ ok: true, name: 'update' })
+    checkPULSEUpdateSpy.mockReset().mockResolvedValue({
       install_method: 'git',
       current_version: '0.4.2',
       behind: 0,
@@ -648,14 +648,14 @@ describe('explicit update targets', () => {
 
     expect($updateOverlayTarget.get()).toBe('client')
     await vi.waitFor(() => expect(checkClientMock).toHaveBeenCalledTimes(1))
-    expect(checkPulseUpdateSpy).not.toHaveBeenCalled()
+    expect(checkPULSEUpdateSpy).not.toHaveBeenCalled()
   })
 
   it('still defaults to the connected machine when no target is named', async () => {
     openUpdatesWindow()
 
     expect($updateOverlayTarget.get()).toBe('backend')
-    await vi.waitFor(() => expect(checkPulseUpdateSpy).toHaveBeenCalled())
+    await vi.waitFor(() => expect(checkPULSEUpdateSpy).toHaveBeenCalled())
     expect(checkClientMock).not.toHaveBeenCalled()
   })
 
@@ -664,7 +664,7 @@ describe('explicit update targets', () => {
 
     expect($updateOverlayTarget.get()).toBe('client')
     await vi.waitFor(() => expect(applyClientMock).toHaveBeenCalledTimes(1))
-    expect(updatePulseSpy).not.toHaveBeenCalled()
+    expect(updatePULSESpy).not.toHaveBeenCalled()
     expect($updateEverything.get().running).toBe(false)
   })
 
@@ -673,7 +673,7 @@ describe('explicit update targets', () => {
 
     startActiveUpdate()
 
-    await vi.waitFor(() => expect(updatePulseSpy).toHaveBeenCalled(), { timeout: 5000 })
+    await vi.waitFor(() => expect(updatePULSESpy).toHaveBeenCalled(), { timeout: 5000 })
   })
 
   // A toast raised by the CLIENT check must open the client overlay: the user
@@ -709,8 +709,8 @@ describe('applyEverythingUpdate', () => {
     applyClientMock.mockReset().mockResolvedValue({ ok: true, handedOff: true })
     checkClientMock.mockReset().mockResolvedValue(status({ behind: 0, updateAvailable: false }))
     updateAllMock.mockReset().mockResolvedValue({ ok: true, results: [] })
-    updatePulseSpy.mockReset().mockResolvedValue({ ok: true, name: 'update' })
-    checkPulseUpdateSpy.mockReset().mockResolvedValue({
+    updatePULSESpy.mockReset().mockResolvedValue({ ok: true, name: 'update' })
+    checkPULSEUpdateSpy.mockReset().mockResolvedValue({
       install_method: 'git',
       current_version: '0.4.2',
       behind: 0,
@@ -763,7 +763,7 @@ describe('applyEverythingUpdate', () => {
 
     await applyEverythingUpdate()
 
-    expect(updatePulseSpy).toHaveBeenCalledTimes(1)
+    expect(updatePULSESpy).toHaveBeenCalledTimes(1)
     expect(applyClientMock).toHaveBeenCalledTimes(1)
   })
 
@@ -774,7 +774,7 @@ describe('applyEverythingUpdate', () => {
 
     await applyEverythingUpdate()
 
-    expect(updatePulseSpy).toHaveBeenCalledTimes(1)
+    expect(updatePULSESpy).toHaveBeenCalledTimes(1)
     expect(applyClientMock).not.toHaveBeenCalled()
   })
 
@@ -798,7 +798,7 @@ describe('applyEverythingUpdate', () => {
 
     await applyEverythingUpdate()
 
-    expect(updatePulseSpy).not.toHaveBeenCalled()
+    expect(updatePULSESpy).not.toHaveBeenCalled()
     expect(updateAllMock).toHaveBeenCalledTimes(1)
     expect(applyClientMock).toHaveBeenCalledTimes(1)
   })
@@ -806,7 +806,7 @@ describe('applyEverythingUpdate', () => {
   it('a failed backend leg does not strand the fan-out or the client', async () => {
     setRemote(true)
     $mockConnectionsRegistry.set(registryOf(['local', 'vps']))
-    updatePulseSpy.mockRejectedValue(new Error('backend gone'))
+    updatePULSESpy.mockRejectedValue(new Error('backend gone'))
     checkClientMock.mockResolvedValue(status({ behind: 4, updateAvailable: true }))
 
     await applyEverythingUpdate()
@@ -902,8 +902,8 @@ describe('client nudge after a backend update', () => {
     dismissSpy.mockClear()
     applyClientMock.mockReset().mockResolvedValue({ ok: true, handedOff: true })
     checkClientMock.mockReset()
-    updatePulseSpy.mockReset().mockResolvedValue({ ok: true, name: 'update' })
-    checkPulseUpdateSpy.mockReset().mockResolvedValue({
+    updatePULSESpy.mockReset().mockResolvedValue({ ok: true, name: 'update' })
+    checkPULSEUpdateSpy.mockReset().mockResolvedValue({
       install_method: 'git',
       current_version: '0.4.2',
       behind: 0,
@@ -1078,7 +1078,7 @@ describe('applyUpdates terminal state', () => {
       guiUpdated: false,
       manualRestart: true,
       sandboxBlocked: true,
-      message: 'Backend updated. Quit and reopen Pulse to finish.'
+      message: 'Backend updated. Quit and reopen PULSE to finish.'
     })
 
     const result = await applyUpdates()
@@ -1095,8 +1095,8 @@ describe('applyUpdates terminal state', () => {
 describe('applyBackendUpdate recovery', () => {
   beforeEach(() => {
     storage.clear()
-    checkPulseUpdateSpy.mockReset()
-    updatePulseSpy.mockReset()
+    checkPULSEUpdateSpy.mockReset()
+    updatePULSESpy.mockReset()
     getActionStatusSpy.mockReset()
     $backendUpdateStatus.set(null)
     $backendUpdateApply.set({
@@ -1117,7 +1117,7 @@ describe('applyBackendUpdate recovery', () => {
 
   it('waits for the backend to return after the restart drops the connection, then clears the overlay', async () => {
     const actionId = 'd'.repeat(32)
-    updatePulseSpy.mockResolvedValue({ action_id: actionId, ok: true, name: 'update', pid: 1 })
+    updatePULSESpy.mockResolvedValue({ action_id: actionId, ok: true, name: 'update', pid: 1 })
     getActionStatusSpy.mockRejectedValueOnce(new Error('ECONNREFUSED')).mockResolvedValueOnce({
       exit_code: null,
       lines: [`=== pulse-update completed ${actionId} ===`],
@@ -1137,7 +1137,7 @@ describe('applyBackendUpdate recovery', () => {
 
   it('surfaces backend update action log lines while the action is running', async () => {
     const actionId = 'e'.repeat(32)
-    updatePulseSpy.mockResolvedValue({ action_id: actionId, ok: true, name: 'update', pid: 1 })
+    updatePULSESpy.mockResolvedValue({ action_id: actionId, ok: true, name: 'update', pid: 1 })
     getActionStatusSpy
       .mockResolvedValueOnce({
         exit_code: null,
@@ -1170,7 +1170,7 @@ describe('applyBackendUpdate recovery', () => {
 
   it('keeps waiting past the old 45-second cutoff while the update action is running', async () => {
     const actionId = 'f'.repeat(32)
-    updatePulseSpy.mockResolvedValue({ action_id: actionId, ok: true, name: 'pulse-update', pid: 1 })
+    updatePULSESpy.mockResolvedValue({ action_id: actionId, ok: true, name: 'pulse-update', pid: 1 })
 
     for (let attempt = 0; attempt < 31; attempt += 1) {
       getActionStatusSpy.mockResolvedValueOnce({
@@ -1201,7 +1201,7 @@ describe('applyBackendUpdate recovery', () => {
   })
 
   it('treats a successful no-op as complete without waiting for a restart', async () => {
-    updatePulseSpy.mockResolvedValue({ ok: true, name: 'pulse-update', pid: 1 })
+    updatePULSESpy.mockResolvedValue({ ok: true, name: 'pulse-update', pid: 1 })
     getActionStatusSpy.mockResolvedValue({
       exit_code: 0,
       lines: ['stale output from another run', '=== pulse-update started now ===', '✓ Already up to date!'],
@@ -1219,7 +1219,7 @@ describe('applyBackendUpdate recovery', () => {
   })
 
   it('treats a successful dependency repair as complete without waiting for a restart', async () => {
-    updatePulseSpy.mockResolvedValue({ ok: true, name: 'pulse-update', pid: 1 })
+    updatePULSESpy.mockResolvedValue({ ok: true, name: 'pulse-update', pid: 1 })
     getActionStatusSpy.mockResolvedValue({
       exit_code: 0,
       lines: ['=== pulse-update started now ===', '✓ Dependencies repaired!', '✓ Update complete!'],
@@ -1235,7 +1235,7 @@ describe('applyBackendUpdate recovery', () => {
   })
 
   it('trusts the current action exit code without parsing its output', async () => {
-    updatePulseSpy.mockResolvedValue({ ok: true, name: 'pulse-update', pid: 1 })
+    updatePULSESpy.mockResolvedValue({ ok: true, name: 'pulse-update', pid: 1 })
     getActionStatusSpy.mockResolvedValue({
       exit_code: 0,
       lines: ['✓ Already up to date!'],
@@ -1246,12 +1246,12 @@ describe('applyBackendUpdate recovery', () => {
     const promise = applyBackendUpdate()
     await vi.advanceTimersByTimeAsync(1500)
     await expect(promise).resolves.toMatchObject({ ok: true })
-    expect(checkPulseUpdateSpy).not.toHaveBeenCalled()
+    expect(checkPULSEUpdateSpy).not.toHaveBeenCalled()
   })
 
   it('waits for current-action completion proof after the backend restarts', async () => {
     const actionId = 'a'.repeat(32)
-    updatePulseSpy.mockResolvedValue({ action_id: actionId, ok: true, name: 'pulse-update', pid: 1 })
+    updatePULSESpy.mockResolvedValue({ action_id: actionId, ok: true, name: 'pulse-update', pid: 1 })
     getActionStatusSpy
       .mockRejectedValueOnce(new Error('ECONNREFUSED'))
       .mockResolvedValueOnce({
@@ -1272,12 +1272,12 @@ describe('applyBackendUpdate recovery', () => {
     const promise = applyBackendUpdate()
     await vi.advanceTimersByTimeAsync(5000)
     await expect(promise).resolves.toMatchObject({ ok: true })
-    expect(checkPulseUpdateSpy).not.toHaveBeenCalled()
+    expect(checkPULSEUpdateSpy).not.toHaveBeenCalled()
   })
 
   it('accepts its terminal receipt when a verbose update pushes the start marker out of the log tail', async () => {
     const actionId = 'b'.repeat(32)
-    updatePulseSpy.mockResolvedValue({ action_id: actionId, ok: true, name: 'pulse-update', pid: 1 })
+    updatePULSESpy.mockResolvedValue({ action_id: actionId, ok: true, name: 'pulse-update', pid: 1 })
     getActionStatusSpy.mockRejectedValueOnce(new Error('ECONNREFUSED')).mockResolvedValueOnce({
       exit_code: null,
       lines: ['final build output', 'Update complete!', `=== pulse-update completed ${actionId} ===`],
@@ -1296,13 +1296,13 @@ describe('applyBackendUpdate recovery', () => {
   it('proves a pre-action-ID backend reached its requested commit after restart', async () => {
     $backendUpdateStatus.set({
       behind: 2,
-      commits: [{ at: 1, author: 'Pulse', sha: 'requested-target', summary: 'target' }],
+      commits: [{ at: 1, author: 'Nous', sha: 'requested-target', summary: 'target' }],
       fetchedAt: 1,
       supported: true,
       targetSha: 'backend:0.18.2',
       updateAvailable: true
     })
-    updatePulseSpy.mockResolvedValue({ ok: true, name: 'pulse-update', pid: 1 })
+    updatePULSESpy.mockResolvedValue({ ok: true, name: 'pulse-update', pid: 1 })
     getActionStatusSpy.mockRejectedValueOnce(new Error('ECONNREFUSED')).mockResolvedValue({
       exit_code: null,
       lines: ['verbose output', 'Update complete!'],
@@ -1310,7 +1310,7 @@ describe('applyBackendUpdate recovery', () => {
       pid: null,
       running: false
     })
-    checkPulseUpdateSpy
+    checkPULSEUpdateSpy
       .mockResolvedValueOnce({
         behind: null,
         can_apply: true,
@@ -1324,7 +1324,7 @@ describe('applyBackendUpdate recovery', () => {
       .mockResolvedValueOnce({
         behind: 1,
         can_apply: true,
-        commits: [{ at: 2, author: 'Pulse', sha: 'newer-commit', summary: 'newer' }],
+        commits: [{ at: 2, author: 'Nous', sha: 'newer-commit', summary: 'newer' }],
         current_version: '0.18.2',
         install_method: 'git',
         message: null,
@@ -1336,7 +1336,7 @@ describe('applyBackendUpdate recovery', () => {
     await vi.advanceTimersByTimeAsync(5000)
 
     await expect(promise).resolves.toMatchObject({ ok: true })
-    expect(checkPulseUpdateSpy).toHaveBeenCalledTimes(2)
+    expect(checkPULSEUpdateSpy).toHaveBeenCalledTimes(2)
   })
 
   it('proves a fast pre-action-ID packaged update by its changed version', async () => {
@@ -1348,7 +1348,7 @@ describe('applyBackendUpdate recovery', () => {
       targetSha: 'backend:0.18.2',
       updateAvailable: true
     })
-    updatePulseSpy.mockResolvedValue({ ok: true, name: 'pulse-update', pid: 1 })
+    updatePULSESpy.mockResolvedValue({ ok: true, name: 'pulse-update', pid: 1 })
     getActionStatusSpy.mockResolvedValue({
       exit_code: null,
       lines: ['verbose output without a retained start marker'],
@@ -1356,7 +1356,7 @@ describe('applyBackendUpdate recovery', () => {
       pid: null,
       running: false
     })
-    checkPulseUpdateSpy.mockResolvedValue({
+    checkPULSEUpdateSpy.mockResolvedValue({
       behind: -1,
       can_apply: true,
       commits: [],
@@ -1371,11 +1371,11 @@ describe('applyBackendUpdate recovery', () => {
     await vi.advanceTimersByTimeAsync(1500)
 
     await expect(promise).resolves.toMatchObject({ ok: true })
-    expect(checkPulseUpdateSpy).toHaveBeenCalledWith(true)
+    expect(checkPULSEUpdateSpy).toHaveBeenCalledWith(true)
   })
 
   it('resumes action polling after a transient status failure', async () => {
-    updatePulseSpy.mockResolvedValue({ ok: true, name: 'pulse-update', pid: 1 })
+    updatePULSESpy.mockResolvedValue({ ok: true, name: 'pulse-update', pid: 1 })
     getActionStatusSpy
       .mockRejectedValueOnce(new Error('ECONNRESET'))
       .mockResolvedValueOnce({
@@ -1400,7 +1400,7 @@ describe('applyBackendUpdate recovery', () => {
   })
 
   it('restores the fixed action deadline after reconnecting', async () => {
-    updatePulseSpy.mockResolvedValue({ action_id: 'a'.repeat(32), ok: true, name: 'pulse-update', pid: 1 })
+    updatePULSESpy.mockResolvedValue({ action_id: 'a'.repeat(32), ok: true, name: 'pulse-update', pid: 1 })
 
     const running = {
       exit_code: null,
@@ -1424,7 +1424,7 @@ describe('applyBackendUpdate recovery', () => {
   })
 
   it('shares one in-flight update between concurrent apply requests', async () => {
-    updatePulseSpy.mockResolvedValue({ ok: true, name: 'pulse-update', pid: 1 })
+    updatePULSESpy.mockResolvedValue({ ok: true, name: 'pulse-update', pid: 1 })
     getActionStatusSpy.mockResolvedValue({
       exit_code: 0,
       lines: ['=== pulse-update started now ===', '✓ Already up to date!'],
@@ -1439,11 +1439,11 @@ describe('applyBackendUpdate recovery', () => {
     expect(second).toBe(first)
     await vi.advanceTimersByTimeAsync(1500)
     await Promise.all([first, second])
-    expect(updatePulseSpy).toHaveBeenCalledTimes(1)
+    expect(updatePULSESpy).toHaveBeenCalledTimes(1)
   })
 
   it('fails closed when the update action never reaches a terminal state', async () => {
-    updatePulseSpy.mockResolvedValue({ ok: true, name: 'pulse-update', pid: 1 })
+    updatePULSESpy.mockResolvedValue({ ok: true, name: 'pulse-update', pid: 1 })
     getActionStatusSpy.mockResolvedValue({
       exit_code: null,
       lines: ['=== pulse-update started now ===', 'still running'],
@@ -1459,7 +1459,7 @@ describe('applyBackendUpdate recovery', () => {
   })
 
   it('fails immediately when the update action exits nonzero', async () => {
-    updatePulseSpy.mockResolvedValue({ ok: true, name: 'pulse-update', pid: 1 })
+    updatePULSESpy.mockResolvedValue({ ok: true, name: 'pulse-update', pid: 1 })
     getActionStatusSpy.mockResolvedValue({
       exit_code: 1,
       lines: ['=== pulse-update started now ===', 'update failed'],
@@ -1471,14 +1471,14 @@ describe('applyBackendUpdate recovery', () => {
     const promise = applyBackendUpdate()
     await vi.advanceTimersByTimeAsync(1500)
     await expect(promise).resolves.toMatchObject({ ok: false, error: 'apply-failed' })
-    expect(checkPulseUpdateSpy).not.toHaveBeenCalled()
+    expect(checkPULSEUpdateSpy).not.toHaveBeenCalled()
     expect($backendUpdateApply.get().stage).toBe('error')
   })
 
   it('surfaces an error when the backend never comes back after the restart', async () => {
-    updatePulseSpy.mockResolvedValue({ ok: true, name: 'update', pid: 1 })
+    updatePULSESpy.mockResolvedValue({ ok: true, name: 'update', pid: 1 })
     getActionStatusSpy.mockRejectedValue(new Error('ECONNREFUSED'))
-    checkPulseUpdateSpy.mockRejectedValue(new Error('ECONNREFUSED'))
+    checkPULSEUpdateSpy.mockRejectedValue(new Error('ECONNREFUSED'))
 
     const promise = applyBackendUpdate()
     await vi.advanceTimersByTimeAsync(250000)
@@ -1572,8 +1572,8 @@ describe('startUpdatePoller', () => {
     // Both profiles resolve to mode: 'remote' — only baseUrl differs. A
     // mode-only comparison would treat this as "no change" and never
     // re-check, leaving profile A's stale status on screen for profile B.
-    checkPulseUpdateSpy.mockReset()
-    checkPulseUpdateSpy.mockResolvedValue({
+    checkPULSEUpdateSpy.mockReset()
+    checkPULSEUpdateSpy.mockResolvedValue({
       install_method: 'git',
       current_version: '0.16.0',
       behind: 1,
@@ -1596,7 +1596,7 @@ describe('startUpdatePoller', () => {
 
     startUpdatePoller()
     await vi.advanceTimersByTimeAsync(0)
-    checkPulseUpdateSpy.mockClear()
+    checkPULSEUpdateSpy.mockClear()
 
     setConnection({
       baseUrl: 'http://profile-b:9119',
@@ -1610,7 +1610,7 @@ describe('startUpdatePoller', () => {
     })
     await vi.advanceTimersByTimeAsync(0)
 
-    expect(checkPulseUpdateSpy).toHaveBeenCalled()
+    expect(checkPULSEUpdateSpy).toHaveBeenCalled()
   })
 
   it('re-checks backend updates when switching between two profiles on the same remote backend', async () => {
@@ -1618,8 +1618,8 @@ describe('startUpdatePoller', () => {
     // update check is profile-scoped (per-profile overrides can pin a
     // different channel/branch), so a baseUrl-only key would treat this as
     // "no change" and keep the first profile's status on screen.
-    checkPulseUpdateSpy.mockReset()
-    checkPulseUpdateSpy.mockResolvedValue({
+    checkPULSEUpdateSpy.mockReset()
+    checkPULSEUpdateSpy.mockResolvedValue({
       install_method: 'git',
       current_version: '0.16.0',
       behind: 1,
@@ -1644,12 +1644,12 @@ describe('startUpdatePoller', () => {
     setConnection(pooled('alpha'))
     startUpdatePoller()
     await vi.advanceTimersByTimeAsync(0)
-    checkPulseUpdateSpy.mockClear()
+    checkPULSEUpdateSpy.mockClear()
 
     setConnection(pooled('beta'))
     await vi.advanceTimersByTimeAsync(0)
 
-    expect(checkPulseUpdateSpy).toHaveBeenCalled()
+    expect(checkPULSEUpdateSpy).toHaveBeenCalled()
   })
 
   it('discards a stale in-flight response and re-checks after switching to B before A resolves', async () => {
@@ -1657,7 +1657,7 @@ describe('startUpdatePoller', () => {
     // trigger is locked out by $backendUpdateChecking. Once A's (now stale)
     // response lands it must not overwrite the display with A's result, and
     // B's own check must still run once the lock clears.
-    checkPulseUpdateSpy.mockReset()
+    checkPULSEUpdateSpy.mockReset()
 
     let resolveA: (value: unknown) => void = () => {}
 
@@ -1665,8 +1665,8 @@ describe('startUpdatePoller', () => {
       resolveA = resolve
     })
 
-    checkPulseUpdateSpy.mockImplementationOnce(() => aPending)
-    checkPulseUpdateSpy.mockResolvedValueOnce({
+    checkPULSEUpdateSpy.mockImplementationOnce(() => aPending)
+    checkPULSEUpdateSpy.mockResolvedValueOnce({
       install_method: 'git',
       current_version: '0.17.0',
       behind: 4,
@@ -1688,7 +1688,7 @@ describe('startUpdatePoller', () => {
     })
 
     startUpdatePoller()
-    // A's checkPulseUpdate() call is now in flight (aPending unresolved).
+    // A's checkPULSEUpdate() call is now in flight (aPending unresolved).
     // Switch profiles before it settles.
 
     setConnection({
@@ -1716,7 +1716,7 @@ describe('startUpdatePoller', () => {
     // Flush the automatic follow-up check queued for B once A's lock cleared.
     await vi.advanceTimersByTimeAsync(0)
 
-    expect(checkPulseUpdateSpy).toHaveBeenCalledTimes(2)
+    expect(checkPULSEUpdateSpy).toHaveBeenCalledTimes(2)
     // B's result (behind: 4), not A's stale one (behind: 1).
     expect($backendUpdateStatus.get()?.behind).toBe(4)
   })

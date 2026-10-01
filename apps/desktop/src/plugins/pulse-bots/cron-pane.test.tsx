@@ -15,7 +15,7 @@
  *      fails closed — the subscription fix must not loosen identity matching.
  */
 
-import type * as PulseSdk from '@pulse/plugin-sdk'
+import type * as PULSESdk from '@pulse/plugin-sdk'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import type { atom } from 'nanostores'
@@ -34,7 +34,7 @@ beforeAll(() => {
 const { request } = vi.hoisted(() => ({ request: vi.fn() }))
 
 vi.mock('@pulse/plugin-sdk', async importOriginal => {
-  const sdk = await importOriginal<typeof PulseSdk>()
+  const sdk = await importOriginal<typeof PULSESdk>()
   const { atom: nanoAtom } = await import('nanostores')
 
   return {

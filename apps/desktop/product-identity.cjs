@@ -1,6 +1,6 @@
 // The desktop product identity — THE single source for every name-shaped
-// value a variant owns. PULSE_DESKTOP_VARIANT=light builds "Pulse
-// Light", the remote-only client; everything else is full "Pulse".
+// value a variant owns. PULSE_DESKTOP_VARIANT=light builds "PULSE
+// Light", the remote-only client; everything else is full "PULSE".
 //
 // Consumed at build time by electron-builder.config.cjs (packaging
 // identity). electron/product-identity.ts is the typed runtime accessor.
@@ -9,16 +9,16 @@
 'use strict'
 
 const variants = {
-  '': { display: 'Pulse', kebab: 'pulse', pascal: 'Pulse' },
+  '': { display: 'PULSE', kebab: 'pulse', pascal: 'PULSE' },
   light: {
-    display: 'Pulse Light',
+    display: 'PULSE Light',
     kebab: 'pulse-light',
-    pascal: 'PulseLight'
+    pascal: 'PULSELight'
   },
   bundled: {
-    display: 'Pulse Agent',
+    display: 'PULSE Agent',
     kebab: 'pulse-bundled',
-    pascal: 'PulseBundled'
+    pascal: 'PULSEBundled'
   }
 }
 
@@ -66,24 +66,22 @@ const identity = {
   store,
   light,
   displayName,
-  appId: `com.anxious-research.${name.kebab}${kebabSuffix}`,
+  appId: `com.nousresearch.${name.kebab}${kebabSuffix}`,
   // Store and commit builds do not publish a release feed.
   channel: store || buildCommit ? null : light ? (canary ? 'light-canary' : 'light') : (canary ? 'canary' : 'latest'),
   appNamePascal: `${name.pascal}${pascalSuffix}`,
   artifactNamePascal: name.pascal,
   windowsExecutableName: kebabSuffix ? cliName : displayName,
   cliName,
-  msixAppIdWithOrg: `Anxious-Research.${name.pascal}${pascalSuffix}`,
+  msixAppIdWithOrg: `NousResearch.${name.pascal}${pascalSuffix}`,
   ...(store
     ? {
         storeMsix: {
           // Partner Center publisher identity (the account's publisher ID) —
           // validated + re-signed by the Store on submission.
-          // PLACEHOLDER: no Store account exists yet. Fill these in from
-          // Partner Center before any Store submission build.
-          identityName: 'Anxious-ResearchInc.PulseAgent',
-          publisher: 'CN=PLACEHOLDER-STORE-PUBLISHER-ID',
-          publisherDisplayName: 'Anxious Research'
+          identityName: 'NousResearchInc.PULSEAgent',
+          publisher: 'CN=EE6D86E4-606F-4E38-B940-AD7248C9D519',
+          publisherDisplayName: 'Nous Research Inc.'
         }
       }
     : {})
@@ -91,6 +89,21 @@ const identity = {
 
 const { channelBuildRequest } = require('../../scripts/msix-shared.mjs')
 const request = channelBuildRequest()
-module.exports = request
-  ? Object.freeze({ ...request.identity, store: false, light: false, channel: request.channel })
-  : identity
+
+// A channel created with --branding stable copies stable's identity, so it IS
+// the regular app. It must also run like one: a token would make the runtime
+// pin a userData dir and single-instance lock that installed stable doesn't use.
+// The updater reads the token from the stamped request, not from this export.
+const officialChannel =
+  request !== null &&
+  ['appId', 'displayName', 'appNamePascal', 'artifactNamePascal', 'windowsExecutableName', 'cliName', 'msixAppIdWithOrg'].every(
+    key => request.identity[key] === identity[key]
+  )
+
+module.exports = !request
+  ? identity
+  : Object.freeze(
+      officialChannel
+        ? { ...identity, channel: request.channel }
+        : { ...request.identity, store: false, light: false, channel: request.channel }
+    )

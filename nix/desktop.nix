@@ -1,4 +1,4 @@
-# nix/desktop.nix — Pulse Desktop (Electron) app build + wrapper
+# nix/desktop.nix — PULSE Desktop (Electron) app build + wrapper
 #
 # `pulseAgent` is the fully-built `.#default` package — it ships the
 # `pulse` binary with the venv, runtime PATH, bundled skills/plugins, etc.
@@ -201,7 +201,7 @@ stdenv.mkDerivation {
   };
 
   meta = with lib; {
-    description = "Native Electron desktop shell for Pulse Agent";
+    description = "Native Electron desktop shell for PULSE Agent";
     homepage = "https://github.com/Anxious-Research/PULSE";
     license = licenses.mit;
     platforms = platforms.unix;

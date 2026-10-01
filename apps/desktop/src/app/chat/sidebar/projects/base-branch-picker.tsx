@@ -13,7 +13,7 @@ import {
   CommandList
 } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import type { PulseGitBaseBranch } from '@/global'
+import type { PULSEGitBaseBranch } from '@/global'
 import { useI18n } from '@/i18n'
 import { $repoStatus } from '@/store/coding-status'
 import { listBaseBranches } from '@/store/projects'
@@ -37,7 +37,7 @@ export function BaseBranchPicker({
   const { t } = useI18n()
   const p = t.sidebar.projects
   const repoStatus = useStore($repoStatus)
-  const [branches, setBranches] = useState<PulseGitBaseBranch[]>([])
+  const [branches, setBranches] = useState<PULSEGitBaseBranch[]>([])
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
 

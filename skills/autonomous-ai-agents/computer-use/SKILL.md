@@ -2,7 +2,7 @@
 name: computer-use
 description: "Drive the desktop background-first; escalate on signal."
 version: 2.1.0
-author: Francesco Bonacci (f-trycua), Pulse Agent
+author: Francesco Bonacci (f-trycua), PULSE Agent
 license: MIT
 platforms: [macos, windows, linux]
 metadata:
@@ -24,11 +24,11 @@ Everything here works with any tool-capable model — Claude, GPT, Gemini,
 or an open model on a local OpenAI-compatible endpoint. There is no
 Anthropic-native schema to learn.
 
-Pulse drives [cua-driver](https://github.com/trycua/cua) under the hood.
-This skill teaches the Pulse `computer_use` **action vocabulary**, which is
+PULSE drives [cua-driver](https://github.com/trycua/cua) under the hood.
+This skill teaches the PULSE `computer_use` **action vocabulary**, which is
 NOT the driver's raw MCP vocabulary. Call the actions documented below and
-never the driver's tools by name: `capture` is a Pulse action that maps to
-the driver's `get_window_state`; `element=N` is a Pulse argument that the
+never the driver's tools by name: `capture` is a PULSE action that maps to
+the driver's `get_window_state`; `element=N` is a PULSE argument that the
 wrapper translates into the driver's `element_token` handle. If you see a
 driver-side error mentioning `snapshot_id`, `element_token`, or "no reviewed
 risk classification", you (or a stale description) called the raw driver
@@ -87,12 +87,12 @@ computer_use(action="click", element=7, capture_after=True)
 | `ax` | Element list only, no image | Text-only models, or when you don't need to see pixels |
 
 Current drivers always return the screenshot AND the tree in one call;
-`mode` decides what Pulse hands back to you, not what the driver does.
+`mode` decides what PULSE hands back to you, not what the driver does.
 There is no numbered overlay burned into the screenshot — the index list is
 the map; ground on both and cross-check (the tree lies on some surfaces).
 
 **No vision model?** If your main model can't read images (or the provider
-rejects image tool results), Pulse routes the screenshot through the
+rejects image tool results), PULSE routes the screenshot through the
 auxiliary vision model and you get a text description instead of pixels.
 Configure `auxiliary.vision` in `config.yaml` to pick that model, or use
 `mode="ax"` and drive by element index without a screenshot at all.
@@ -302,12 +302,12 @@ in your conversation context.
 | `cua-driver not installed` | Run `pulse computer-use install`, or `pulse tools` and enable Computer Use |
 | Captures consistently return empty / "no on-screen window" | On Linux: DISPLAY may not be set (X11) or you're on pure Wayland — ask the user to run `pulse computer-use doctor`. On Windows: you may be in Session 0 (SSH session) instead of the interactive desktop — see the cua-driver `WINDOWS.md` deep-dive |
 | `code:"stale"` / "element_token is stale" | Indices belong to one snapshot. Re-`capture`, read the new indices, then act. Never reuse an index across a capture |
-| "bare element_index is not accepted" / `snapshot_id_required` | The driver saw a raw index without its token. This is a wrapper defect, not something you fix by passing `snapshot_id` (Pulse has no such argument). Re-capture once; if it repeats, tell the user to run `pulse update` and fall back to `coordinate=[x, y]` from the capture's bounds meanwhile |
-| "tool 'capture' has no reviewed risk classification" / `Unknown tool` | Something called the driver's MCP vocabulary directly (`capture`, `screenshot`, `get_window_state`, `click` with raw args). Only the `computer_use(action=…)` vocabulary in this file exists on the Pulse side |
+| "bare element_index is not accepted" / `snapshot_id_required` | The driver saw a raw index without its token. This is a wrapper defect, not something you fix by passing `snapshot_id` (PULSE has no such argument). Re-capture once; if it repeats, tell the user to run `pulse update` and fall back to `coordinate=[x, y]` from the capture's bounds meanwhile |
+| "tool 'capture' has no reviewed risk classification" / `Unknown tool` | Something called the driver's MCP vocabulary directly (`capture`, `screenshot`, `get_window_state`, `click` with raw args). Only the `computer_use(action=…)` vocabulary in this file exists on the PULSE side |
 | Click had no effect | Read the structured verdict. `effect:"unverifiable"` → fresh capture/state before retry, even with an escalation hint. `effect:"suspected_noop"` or a structured refusal → climb the recommended ladder: coordinate (px), then foreground. Browser chrome/native prompts remain native; page content is a separate toolset. Don't conclude the app is undrivable |
 | Type text disappears into a terminal emulator | cua-driver detects terminals (Ghostty, iTerm2, Terminal.app, Windows Terminal, mintty, etc.) and routes through key-event synthesis — should "just work" on a recent cua-driver. If it doesn't, ask the user to run `pulse computer-use doctor` |
 | `blocked pattern in type text` | You tried to `type` a shell command matching the dangerous-pattern block list (`curl ... \| bash`, `sudo rm -rf`, etc.). Break the command up or reconsider |
-| `pulse computer-use doctor` says "could not be started … Access is denied" (Windows) | The Pulse venv interpreter can't execute a binary under `C:\Program Files\WindowsApps`; the tool itself may still work because the shell resolves another copy on PATH. Fix once: reinstall cua-driver with the upstream installer (lands under the user profile) or set `PULSE_CUA_DRIVER_CMD` to a copy outside `WindowsApps`. The same denial spams `errors.log` for any other `WindowsApps` binary Pulse spawns (e.g. `bws.exe`) |
+| `pulse computer-use doctor` says "could not be started … Access is denied" (Windows) | The PULSE venv interpreter can't execute a binary under `C:\Program Files\WindowsApps`; the tool itself may still work because the shell resolves another copy on PATH. Fix once: reinstall cua-driver with the upstream installer (lands under the user profile) or set `PULSE_CUA_DRIVER_CMD` to a copy outside `WindowsApps`. The same denial spams `errors.log` for any other `WindowsApps` binary PULSE spawns (e.g. `bws.exe`) |
 | Anything else weird | **First action: ask the user to run `pulse computer-use doctor`.** It runs the cua-driver `health_report` MCP tool and prints a structured per-check matrix. Their output tells you (and them) exactly what's wrong |
 
 ## When NOT to use `computer_use`
@@ -325,7 +325,7 @@ in your conversation context.
 
 ## Going deeper — read the cua-driver skill pack
 
-Pulse intentionally keeps THIS skill focused on the Pulse-side
+PULSE intentionally keeps THIS skill focused on the PULSE-side
 `computer_use` action vocabulary. The platform-specific deep dives
 (macOS no-foreground contract, Windows UIA + Session 0, Linux AT-SPI +
 X11/Wayland nuances, recording trajectory + video, browser-page
@@ -336,7 +336,7 @@ cua-driver team ships and maintains for every other agent harness.
 cua-driver skills install
 ```
 
-links the pack into `~/.pulse/skills/cua-driver` (Pulse is a detected
+links the pack into `~/.pulse/skills/cua-driver` (PULSE is a detected
 agent; `cua-driver skills status` shows the link state). You'll then have:
 
 - `SKILL.md` — the cross-platform core (snapshot invariant, no-
@@ -353,4 +353,4 @@ agent; `cua-driver skills status` shows the link state). You'll then have:
 
 Those files describe the driver's OWN MCP tools (`get_window_state`,
 `element_token`, `snapshot_id`, …). Read them for platform context; keep
-calling the Pulse actions from this file — the wrapper does the translation.
+calling the PULSE actions from this file — the wrapper does the translation.

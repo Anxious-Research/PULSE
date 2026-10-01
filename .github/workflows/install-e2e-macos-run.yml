@@ -8,7 +8,7 @@
 #                           script/updater/pulse-desktop-app-update
 #                           updates.
 #   gui-e2e (desktop arm)   tests/install/macos-desktop-e2e.sh - the
-#                           published Pulse-Setup.dmg, mounted and run,
+#                           published PULSE-Setup.dmg, mounted and run,
 #                           then the app driven by Playwright for the
 #                           app-update methods.
 #
@@ -21,7 +21,7 @@ on:
   workflow_call:
     inputs:
       install-method:
-        description: 'How OLD gets installed. Supported: installer-script, installer-script+desktop (curl | bash one-liner, optionally with --include-desktop) and desktop-installer@latest (the published Pulse-Setup.dmg).'
+        description: 'How OLD gets installed. Supported: installer-script, installer-script+desktop (curl | bash one-liner, optionally with --include-desktop) and desktop-installer@latest (the published PULSE-Setup.dmg).'
         required: true
         type: string
       update-method:
@@ -51,7 +51,7 @@ on:
         description: 'Bootstrap dmg to install OLD with. Default: the latest published one — what a user downloads today.'
         required: false
         type: string
-        default: https://pulse-assets.anxiousresearchlab.com/Pulse-Setup.dmg
+        default: https://pulse-assets.anxious-research.com/PULSE-Setup.dmg
       bundle-manifest-url:
         description: 'URL of the JSON schema-1 bundle manifest for the packaged-app arm. Empty (default) means the bundled arm does not run — native packaged coverage only runs when the caller pins a real signed OLD/NEW pair.'
         required: false
@@ -99,7 +99,7 @@ jobs:
   gui-e2e:
     # Short static name on purpose: name expressions render UNEXPANDED on
     # skipped jobs.
-    name: Pulse-Setup.dmg
+    name: PULSE-Setup.dmg
     if: >-
       inputs.install-method == 'desktop-installer@latest' && inputs.tag-has-desktop
       && contains(fromJSON('["open-app-update", "pulse-desktop-app-update", "pulse-update", "installer-script", "installer-script+desktop"]'), inputs.update-method)
@@ -109,7 +109,7 @@ jobs:
     steps:
       # Full history: the driver bare-clones this checkout as the repo the
       # installer/updater talk to.
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # v7.0.1
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
@@ -144,7 +144,7 @@ jobs:
         env:
           PULSE_E2E_LOG_DIR: ${{ runner.temp }}/e2e-logs
 
-      - name: Install ${{ inputs.install-ref }} via Pulse-Setup.dmg
+      - name: Install ${{ inputs.install-ref }} via PULSE-Setup.dmg
         run: |
           set -euo pipefail
           tests/install/macos-desktop-e2e.sh --phase install \
@@ -208,7 +208,7 @@ jobs:
     timeout-minutes: ${{ inputs.timeout-minutes }}
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # v7.0.1
         with:
           ref: ${{ github.sha }}
 

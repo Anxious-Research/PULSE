@@ -8,7 +8,7 @@ import { SearchField } from '@/components/ui/search-field'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { Slider } from '@/components/ui/slider'
 import type { DesktopMarketplaceSearchItem } from '@/global'
-import { savePulseConfig } from '@/pulse'
+import { savePULSEConfig } from '@/pulse'
 import { useI18n } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
 import { Check, Download, Loader2, Palette, Trash2 } from '@/lib/icons'
@@ -16,6 +16,7 @@ import { selectableCardClass } from '@/lib/selectable-card'
 import { normalize } from '@/lib/text'
 import { cn } from '@/lib/utils'
 import { $backdrop, setBackdrop } from '@/store/backdrop'
+import { $chatTextScale, CHAT_TEXT_SCALE_PRESETS, setChatTextScale } from '@/store/chat-text-scale'
 import { $composerPopoutGesturesEnabled, setComposerPopoutGesturesEnabled } from '@/store/composer-popout'
 import { $embedAllowed, $embedMode, clearEmbedAllowed, type EmbedMode, setEmbedMode } from '@/store/embed-consent'
 import {
@@ -73,7 +74,7 @@ import { installVscodeThemeFromMarketplace } from '@/themes/install'
 import type { DesktopTheme } from '@/themes/types'
 import { $marketplaceInstalls, isUserTheme, removeUserTheme } from '@/themes/user-themes'
 
-import { setPulseConfigCache, usePulseConfigRecord } from '../hooks/use-config-record'
+import { setPULSEConfigCache, usePULSEConfigRecord } from '../hooks/use-config-record'
 
 import { AppearanceExtraSlot } from './appearance-contrib'
 import type { AppearanceSubpageId } from './appearance-subpages'
@@ -94,7 +95,7 @@ import { useSettingDeepLink } from './use-setting-deep-link'
 function ResumeLastSessionSetting() {
   const { t } = useI18n()
   const a = t.settings.appearance
-  const configQuery = usePulseConfigRecord()
+  const configQuery = usePULSEConfigRecord()
   const config = configQuery.data
   const writeScope = configQuery.writeScope
   const checked = (config?.display as { resume_last_session?: unknown } | undefined)?.resume_last_session !== false
@@ -105,17 +106,17 @@ function ResumeLastSessionSetting() {
     }
 
     const next = setNested(config, 'display.resume_last_session', on)
-    setPulseConfigCache(next)
+    setPULSEConfigCache(next)
     // Sparse patch: PUT /api/config deep-merges, and echoing the cached
     // snapshot would overwrite keys other surfaces changed since it loaded.
-    void savePulseConfig(setNested({}, 'display.resume_last_session', on), writeScope)
+    void savePULSEConfig(setNested({}, 'display.resume_last_session', on), writeScope)
       .then(result => {
         if (!result.ok) {
           throw new Error(t.settings.config.autosaveFailed)
         }
       })
       .catch(error => {
-        setPulseConfigCache(config)
+        setPULSEConfigCache(config)
         notifyError(error, t.settings.config.autosaveFailed)
       })
   }
@@ -424,6 +425,7 @@ export function AppearanceSettings({ subpage }: AppearanceSettingsProps = {}) {
   const tabStripDefault = useStore($tabStripDefault)
   const titlebarAppActionsSide = useStore($titlebarAppActionsSide)
   const zoomPercent = useStore($zoomPercent)
+  const chatTextScale = useStore($chatTextScale)
   const embedMode = useStore($embedMode)
   const embedAllowed = useStore($embedAllowed)
   const composerPopoutGesturesEnabled = useStore($composerPopoutGesturesEnabled)
@@ -682,6 +684,22 @@ export function AppearanceSettings({ subpage }: AppearanceSettingsProps = {}) {
                 description={a.uiScaleDesc(zoomPercent)}
                 id={settingElementId(ids.uiScale)}
                 title={a.uiScaleTitle}
+              />
+
+              <ListRow
+                action={
+                  <SegmentedControl
+                    onChange={value => {
+                      triggerHaptic('selection')
+                      setChatTextScale(Number(value))
+                    }}
+                    options={CHAT_TEXT_SCALE_PRESETS.map(value => ({ id: String(value), label: `${value}%` }))}
+                    value={String(chatTextScale)}
+                  />
+                }
+                description={a.chatTextScaleDesc}
+                id={settingElementId(ids.chatTextScale)}
+                title={a.chatTextScaleTitle}
               />
 
               <div id={settingElementId(ids.chatFont)}>

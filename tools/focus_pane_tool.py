@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reveal/focus a pane in the Pulse desktop GUI (``pane.reveal`` via ``desktop_ui``).
+"""Reveal/focus a pane in the PULSE desktop GUI (``pane.reveal`` via ``desktop_ui``).
 
 The renderer runs each pane's own reveal path and only acts on the active window, so
 a background turn never moves the user's focus. URLs/files go through `desktop_preview`.
@@ -18,7 +18,7 @@ def focus_pane_tool(pane: str) -> str:
         return tool_error(f"pane must be one of: {', '.join(PANES)}.")
     return desktop_ui.emit_or_error(
         "pane.reveal", {"pane": name}, f"Failed to focus the {name} pane: ",
-        "Pane focus is only available in the Pulse desktop app.", {"success": True, "pane": name})
+        "Pane focus is only available in the PULSE desktop app.", {"success": True, "pane": name})
 
 
 registry.register(
@@ -27,7 +27,7 @@ registry.register(
     schema={
         "name": "focus_pane",
         "description": (
-            "Reveal and focus a Pulse desktop pane when the user asks to see it: "
+            "Reveal and focus a PULSE desktop pane when the user asks to see it: "
             "chat, files, terminal, review (git diff), or sessions. For URLs/"
             "files use the desktop_preview tool instead."
         ),
@@ -46,31 +46,3 @@ registry.register(
     handler=lambda args, **kw: focus_pane_tool(pane=args.get("pane", "")),
     emoji="🪟",
 )
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-import json  # noqa: F401,E402
-
-FOCUS_PANE_SCHEMA = {
-    "name": "focus_pane",
-    "description": (
-        "Reveal and focus a Pulse desktop pane when the user asks to see it: "
-        "chat, files, terminal, review (git diff), or sessions. For URLs/"
-        "files use the desktop_preview tool instead."
-    ),
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "pane": {
-                "type": "string",
-                "enum": list(PANES),
-                "description": "Which pane to reveal.",
-            },
-        },
-        "required": ["pane"],
-    },
-}
-# ---- END PLUGIN-COMPAT ----

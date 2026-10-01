@@ -1,20 +1,20 @@
-// Pulse Agent — Photon Spectrum sidecar
+// PULSE Agent — Photon Spectrum sidecar
 //
 // Spawned by `plugins/platforms/photon/adapter.py` to bridge BOTH directions
 // of messaging to Photon's Spectrum platform via the `spectrum-ts` SDK (the
 // SDK is TypeScript-only, so a Node sidecar is unavoidable — there is no
 // Python SDK and no public HTTP message API).
 //
-// Inbound  (gRPC -> Pulse): the SDK's `app.messages` async iterator is a
+// Inbound  (gRPC -> PULSE): the SDK's `app.messages` async iterator is a
 //   long-lived gRPC stream. We serialize each `[space, message]` to a
 //   normalized JSON event and stream it to the Python adapter over a
 //   loopback `GET /inbound` (NDJSON). We pause pulling from the stream while
 //   no consumer is attached so a backlog isn't pulled-and-lost before the
 //   gateway connects.
-// Outbound (Pulse -> gRPC): `/send` drives `space.send(...)`; `/typing`
+// Outbound (PULSE -> gRPC): `/send` drives `space.send(...)`; `/typing`
 //   sends the documented `typing("start" | "stop")` content builder.
 //
-// Protocol (all requests require `X-Pulse-Sidecar-Token: ${TOKEN}`):
+// Protocol (all requests require `X-PULSE-Sidecar-Token: ${TOKEN}`):
 //   - GET  /inbound    -> 200 NDJSON stream; one JSON event per line, blank
 //                         lines are heartbeats. One consumer at a time.
 //   - POST /healthz     -> {"ok": true}
@@ -195,7 +195,7 @@ function scheduleStreamRestart() {
     }
     console.error(
       `photon-sidecar: upstream stream degraded for ${degradedForMs}ms; ` +
-        "exiting so Pulse can restart the Photon adapter"
+        "exiting so PULSE can restart the Photon adapter"
     );
     process.exit(75);
   }, STREAM_DEGRADED_RESTART_MS + 1000);
@@ -279,7 +279,7 @@ if (!projectId || !projectSecret || !sharedToken) {
 }
 
 // Lazy-load spectrum-ts so a missing install fails with a clear message
-// instead of a cryptic module-resolution error during import. Apply Pulse'
+// instead of a cryptic module-resolution error during import. Apply PULSE'
 // pinned-sdk compatibility patch first so existing installs self-heal at
 // runtime, not only during npm postinstall.
 try {
@@ -652,7 +652,7 @@ function inboundStreamErrorMessage(e) {
   let out = "photon-sidecar: inbound stream errored — restarting: " + msg;
 
   // The Spectrum SDK surfaces Photon cloud CatchUpEvents failures as an
-  // iMessage internal error. Local Pulse allowlists cannot cause or fix this:
+  // iMessage internal error. Local PULSE allowlists cannot cause or fix this:
   // inbound messages stop before they reach the gateway. Add an explicit hint
   // so operators know to retry/restart or escalate to Photon support instead
   // of chasing PHOTON_ALLOWED_USERS / pairing configuration.
@@ -666,7 +666,7 @@ function inboundStreamErrorMessage(e) {
   ) {
     out +=
       " | Photon Spectrum CatchUpEvents returned an internal server error; " +
-      "this is upstream of Pulse, so inbound iMessages may not be delivered " +
+      "this is upstream of PULSE, so inbound iMessages may not be delivered " +
       "until Photon recovers or the stream is re-established.";
   }
   return out;
@@ -1088,7 +1088,7 @@ const server = http.createServer(async (req, res) => {
       const space = await resolveSpace(spaceId);
 
       // spectrum-ts infers name + MIME from the file extension; pass
-      // overrides only when Pulse supplied them so a known-good
+      // overrides only when PULSE supplied them so a known-good
       // inference isn't clobbered with an empty string.
       const opts = {};
       if (name) opts.name = name;

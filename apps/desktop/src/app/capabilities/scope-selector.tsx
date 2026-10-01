@@ -126,7 +126,7 @@ export function useCapabilityScope({
 
     return (profilesData?.profiles ?? []).map(p => ({
       key: p.name,
-      label: p.is_default ? 'Pulse (default)' : p.name,
+      label: p.is_default ? 'PULSE (default)' : p.name,
       value: p.name
     }))
   }, [multiConnection, profilesData, rosterData])

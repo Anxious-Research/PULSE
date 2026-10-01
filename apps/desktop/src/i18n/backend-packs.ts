@@ -1,5 +1,5 @@
 /**
- * Backend-delivered language packs. A Pulse language-pack plugin (or a user
+ * Backend-delivered language packs. A PULSE language-pack plugin (or a user
  * overlay under `$PULSE_HOME/locales/`) ships `<lang>.desktop.yaml`; the
  * gateway serves the flattened strings over `i18n.catalog {lang, surface:
  * 'desktop'}` and the selectable languages over `i18n.languages`. Both land

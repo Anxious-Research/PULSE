@@ -93,8 +93,8 @@ website/
 assets/
 !assets/
 assets/*
-!assets/anxious-girl-black.svg
-!assets/anxious-girl-white.svg
+!assets/nous-girl-black.svg
+!assets/nous-girl-white.svg
 !assets/backgrounds/
 !assets/backgrounds/**
 infographic/

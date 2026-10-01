@@ -2,7 +2,7 @@
 name: xlsx
 description: Create, read, edit Excel .xlsx workbooks and CSVs.
 version: 1.1.0
-author: Anxious Research Lab
+author: Nous Research
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

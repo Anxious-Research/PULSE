@@ -1,4 +1,4 @@
-"""Unified self-relaunch for Pulse CLI: preserves inherited flags (--tui, --dev, --profile, --model…)
+"""Unified self-relaunch for PULSE CLI: preserves inherited flags (--tui, --dev, --profile, --model…)
 across process replacement so ``pulse sessions browse`` / post-setup relaunch keep the user's mode."""
 
 import os
@@ -60,7 +60,7 @@ def _extract_inherited_flags(argv: Sequence[str]) -> list[str]:
 
 
 def resolve_pulse_bin() -> Optional[str]:
-    """Pulse entry point: ``sys.argv[0]`` if a real executable, else ``which pulse``, else ``None``
+    """PULSE entry point: ``sys.argv[0]`` if a real executable, else ``which pulse``, else ``None``
     (caller falls back to ``python -m pulse_cli.main``).
 
     Python launchers are never returned: on Windows a ``.py`` can't be exec'd directly, and on
@@ -132,11 +132,14 @@ def relaunch(
             # Raw ``[Errno 8] Exec format error`` is cryptic; usual causes are ``pulse`` not on
             # PATH yet (install hasn't propagated User PATH into this shell) or a stale shim.
             print(
-                f"\nPulse relaunch failed: {exc}\n"
+                f"\nPULSE relaunch failed: {exc}\n"
                 f"Command: {' '.join(new_argv)}\n"
                 f"Fix: open a new terminal so PATH picks up, then re-run pulse.",
                 file=sys.stderr,
             )
             sys.exit(1)
     else:
+        from pulse_cli.observability.shared_metrics_startup import mark_in_place_relaunch
+
+        mark_in_place_relaunch()
         os.execvp(new_argv[0], new_argv)

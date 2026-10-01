@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { Settings2, Wrench } from '@/lib/icons'
-import type { ConfigFieldSchema, PulseConfigRecord } from '@/types/pulse'
+import type { ConfigFieldSchema, PULSEConfigRecord } from '@/types/pulse'
 
 import {
   buildConfigSearchEntries,
@@ -13,7 +13,7 @@ import { envVar } from './test-utils'
 
 const searchCopy = {
   fieldDescriptions: {
-    'display.personality': 'Choose how Pulse sounds in conversation.',
+    'display.personality': 'Choose how PULSE sounds in conversation.',
     'tts.edge.voice': 'Voice used by Edge TTS.'
   },
   fieldLabels: {
@@ -38,7 +38,7 @@ describe('settings search index', () => {
     const config = {
       display: { personality: 'default' },
       tts: { provider: 'edge', edge: { voice: '' }, openai: { voice: '' } }
-    } as unknown as PulseConfigRecord
+    } as unknown as PULSEConfigRecord
 
     const entries = buildConfigSearchEntries(schema, config, searchCopy)
 
@@ -49,7 +49,7 @@ describe('settings search index', () => {
     ])
     expect(entries[0]).toMatchObject({
       context: 'Chat',
-      description: 'Choose how Pulse sounds in conversation.',
+      description: 'Choose how PULSE sounds in conversation.',
       label: 'Personality',
       target: { field: 'display.personality', view: 'config:chat' }
     })

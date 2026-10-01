@@ -23,7 +23,7 @@ export interface MigrationDeps {
   readFileSync: (path: string, encoding: 'utf8') => string
   statSync: (path: string) => { size: number; mtimeMs: number }
   readdirSync: (path: string, options?: { withFileTypes?: boolean }) => Dirent[]
-  isPulseProcess: (pid: number) => boolean
+  isPULSEProcess: (pid: number) => boolean
   now: () => number
   writeJson: (path: string, payload: MigrationDecision) => void
   isValidProfileName: (name: string) => boolean
@@ -47,7 +47,7 @@ export function profileGatewayPidPath(name: string, pulseHome: string, profilesR
   return name === 'default' ? `${pulseHome}/gateway.pid` : `${profilesRoot}/${name}/gateway.pid`
 }
 
-function resolvePulseHome(profilesRoot: string, pulseHome?: string): string {
+function resolvePULSEHome(profilesRoot: string, pulseHome?: string): string {
   if (pulseHome) {
     return pulseHome
   }
@@ -107,9 +107,9 @@ export function readLegacyActiveProfile(
 export function findRunningGatewayProfiles(
   profilesRoot: string,
   allProfiles: string[],
-  deps: Pick<MigrationDeps, 'existsSync' | 'readFileSync' | 'isPulseProcess'> & { pulseHome?: string }
+  deps: Pick<MigrationDeps, 'existsSync' | 'readFileSync' | 'isPULSEProcess'> & { pulseHome?: string }
 ): string[] {
-  const pulseHome = resolvePulseHome(profilesRoot, deps.pulseHome)
+  const pulseHome = resolvePULSEHome(profilesRoot, deps.pulseHome)
   const running: string[] = []
 
   for (const name of allProfiles) {
@@ -133,7 +133,7 @@ export function findRunningGatewayProfiles(
       continue
     }
 
-    if (deps.isPulseProcess(pid)) {
+    if (deps.isPULSEProcess(pid)) {
       running.push(name)
     }
   }

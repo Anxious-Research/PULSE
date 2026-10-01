@@ -8,7 +8,7 @@
  * job cannot invalidate every other bot's list.
  */
 
-import type * as PulseSdk from '@pulse/plugin-sdk'
+import type * as PULSESdk from '@pulse/plugin-sdk'
 import { queryClient } from '@pulse/plugin-sdk'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -16,7 +16,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const { request } = vi.hoisted(() => ({ request: vi.fn(async () => ({})) }))
 
 vi.mock('@pulse/plugin-sdk', async importOriginal => {
-  const sdk = await importOriginal<typeof PulseSdk>()
+  const sdk = await importOriginal<typeof PULSESdk>()
 
   return { ...sdk, host: { ...sdk.host, request } }
 })

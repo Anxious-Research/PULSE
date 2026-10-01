@@ -1497,6 +1497,9 @@ def _emit_compression_attempt_telemetry(
         logger.info(
             "context compression attempt telemetry: %s", json.dumps(payload, sort_keys=True, separators=(",", ":"))
         )
+        from pulse_cli.observability.shared_metrics_events import finish_compression_attempt
+
+        finish_compression_attempt(commit_status, failure_class, getattr(agent.context_compressor, "context_length", None), agent=agent)
 
 
 def _existing_system_prompt(agent: Any, system_message: str) -> str:
@@ -1691,6 +1694,7 @@ def _adopt_live_compression_child(
         return None
     agent.session_id = child_session_id
     _rebind_session_context(child_session_id)
+    _hand_off_metrics_segment(parent_session_id, child_session_id)
     agent._session_db_created = True
     # The turn skips restore/rebuild while this slot is set, so it may hold only the child's own
     # prompt, and only when that prompt matches the current runtime (otherwise None -> rebuild).
@@ -2058,7 +2062,7 @@ def _lower_threshold_to_aux_context(
             f"  To make this permanent, use a larger compression model in config.yaml:\n       auxiliary:\n"
             f"         compression:\n           model: <model-with-{old_threshold:,}+-context>\n"
             f"  (Lowering compression.threshold cannot help here — with {_main_label}'s {main_ctx:,}-token window, "
-            f"Pulse's small-context floor and output reservation would recompute the trigger to "
+            f"PULSE's small-context floor and output reservation would recompute the trigger to "
             f"{recomputed_threshold:,} tokens, still above the compression model's {aux_context:,}.)"
         )
     _emit_feasibility_notice(agent, msg)
@@ -2114,7 +2118,7 @@ def check_compression_model_feasibility(agent: Any) -> None:
                 )
             else:
                 msg = (
-                    "⚠ No auxiliary LLM provider configured: Pulse has no helper model for summarising "
+                    "⚠ No auxiliary LLM provider configured: PULSE has no helper model for summarising "
                     "long chats, so older messages will be cut without a summary. Run `pulse setup` to add one."
                 )
             _emit_feasibility_notice(agent, msg)
@@ -2146,7 +2150,7 @@ def check_compression_model_feasibility(agent: Any) -> None:
             raise ValueError(
                 f"Auxiliary compression model {aux_model} has a context "
                 f"window of {aux_context:,} tokens, which is below the "
-                f"minimum {MINIMUM_CONTEXT_LENGTH:,} required by Pulse "
+                f"minimum {MINIMUM_CONTEXT_LENGTH:,} required by PULSE "
                 f"Agent.  Choose a compression model with at least "
                 f"{MINIMUM_CONTEXT_LENGTH // 1000}K context (set "
                 f"auxiliary.compression.model in config.yaml), or set "
@@ -2422,6 +2426,11 @@ def _merge_anchor_into_user_message(target: dict, anchor: dict) -> None:
         _replace_message_content(target, merged)
     for flag in _SYNTHETIC_USER_FLAGS:
         target.pop(flag, None)
+    # The anchor's text leads the composite, so the fold keeps the anchor's uid and records the
+    # scaffolding turn's (merge witness).
+    from agent.message_metadata import record_absorbed_message
+
+    record_absorbed_message(target, anchor, dropped_leads=True)
 
 
 CompressedUserTurnOutcome = Literal["inserted", "merged", "already_present", "placeholder_appended"]
@@ -2545,6 +2554,13 @@ def _stamp_scoped_twins(targets: list, source: dict, *, exact_counts_stamped: bo
 _PENDING_CONTEXT_ENGINE_NOTIFICATION = "_pending_context_engine_compression_notification"
 
 
+def _hand_off_metrics_segment(old_session_id: str, new_session_id: str) -> None:
+    """Shared metrics count one conversation across the rotation (a no-op when collection is off)."""
+    with _swallow('shared-metrics segment hand-off failed', exc_info=True):
+        from pulse_cli.observability.relay_shared_metrics import rotate_segment
+        rotate_segment(old_session_id, new_session_id)
+
+
 def _notify_context_engine_compression_complete(agent: Any, *, new_session_id: str, old_session_id: str) -> bool:
     """Notify the active context engine after a durable compression commit."""
     # Opt-in relay session-span segmentation. Observer semantics — failure must
@@ -2554,6 +2570,7 @@ def _notify_context_engine_compression_complete(agent: Any, *, new_session_id: s
         relay_runtime.SESSION_COORDINATOR.notify_session_compacted(
             profile_key=relay_runtime.current_profile_key(), session_id=new_session_id, old_session_id=old_session_id
         )
+    _hand_off_metrics_segment(old_session_id, new_session_id)
     callback = getattr(agent.context_compressor, "on_session_start", None)
     if not callable(callback):
         return False
@@ -3411,7 +3428,7 @@ def _warn_summary_or_aux_fallback(agent: Any) -> None:
                 _aux_fail_model, _aux_fail_err or "unknown error",
             )
             agent._emit_warning(
-                f"ℹ Configured compression model '{_aux_fail_model}' failed, so Pulse summarised "
+                f"ℹ Configured compression model '{_aux_fail_model}' failed, so PULSE summarised "
                 "with your main model instead. Check auxiliary.compression.model in your config."
             )
 
@@ -3968,7 +3985,10 @@ class _Attempt:
         )
 
 
-def _begin_compression_attempt(agent: Any, *, force: bool, defer_notification: bool) -> _Attempt:
+def _begin_compression_attempt(
+    agent: Any, *, force: bool, defer_notification: bool, trigger: Optional[str] = None,
+    approx_tokens: Optional[int] = None,
+) -> _Attempt:
     """Snapshot + claim the compressor, reset per-attempt agent signals, seed telemetry.
     The claim stops a late-unwinding sibling (stall-fallback overlap) from restoring its snapshot over ours or
     clearing our cancellation consult. Signals are cleared at the VERY TOP, before codex/breaker
@@ -3992,11 +4012,14 @@ def _begin_compression_attempt(agent: Any, *, force: bool, defer_notification: b
     agent._compression_blocked_transient = None
     started_at = time.monotonic()
     attempt_id = uuid.uuid4().hex
+    trigger = trigger or ("manual" if force else "auto")
     with contextlib.suppress(Exception):
         agent._compression_attempt_id = attempt_id
+        from pulse_cli.observability.shared_metrics_events import begin_compression_attempt
+
+        begin_compression_attempt(trigger, approx_tokens or getattr(agent.context_compressor, "last_prompt_tokens", None))
         agent.context_compressor._compression_telemetry_seed = {
-            "attempt_id": attempt_id, "session_id": agent.session_id or "",
-            "trigger_source": "manual" if force else "auto",
+            "attempt_id": attempt_id, "session_id": agent.session_id or "", "trigger_source": trigger,
         }
     return _Attempt(snapshot, generation, started_at)
 
@@ -4042,6 +4065,7 @@ def compress_context(
     task_id: str = "default", focus_topic: Optional[str] = None, force: bool = False,
     bypass_cooldown: bool = False, defer_context_engine_notification: bool = False,
     commit_fence: Optional[CompressionCommitFence] = None, verbatim_tail: Optional[list] = None,
+    trigger: Optional[str] = None,
 ) -> Tuple[list, str]:
     """Compress conversation context and split the session in SQLite.
     ``force`` (manual /compress) clears the summary-failure cooldown; ``bypass_cooldown`` (provider-proven
@@ -4064,11 +4088,16 @@ def compress_context(
     cooperative fence for executor callers that may time out. It prevents a late worker from mutating
     session state after its caller has moved on. verbatim_tail: The exchanges ``/compress here N`` keeps
     after ``messages``; an in-place commit stores them after the compacted head and returns head + tail.
+    trigger: Why this attempt runs (``"overflow"`` for provider-rejected requests); defaults to manual/auto
+    from ``force``. Feeds attempt telemetry only.
     """
-    attempt = _begin_compression_attempt(agent, force=force, defer_notification=defer_context_engine_notification)
+    attempt = _begin_compression_attempt(
+        agent, force=force, defer_notification=defer_context_engine_notification, trigger=trigger,
+        approx_tokens=approx_tokens,
+    )
 
     # Codex owns the real thread; route compaction to its own compact (config
-    # compression.codex_app_server_auto). Memory handoff is Pulse-only: no native
+    # compression.codex_app_server_auto). Memory handoff is PULSE-only: no native
     # summary prompt to inject into. `is True`: MagicMock attributes are truthy.
     checkpoint_required = getattr(agent, "compression_checkpoint_required", False) is True
     if getattr(agent, "api_mode", None) == "codex_app_server":
@@ -4293,7 +4322,7 @@ def _compress_context_via_codex_app_server(
 ) -> Tuple[list, str]:
     """Route compaction to Codex app-server for Codex-owned threads.
     Rewriting the local transcript would not shrink the Codex thread, so Codex compacts its own thread and
-    Pulse' transcript is left unchanged."""
+    PULSE' transcript is left unchanged."""
     _sid = getattr(agent, "session_id", None) or "none"
     _tokens = f"{approx_tokens:,}" if approx_tokens else "unknown"
     auto_mode = str(getattr(agent, "codex_app_server_auto_compaction", "native") or "native").lower()
@@ -4548,13 +4577,3 @@ __all__ = [
     "compress_context",
     "try_shrink_image_parts_in_messages",
 ]
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-class CompressionExecutorSaturatedError(RuntimeError):
-    """All compression pool slots are occupied; submission was refused."""
-# ---- END PLUGIN-COMPAT ----

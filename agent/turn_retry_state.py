@@ -17,9 +17,9 @@ class TurnRetryState:
     # Per-provider OAuth / credential refresh guards
     codex_auth_retry_attempted: bool = False
     anthropic_auth_retry_attempted: bool = False
-    anxious_auth_retry_attempted: bool = False
-    anxious_paid_entitlement_refresh_attempted: bool = False
-    # Anxious free tier: one model move onto the tier's own model after a ``model_not_free``
+    nous_auth_retry_attempted: bool = False
+    nous_paid_entitlement_refresh_attempted: bool = False
+    # Nous free tier: one model move onto the tier's own model after a ``model_not_free``
     # refusal, and one route re-read after a wrong-host refusal (``anon_on_paid_host``).
     welcome_model_switch_attempted: bool = False
     welcome_route_heal_attempted: bool = False
@@ -56,11 +56,3 @@ class TurnRetryState:
     # A user correction cancelled the in-flight request: append a role-safe checkpoint +
     # user message, rebuild the payload, and retry the same logical iteration.
     restart_with_redirected_messages: bool = False
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from dataclasses import fields  # noqa: F401,E402
-# ---- END PLUGIN-COMPAT ----

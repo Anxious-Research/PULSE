@@ -304,7 +304,7 @@ test('backend identity check matches only serve and dashboard invocation shapes'
   assert.equal(backendCommandMatches('/venv/bin/pulse serve --port 0'), true)
   assert.equal(backendCommandMatches('python -m pulse_cli.main dashboard --no-open'), true)
   assert.equal(backendCommandMatches('/venv/bin/pulse --profile work serve --port 0'), true)
-  assert.equal(backendCommandMatches('"C:\\Pulse Runtime\\pulse.exe" dashboard --no-open'), true)
+  assert.equal(backendCommandMatches('"C:\\PULSE Runtime\\pulse.exe" dashboard --no-open'), true)
   assert.equal(backendCommandMatches('pulse chat --query serve'), false)
   assert.equal(backendCommandMatches('unrelated dashboard'), false)
 })

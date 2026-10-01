@@ -1,6 +1,7 @@
 import { withInkSuspended } from '@pulse/ink'
 
-import { launchPulseCommand } from '../../../lib/externalCli.js'
+import { t } from '../../../i18n/runtime.js'
+import { launchPULSECommand } from '../../../lib/externalCli.js'
 import { runExternalSetup } from '../../setupHandoff.js'
 import type { SlashCommand } from '../types.js'
 
@@ -12,8 +13,8 @@ export const setupCommands: SlashCommand[] = [
       void runExternalSetup({
         args: ['setup', ...arg.split(/\s+/).filter(Boolean)],
         ctx,
-        done: 'setup complete — starting session…',
-        launcher: launchPulseCommand,
+        done: t('slashCmd.setup.setup.done'),
+        launcher: launchPULSECommand,
         suspend: withInkSuspended
       })
   }

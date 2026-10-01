@@ -1,6 +1,6 @@
 # Langfuse Observability Plugin
 
-This plugin ships bundled with Pulse but is **opt-in** — it only loads when
+This plugin ships bundled with PULSE but is **opt-in** — it only loads when
 you explicitly enable it.
 
 ## Enable
@@ -10,7 +10,7 @@ you explicitly enable it.
 pulse tools  # → Langfuse Observability
 ```
 
-Restart Pulse after setup. If dependency preparation fails, retry through
+Restart PULSE after setup. If dependency preparation fails, retry through
 `pulse tools`; do not inject the SDK into the selected environment with pip.
 For manual source-checkout setup, see the
 [plugin guide](../../../website/docs/user-guide/features/built-in-plugins.md#observabilitylangfuse).
@@ -32,10 +32,10 @@ open.
 
 ```bash
 pulse plugins list                 # observability/langfuse should show "enabled"
-pulse chat -q "hello"              # then check Langfuse for a "Pulse turn" trace
+pulse chat -q "hello"              # then check Langfuse for a "PULSE turn" trace
 ```
 
-Generation observations include the Pulse system prompt when the provider
+Generation observations include the PULSE system prompt when the provider
 uses a separate `system` param (Anthropic Messages API). Open an **LLM call**
 child span to inspect `role: system` (truncated via `PULSE_LANGFUSE_MAX_CHARS`).
 
@@ -55,7 +55,7 @@ PULSE_LANGFUSE_DEBUG=true           # verbose plugin logging
 and `full` modes, including tool arguments and JSON tool results. The root is
 depth 0; each dictionary value or array element adds one level. Values beyond
 the limit become `<max-depth>`, including scalars. For deeper MCP responses,
-set it to a higher non-negative integer (for example, `10`) in the Pulse
+set it to a higher non-negative integer (for example, `10`) in the PULSE
 process environment. Unset or blank values default to `4`; invalid or negative
 values log a warning and fall back to `4`. `0` keeps only the root level.
 Increasing the depth exports more content and may produce larger traces;

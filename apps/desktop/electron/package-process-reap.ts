@@ -10,7 +10,7 @@ export interface RunningProcess {
   pid: number
   /**
    * Parent pid (Win32_Process.ParentProcessId), or null when unavailable.
-   * Descendants of a live Pulse runtime process are protected too — see
+   * Descendants of a live PULSE runtime process are protected too — see
    * reapPackageRootedProcesses.
    */
   parentPid: number | null
@@ -20,7 +20,7 @@ export interface RunningProcess {
    */
   path: string | null
   /**
-   * Full command line, or null when it cannot be read. A live Pulse runtime
+   * Full command line, or null when it cannot be read. A live PULSE runtime
    * process is identified by its command line and never reaped — see
    * protectedRuntimePids. An UNREADABLE command line is conservatively
    * skipped as well: the cost of missing one pinner is the bug we already
@@ -137,7 +137,7 @@ export function listWindowsProcesses(
  * Windows paths are case-insensitive, so the compare is too. The separator
  * check is what keeps the prefix honest: a bare startsWith would match a
  * sibling directory whose name merely begins with a root
- * (`...\PulseBundled_0.21` vs `...\PulseBundled_0.21.20`), and killing
+ * (`...\PULSEBundled_0.21` vs `...\PULSEBundled_0.21.20`), and killing
  * another package's processes is a far worse bug than the one being fixed.
  */
 export function isUnderInstallRoot(
@@ -272,7 +272,7 @@ export function reapPackageRootedProcesses(deps: ReapPackageRootedProcessesDeps)
     }
 
     // Conservative skip: an unreadable command line cannot prove the process
-    // is not a live Pulse runtime, so it is never a candidate.
+    // is not a live PULSE runtime, so it is never a candidate.
     if (typeof candidate.commandLine !== 'string' || candidate.commandLine.trim() === '') {
       continue
     }

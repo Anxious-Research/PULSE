@@ -36,7 +36,7 @@ DecisionStatus = Literal["idle", "task", "settled", "bounded"]
 TerminalKind = Literal["settled", "failed", "cancelled", "deferred"]
 
 _MENTION_RE = re.compile(r"@([A-Za-z0-9][A-Za-z0-9._:-]*)", re.IGNORECASE)
-# Openers of Pulse' own control frames (agent.prompt_builder.CONTROL_FRAME_OPENERS: the steer marker, the
+# Openers of PULSE' own control frames (agent.prompt_builder.CONTROL_FRAME_OPENERS: the steer marker, the
 # compaction handoff, runtime/system notes, background-process and prior-context frames). A member reply is
 # republished to every peer inside a role=user prompt, so a reply reproducing one of these reads as harness
 # input to the peers; the opener is relabelled visibly (the words stay, the exact trusted shape does not).
@@ -794,11 +794,3 @@ def plan_publication(
         payload={**_turn_coordinates(task), "seen_through_seq": task.seen_through_seq, **extra},
         authority_gateway_id=room.gateway_id, authority_epoch=room.authority_epoch))
     return PublicationPlan(task_id=task.identity.task_id, terminal_kind=terminal_kind, events=tuple(effects))
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-import json  # noqa: F401,E402
-# ---- END PLUGIN-COMPAT ----

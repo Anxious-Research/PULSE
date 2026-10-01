@@ -197,7 +197,7 @@ def _safe_restore_db(src: Path, dst: Path) -> bool:
         except LiveConnectionError as exc2:
             logger.error(
                 "Refusing unlink+move restore of %s: %s Close the in-process "
-                "database handles (or restart Pulse) and retry.",
+                "database handles (or restart PULSE) and retry.",
                 dst, exc2,
             )
             return False
@@ -207,7 +207,7 @@ def _safe_restore_db(src: Path, dst: Path) -> bool:
 
 
 def _validate_backup_zip(zf: zipfile.ZipFile) -> tuple[bool, str]:
-    """Check that a zip looks like a Pulse backup.
+    """Check that a zip looks like a PULSE backup.
 
     Returns (ok, reason).
     """
@@ -226,7 +226,7 @@ def _validate_backup_zip(zf: zipfile.ZipFile) -> tuple[bool, str]:
 
     if not found:
         return False, (
-            "zip does not appear to be a Pulse backup "
+            "zip does not appear to be a PULSE backup "
             "(no config.yaml, .env, or state databases found)"
         )
 
@@ -338,7 +338,7 @@ def _extract_member_atomically(
         # Carrying the elevated bits across would let archive-controlled bytes
         # take over an existing setuid/setgid file, so ``pulse import`` would
         # hand whoever produced the zip the identity that file runs as.  Nothing
-        # constrains that to Pulse' own state either: the ``_external/`` branch
+        # constrains that to PULSE' own state either: the ``_external/`` branch
         # of ``run_import`` publishes members anywhere under ``$HOME``.  The
         # sticky bit is kept — it is inert on a regular file.
         mode &= ~(stat.S_ISUID | stat.S_ISGID)
@@ -385,7 +385,7 @@ def _count_session_rows(path: Path) -> Optional[Tuple[int, int]]:
     """Return ``(sessions, messages)`` stored in the session database *path*.
 
     Read-only and best effort.  ``None`` means "unknown" — a missing file, a
-    database that is not a Pulse session store, or one that cannot be read.
+    database that is not a PULSE session store, or one that cannot be read.
     Callers must never read ``None`` as "zero rows": acting on an unreadable
     database would mask the very loss this count exists to surface.  Same
     contract as :func:`_count_cron_jobs`.

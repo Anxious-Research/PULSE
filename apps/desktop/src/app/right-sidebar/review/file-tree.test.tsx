@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { PulseReviewFile } from '@/global'
+import type { PULSEReviewFile } from '@/global'
 import { I18nProvider } from '@/i18n'
 import { $sidebarWorkspaceNodeOpen } from '@/store/layout'
 import { $reviewFiles, $reviewOpen } from '@/store/review'
@@ -11,7 +11,7 @@ import { ReviewFileTree } from './file-tree'
 const ROW_HEIGHT = 24
 const VIEWPORT_HEIGHT = 600
 
-const file = (path: string): PulseReviewFile => ({
+const file = (path: string): PULSEReviewFile => ({
   added: 1,
   path,
   removed: 0,
@@ -21,11 +21,11 @@ const file = (path: string): PulseReviewFile => ({
 
 // The issue's repro shape: a .NET publish/ folder with tens of thousands of
 // untracked files and no .gitignore.
-function filesUnderPublish(count: number): PulseReviewFile[] {
+function filesUnderPublish(count: number): PULSEReviewFile[] {
   return Array.from({ length: count }, (_, i) => file(`publish/file-${String(i).padStart(4, '0')}.so`))
 }
 
-function topLevelFiles(count: number): PulseReviewFile[] {
+function topLevelFiles(count: number): PULSEReviewFile[] {
   return Array.from({ length: count }, (_, i) => file(`file-${String(i).padStart(4, '0')}.ts`))
 }
 

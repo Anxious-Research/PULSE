@@ -1,4 +1,4 @@
-"""Email platform adapter for the Pulse gateway: users talk to Pulse by sending email; IMAP (polled)
+"""Email platform adapter for the PULSE gateway: users talk to PULSE by sending email; IMAP (polled)
 receives, SMTP sends. Configured via EMAIL_* env vars or ``platforms.email`` in config.yaml (see website docs)."""
 
 import asyncio
@@ -21,6 +21,7 @@ from email import encoders
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from agent.i18n import t
 from gateway.platforms.base import (
     BasePlatformAdapter, SendResult,
     cache_document_from_bytes, cache_image_from_bytes,
@@ -174,7 +175,7 @@ def _send_imap_id(imap: "imaplib.IMAP4") -> None:
         except Exception:  # noqa: BLE001 — keep ID best-effort if import fails
             version = "0"
         imap.xatom("ID", f'("name" "pulse-agent" "version" "{version}" '
-                         '"vendor" "AnxiousResearchLab" "support-email" "noreply@anxiousresearchlab.com")')
+                         '"vendor" "NousResearch" "support-email" "noreply@anxious-research.com")')
     except Exception as e:  # noqa: BLE001 — best-effort, never fatal
         logger.debug("[Email] IMAP ID command not accepted: %s", e)
 
@@ -787,7 +788,7 @@ class EmailAdapter(BasePlatformAdapter):
                    attach_empty_body: bool = False) -> Tuple[MIMEMultipart, str, str]:
         """Build a threaded reply skeleton. Returns ``(msg, msg_id, subject)``."""
         msg, ctx = MIMEMultipart(), self._thread_context.get(to_addr, {})
-        subject = ctx.get("subject", "Pulse Agent")
+        subject = ctx.get("subject", "PULSE Agent")
         if not subject.startswith("Re:"):
             subject = f"Re: {subject}"
         original_msg_id = reply_to_msg_id or ctx.get("message_id")
@@ -850,7 +851,7 @@ class EmailAdapter(BasePlatformAdapter):
             if alt_text:
                 body_parts.append(alt_text)
             if not image_url.startswith("file://"):
-                body_parts.append(f"Image: {image_url}")  # parity with send_image
+                body_parts.append(t("platform.email.image_line", url=image_url))  # parity with send_image
             elif Path(local_path := _unquote(image_url[7:])).exists():
                 local_paths.append(local_path)
             else:
@@ -899,7 +900,7 @@ async def _standalone_send(pconfig, chat_id, message, *, thread_id=None, media_f
         return send_error("Email not configured (EMAIL_ADDRESS, EMAIL_PASSWORD, EMAIL_SMTP_HOST required)")
     try:
         msg = MIMEText(message, "plain", "utf-8")
-        for key, value in (("From", address), ("To", chat_id), ("Subject", "Pulse Agent"), ("Date", formatdate(localtime=True))):
+        for key, value in (("From", address), ("To", chat_id), ("Subject", t("platform.email.standalone_subject")), ("Date", formatdate(localtime=True))):
             msg[key] = value
         server = _open_smtp(smtp_host, smtp_port, smtp_security, _tls_context(smtp_tls_verify, smtp_host), smtplib.SMTP, smtplib.SMTP_SSL)
         server.login(address, password)
@@ -924,7 +925,7 @@ def _is_connected(config) -> bool:
 
 
 def register(ctx) -> None:
-    """Plugin entry point — called by the Pulse plugin system."""
+    """Plugin entry point — called by the PULSE plugin system."""
     ctx.register_platform(
         name="email", label="Email", adapter_factory=EmailAdapter, check_fn=check_email_requirements, is_connected=_is_connected,
         required_env=["EMAIL_ADDRESS", "EMAIL_PASSWORD", "EMAIL_SMTP_HOST"],

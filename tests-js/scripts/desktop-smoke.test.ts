@@ -6,7 +6,7 @@ import path from 'node:path'
 import yaml from 'js-yaml'
 import { expect, test } from 'vitest'
 
-import { candidateSmokePulseHomes, predictSmokePulseHome, resolveSmokeLaunch, runInstalledDesktopSmoke, smokeEnvironment } from '../../tests/install/e2e-assets/desktop-smoke.ts'
+import { candidateSmokePULSEHomes, predictSmokePULSEHome, resolveSmokeLaunch, runInstalledDesktopSmoke, smokeEnvironment } from '../../tests/install/e2e-assets/desktop-smoke.ts'
 import { sourceRuntimeSettleCommand } from '../../tests/install/e2e-assets/source-runtime-settle.mjs'
 import { assertUpdateWindowBackendOrigin, assertUpdateWindowProcess } from '../../tests/install/e2e-assets/update-window-chat.mjs'
 
@@ -465,7 +465,7 @@ test('update-window process checks use the isolated launch environment, not the 
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'smoke-update-window-process-'))
 
   try {
-    const executable = path.join(root, 'Pulse')
+    const executable = path.join(root, 'PULSE')
     const isolated = path.join(root, 'isolated-user-data')
     const driver = path.join(root, 'driver-user-data')
     fs.writeFileSync(executable, '')
@@ -493,16 +493,16 @@ test('update-window process checks use the isolated launch environment, not the 
   } finally { fs.rmSync(root, { recursive: true, force: true }) }
 })
 
-test('predictSmokePulseHome replays the bundle banner through the shared resolver', (): void => {
+test('predictSmokePULSEHome replays the bundle banner through the shared resolver', (): void => {
   const launchEnv = { PULSE_HOME: '/pinned/home', PULSE_DESKTOP_USER_DATA_DIR: '/pinned/userdata', LOCALAPPDATA: 'C:/Users/runner/AppData/Local' }
   // No baked env: the driver's own PULSE_HOME pin wins.
-  expect(predictSmokePulseHome(launchEnv, {}, 'linux', '/real/home')).toBe('/pinned/home')
+  expect(predictSmokePULSEHome(launchEnv, {}, 'linux', '/real/home')).toBe('/pinned/home')
   // PULSE_HOME cleared -> the <userData>/pulse-home fallback.
-  expect(predictSmokePulseHome(launchEnv, { PULSE_HOME: null }, 'linux', '/real/home')).toBe('/pinned/userdata/pulse-home')
+  expect(predictSmokePULSEHome(launchEnv, { PULSE_HOME: null }, 'linux', '/real/home')).toBe('/pinned/userdata/pulse-home')
   // Both cleared + baked suffix -> the platform default with that suffix.
-  expect(predictSmokePulseHome(launchEnv, { PULSE_HOME: null, PULSE_DESKTOP_USER_DATA_DIR: null, PULSE_DATA_DIR_SUFFIX: '-magic' }, 'linux', '/real/home')).toBe('/real/home/.pulse-magic')
+  expect(predictSmokePULSEHome(launchEnv, { PULSE_HOME: null, PULSE_DESKTOP_USER_DATA_DIR: null, PULSE_DATA_DIR_SUFFIX: '-magic' }, 'linux', '/real/home')).toBe('/real/home/.pulse-magic')
   // On Windows the default derives from the sandboxed LOCALAPPDATA, not the OS home.
-  expect(predictSmokePulseHome(launchEnv, { PULSE_HOME: null, PULSE_DESKTOP_USER_DATA_DIR: null, PULSE_DATA_DIR_SUFFIX: '-magic' }, 'win32', 'C:/Users/real')).toBe('C:\\Users\\runner\\AppData\\Local\\pulse-magic')
+  expect(predictSmokePULSEHome(launchEnv, { PULSE_HOME: null, PULSE_DESKTOP_USER_DATA_DIR: null, PULSE_DATA_DIR_SUFFIX: '-magic' }, 'win32', 'C:/Users/real')).toBe('C:\\Users\\runner\\AppData\\Local\\pulse-magic')
 })
 
 test('readBundledBundleEnv reads the stamped defaults/clears and is absent when unstamped', (): void => {
@@ -534,12 +534,12 @@ test('a bundle-env PULSE_HOME clear cannot strand the mock config outside the re
 
     try {
       // The bundled app's banner turns PULSE_HOME=null into PULSE_HOME='', so
-      // resolveDesktopPulseHome falls to <userData>/pulse-home. The driver must
+      // resolveDesktopPULSEHome falls to <userData>/pulse-home. The driver must
       // have seeded THAT home, not only the --home the caller named.
       await expect(runInstalledDesktopSmoke({ exe, root: path.join(root, 'root'), origin: 'bundled', home,
         'user-data': userData, out: root, phase: 'installed', 'expect-commit': 'a'.repeat(40) }, refuseLaunch)).rejects.toThrow('launch refused by test')
 
-      for (const candidate of candidateSmokePulseHomes(home, userData)) {
+      for (const candidate of candidateSmokePULSEHomes(home, userData)) {
         expect(yaml.load(fs.readFileSync(path.join(candidate, 'config.yaml'), 'utf8'))).toMatchObject({ model: { provider: 'custom' } })
         const env = fs.readFileSync(path.join(candidate, '.env'), 'utf8')
         expect(env).toMatch(/MOCK_API_KEY=/)

@@ -58,7 +58,7 @@ export async function resolveSourceInstallationBackend(
 
   return {
     kind: 'command',
-    label: `Pulse at ${root}`,
+    label: `PULSE at ${root}`,
     command,
     args: [...args],
     env,
@@ -93,7 +93,7 @@ export function createSourcePythonBackend(
 
   return {
     kind: 'python',
-    label: `Pulse source at ${root}`,
+    label: `PULSE source at ${root}`,
     command,
     args: ['-m', 'pulse_cli.main', ...args],
     // The backend runs in the user's workspace cwd, and the selected

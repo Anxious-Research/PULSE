@@ -19,7 +19,7 @@ import {
 } from './external-link'
 
 const desktopWindow = window as unknown as { pulseDesktop?: Window['pulseDesktop'] }
-const initialPulseDesktop = desktopWindow.pulseDesktop
+const initialPULSEDesktop = desktopWindow.pulseDesktop
 
 function installDesktopBridge(partial: Partial<Window['pulseDesktop']> = {}) {
   desktopWindow.pulseDesktop = {
@@ -46,8 +46,8 @@ afterEach(() => {
   vi.restoreAllMocks()
   cleanup()
 
-  if (initialPulseDesktop) {
-    desktopWindow.pulseDesktop = initialPulseDesktop
+  if (initialPULSEDesktop) {
+    desktopWindow.pulseDesktop = initialPULSEDesktop
   } else {
     delete desktopWindow.pulseDesktop
   }

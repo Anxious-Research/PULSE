@@ -9,11 +9,11 @@ import shutil
 from pathlib import Path
 from tools import tool_backend_helpers
 from tools.environments.docker import docker_runtime_name, find_docker
-from pulse_cli import anxious_subscription
+from pulse_cli import nous_subscription
 
 logger = logging.getLogger("pulse_cli.setup")
 
-from pulse_cli.config_defaults import DEFAULT_SANDBOX_IMAGE as _SANDBOX_IMAGE
+from pulse_cli.config_defaults import DEFAULT_SANDBOX_IMAGE as _SANDBOX_IMAGE, DEFAULT_VERCEL_IMAGE
 _RUN_KW = dict(capture_output=True, text=True, encoding="utf-8", errors="replace")
 
 
@@ -22,15 +22,14 @@ def _prompt_vercel_sandbox_settings(config: dict):
     terminal = config.setdefault("terminal", {})
     _setup._info(None, "Vercel Sandbox settings:", "  Filesystem persistence uses Vercel snapshots.",
                  "  Snapshots restore files only; live processes do not continue after sandbox recreation.")
-    from tools.terminal_tool_backends import _SUPPORTED_VERCEL_RUNTIMES
-    current_runtime = terminal.get("vercel_runtime") or "node24"
-    supported_label = ", ".join(_SUPPORTED_VERCEL_RUNTIMES)
-    runtime = _setup.prompt(f"  Runtime ({supported_label})", current_runtime).strip() or current_runtime
-    if runtime not in _SUPPORTED_VERCEL_RUNTIMES:
-        _setup.print_warning(f"Unsupported Vercel runtime '{runtime}', keeping {current_runtime}.")
-        runtime = current_runtime if current_runtime in _SUPPORTED_VERCEL_RUNTIMES else "node24"
-    terminal["vercel_runtime"] = runtime
-    _setup.save_env_value("TERMINAL_VERCEL_RUNTIME", runtime)
+    current_image = terminal.get("vercel_image") or DEFAULT_VERCEL_IMAGE
+    image = _setup.prompt("  Image (Vercel managed image or VCR repository[:tag])", current_image).strip() or current_image
+    terminal["vercel_image"] = image
+    _setup.save_env_value("TERMINAL_VERCEL_IMAGE", image)
+    if terminal.get("vercel_runtime"):
+        # Vercel deprecated runtimes; a pinned one still wins over the image until the user clears it.
+        _setup.print_warning(f"terminal.vercel_runtime={terminal['vercel_runtime']!r} is deprecated by Vercel and "
+                             "overrides the image; unset it to use the image above.")
     persist_label = "yes" if terminal.get("container_persistent", True) else "no"
     persist = _setup.prompt("  Persist filesystem with snapshots? (yes/no)", persist_label).lower()
     terminal["container_persistent"] = persist in {"yes", "true", "y", "1"}
@@ -113,7 +112,7 @@ def _ensure_sdk(extra: str) -> None:
             _setup.print_warning(f"Install failed: {exc}")
             _setup.print_info("Retry with: pulse setup terminal")
         else:
-            _setup.print_success(f"{extra} SDK installed. Restart Pulse to use it.")
+            _setup.print_success(f"{extra} SDK installed. Restart PULSE to use it.")
 
 
 def _report_binary(found: str | None, missing: str, install_hint: str, found_prefix: str = "Found: ") -> None:
@@ -169,8 +168,8 @@ def _setup_backend_modal(config: dict) -> None:
     from tools.managed_tool_gateway import is_managed_tool_gateway_ready
     from tools.tool_backend_helpers import normalize_modal_mode
     managed_modal_available = bool(
-        tool_backend_helpers.managed_anxious_tools_enabled()
-        and anxious_subscription.get_anxious_subscription_features(config).anxious_auth_present
+        tool_backend_helpers.managed_nous_tools_enabled()
+        and nous_subscription.get_nous_subscription_features(config).nous_auth_present
         and is_managed_tool_gateway_ready("modal"))
     modal_mode = normalize_modal_mode(_setup.cfg_get(config, "terminal", "modal_mode"))
     use_managed_modal = False
@@ -179,10 +178,10 @@ def _setup_backend_modal(config: dict) -> None:
         default_idx = {"managed": 0, "direct": 1}.get(modal_mode, 1 if _setup.get_env_value("MODAL_TOKEN_ID") else 0)
         use_managed_modal = _setup.prompt_choice(
             "Select how Modal execution should be billed:",
-            ["Use my Anxious subscription", "Use my own Modal account"], default_idx) == 0
+            ["Use my Nous subscription", "Use my own Modal account"], default_idx) == 0
     if use_managed_modal:
         config["terminal"]["modal_mode"] = "managed"
-        _setup.print_info("Modal execution will use the managed Anxious gateway and bill to your subscription.")
+        _setup.print_info("Modal execution will use the managed Nous gateway and bill to your subscription.")
         if _setup.get_env_value("MODAL_TOKEN_ID") or _setup.get_env_value("MODAL_TOKEN_SECRET"):
             _setup.print_info(
                 "Direct Modal credentials are still configured, but this backend is pinned to managed mode.")
@@ -214,7 +213,7 @@ def _setup_backend_daytona(config: dict) -> None:
 def _setup_backend_vercel(config: dict) -> None:
     _setup.print_success("Terminal backend: Vercel Sandbox")
     _setup._info("Cloud microVM sandboxes with snapshot-backed filesystem persistence.",
-                 "Requires the optional Vercel SDK (installed through Pulse PM).")
+                 "Requires the optional Vercel SDK (installed through PULSE PM).")
     _ensure_sdk("vercel")
     _prompt_vercel_sandbox_settings(config)
 
@@ -277,14 +276,14 @@ _TERMINAL_BACKEND_SETUP = {
 # Backend -> env var mirrored from config after setup (config.yaml is the source of truth, but
 # terminal_tool reads these from .env).
 _BACKEND_ENV_MIRROR = {"modal": ("TERMINAL_MODAL_MODE", "modal_mode", "auto"),
-                       "vercel_sandbox": ("TERMINAL_VERCEL_RUNTIME", "vercel_runtime", "node24")}
+                       "vercel_sandbox": ("TERMINAL_VERCEL_IMAGE", "vercel_image", DEFAULT_VERCEL_IMAGE)}
 
 
 def setup_terminal_backend(config: dict):
     """Configure the terminal execution backend."""
     import platform as _platform
     _setup.print_header("Terminal Backend")
-    _setup._info("Choose where Pulse runs shell commands and code.",
+    _setup._info("Choose where PULSE runs shell commands and code.",
                  "This affects tool execution, file access, and isolation.",
                  f"   Guide: {_setup._DOCS_BASE}/user-guide/configuration#terminal-backend-configuration", None)
     current_backend = _setup.cfg_get(config, "terminal", "backend", default="local")

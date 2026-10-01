@@ -73,7 +73,7 @@ def _context_pruned_argument_paths(tool_name: str, args: Any) -> list[str]:
     """Paths whose values contain model-visible context-compression artifacts.
 
     The compressor's current marker carries numeric omitted/total counts. Match
-    that rendered shape rather than the prefix alone so Pulse can still edit
+    that rendered shape rather than the prefix alone so PULSE can still edit
     source/docs that mention the compression marker constant or its template.
     Unknown/plugin/MCP tools stay effect-capable by default; known read-only
     tools may inspect or quote compressed history.

@@ -15,7 +15,7 @@ import assert from 'node:assert/strict'
 import { test } from 'vitest'
 
 import { httpStatusError } from './api-transport'
-import { makePulseCloudBackendDownError } from './backend-health'
+import { makeNousCloudBackendDownError } from './backend-health'
 import {
   apiRequestRegistryConnectionId,
   authModeFromStatus,
@@ -88,7 +88,7 @@ test('normalizeRemoteHeaders keeps safe proxy headers and drops transport/auth h
       Authorization: { encoding: 'plain', value: 'bearer' },
       Cookie: { encoding: 'plain', value: 'a=b' },
       Host: { encoding: 'plain', value: 'example.com' },
-      'X-Pulse-Session-Token': { encoding: 'plain', value: 'token' },
+      'X-PULSE-Session-Token': { encoding: 'plain', value: 'token' },
       'Bad Header': { encoding: 'plain', value: 'bad' },
       Empty: { encoding: 'plain', value: '' }
     }),
@@ -218,12 +218,12 @@ test('profileRemoteOverride treats a cloud entry as a remote override', () => {
   // entry would (Q6) — the override must be returned, not dropped.
   const config = {
     profiles: {
-      coder: { mode: 'cloud', url: 'https://example.agents.pulse.invalid', authMode: 'oauth' }
+      coder: { mode: 'cloud', url: 'https://agent-1.agents.anxious-research.com', authMode: 'oauth' }
     }
   }
 
   assert.deepEqual(profileRemoteOverride(config, 'coder'), {
-    url: 'https://example.agents.pulse.invalid',
+    url: 'https://agent-1.agents.anxious-research.com',
     authMode: 'oauth',
     token: undefined
   })
@@ -352,7 +352,7 @@ test('normalizeSshConfig strips a pasted "ssh " command prefix', () => {
 })
 
 test('localProfileEntry preserves inactive SSH drafts but drops Cloud state', () => {
-  const ssh = { mode: 'ssh', host: 'box', user: 'alice', remotePulsePath: '/pulse' }
+  const ssh = { mode: 'ssh', host: 'box', user: 'alice', remotePULSEPath: '/pulse' }
   assert.deepEqual(localProfileEntry(ssh), { mode: 'local', savedSsh: ssh })
   assert.deepEqual(localProfileEntry({ mode: 'local', savedSsh: ssh }), {
     mode: 'local',
@@ -1001,12 +1001,12 @@ test('resolveProfileApiRequest uses exact method and path eligibility for mixed 
     { backendProfile: null, requestPath: '/api/config/defaults?profile=iris' }
   )
   assert.deepEqual(
-    resolveProfileApiRequest('iris', '/api/model/recommended-default?provider=pulse', {
+    resolveProfileApiRequest('iris', '/api/model/recommended-default?provider=nous', {
       requestMethod: 'GET'
     }),
     {
       backendProfile: null,
-      requestPath: '/api/model/recommended-default?provider=pulse&profile=iris'
+      requestPath: '/api/model/recommended-default?provider=nous&profile=iris'
     }
   )
 })
@@ -1194,7 +1194,7 @@ test('buildGatewayWsUrlWithTicket url-encodes the ticket', () => {
 // --- authModeFromStatus ---
 
 test('authModeFromStatus returns oauth when auth_required is true', () => {
-  assert.equal(authModeFromStatus({ auth_required: true, auth_providers: ['pulse'] }), 'oauth')
+  assert.equal(authModeFromStatus({ auth_required: true, auth_providers: ['nous'] }), 'oauth')
 })
 
 test('authModeFromStatus returns token when auth_required is false/missing', () => {
@@ -1494,7 +1494,7 @@ test('gateway WS URL IPC result serializes success and the auth-vs-transport mat
 
   for (const error of [
     Object.assign(new Error('500: unavailable'), { statusCode: 500 }),
-    new Error('Timed out connecting to Pulse backend after 8000ms'),
+    new Error('Timed out connecting to PULSE backend after 8000ms'),
     Object.assign(new Error('socket reset'), { code: 'ECONNRESET' })
   ]) {
     assert.deepEqual(await gatewayWsUrlIpcResult(async () => Promise.reject(error)), {
@@ -1525,7 +1525,7 @@ test('gatewayTicketFailure preserves a structured 503 statusCode as a transport 
 
 test('gatewayTicketFailure only copies an integer statusCode, not a message prefix', () => {
   // A legacy "503: ..." message carries no structured statusCode; the Cloud
-  // classifier (makePulseCloudBackendDownError) handles the prefix at the mint
+  // classifier (makeNousCloudBackendDownError) handles the prefix at the mint
   // boundary. The wrapper must not invent an integer from the message.
   const source = new Error('503: Service Unavailable') as any
 
@@ -1536,18 +1536,18 @@ test('gatewayTicketFailure only copies an integer statusCode, not a message pref
 })
 
 // OAuth integration regression (#85373): the WS-ticket mint boundary runs
-// BEFORE waitForPulseReady. This mirrors main.ts buildRemoteConnection's
-// catch — classify a Pulse Cloud server fault via the shared factory, else
+// BEFORE waitForPULSEReady. This mirrors main.ts buildRemoteConnection's
+// catch — classify a Nous Cloud server fault via the shared factory, else
 // fall through to gatewayTicketFailure. Proves the production composition:
 //   1. Cloud + OAuth ticket mint + 503  -> actionable Cloud-down error
 //   2. Cloud + OAuth ticket mint + 401  -> reauth (never Cloud-down)
 test('OAuth ticket-mint 503 surfaces the Cloud-down error (startup boundary)', () => {
-  const baseUrl = 'https://example.agents.pulse.invalid'
+  const baseUrl = 'https://ares-3009.agents.anxious-research.com'
   const ticketErr = new Error('upstream unavailable') as any
   ticketErr.statusCode = 503
 
   // The exact production sequence from main.ts.
-  const cloudError = makePulseCloudBackendDownError(baseUrl, ticketErr)
+  const cloudError = makeNousCloudBackendDownError(baseUrl, ticketErr)
 
   if (cloudError !== null) {
     assert.equal((cloudError as any).isCloudBackendDown, true)
@@ -1562,11 +1562,11 @@ test('OAuth ticket-mint 503 surfaces the Cloud-down error (startup boundary)', (
 })
 
 test('OAuth ticket-mint 401 stays on the reauth path (never Cloud-down)', () => {
-  const baseUrl = 'https://example.agents.pulse.invalid'
+  const baseUrl = 'https://ares-3009.agents.anxious-research.com'
   const ticketErr = new Error('Unauthorized') as any
   ticketErr.statusCode = 401
 
-  const cloudError = makePulseCloudBackendDownError(baseUrl, ticketErr)
+  const cloudError = makeNousCloudBackendDownError(baseUrl, ticketErr)
   assert.equal(cloudError, null, 'a 401 must not become a Cloud-down error')
 
   const wrapped = gatewayTicketFailure(ticketErr, 'auth message', 'transport message')
@@ -1576,7 +1576,7 @@ test('OAuth ticket-mint 401 stays on the reauth path (never Cloud-down)', () => 
   assert.equal((wrapped as any).statusCode, 401)
 })
 
-test('FIX #95701: a confirmed 401/403 ticket rejection is tagged isReauthRequired so startPulse latches it', () => {
+test('FIX #95701: a confirmed 401/403 ticket rejection is tagged isReauthRequired so startPULSE latches it', () => {
   for (const statusCode of [401, 403]) {
     const source = Object.assign(new Error(`${statusCode}: rejected`), { statusCode })
     const wrapped = gatewayTicketFailure(source, 'auth copy', 'transport copy') as any
@@ -1596,7 +1596,7 @@ test('FIX #95701: a confirmed 401/403 ticket rejection is tagged isReauthRequire
 test('FIX #95701: transport and server failures at the ticket mint stay retryable — never reauth', () => {
   for (const source of [
     Object.assign(new Error('503: unavailable'), { statusCode: 503 }),
-    new Error('Timed out connecting to Pulse backend after 8000ms'),
+    new Error('Timed out connecting to PULSE backend after 8000ms'),
     Object.assign(new Error('read ECONNRESET'), { code: 'ECONNRESET' })
   ]) {
     const wrapped = gatewayTicketFailure(source, 'auth copy', 'transport copy') as any

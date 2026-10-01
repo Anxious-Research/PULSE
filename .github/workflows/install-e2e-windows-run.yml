@@ -6,13 +6,13 @@
 # new job. The driver's phases share state via the workroot, and every leg
 # runs the REAL user surface for its methods:
 #
-#   desktop-installer@latest    the website's Pulse-Setup.exe, downloaded and
+#   desktop-installer@latest    the website's PULSE-Setup.exe, downloaded and
 #                               run headed, AutoHotkey clicks Install ->
 #                               Launch, the real Electron window must appear.
 #   installer-script            the irm | iex one-liner: the install.ps1
 #                               shipped AT the OLD ref, headless.
 #   installer-script+desktop    the same one-liner with -IncludeDesktop:
-#                               builds Pulse.exe AND registers Start Menu /
+#                               builds PULSE.exe AND registers Start Menu /
 #                               Desktop shortcuts.
 #   pulse-update               venv pulse.exe update.
 #   open-app-update             the app's own Update button, app launched
@@ -50,7 +50,7 @@ on:
         required: true
         type: string
       update-method:
-        description: 'How the install updates to HEAD. Supported: open-app-update (Update button under Playwright, from a desktop-bearing install), pulse-desktop-app-update (same button, app launched via pulse desktop), pulse-update, installer-script, installer-script+desktop, desktop-installer@latest (re-download Pulse-Setup.exe, AHK clicks Install over the existing install).'
+        description: 'How the install updates to HEAD. Supported: open-app-update (Update button under Playwright, from a desktop-bearing install), pulse-desktop-app-update (same button, app launched via pulse desktop), pulse-update, installer-script, installer-script+desktop, desktop-installer@latest (re-download PULSE-Setup.exe, AHK clicks Install over the existing install).'
         required: true
         type: string
       install-ref:
@@ -76,7 +76,7 @@ on:
         description: 'Bootstrap installer to install OLD with. Default: the latest published one — what a user downloads today.'
         required: false
         type: string
-        default: https://pulse-assets.anxiousresearchlab.com/Pulse-Setup.exe
+        default: https://pulse-assets.anxious-research.com/PULSE-Setup.exe
       timeout-minutes:
         description: 'Job timeout. The install leg does real toolchain work and the update leg a full Electron rebuild.'
         required: false
@@ -107,7 +107,7 @@ jobs:
     runs-on: ${{ inputs.bundle-arch == 'arm64' && 'windows-latest-32-arm-core' || 'windows-latest-32-core' }}
     timeout-minutes: ${{ inputs.timeout-minutes }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # v7.0.1
         with:
           ref: ${{ github.sha }}
       - name: Set up driver tools only
@@ -189,7 +189,7 @@ jobs:
       # Full history: the driver bare-clones this checkout as the repo the
       # installer/updater talk to, and both OLD and HEAD must be reachable
       # in that clone. A shallow checkout cannot serve either need.
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # v7.0.1
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0

@@ -50,7 +50,7 @@ export async function resolveSiblingWsUrl(
   const desktop = window.pulseDesktop
 
   if (!desktop?.getConnection) {
-    throw new Error('Pulse Desktop connection bridge unavailable')
+    throw new Error('PULSE Desktop connection bridge unavailable')
   }
 
   const connectionId = route.connectionId?.trim() || null

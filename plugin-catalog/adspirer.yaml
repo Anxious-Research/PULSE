@@ -5,7 +5,7 @@ description: Create, analyze, and optimize campaigns across Google Ads, Meta Ads
   Ads, Amazon Ads, ChatGPT Ads, and Microsoft Ads through the hosted Adspirer MCP. Portable Agent Plugins
   v1 package with fourteen paid-media workflow skills and approval safeguards; OAuth uses pinned mcp-remote@0.1.49
   over npx stdio, so Node.js 20.18.1+ and npm are required. Disclosure — creates and edits real ad campaigns
-  that spend your ad budgets; confirm-before-spend is enforced by skill instructions, not by Pulse.
+  that spend your ad budgets; confirm-before-spend is enforced by skill instructions, not by PULSE.
 maintainer: Adspirer
 tier: community
 category: tools

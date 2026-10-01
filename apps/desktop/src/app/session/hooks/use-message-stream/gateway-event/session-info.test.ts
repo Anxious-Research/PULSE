@@ -41,7 +41,7 @@ function sessionInfoEvent({
       hydrateFromStoredSession: vi.fn(),
       lastCwdInfoSessionRef: { current: null },
       queryClient: { invalidateQueries: vi.fn() },
-      refreshPulseConfig: vi.fn(),
+      refreshPULSEConfig: vi.fn(),
       scheduleSessionsRefresh: vi.fn(),
       sessionInterrupted: () => false,
       sessionStateByRuntimeIdRef: { current: new Map() },

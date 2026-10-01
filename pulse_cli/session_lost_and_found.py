@@ -77,9 +77,9 @@ SQLITE3_CLI_GUIDANCE = (
 # 3.50.7 and 3.44.6 — the same version gate pulse_state applies to the
 # embedded library (#69784). The system `sqlite3` CLI on Debian/Ubuntu is
 # routinely in the vulnerable band (e.g. 3.45.1), and #100368's forensics
-# caught exactly this shell converting a live Pulse state.db into two
+# caught exactly this shell converting a live PULSE state.db into two
 # generations. A salvage shell must therefore be version-gated, not just
-# capability-gated, before it is pointed at (a copy of) a Pulse database.
+# capability-gated, before it is pointed at (a copy of) a PULSE database.
 #
 # The predicate lives in pulse_cli.sqlite_runtime (stdlib-only, shared with
 # the installer/update gates) so the embedded runtime and the salvage shell
@@ -87,7 +87,7 @@ SQLITE3_CLI_GUIDANCE = (
 from pulse_cli.sqlite_runtime import is_sqlite_wal_reset_vulnerable as _wal_reset_vulnerable  # noqa: E502
 
 _WAL_RESET_VULNERABLE_GUIDANCE = (
-    "salvage against a Pulse database with the WAL-reset bug "
+    "salvage against a PULSE database with the WAL-reset bug "
     "(https://sqlite.org/wal.html#walresetbug, fixed in 3.51.3+ / backports "
     "3.50.7 / 3.44.6; the vulnerable fresh-opener can unlink a live WAL/SHM "
     "pair and split the database into two generations, losing acknowledged "
@@ -354,7 +354,7 @@ def _type_conflicts(value: Any, declared: str) -> bool:
     """True when a salvaged cell cannot have come from a column of this type.
 
     Stricter than SQLite affinity on purpose: SQLite would happily keep a
-    non-numeric string in an INTEGER column, but Pulse never writes one, so
+    non-numeric string in an INTEGER column, but PULSE never writes one, so
     text sitting where a counter is declared means the layout is wrong. A
     TEXT column always yields ``str`` (numbers are coerced on write), a REAL
     column always yields ``float``, an INTEGER column yields ``int``.

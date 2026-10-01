@@ -211,7 +211,7 @@ def ensure_import(extra: str) -> None:
         app_running = bool(getattr(get_app_or_none(), "is_running", False))
     if not app_running and sys.stdin.isatty() and sys.stdout.isatty():
         try:
-            answer = input(f"\nThis needs Pulse' optional {extra!r} feature, which isn't installed yet.\n"
+            answer = input(f"\nThis needs PULSE' optional {extra!r} feature, which isn't installed yet.\n"
                            "Install it now? [Y/n] ").strip().lower()
         except (EOFError, KeyboardInterrupt):
             answer = "n"
@@ -235,7 +235,7 @@ def ensure_import(extra: str) -> None:
         selected = site_packages(selected_venv(root)).resolve()
         if selected not in {Path(entry).resolve() for entry in sys.path}:
             reason = restart_needed(root) or "this process does not run from the install's dependency environment"
-            raise InstallError("venv", f"{extra} installed; restart Pulse to activate it ({reason})")
+            raise InstallError("venv", f"{extra} installed; restart PULSE to activate it ({reason})")
 
 
 def ensure_and_bind(extra, importer, target_globals) -> bool:

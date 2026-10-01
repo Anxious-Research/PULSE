@@ -57,8 +57,8 @@ from gateway.platforms.helpers import MessageDeduplicator
 from gateway.platforms.base import (
     gateway_trust_env, BasePlatformAdapter, ExecApprovalPrompt, SendResult, cache_image_from_url, cache_media_bytes_async,
 )
-from gateway.platforms.base_exec_approval import (
-    EA_HEADER_TEXT, EA_REASON_LABEL_TEXT, approval_timeout_seconds, format_approval_deadline_line)
+from gateway.platforms.base_exec_approval import approval_timeout_seconds, format_approval_deadline_line
+from agent.i18n import t
 from gateway.platforms.event import MessageEvent, MessageType
 from gateway.platforms._shared import (
     coerce_port, extra_or_secret as _extra_or_secret, get_scoped_secret as _get_scoped_secret,
@@ -265,7 +265,7 @@ _SDK_IMPORTS = {
 @contextmanager
 def _suppress_third_party_dotenv() -> Iterator[None]:
     """No-op ``dotenv.load_dotenv`` while importing the Teams SDK: ``microsoft_teams.apps.app`` loads a
-    cwd-discovered ``.env`` at import, mutating process-global ``os.environ``. Pulse owns dotenv loading.
+    cwd-discovered ``.env`` at import, mutating process-global ``os.environ``. PULSE owns dotenv loading.
 
     See #62935.
     """
@@ -324,8 +324,10 @@ _MEDIA_KIND_PRECEDENCE = (
     ("document", MessageType.DOCUMENT), ("image", MessageType.PHOTO),
     ("video", MessageType.VIDEO), ("audio", MessageType.AUDIO))
 _APPROVAL_CHOICES = {"approve_once": "once", "approve_session": "session", "approve_always": "always", "deny": "deny"}
-_APPROVAL_LABELS = {
-    "once": "✅ Allowed (once)", "session": "✅ Allowed (session)", "always": "✅ Always allowed", "deny": "❌ Denied",
+# choice → catalog key of the card footer; resolved through ``t()`` at click time, never at import.
+_APPROVAL_LABEL_KEYS = {
+    "once": "platform.teams.approval.resolved_once", "session": "platform.teams.approval.resolved_session",
+    "always": "platform.teams.approval.resolved_always", "deny": "platform.teams.approval.resolved_deny",
 }
 
 
@@ -337,10 +339,10 @@ def _approval_body(cmd: str, desc: str, *, always: bool = False) -> list:
     """Adaptive Card body blocks for an approval prompt; unless ``always``, empty ``cmd``/``desc`` omit their blocks."""
     body = []
     if cmd or always:
-        body.append(TextBlock(text=f"⚠️ {EA_HEADER_TEXT}", wrap=True, weight="Bolder"))
+        body.append(TextBlock(text=f"⚠️ {t('gateway.exec_approval.header')}", wrap=True, weight="Bolder"))
         body.append(TextBlock(text=f"```\n{cmd}\n```", wrap=True))
     if desc or always:
-        body.append(TextBlock(text=f"{EA_REASON_LABEL_TEXT}: {desc}", wrap=True, isSubtle=True))
+        body.append(TextBlock(text=f"{t('gateway.exec_approval.reason_label')}: {desc}", wrap=True, isSubtle=True))
     return body
 
 
@@ -408,7 +410,7 @@ class TeamsAdapter(BasePlatformAdapter):
             self._app = App(
                 client_id=self._client_id, client_secret=self._client_secret, tenant_id=self._tenant_id,
                 http_server_adapter=_AiohttpBridgeAdapter(aiohttp_app),
-                client=ClientOptions(headers={"User-Agent": "Pulse"}))
+                client=ClientOptions(headers={"User-Agent": "PULSE"}))
             # Handlers (ours, then plugin on_* decorators) must be wired before initialize(),
             # which registers POST /api/messages on aiohttp_app via the bridge's register_route().
             @self._app.on_message
@@ -476,7 +478,7 @@ class TeamsAdapter(BasePlatformAdapter):
         from gateway.platforms.base import _ssrf_redirect_guard, _read_httpx_body_with_limit
         if not is_safe_url(url):
             raise ValueError("Blocked unsafe attachment URL (SSRF protection)")
-        headers = {"User-Agent": "Mozilla/5.0 (compatible; PulseAgent/1.0)"}
+        headers = {"User-Agent": "Mozilla/5.0 (compatible; PULSEAgent/1.0)"}
         if _is_botframework_attachment_url(url):
             try:
                 headers["Authorization"] = f"Bearer {await self._get_botframework_token()}"
@@ -639,18 +641,18 @@ class TeamsAdapter(BasePlatformAdapter):
         pulse_action = data.get("pulse_action", "")
         session_key = data.get("session_key", "")
         if not pulse_action or not session_key:
-            return self._invoke_message("Unknown action.")
+            return self._invoke_message(t("platform.teams.approval.unknown_action"))
         denied = self._card_action_denied(ctx.activity.from_)
         if denied:
             return self._invoke_message(denied)
         choice = _APPROVAL_CHOICES.get(pulse_action)
         if not choice:
-            return self._invoke_message("Unknown action.")
+            return self._invoke_message(t("platform.teams.approval.unknown_action"))
         if not has_blocking_approval(session_key):
-            return self._invoke_card([TextBlock(text="⚠️ Approval already resolved or expired.", wrap=True)])
+            return self._invoke_card([TextBlock(text=t("platform.shared.approval_expired"), wrap=True)])
         resolve_gateway_approval(session_key, choice)
         body = _approval_body(data.get("cmd", ""), data.get("desc", ""))
-        body.append(TextBlock(text=_APPROVAL_LABELS[choice], wrap=True, weight="Bolder"))
+        body.append(TextBlock(text=t(_APPROVAL_LABEL_KEYS[choice]), wrap=True, weight="Bolder"))
         return self._invoke_card(body)
 
     @staticmethod
@@ -666,12 +668,12 @@ class TeamsAdapter(BasePlatformAdapter):
             logger.warning(
                 "[teams] card action rejected: TEAMS_ALLOWED_USERS not configured "
                 "and TEAMS_ALLOW_ALL_USERS not set — default deny")
-            return "⛔ Approval buttons require TEAMS_ALLOWED_USERS to be configured."
+            return t("platform.teams.approval.requires_allowlist")
         clicker_id = getattr(from_account, "aad_object_id", None) or getattr(from_account, "id", "")
         allowed_ids = {uid.strip() for uid in allowed_csv.split(",") if uid.strip()}
         if "*" not in allowed_ids and clicker_id not in allowed_ids:
             logger.warning("[teams] Unauthorized card action by %s — ignoring", clicker_id)
-            return "⛔ Not authorized."
+            return t("platform.shared.not_authorized")
         return None
 
     _EA_CMD_BUDGET = 2000
@@ -792,7 +794,7 @@ _SETUP_CREDENTIALS = (
 _SETUP_INTRO = (  # "" → blank line
     "You'll need the Teams CLI. If you haven't already:", "  npm install -g @microsoft/teams.cli@preview",
     "  teams login", "", "Then expose port 3978 publicly (devtunnel / ngrok / cloudflared),", "and create your bot:",
-    '  teams app create --name "Pulse" --endpoint "https://<tunnel>/api/messages"', "",
+    '  teams app create --name "PULSE" --endpoint "https://<tunnel>/api/messages"', "",
     "The CLI will print CLIENT_ID, CLIENT_SECRET, and TENANT_ID. Paste them below.", "")
 
 
@@ -852,27 +854,3 @@ def register(ctx) -> None:
             "markdown — bold (**text**), italic (*text*), and inline code "
             "(`code`) work, but complex tables or raw HTML do not. Keep "
             "responses clear and professional."))
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-import html  # noqa: F401,E402
-from urllib.parse import quote  # noqa: F401,E402
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'TeamsSummaryWriter': ('plugins.platforms.teams.summary_writer', 'TeamsSummaryWriter'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

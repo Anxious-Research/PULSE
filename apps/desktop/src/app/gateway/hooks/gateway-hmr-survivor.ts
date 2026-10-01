@@ -3,13 +3,13 @@
 // self-accept so this module's own reload doesn't reset the cache. Prod strips
 // import.meta.hot → byte-for-byte unchanged live unmount.
 
-import type { PulseConnection } from '@/global'
+import type { PULSEConnection } from '@/global'
 import type { PulseGateway } from '@/pulse'
 
 export interface GatewaySurvivor {
   gateway: PulseGateway
   profile: string
-  connection: PulseConnection | null
+  connection: PULSEConnection | null
 }
 
 // One slot on globalThis, keyed by a process-stable Symbol so repeated imports

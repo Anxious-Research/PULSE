@@ -8,8 +8,8 @@ const READY: FreeTierStatus = {
   available: true,
   enabled: true,
   has_guest: true,
-  label: 'Pulse · free tier',
-  model: 'pulse/welcome',
+  label: 'Nous · free tier',
+  model: 'nous/welcome',
   notice_pending: true
 }
 

@@ -4,7 +4,7 @@ sha: "a5ad6f9428c76259a2e507639a6b6da80537f8ea"
 description: >-
   Free web search and page fetching through Parallel's hosted MCP, with a setup
   skill bundled. No account or API key required. Queries and requested URLs are
-  sent to Parallel. Adds direct MCP tools alongside Pulse's native web providers.
+  sent to Parallel. Adds direct MCP tools alongside PULSE's native web providers.
 maintainer: georgeatparallel
 tier: community
 category: web

@@ -1,6 +1,6 @@
 import { Codicon } from '@/components/ui/codicon'
 import { Tip } from '@/components/ui/tooltip'
-import type { PulseBranchPullRequest } from '@/global'
+import type { PULSEBranchPullRequest } from '@/global'
 import { cn } from '@/lib/utils'
 import { pullRequestBucket } from '@/store/pull-requests'
 
@@ -14,7 +14,7 @@ const PR_STYLE: Record<string, { className: string; icon: string }> = {
   open: { className: 'text-(--ui-green)', icon: 'git-pull-request' }
 }
 
-export function openPullRequest(pr: PulseBranchPullRequest): void {
+export function openPullRequest(pr: PULSEBranchPullRequest): void {
   if (pr.url) {
     void window.pulseDesktop?.openExternal?.(pr.url)
   }
@@ -31,7 +31,7 @@ export function PrTag({
   showIcon = true
 }: {
   className?: string
-  pr: PulseBranchPullRequest
+  pr: PULSEBranchPullRequest
   showIcon?: boolean
 }) {
   const style = PR_STYLE[pullRequestBucket(pr)] ?? PR_STYLE.open

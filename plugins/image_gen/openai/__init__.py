@@ -77,7 +77,7 @@ def _resolve_endpoint() -> Tuple[str, str]:
 
 
 def _build_client(openai: Any, base_url: str, api_key: str) -> Any:
-    """``openai.OpenAI`` on Pulse' env-only-proxy httpx client, so a local/custom endpoint never
+    """``openai.OpenAI`` on PULSE' env-only-proxy httpx client, so a local/custom endpoint never
     routes through a macOS system proxy whose ExceptionsList httpx cannot see (#64888). The project
     header is blanked: an ``OPENAI_PROJECT_ID`` set for chat makes ``/images/generations`` 403 on
     projects with a model allow-list, and the key already carries the project (#60748)."""
@@ -194,7 +194,7 @@ class OpenAIImageGenProvider(StaticImageGenProvider):
             logger.debug("OpenAI image %s failed", verb, exc_info=True)
             return fail(f"OpenAI image {'editing' if is_edit else 'generation'} failed: {exc}", "api_error")
 
-        # gpt-image bills per text/image token; the tier id is a Pulse label, the API model prices.
+        # gpt-image bills per text/image token; the tier id is a PULSE label, the API model prices.
         # Recorded before extraction/save: the tokens are billed whether or not an image came back.
         record_token_usage(getattr(response, "usage", None), model=meta["api_model"], provider="openai")
         data = getattr(response, "data", None) or []
@@ -218,29 +218,3 @@ class OpenAIImageGenProvider(StaticImageGenProvider):
 def register(ctx) -> None:
     """Plugin entry point — wire ``OpenAIImageGenProvider`` into the registry."""
     ctx.register_image_gen_provider(OpenAIImageGenProvider())
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'ImageGenProvider': ('agent.image_gen_provider', 'ImageGenProvider'),
-    'error_response': ('agent.image_gen_provider', 'error_response'),
-    'normalize_reference_images': ('agent.image_gen_provider', 'normalize_reference_images'),
-    'save_b64_image': ('agent.image_gen_provider', 'save_b64_image'),
-    'save_url_image': ('agent.image_gen_provider', 'save_url_image'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

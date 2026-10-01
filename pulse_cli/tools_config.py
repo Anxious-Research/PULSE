@@ -1,4 +1,4 @@
-"""Unified tool configuration for Pulse Agent."""
+"""Unified tool configuration for PULSE Agent."""
 
 import json as _json
 import logging
@@ -9,8 +9,8 @@ from typing import Dict, List, NoReturn, Optional, Set
 from pulse_cli.cli_output import print_info as _print_info
 from pulse_cli.colors import Colors, color
 from pulse_cli.config import cfg_get, load_config, save_config, get_env_value
-from pulse_cli.anxious_subscription import (
-    AnxiousSubscriptionFeatures, apply_anxious_managed_defaults, get_anxious_subscription_features)
+from pulse_cli.nous_subscription import (
+    NousSubscriptionFeatures, apply_nous_managed_defaults, get_nous_subscription_features)
 from pulse_cli.platforms import PLATFORMS as _PLATFORMS_REGISTRY
 from pulse_cli.toolset_scope import (
     _TOOLSET_PLATFORM_RESTRICTIONS, toolset_allowed_for_platform as _toolset_allowed_for_platform)
@@ -216,7 +216,7 @@ def _key(key: str, prompt: str, url: str = "", **extra) -> dict:
 
 
 def _row(name: str, badge: str = "", tag: str = "", env_vars: list = (), **markers) -> dict:
-    """One TOOL_CATEGORIES provider row; ``markers`` are the ``*_provider`` / ``post_setup`` / Anxious keys."""
+    """One TOOL_CATEGORIES provider row; ``markers`` are the ``*_provider`` / ``post_setup`` / Nous keys."""
     row = {"name": name}
     if badge:
         row["badge"] = badge
@@ -227,7 +227,7 @@ def _row(name: str, badge: str = "", tag: str = "", env_vars: list = (), **marke
     return row
 
 
-_ANXIOUS = {"requires_anxious_auth": True}
+_NOUS = {"requires_nous_auth": True}
 _OPENAI_VOICE_KEY = _key("VOICE_TOOLS_OPENAI_KEY", "OpenAI API key", "https://platform.openai.com/api-keys")
 _ELEVENLABS_KEY = _key("ELEVENLABS_API_KEY", "ElevenLabs API key", "https://elevenlabs.io/app/settings/api-keys")
 _DEEPINFRA_KEY = _key("DEEPINFRA_API_KEY", "DeepInfra API key", "https://deepinfra.com/dash/api_keys")
@@ -239,8 +239,8 @@ TOOL_CATEGORIES = {
         "name": "Text-to-Speech", "icon": "🔊",
         "providers": [
             _row("Microsoft Edge TTS", "★ recommended · free", "Good quality, no API key needed", tts_provider="edge"),
-            _row("Anxious Subscription", "subscription", "Managed OpenAI TTS billed to your subscription", tts_provider="openai",
-                 **_ANXIOUS, managed_anxious_feature="tts", override_env_vars=["VOICE_TOOLS_OPENAI_KEY", "OPENAI_API_KEY"]),
+            _row("Nous Subscription", "subscription", "Managed OpenAI TTS billed to your subscription", tts_provider="openai",
+                 **_NOUS, managed_nous_feature="tts", override_env_vars=["VOICE_TOOLS_OPENAI_KEY", "OPENAI_API_KEY"]),
             _row("OpenAI TTS", "paid", "High quality voices", [_OPENAI_VOICE_KEY], tts_provider="openai"),
             _row("xAI TTS", tag="Grok voices — uses xAI Grok OAuth or XAI_API_KEY", tts_provider="xai", post_setup="xai_grok"),
             _row("ElevenLabs", "paid", "Most natural voices", [_ELEVENLABS_KEY], tts_provider="elevenlabs"),
@@ -262,8 +262,8 @@ TOOL_CATEGORIES = {
         "providers": [
             _row("Local Whisper", "★ recommended · free", "faster-whisper on-device, no API key", stt_provider="local",
                  post_setup="faster_whisper"),
-            _row("Anxious Subscription", "subscription", "Managed OpenAI transcription billed to your subscription",
-                 stt_provider="openai", **_ANXIOUS, managed_anxious_feature="stt",
+            _row("Nous Subscription", "subscription", "Managed OpenAI transcription billed to your subscription",
+                 stt_provider="openai", **_NOUS, managed_nous_feature="stt",
                  override_env_vars=["VOICE_TOOLS_OPENAI_KEY", "OPENAI_API_KEY"]),
             _row("OpenAI", "paid", "whisper-1, gpt-4o-transcribe, gpt-transcribe", [_OPENAI_VOICE_KEY], stt_provider="openai"),
             _row("Groq", "free tier", "Whisper large-v3 family — very fast",
@@ -281,10 +281,10 @@ TOOL_CATEGORIES = {
         "setup_note": "A free DuckDuckGo search skill is also included — skip this if you don't need a premium provider.",
         "icon": "🔍",
         # Provider rows come from plugins.web.<vendor> via _plugin_web_search_providers(). Only the two
-        # non-provider firecrawl setup-flow rows live here: managed via Anxious subscription, and self-hosted.
+        # non-provider firecrawl setup-flow rows live here: managed via Nous subscription, and self-hosted.
         "providers": [
-            {"name": "Anxious Subscription", "badge": "subscription", "tag": "Managed web search and extract billed to your subscription",
-             "web_backend": "firecrawl", "env_vars": [], **_ANXIOUS, "managed_anxious_feature": "web",
+            {"name": "Nous Subscription", "badge": "subscription", "tag": "Managed web search and extract billed to your subscription",
+             "web_backend": "firecrawl", "env_vars": [], **_NOUS, "managed_nous_feature": "web",
              "override_env_vars": ["FIRECRAWL_API_KEY", "FIRECRAWL_API_URL", "PERPLEXITY_API_KEY"]},
             {"name": "Firecrawl Self-Hosted", "badge": "free · self-hosted", "tag": "Run your own Firecrawl instance (Docker)",
              "web_backend": "firecrawl",
@@ -294,29 +294,29 @@ TOOL_CATEGORIES = {
     "image_gen": {
         "name": "Image Generation", "icon": "🎨",
         # Provider rows (FAL, OpenAI, OpenAI Codex, xAI, Krea, …) come from plugins.image_gen.<vendor> via
-        # _plugin_image_gen_providers(). Only the managed "Anxious Subscription" row lives here: ONE row for the
-        # FAL, Krea and Portal gateways, whose union catalog is `imagegen_backend: "anxious"`; the stored model id
+        # _plugin_image_gen_providers(). Only the managed "Nous Subscription" row lives here: ONE row for the
+        # FAL, Krea and Portal gateways, whose union catalog is `imagegen_backend: "nous"`; the stored model id
         # picks the gateway at run time (tools/image_generation_managed.py).
         "providers": [
-            _row("Anxious Subscription", "subscription",
-                 "Managed image generation (FAL, Krea 2, Anxious Portal models) billed to your subscription", **_ANXIOUS,
-                 managed_anxious_feature="image_gen", override_env_vars=["FAL_KEY"], imagegen_backend="anxious"),
+            _row("Nous Subscription", "subscription",
+                 "Managed image generation (FAL, Krea 2, Nous Portal models) billed to your subscription", **_NOUS,
+                 managed_nous_feature="image_gen", override_env_vars=["FAL_KEY"], imagegen_backend="nous"),
         ],
     },
     "video_gen": {
         "name": "Video Generation", "icon": "🎬",
-        # Mirrors image_gen: managed FAL video billed via the Anxious Portal. Plugin-backed rows (FAL BYOK, xAI, …)
+        # Mirrors image_gen: managed FAL video billed via the Nous Portal. Plugin-backed rows (FAL BYOK, xAI, …)
         # are injected at runtime by ``_plugin_video_gen_providers()`` in ``_visible_providers``. Picking this row
         # sets video_gen.provider = "fal" + use_gateway so the FAL plugin routes through the managed queue gateway.
         "providers": [
-            _row("Anxious Subscription", "subscription", "Managed FAL video generation billed to your subscription", **_ANXIOUS,
-                 managed_anxious_feature="video_gen", override_env_vars=["FAL_KEY"], video_gen_plugin_name="fal"),
+            _row("Nous Subscription", "subscription", "Managed FAL video generation billed to your subscription", **_NOUS,
+                 managed_nous_feature="video_gen", override_env_vars=["FAL_KEY"], video_gen_plugin_name="fal"),
         ],
     },
     "x_search": {
         "name": "X (Twitter) Search", "setup_title": "Select xAI Credential Source",
         "setup_note": (
-            "Pulse routes X searches through xAI's built-in x_search Responses tool for read-only public X "
+            "PULSE routes X searches through xAI's built-in x_search Responses tool for read-only public X "
             "discovery. Use the xurl skill for authenticated X API reads and account actions. Both credential "
             "sources hit the same https://api.x.ai/v1/responses endpoint — pick whichever you already have. "
             "SuperGrok OAuth is preferred when both are set (uses your subscription quota instead of API spend)."
@@ -333,20 +333,20 @@ TOOL_CATEGORIES = {
         "name": "Browser Automation", "icon": "🌐",
         # Cloud provider rows (Browserbase, Browser Use, Firecrawl) come from plugins.browser.<vendor> via
         # _plugin_browser_providers(); only non-provider setup-flow rows live here. "Local Browser" MUST stay
-        # first so a fresh install's Enter lands on the free local backend (index 0), never on the paid Anxious row.
+        # first so a fresh install's Enter lands on the free local backend (index 0), never on the paid Nous row.
         # Lightpanda is local too (cloud_provider: local, browser.engine: lightpanda — Browser Use mode spawns
         # ``lightpanda serve``, built-in tools use ``agent-browser --engine lightpanda``; no Chromium).
         # Camofox short-circuits the cloud dispatch via _is_camofox_mode().
         "providers": [
             _row("Local Browser", "★ recommended · free", "Headless Chromium, no API key needed", browser_provider="local",
                  browser_engine="auto", post_setup="agent_browser"),
-            _row("Lightpanda", "free · local · no Chromium", "Zig headless browser spawned by Pulse, text-only (no screenshots)",
+            _row("Lightpanda", "free · local · no Chromium", "Zig headless browser spawned by PULSE, text-only (no screenshots)",
                  browser_provider="local", browser_engine="lightpanda", post_setup="lightpanda"),
             # Cloud hook installs only the agent-browser CLI: Browser Use hosts its own Chromium, so the
             # local-Chromium install and readiness gate must not apply (with "agent_browser" this row read
             # "needs setup" forever on machines without a local Chromium build).
-            _row("Anxious Subscription (Browser Use cloud)", "subscription", "Managed Browser Use billed to your subscription",
-                 browser_provider="browser-use", **_ANXIOUS, managed_anxious_feature="browser",
+            _row("Nous Subscription (Browser Use cloud)", "subscription", "Managed Browser Use billed to your subscription",
+                 browser_provider="browser-use", **_NOUS, managed_nous_feature="browser",
                  override_env_vars=["BROWSER_USE_API_KEY"], post_setup="browserbase"),
             _row("Camofox", "free · local", "Anti-detection browser (Firefox/Camoufox)",
                  [_key("CAMOFOX_URL", "Camofox server URL", "https://github.com/jo-inc/camofox-browser", default="http://localhost:9377")],
@@ -766,7 +766,7 @@ def _provider_env_ready(provider: dict) -> bool:
 
 
 def _toolset_has_keys(
-    ts_key: str, config: dict = None, *, force_fresh: bool = False, features: Optional[AnxiousSubscriptionFeatures] = None,
+    ts_key: str, config: dict = None, *, force_fresh: bool = False, features: Optional[NousSubscriptionFeatures] = None,
 ) -> bool:
     """Check if a toolset's required API keys are configured."""
     if config is None:
@@ -779,9 +779,9 @@ def _toolset_has_keys(
             return False
     if ts_key in {"web", "image_gen", "video_gen", "tts", "stt", "browser"}:
         if features is None:
-            features = get_anxious_subscription_features(config, force_fresh=force_fresh)
+            features = get_nous_subscription_features(config, force_fresh=force_fresh)
         feature = features.features.get(ts_key)
-        if feature and (feature.available or feature.managed_by_anxious):
+        if feature and (feature.available or feature.managed_by_nous):
             return True
     # Provider-aware categories first: a no-key provider (Local Browser, Edge TTS) counts as configured.
     cat = TOOL_CATEGORIES.get(ts_key)
@@ -918,7 +918,7 @@ def _shared_metrics_state(config: dict) -> tuple[bool, bool]:
 def _shared_metrics_menu_label(config: dict) -> str:
     """Menu row for shared metrics, showing both consent states."""
     enabled, send = _shared_metrics_state(config)
-    state = "off" if not enabled else ("collecting + sending to Anxious" if send else "collecting locally")
+    state = "off" if not enabled else ("collecting + sending to Nous" if send else "collecting locally")
     return f"Configure shared metrics  ({state})"
 
 
@@ -1003,10 +1003,10 @@ def _first_install_flow(config: dict, enabled_platforms: List[str]) -> None:
         current_enabled = _current_platform_tools(config, pkey)
         new_enabled = _prompt_toolset_checklist(pinfo["label"], current_enabled - _DEFAULT_OFF_TOOLSETS, pkey)
         _print_toolset_diff(*_checklist_diff(new_enabled, current_enabled, pkey))
-        auto_configured = apply_anxious_managed_defaults(config, enabled_toolsets=new_enabled, force_fresh=True)
+        auto_configured = apply_nous_managed_defaults(config, enabled_toolsets=new_enabled, force_fresh=True)
         for ts_key in sorted(auto_configured):
             label = next((l for k, l, _ in CONFIGURABLE_TOOLSETS if k == ts_key), ts_key)
-            print(color(f"  ✓ {label}: using your Anxious subscription defaults", Colors.GREEN))
+            print(color(f"  ✓ {label}: using your Nous subscription defaults", Colors.GREEN))
         # Walk through ALL selected tools with provider options or key requirements, so browser (Local vs
         # Browserbase), TTS (Edge vs OpenAI vs ElevenLabs), etc. are shown even when a free provider exists.
         _configure_list(
@@ -1070,10 +1070,10 @@ def tools_command(args=None, first_install: bool = False, config: dict = None):
     if getattr(args, "summary", False):
         _print_tools_summary(config, enabled_platforms)
         return
-    print(color("☤ Pulse Tool Configuration", Colors.CYAN, Colors.BOLD))
+    print(color("☤ PULSE Tool Configuration", Colors.CYAN, Colors.BOLD))
     print(color("  Enable or disable tools per platform.", Colors.DIM))
     print(color("  Tools that need API keys will be configured when enabled.", Colors.DIM))
-    print(color("  Guide: https://pulse-agent.anxiousresearchlab.com/docs/user-guide/features/tools", Colors.DIM))
+    print(color("  Guide: https://pulse-agent.anxious-research.com/docs/user-guide/features/tools", Colors.DIM))
     print()
     if first_install:
         _first_install_flow(config, enabled_platforms)
@@ -1120,34 +1120,3 @@ def tools_command(args=None, first_install: bool = False, config: dict = None):
     print(color(f"  Tool configuration saved to {display_pulse_home()}/config.yaml", Colors.DIM))
     print(color("  Changes take effect on next 'pulse' or gateway restart.", Colors.DIM))
     print()
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-import shutil  # noqa: F401,E402
-import subprocess  # noqa: F401,E402
-import sys  # noqa: F401,E402
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'MANAGED_FEATURE_COVERAGE_CATEGORY': ('pulse_cli.anxious_subscription', 'MANAGED_FEATURE_COVERAGE_CATEGORY'),
-    'ANXIOUS_MANAGED_PROVIDER': ('tools.tool_backend_helpers', 'ANXIOUS_MANAGED_PROVIDER'),
-    'base_url_hostname': ('utils', 'base_url_hostname'),
-    'fal_key_is_configured': ('tools.tool_backend_helpers', 'fal_key_is_configured'),
-    'format_anxious_portal_entitlement_message': ('pulse_cli.anxious_account', 'format_anxious_portal_entitlement_message'),
-    'is_truthy_value': ('utils', 'is_truthy_value'),
-    'save_env_value': ('pulse_cli.config', 'save_env_value'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

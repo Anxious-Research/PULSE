@@ -1,4 +1,4 @@
-"""Pulse Agent Uninstaller."""
+"""PULSE Agent Uninstaller."""
 
 import os
 import shutil
@@ -117,7 +117,7 @@ def find_shell_configs() -> list:
 
 
 def remove_path_from_shell_configs():
-    """Remove Pulse PATH entries from shell configuration files."""
+    """Remove PULSE PATH entries from shell configuration files."""
     removed_from = []
     for config_path in find_shell_configs():
         try:
@@ -129,8 +129,8 @@ def remove_path_from_shell_configs():
             skip_next = False
             
             for line in content.split('\n'):
-                # Skip the "# Pulse Agent" comment and following line
-                if '# Pulse Agent' in line or '# pulse-agent' in line:
+                # Skip the "# PULSE Agent" comment and following line
+                if '# PULSE Agent' in line or '# pulse-agent' in line:
                     skip_next = True
                     continue
                 if skip_next and ('pulse' in line.lower() and 'PATH' in line):
@@ -209,7 +209,7 @@ def remove_node_symlinks(pulse_home: Path) -> list:
     We check all candidate directories so that uninstall works regardless of
     how the install was done (e.g. a root FHS install that placed links in
     ``/usr/local/bin``, or an older install that used ``~/.local/bin`` before
-    the FHS fix).  Only symlinks that resolve into this Pulse home's ``node``
+    the FHS fix).  Only symlinks that resolve into this PULSE home's ``node``
     directory are removed — links the user has repointed elsewhere (nvm, fnm,
     etc.) are left untouched.
     """
@@ -295,12 +295,12 @@ def _remove_systemd_gateway() -> bool:
 
 
 # Both gateway LaunchAgent naming schemes: the current ``ai.pulse.gateway*``
-# label and the ``io.anxiousresearchlab.pulse-agent.gateway*`` label older builds
+# label and the ``io.nousresearch.pulse-agent.gateway*`` label older builds
 # installed. An uninstall must sweep BOTH — a stale agent keeps respawning the
 # gateway after the code tree is gone (#62209).
 _LAUNCHD_GATEWAY_PLIST_PATTERNS = (
     "ai.pulse.gateway*.plist",
-    "io.anxiousresearchlab.pulse-agent.gateway*.plist",
+    "io.nousresearch.pulse-agent.gateway*.plist",
 )
 
 
@@ -367,7 +367,7 @@ _GATEWAY_SERVICE_REMOVERS = {
 
 
 def _pulse_path_markers(pulse_home: Path, *, include_managed_bin: bool = False) -> list[str]:
-    """Prefixes identifying Pulse-owned User-PATH entries (prefix match sweeps git\cmd, git\bin,
+    """Prefixes identifying PULSE-owned User-PATH entries (prefix match sweeps git\cmd, git\bin,
     node...). ``include_managed_bin`` adds ``<root>\bin`` (launchers + managed uv) — only when that
     dir is about to be deleted, so a keep-data uninstall keeps the working uv resolvable."""
     root = str(pulse_home).rstrip("\\/")
@@ -376,7 +376,7 @@ def _pulse_path_markers(pulse_home: Path, *, include_managed_bin: bool = False) 
 
 
 def remove_path_from_windows_registry(pulse_home: Path, *, include_managed_bin: bool = False) -> list[str]:
-    """Strip Pulse-owned entries from User-scope PATH in the registry (see ``_pulse_path_markers``)."""
+    """Strip PULSE-owned entries from User-scope PATH in the registry (see ``_pulse_path_markers``)."""
     markers = tuple(m.lower() for m in _pulse_path_markers(pulse_home, include_managed_bin=include_managed_bin))
 
     def edit(winreg, key, removed):
@@ -461,7 +461,7 @@ def remove_desktop_app_leftovers(*, full_uninstall: bool) -> list[Path]:
     Electron scatter, and the XDG cache dir on every platform. On a full
     uninstall the XDG data dir (``~/.local/share/pulse``) goes too.
 
-    Only well-known Pulse-named entries are touched — never a glob of the
+    Only well-known PULSE-named entries are touched — never a glob of the
     whole Library.
     """
     import sys as _sys
@@ -532,7 +532,7 @@ def remove_legacy_runtime_trees(pulse_home: Path) -> list[Path]:
 
 
 def remove_windows_bin_launchers(*, windows: bool | None = None) -> list[Path]:
-    """Delete the managed binary dir (the default Pulse root's ``bin``).
+    """Delete the managed binary dir (the default PULSE root's ``bin``).
 
     The dir holds only pulse-owned launcher copies (the relocatable venv's
     console scripts, staged onto PATH by first-run repair) — pm keeps uv in
@@ -652,7 +652,7 @@ def run_data_uninstall(args):
         log_warn(str(exc))
         raise SystemExit(1) from exc
     if not plan.remove:
-        print(f"No Pulse user data found in {home}.")
+        print(f"No PULSE user data found in {home}.")
         return
     print("Data-only removal: installed code and other profiles stay intact.")
     print("Will remove:")
@@ -678,11 +678,11 @@ def run_data_uninstall(args):
     for path in removed:
         log_success(f"Removed {path}")
     if failed:
-        print("Pulse data was only partially removed. Surviving targets:")
+        print("PULSE data was only partially removed. Surviving targets:")
         for path, reason in failed:
             log_warn(f"{path}: {reason}")
         raise SystemExit(1)
-    log_success("Pulse data removed.")
+    log_success("PULSE data removed.")
 
 
 def run_gui_uninstall(args):
@@ -706,15 +706,15 @@ def run_gui_uninstall(args):
     skip_confirm = bool(getattr(args, "yes", False))
 
     print()
-    _print_box("│         ☤ Pulse Chat GUI Uninstaller                  │", Colors.MAGENTA)
+    _print_box("│         ☤ PULSE Chat GUI Uninstaller                  │", Colors.MAGENTA)
     print()
 
     if not summary["gui_installed"]:
-        print("No Pulse Chat GUI installation was found.")
+        print("No PULSE Chat GUI installation was found.")
         print(f"  Checked: {pulse_home}, and the standard app locations for this OS.")
         return
 
-    print(color("This removes the Chat GUI only. The Pulse agent stays installed.", Colors.CYAN))
+    print(color("This removes the Chat GUI only. The PULSE agent stays installed.", Colors.CYAN))
     print()
     print(color("Will remove:", Colors.YELLOW, Colors.BOLD))
     for p in (*summary["source_built_artifacts"], *summary["packaged_app_paths"]):
@@ -724,7 +724,7 @@ def run_gui_uninstall(args):
     print()
     if agent_is_installed(pulse_home):
         print(color("Kept intact:", Colors.GREEN, Colors.BOLD))
-        print(f"  • The Pulse agent at {pulse_home / 'pulse-agent'}")
+        print(f"  • The PULSE agent at {pulse_home / 'pulse-agent'}")
         print(f"  • Your config, sessions, and secrets under {pulse_home}")
         print()
 
@@ -739,7 +739,7 @@ def run_gui_uninstall(args):
     print()
     _print_box("│            ✓ Chat GUI Uninstalled!                      │", Colors.GREEN)
     print()
-    print("The Pulse agent is still installed. Run 'pulse' to use the CLI,")
+    print("The PULSE agent is still installed. Run 'pulse' to use the CLI,")
     print("or 'pulse uninstall' to remove the agent too.")
     print()
 
@@ -777,7 +777,7 @@ def run_uninstall(args):
         return
 
     print()
-    _print_box("│            ☤ Pulse Agent Uninstaller                  │", Colors.MAGENTA)
+    _print_box("│            ☤ PULSE Agent Uninstaller                  │", Colors.MAGENTA)
     print()
 
     # Show what will be affected
@@ -837,12 +837,12 @@ def run_uninstall(args):
     # Final confirmation
     print()
     if full_uninstall:
-        print(color("⚠️  WARNING: This will permanently delete ALL Pulse data!", Colors.RED, Colors.BOLD))
+        print(color("⚠️  WARNING: This will permanently delete ALL PULSE data!", Colors.RED, Colors.BOLD))
         print(color("   Including: configs, API keys, sessions, scheduled jobs, logs", Colors.RED))
         if remove_profiles:
             print(color(f"   Plus {n_profiles} profile(s): {profile_names}", Colors.RED))
     else:
-        print("This will remove the Pulse code but keep your configuration and data.")
+        print("This will remove the PULSE code but keep your configuration and data.")
 
     print()
     if not _confirm_yes("to confirm"):
@@ -860,18 +860,18 @@ def _print_uninstall_dry_run(*, project_root: Path, pulse_home: Path, full_unins
     print()
     print(color("Would inspect/remove:", Colors.YELLOW, Colors.BOLD))
     print("  • Gateway services and standalone gateway processes")
-    print("  • Pulse PATH entries from shell configs / Windows User PATH")
-    print("  • Pulse wrapper scripts and Pulse-managed node/npm/npx symlinks")
+    print("  • PULSE PATH entries from shell configs / Windows User PATH")
+    print("  • PULSE wrapper scripts and PULSE-managed node/npm/npx symlinks")
     print("  • Desktop Chat GUI artifacts")
     print(f"  • Code checkout: {project_root}")
     from pulse_cli.gui_uninstall import desktop_userdata_dir
     userdata = desktop_userdata_dir()
     if not full_uninstall:
-        print(f"  • Keep Pulse config/data: {pulse_home}")
+        print(f"  • Keep PULSE config/data: {pulse_home}")
         if userdata.exists():
             print(f"  • Keep desktop app data: {userdata}")
     else:
-        print(f"  • Pulse config/data: {pulse_home}")
+        print(f"  • PULSE config/data: {pulse_home}")
         if sys.platform == "darwin":
             print("  • macOS: dashboard/serve launchd jobs, Electron + setup caches")
         if userdata.exists():
@@ -911,13 +911,13 @@ def _macos_cache_leftover_dirs() -> "list[Path]":
     macOS. Chromium splits the desktop app's HTTP/script caches under ``~/Library/Caches``
     keyed by both the product name and the app id, and the Tauri setup binary does the
     same under its own pair of identifiers. ``gui_uninstall`` removes the userData dir
-    (``Application Support/Pulse``) but never these (#62209)."""
+    (``Application Support/PULSE``) but never these (#62209)."""
     caches = Path.home() / "Library" / "Caches"
     return [
-        caches / "Pulse",
-        caches / "com.anxiousresearchlab.pulse",
+        caches / "PULSE",
+        caches / "com.nousresearch.pulse",
         caches / "pulse-setup",
-        caches / "com.anxiousresearchlab.pulse.setup",
+        caches / "com.nousresearch.pulse.setup",
     ]
 
 
@@ -939,7 +939,7 @@ def remove_dashboard_launchd_jobs() -> "list[Path]":
     (``_launchd_plist_dirs`` + ``_parse_dashboard_runtime``): read each plist, match the
     arguments, ``launchctl bootout`` the job's domains (launchd takes the process down;
     booting out an already-unloaded job is fine and never checked), then delete the
-    plist — a stale, not-loaded plist is still Pulse-created and still goes. A missing,
+    plist — a stale, not-loaded plist is still PULSE-created and still goes. A missing,
     unreadable, or malformed plist is skipped, never fatal. macOS only (empty list
     elsewhere)."""
     if sys.platform != "darwin":
@@ -1021,14 +1021,14 @@ def _perform_uninstall(
         (windows, "Removing PATH entries from Windows User environment...",
          lambda: remove_path_from_windows_registry(
              Path(os.path.expandvars(str(pulse_home))), include_managed_bin=sweep_managed_bin),
-         "Removed from User PATH: {}", "No Pulse-owned PATH entries in User environment"),
+         "Removed from User PATH: {}", "No PULSE-owned PATH entries in User environment"),
         (windows, "Removing PULSE_HOME / PULSE_GIT_BASH_PATH User env vars...",
-         remove_pulse_env_vars_windows, "Removed User env var: {}", "No Pulse-set User env vars to remove"),
+         remove_pulse_env_vars_windows, "Removed User env var: {}", "No PULSE-set User env vars to remove"),
         (True, "Removing pulse command...", remove_wrapper_script, "Removed {}", "No wrapper script found"),
         (windows, "Removing Windows pulse launchers...",
          remove_windows_bin_launchers, "Removed {}", "No Windows pulse launchers found"),
-        (True, "Removing Pulse-managed node/npm/npx symlinks...",
-         lambda: remove_node_symlinks(pulse_home), "Removed {}", "No Pulse-managed node/npm/npx symlinks found"),
+        (True, "Removing PULSE-managed node/npm/npx symlinks...",
+         lambda: remove_node_symlinks(pulse_home), "Removed {}", "No PULSE-managed node/npm/npx symlinks found"),
     ):
         if on_this_platform:
             _remove_step(label, remove, success_fmt, none_msg)
@@ -1047,7 +1047,7 @@ def _perform_uninstall(
 
     # 3d. Per-user app leftovers outside PULSE_HOME: macOS Library caches/logs/
     #     browser-store/state entries, the XDG cache dir, and (full mode) the XDG
-    #     data dir. Only Pulse-named entries are touched (#62209).
+    #     data dir. Only PULSE-named entries are touched (#62209).
     log_info("Removing app caches and leftovers outside the install...")
     removed_leftovers = remove_desktop_app_leftovers(full_uninstall=full_uninstall)
     if removed_leftovers:
@@ -1129,13 +1129,13 @@ def _perform_uninstall(
     for line, col in _RELOAD_HINT[windows]:
         print(color(line, col) if col else line)
     print()
-    print("Thank you for using Pulse Agent! ☤")
+    print("Thank you for using PULSE Agent! ☤")
     print()
 
 
 _REINSTALL_HINT = {
-    True: "  iex (irm https://pulse-agent.anxiousresearchlab.com/install.ps1)",
-    False: "  curl -fsSL https://pulse-agent.anxiousresearchlab.com/install.sh | bash"}
+    True: "  iex (irm https://pulse-agent.anxious-research.com/install.ps1)",
+    False: "  curl -fsSL https://pulse-agent.anxious-research.com/install.sh | bash"}
 # windows -> [(line, color or None)]
 _RELOAD_HINT = {
     True: [("Open a new terminal (PowerShell / Windows Terminal) to pick up", Colors.YELLOW),

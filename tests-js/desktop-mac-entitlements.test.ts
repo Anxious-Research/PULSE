@@ -1,7 +1,7 @@
 /**
  * Regression for #37718: macOS microphone entitlement must be inherited.
  *
- * Pulse Desktop signs with ``hardenedRuntime: true`` and points
+ * PULSE Desktop signs with ``hardenedRuntime: true`` and points
  * electron-builder at two entitlement files (see ``apps/desktop/package.json``):
  *
  * - ``entitlements`` → ``electron/entitlements.mac.plist`` (the main app), and
@@ -90,8 +90,8 @@ test('bootstrap installer carries microphone entitlement for launcher attributio
     config.bundle?.macOS?.entitlements,
     'entitlements.plist',
     'the macOS bootstrap installer must sign with its entitlements.plist. ' +
-      'When /Applications/Pulse.app is the setup launcher, macOS TCC treats ' +
-      'com.anxiousresearchlab.pulse.setup as the responsible process for the desktop ' +
+      'When /Applications/PULSE.app is the setup launcher, macOS TCC treats ' +
+      'com.nousresearch.pulse.setup as the responsible process for the desktop ' +
       'app it opens; without audio-input on the setup app, microphone access is ' +
       'denied before a permission prompt can appear.'
   )

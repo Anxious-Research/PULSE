@@ -210,9 +210,11 @@ const $focusedSessionProfile = computed(
 export interface PluginProfileRoute {
   connectionId: string
   mode: 'local' | 'remote'
+  /** Electron's authoritative registry primary. Absent on older shells. */
+  primary?: true
   /** Desktop profile used to select the connection route. */
   profile: string
-  /** Backend Pulse profile served by that route. */
+  /** Backend PULSE profile served by that route. */
   targetProfile: string
 }
 
@@ -855,7 +857,7 @@ export const host = {
     )
 
     // The profile is gone. Drop its persisted tiles now — a leftover tile
-    // restores on relaunch and re-creates the deleted profile .
+    // restores on relaunch and re-creates the deleted profile (pulse-agent#94235).
     dropTilesForProfile(
       route ? route.profile : name,
       route
@@ -892,7 +894,7 @@ export const host = {
     const bridge = window.pulseDesktop?.connections
 
     if (!bridge) {
-      throw new Error('This Desktop build has no connection registry. Update Pulse Desktop.')
+      throw new Error('This Desktop build has no connection registry. Update PULSE Desktop.')
     }
 
     const registryPayload = await bridge.list()
@@ -909,7 +911,7 @@ export const host = {
     const roster = window.pulseDesktop?.getAgentRoster
 
     if (!roster) {
-      throw new Error('This Desktop build cannot enumerate multi-source agents. Update Pulse Desktop.')
+      throw new Error('This Desktop build cannot enumerate multi-source agents. Update PULSE Desktop.')
     }
 
     return roster()
@@ -1379,7 +1381,7 @@ export const host = {
       const openTab = $newSessionTabAction.get()
 
       if (!openTab) {
-        notify({ kind: 'error', message: 'Update Pulse Desktop to open another Bot chat.' })
+        notify({ kind: 'error', message: 'Update PULSE Desktop to open another Bot chat.' })
 
         return
       }
@@ -1405,7 +1407,7 @@ export const host = {
    *  they closed) are respected. Presentation only: no gateway activation,
    *  no session create. Feature-detect on older desktops.
    *
-   *  `isStaleTile` : the caller's reconciliation probe
+   *  `isStaleTile` (pulse-agent#90102): the caller's reconciliation probe
    *  against backend truth. The tile bucket is a Local Storage cache — a
    *  persisted bot tile can name a session the backend has since superseded,
    *  and fronting it pinned the roster click to a stale finished session
@@ -1476,7 +1478,7 @@ export const host = {
     const getProfileRoutes = desktop?.getProfileRoutes
 
     if (!getProfileRoutes) {
-      throw new Error('Pulse Desktop connection routing unavailable')
+      throw new Error('PULSE Desktop connection routing unavailable')
     }
 
     let profiles = $profiles.get()
@@ -1620,7 +1622,7 @@ export const host = {
     const gateway = $gateway.get()
 
     if (!gateway) {
-      throw new Error('Pulse gateway unavailable')
+      throw new Error('PULSE gateway unavailable')
     }
 
     return timeoutMs === undefined ? gateway.request<T>(method, params) : gateway.request<T>(method, params, timeoutMs)
@@ -1861,7 +1863,7 @@ export { Textarea } from '@/components/ui/textarea'
 export { Tip, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 export type { GatewayEventListener } from '@/contrib/events'
 export type {
-  PulsePlugin,
+  PULSEPlugin,
   PluginContext,
   PluginContribution,
   PluginNativeNotificationInput,
@@ -1930,7 +1932,7 @@ export {
   type SurfaceModelSwitchConfirmOptions
 } from '@/lib/guarded-model-switch'
 export { triggerHaptic as haptic } from '@/lib/haptics'
-export type { PulseOpenTarget } from '@/lib/pulse-open-target'
+export type { PULSEOpenTarget } from '@/lib/pulse-open-target'
 /** The app's lucide icon set (RefreshCw, LayoutDashboard, Activity, …). */
 export * as icons from '@/lib/icons'
 /** IME-aware Enter: true only for a real submit Enter, never a CJK composition
@@ -2052,14 +2054,16 @@ export type { StatusResponse } from '@/types/pulse'
 export type { GatewayEvent as RpcEvent } from '@pulse/shared'
 /** Bot Screen wire shapes, generated from `tui_gateway/contracts/display.py`. */
 export type { DisplayLease, DisplayObserveResult, DisplayStatus, DisplayThumbnailResult } from '@pulse/shared'
+/** `session.list` / `profiles.list` session rows, generated from `tui_gateway/contracts`. */
+export type { ProfileSessionPreview, SessionListRow } from '@pulse/shared'
 /** THE compact-number formatter — every user-facing count/token figure goes
  *  through here (1230 → "1.2k", 1_500_000 → "1.5M"). Don't hand-roll `/1000`. */
 export { compactNumber } from '@pulse/shared'
-/** Client deadline for `approval.respond`: matches the backend's
- *  `approvals.timeout` (300s) so a plugin answering an approval never rejects
- *  its own RPC while the backend still applies the decision (#60654). */
+/** Client deadline for `approval.respond`, counted from the answer: generous so
+ *  a plugin answering an approval never rejects its own RPC while the backend
+ *  still applies the decision (#60654). */
 export { APPROVAL_RESPOND_TIMEOUT_MS } from '@pulse/shared'
-/** Pulse' reasoning levels, so a plugin surfacing a thinking depth uses the
+/** PULSE' reasoning levels, so a plugin surfacing a thinking depth uses the
  *  same scale as the rest of the app (labels: `reasoningEffortLabel`). */
 export {
   DEFAULT_REASONING_EFFORT,

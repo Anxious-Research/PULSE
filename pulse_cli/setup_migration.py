@@ -158,22 +158,22 @@ def _load_openclaw_migration_module():
 
 
 # Item kinds that warrant explicit warnings: gateway tokens/channels hijack the old agent's
-# platforms; config values and instruction/context .md files may not map 1:1 to Pulse.
+# platforms; config values and instruction/context .md files may not map 1:1 to PULSE.
 _HIGH_IMPACT_KIND_KEYWORDS = {
-    "gateway": "⚠ Gateway/messaging — this will configure Pulse to use your OpenClaw messaging channels",
-    "telegram": "⚠ Telegram — this will point Pulse at your OpenClaw Telegram bot",
-    "slack": "⚠ Slack — this will point Pulse at your OpenClaw Slack workspace",
-    "discord": "⚠ Discord — this will point Pulse at your OpenClaw Discord bot",
-    "whatsapp": "⚠ WhatsApp — this will point Pulse at your OpenClaw WhatsApp connection",
-    "config": "⚠ Config values — OpenClaw settings may not map 1:1 to Pulse equivalents",
+    "gateway": "⚠ Gateway/messaging — this will configure PULSE to use your OpenClaw messaging channels",
+    "telegram": "⚠ Telegram — this will point PULSE at your OpenClaw Telegram bot",
+    "slack": "⚠ Slack — this will point PULSE at your OpenClaw Slack workspace",
+    "discord": "⚠ Discord — this will point PULSE at your OpenClaw Discord bot",
+    "whatsapp": "⚠ WhatsApp — this will point PULSE at your OpenClaw WhatsApp connection",
+    "config": "⚠ Config values — OpenClaw settings may not map 1:1 to PULSE equivalents",
     "soul": "⚠ Instruction file — may contain OpenClaw-specific setup/restart procedures",
     "memory": "⚠ Memory/context file — may reference OpenClaw-specific infrastructure",
     "context": "⚠ Context file — may contain OpenClaw-specific instructions",
 }
 
 _MIGRATION_WARNING_NOTES = (
-    "  Note: OpenClaw config values may have different semantics in Pulse.",
-    "  For example, OpenClaw's tool_call_execution: \"auto\" ≠ Pulse's yolo mode.",
+    "  Note: OpenClaw config values may have different semantics in PULSE.",
+    "  For example, OpenClaw's tool_call_execution: \"auto\" ≠ PULSE's yolo mode.",
     "  Instruction files (.md) from OpenClaw may contain incompatible procedures.",
 )
 
@@ -199,7 +199,7 @@ def _print_migration_preview(report: dict):
         return
     groups = (
         ("migrated", "  Would import:", Colors.GREEN, _migrated_row),
-        ("conflict", "  Would overwrite (conflicts with existing Pulse config):", Colors.YELLOW,
+        ("conflict", "  Would overwrite (conflicts with existing PULSE config):", Colors.YELLOW,
          partial(_reason_row, "already exists")),
         ("skipped", "  Would skip:", Colors.DIM, partial(_reason_row, "")),
     )
@@ -263,7 +263,7 @@ def _offer_openclaw_migration(pulse_home: Path) -> bool:
         return False
     print_header("OpenClaw Installation Detected", gap=True)
     _info(f"Found OpenClaw data at {openclaw_dir}",
-          "Pulse can preview what would be imported before making any changes.", None)
+          "PULSE can preview what would be imported before making any changes.", None)
     if not prompt_yes_no("Would you like to see what can be imported?", default=True):
         print_info("Skipping migration. You can run it later with: pulse claw migrate --dry-run")
         return False
@@ -301,7 +301,7 @@ def _offer_openclaw_migration(pulse_home: Path) -> bool:
               "Use --dry-run to preview again, or --preset minimal for a lighter import.")
         return False
 
-    # overwrite=False so existing Pulse configs are preserved. The user saw the preview;
+    # overwrite=False so existing PULSE configs are preserved. The user saw the preview;
     # conflicts are skipped by default.
     report = _migration_step("Migration failed", "OpenClaw migration error", lambda: _run_migrator(
         mod, openclaw_dir, pulse_home, selected, execute=True, overwrite=False))
@@ -312,7 +312,7 @@ def _offer_openclaw_migration(pulse_home: Path) -> bool:
     for key, printer, text in (
         ("migrated", print_success, "Imported {n} item(s) from OpenClaw."),
         ("conflict", print_info,
-         "Skipped {n} item(s) that already exist in Pulse (use pulse claw migrate --overwrite to force)."),
+         "Skipped {n} item(s) that already exist in PULSE (use pulse claw migrate --overwrite to force)."),
         ("skipped", print_info, "Skipped {n} item(s) (not found or unchanged)."),
         ("error", print_warning, "{n} item(s) had errors — check the migration report."),
     ):

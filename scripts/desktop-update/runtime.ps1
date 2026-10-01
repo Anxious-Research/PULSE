@@ -1,4 +1,4 @@
-function Get-PulseRuntimeCommand {
+function Get-PULSERuntimeCommand {
     param(
         [Parameter(Mandatory = $true)][string]$InstallRoot,
         [string]$Module = 'pulse_cli.main'

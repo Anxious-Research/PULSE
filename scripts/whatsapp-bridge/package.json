@@ -1,7 +1,7 @@
 {
   "name": "pulse-whatsapp-bridge",
   "version": "1.0.0",
-  "description": "WhatsApp bridge for Pulse Agent using Baileys",
+  "description": "WhatsApp bridge for PULSE Agent using Baileys",
   "private": true,
   "type": "module",
   "scripts": {

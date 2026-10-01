@@ -11,7 +11,7 @@ $ErrorActionPreference = 'Stop'
 $before = @{}
 Get-ChildItem Env: | ForEach-Object { $before[$_.Name] = $_.Value }
 . (Join-Path $PSScriptRoot '..\windows-build-deps.ps1')
-Initialize-PulseArm64BuildTools -StateRoot $StateRoot -OpenSSLRoot $OpenSSLRoot
+Initialize-PULSEArm64BuildTools -StateRoot $StateRoot -OpenSSLRoot $OpenSSLRoot
 
 $after = @{}
 Get-ChildItem Env: | ForEach-Object { $after[$_.Name] = $_.Value }

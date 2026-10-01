@@ -63,7 +63,7 @@ test.skipIf(process.env.PULSE_TEST_REAL_SERVE !== '1' || process.platform === 'w
   'native retirement preserves backend-only cron and hands both waiters capacity only after real child exit',
   async () => {
     const python = process.env.PULSE_TEST_PYTHON
-    assert.ok(python && existsSync(python), 'Set PULSE_TEST_PYTHON to an installed Pulse Python environment')
+    assert.ok(python && existsSync(python), 'Set PULSE_TEST_PYTHON to an installed PULSE Python environment')
     const electron = process.env.PULSE_TEST_ELECTRON || (require('electron') as string)
     assert.ok(existsSync(electron), 'PULSE_TEST_ELECTRON must name a real native Electron executable')
     const root = mkdtempSync(join(tmpdir(), 'pulse-pool-retirement-live-'))

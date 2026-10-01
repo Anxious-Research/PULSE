@@ -219,7 +219,7 @@ def cmd_setup(args: argparse.Namespace) -> int:
     save_config(cfg)
     console.print()
     console.print("[green]✓ Bitwarden Secrets Manager is enabled.[/green]  "
-                  "Secrets will be pulled at the start of every Pulse process.")
+                  "Secrets will be pulled at the start of every PULSE process.")
     console.print("  Status:  [cyan]pulse secrets bitwarden status[/cyan]\n"
                   "  Refresh: [cyan]pulse secrets bitwarden sync[/cyan]\n"
                   "  Disable: [cyan]pulse secrets bitwarden disable[/cyan]")
@@ -268,7 +268,7 @@ def cmd_status(args: argparse.Namespace) -> int:
         console.print("\n  Run [cyan]pulse secrets bitwarden setup[/cyan] to enable.")
         return 0
     if not token:
-        console.print(f"\n  [yellow]Enabled but {token_env} is not set — Pulse will skip BSM "
+        console.print(f"\n  [yellow]Enabled but {token_env} is not set — PULSE will skip BSM "
                       "and warn on next startup.[/yellow]")
     if not project_id:
         console.print("\n  [yellow]Enabled but no project_id — nothing to fetch.[/yellow]")
@@ -383,7 +383,7 @@ def cmd_disable(args: argparse.Namespace) -> int:
     return disable_secret_source(
         "bitwarden",
         "[green]Disabled.[/green]  Bitwarden secrets will NOT be pulled on the next "
-        "Pulse invocation.\n"
+        "PULSE invocation.\n"
         "  Your access token is left in .env — remove it manually if you also want "
         "to revoke the credential.")
 

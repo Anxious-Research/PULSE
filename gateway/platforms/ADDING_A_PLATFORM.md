@@ -1,6 +1,6 @@
 # Adding a New Messaging Platform
 
-There are two ways to add a platform to the Pulse gateway:
+There are two ways to add a platform to the PULSE gateway:
 
 ## Plugin Path (Recommended for Community/Third-Party)
 
@@ -8,7 +8,7 @@ Create a plugin directory in `~/.pulse/plugins/` (or under `plugins/platforms/`
 for bundled plugins) with a `plugin.yaml` and `adapter.py`.  The adapter
 inherits from `BasePlatformAdapter` and registers via
 `ctx.register_platform()` in the `register(ctx)` entry point.  This requires
-**zero changes to core Pulse code**.
+**zero changes to core PULSE code**.
 
 The plugin system automatically handles: adapter creation, config parsing,
 user authorization, cron delivery, send_message routing, system prompt hints,
@@ -92,7 +92,7 @@ catch-all last (Telegram hoists late handlers ahead of core); see `gateway/run_p
 
 ## Built-in Path (Core Contributors Only)
 
-Checklist for integrating a platform directly into the Pulse core.
+Checklist for integrating a platform directly into the PULSE core.
 Use this as a reference when building a built-in adapter — every item here
 is a real integration point. Missing any of them will cause broken
 functionality, missing features, or inconsistent behavior.

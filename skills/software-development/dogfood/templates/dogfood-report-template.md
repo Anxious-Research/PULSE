@@ -3,7 +3,7 @@
 **Target:** {target_url}
 **Date:** {date}
 **Scope:** {scope_description}
-**Tester:** Pulse Agent (automated exploratory QA)
+**Tester:** PULSE Agent (automated exploratory QA)
 
 ---
 

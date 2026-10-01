@@ -4,7 +4,7 @@ import type { BrowserWindow, WebContents } from 'electron'
  * Live window state to attach to a connection reply (#102451).
  *
  * A republished connection must carry the calling window's CURRENT chrome state
- * (fullscreen, maximized, …), not whatever `startPulse()` baked into the cached
+ * (fullscreen, maximized, …), not whatever `startPULSE()` baked into the cached
  * backend descriptor at mint time. The backend pool entry outlives renderer
  * reloads, reconnects and sleep/wake, so a mint-time `...getWindowState()`
  * spread goes stale the moment the user toggles fullscreen — and a stale

@@ -1,4 +1,4 @@
-"""disk-cleanup plugin — auto-cleanup of ephemeral Pulse session files.
+"""disk-cleanup plugin — auto-cleanup of ephemeral PULSE session files.
 
 ``post_tool_call`` silently tracks test/temp paths created by write_file/patch/terminal;
 ``on_session_end`` runs :func:`disk_cleanup.quick` when any test file was tracked this turn;
@@ -199,4 +199,4 @@ def register(ctx) -> None:
     ctx.register_hook("post_tool_call", _on_post_tool_call)
     ctx.register_hook("on_session_end", _on_session_end)
     ctx.register_command("disk-cleanup", handler=_handle_slash,
-                         description="Track and clean up ephemeral Pulse session files.")
+                         description="Track and clean up ephemeral PULSE session files.")

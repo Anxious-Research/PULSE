@@ -11,7 +11,7 @@ import {
   requestModelOptions
 } from './model-options'
 
-const globalOptions = { model: 'pulse-4', provider: 'pulse', providers: [] }
+const globalOptions = { model: 'pulse-4', provider: 'nous', providers: [] }
 
 vi.mock('@/pulse', () => ({
   getGlobalModelOptions: vi.fn(() => Promise.resolve(globalOptions))
@@ -45,7 +45,7 @@ describe('requestModelOptions', () => {
     const restPayload = {
       model: 'profile-default',
       provider: 'openai-codex',
-      providers: [{ models: ['pulse-local'], name: 'Pulse Local vLLM', slug: 'pulse-local' }]
+      providers: [{ models: ['pulse-local'], name: 'PULSE Local vLLM', slug: 'pulse-local' }]
     }
 
     const gateway = {
@@ -67,7 +67,7 @@ describe('requestModelOptions', () => {
     const restPayload = {
       model: 'pulse-local',
       provider: 'pulse-local',
-      providers: [{ models: ['pulse-local'], name: 'Pulse Local vLLM', slug: 'pulse-local' }]
+      providers: [{ models: ['pulse-local'], name: 'PULSE Local vLLM', slug: 'pulse-local' }]
     }
 
     const gateway = {
@@ -141,8 +141,8 @@ describe('requestModelOptions', () => {
   it('prefers an owner-routed request over the ambient gateway socket', async () => {
     const gatewayPayload = {
       model: 'chrome-model',
-      provider: 'pulse',
-      providers: [{ models: ['chrome-model'], name: 'Pulse', slug: 'pulse' }]
+      provider: 'nous',
+      providers: [{ models: ['chrome-model'], name: 'Nous', slug: 'nous' }]
     }
 
     const routedPayload = {

@@ -1,7 +1,7 @@
 /** Shared with the docs catalog: taxonomy order is independent of popularity. Keep keys in sync
  *  with CATALOG_CATEGORIES in pulse_cli/plugin_catalog.py and website/scripts/extract-plugins.py. */
 export const PLUGIN_CATEGORIES: Record<string, { label: string; icon: string; blurb: string }> = {
-  desktop: { label: 'Desktop', icon: '🖥️', blurb: 'Panes, tabs and views for Pulse Desktop' },
+  desktop: { label: 'Desktop', icon: '🖥️', blurb: 'Panes, tabs and views for PULSE Desktop' },
   memory: { label: 'Memory', icon: '🧠', blurb: 'Memory providers and context engines' },
   platform: { label: 'Platforms', icon: '💬', blurb: 'Messaging and channel adapters' },
   web: { label: 'Web & Browser', icon: '🌐', blurb: 'Search backends, extraction and browser control' },

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import type { PulseConnection } from '@/global'
+import type { PULSEConnection } from '@/global'
 import { readKey } from '@/lib/storage'
 
 import { $pinnedSessionIds, $sidebarSessionOrderIds, $sidebarSessionOrderManual, pinSession } from './layout'
@@ -17,19 +17,19 @@ const localConn = {
   baseUrl: 'http://127.0.0.1:8000',
   mode: 'local',
   profile: 'default'
-} as unknown as PulseConnection
+} as unknown as PULSEConnection
 
 const remoteA = {
   baseUrl: 'https://vps-a.example:8443',
   mode: 'remote',
   profile: 'default'
-} as unknown as PulseConnection
+} as unknown as PULSEConnection
 
 const remoteB = {
   baseUrl: 'https://vps-b.example:8443',
   mode: 'remote',
   profile: 'default'
-} as unknown as PulseConnection
+} as unknown as PULSEConnection
 
 beforeEach(() => {
   window.localStorage.clear()
@@ -122,7 +122,7 @@ describe('connection-scoped sidebar lists (#77318)', () => {
     $sidebarSessionOrderIds.set(['s1'])
     $sidebarSessionOrderManual.set(true)
 
-    setConnection({ ...remoteA, profile: 'k9' } as unknown as PulseConnection)
+    setConnection({ ...remoteA, profile: 'k9' } as unknown as PULSEConnection)
 
     expect($pinnedSessionIds.get()).toEqual(['a-1'])
     expect($sidebarSessionOrderIds.get()).toEqual([])

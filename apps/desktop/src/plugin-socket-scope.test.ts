@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { PulseConnection } from '@/global'
+import type { PULSEConnection } from '@/global'
 
 // pluginSocket must dial the ACTIVE gateway's backend — resolved through the
 // same (connectionId, profile) source of truth ensureGatewayProfile /
@@ -39,7 +39,7 @@ const { $activeGatewayProfile, ensureGatewayAgent, ensureGatewayProfile } = awai
 
 // authMode 'oauth' makes pluginSocket stop after resolving the connection
 // (polling fallback), so the assertions cover resolution without a WS dial.
-const conn = (over: Partial<PulseConnection> = {}): PulseConnection =>
+const conn = (over: Partial<PULSEConnection> = {}): PULSEConnection =>
   ({
     authMode: 'oauth',
     baseUrl: 'https://pool.invalid',
@@ -47,7 +47,7 @@ const conn = (over: Partial<PulseConnection> = {}): PulseConnection =>
     token: 'fake-test-token',
     wsUrl: 'wss://pool.invalid/api/ws?token=fake-test-token',
     ...over
-  }) as PulseConnection
+  }) as PULSEConnection
 
 let getConnection: ReturnType<typeof vi.fn>
 let getConnectionFor: ReturnType<typeof vi.fn>

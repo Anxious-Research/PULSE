@@ -1,4 +1,4 @@
-import type * as PulseSdk from '@pulse/plugin-sdk'
+import type * as PULSESdk from '@pulse/plugin-sdk'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeAll, expect, it, vi } from 'vitest'
@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@pulse/plugin-sdk', async importOriginal => {
-  const sdk = await importOriginal<typeof PulseSdk>()
+  const sdk = await importOriginal<typeof PULSESdk>()
 
   return { ...sdk, host: { ...sdk.host, request: mocks.request, connections: mocks.connections } }
 })

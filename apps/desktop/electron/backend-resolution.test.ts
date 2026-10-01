@@ -40,15 +40,15 @@ describe('installed runtime gate', () => {
   it('uses the runtime this launch installed so the post-install re-resolve does not reinstall', async () => {
     const { runtime } = gate({ PULSE_DESKTOP_IGNORE_EXISTING: '1' })
     const probe = vi.fn(async () => active)
-    // main.ts: resolvePulseBackend's ACTIVE_PULSE_ROOT rung, else bootstrap-needed.
-    const resolvePulseBackend = async () => (await runtime.resolve(ROOT, probe)) ?? 'bootstrap-needed'
+    // main.ts: resolvePULSEBackend's ACTIVE_PULSE_ROOT rung, else bootstrap-needed.
+    const resolvePULSEBackend = async () => (await runtime.resolve(ROOT, probe)) ?? 'bootstrap-needed'
 
-    await expect(resolvePulseBackend()).resolves.toBe('bootstrap-needed')
+    await expect(resolvePULSEBackend()).resolves.toBe('bootstrap-needed')
     expect(probe).not.toHaveBeenCalled()
     // main.ts ensureRuntime: the re-resolve after a successful bootstrap.
-    await expect(runtime.afterInstall(resolvePulseBackend)).resolves.toBe(active)
+    await expect(runtime.afterInstall(resolvePULSEBackend)).resolves.toBe(active)
     // Later resolves (pool backends, TUI resume) keep the new runtime too.
-    await expect(resolvePulseBackend()).resolves.toBe(active)
+    await expect(resolvePULSEBackend()).resolves.toBe(active)
     expect(probe).toHaveBeenCalledTimes(2)
   })
 

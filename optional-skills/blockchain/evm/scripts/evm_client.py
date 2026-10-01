@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-evm_client.py — EVM blockchain CLI tool for the Pulse Agent project.
+evm_client.py — EVM blockchain CLI tool for the PULSE Agent project.
 Zero external dependencies. Uses stdlib only: urllib, json, argparse, time, os, sys, typing.
 """
 

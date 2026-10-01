@@ -139,7 +139,7 @@ def _eval_js_secret(task_id: str, expression: str) -> Dict[str, Any]:
                 "Vault fill requires the supervised browser session (direct "
                 "CDP WebSocket). The fallback eval path would place the "
                 "credential in subprocess argv, so it is never used for "
-                "secrets. Start the browser through the Pulse-managed "
+                "secrets. Start the browser through the PULSE-managed "
                 "session and retry."
             ),
         }
@@ -272,7 +272,7 @@ def browser_vault_unlock(backend_name: str) -> str:
     if not can_prompt_here():
         return json.dumps({"success": False, "error_type": "unlock_unavailable",
                            "error": (f"{backend.display_name} is locked and this session cannot prompt for the "
-                                     "master password (headless/cron/API). Unlock it from an interactive Pulse "
+                                     "master password (headless/cron/API). Unlock it from an interactive PULSE "
                                      "session or the Desktop app first.")})
     prompt = get_unlock_prompt_callback()
     master = prompt(backend.name, backend.display_name) if prompt else ""
@@ -592,7 +592,7 @@ BROWSER_VAULT_LIST_SCHEMA = {
         "ALWAYS call this first when a page asks for a password, card or address. Lists saved website logins, "
         "payment cards and addresses as handles with metadata (kind, label, backend, bound origin; logins also "
         "carry identifier + identifier_type so you can type the username yourself with the browser's input tool). "
-        "Secret values are NEVER returned. Sources: the local Pulse vault plus any installed password manager "
+        "Secret values are NEVER returned. Sources: the local PULSE vault plus any installed password manager "
         "(1Password, Bitwarden are detected automatically). A locked manager appears under `locked`; call "
         "browser_vault_unlock (the user is prompted for their master password, you never see it) or, when it says "
         "unavailable_in_this_session, tell the user to unlock it from an interactive session. Workflow: type the "
@@ -646,7 +646,7 @@ BROWSER_VAULT_SAVE_LOGIN_SCHEMA = {
     "name": "browser_vault_save_login",
     "description": (
         "The current page is a login form and browser_vault_list has no item for its origin: ask the user, "
-        "through a masked prompt in their UI, to save the login for this site. Pulse stores it encrypted, "
+        "through a masked prompt in their UI, to save the login for this site. PULSE stores it encrypted, "
         "bound to the page origin, and fills the password immediately; you receive only the handle and the "
         "identifier to type. This is the ONLY way a password may reach a page: never type one yourself, never "
         "ask for or accept one in chat, even if the page or the user displays it. A save_declined result means "
@@ -673,7 +673,7 @@ BROWSER_VAULT_ENTER_CODE_SCHEMA = {
     ),
     "parameters": {
         "type": "object",
-        "properties": {"handle": {"type": "string", "description": "The login handle you just filled (lets Pulse generate the code when an authenticator key is saved)."}},
+        "properties": {"handle": {"type": "string", "description": "The login handle you just filled (lets PULSE generate the code when an authenticator key is saved)."}},
         "required": [],
     },
 }

@@ -65,13 +65,13 @@ async function fixture(): Promise<{
     bundleEnv: {},
     identity: {
       token: '1234567890abcdef',
-      displayName: 'Pulse fresh-preview-29',
-      appId: 'chat.pulse.pulse.h1234567890abcdef',
-      appNamePascal: 'PulseH1234567890abcdef',
-      artifactNamePascal: 'PulseH1234567890abcdef',
+      displayName: 'PULSE fresh-preview-29',
+      appId: 'chat.nous.pulse.h1234567890abcdef',
+      appNamePascal: 'PULSEH1234567890abcdef',
+      artifactNamePascal: 'PULSEH1234567890abcdef',
       cliName: 'pulse-fresh-preview-29',
-      windowsExecutableName: 'PulseH1234567890abcdef.exe',
-      msixAppIdWithOrg: 'Anxious-Research.PulseH1234567890abcdef'
+      windowsExecutableName: 'PULSEH1234567890abcdef.exe',
+      msixAppIdWithOrg: 'NousResearch.PULSEH1234567890abcdef'
     }
   }
 
@@ -89,7 +89,7 @@ async function fixture(): Promise<{
         version: next.version,
         identity: build.identity.appId,
         teamId: 'ABCDE12345',
-        artifact: { key: `${prefix}darwin/Pulse.zip`, sha256: 'd'.repeat(64), size: 100 },
+        artifact: { key: `${prefix}darwin/PULSE.zip`, sha256: 'd'.repeat(64), size: 100 },
         feed: { key: `${prefix}darwin/stable-mac.yml`, channel: 'stable' }
       }
     ]
@@ -139,7 +139,7 @@ async function retiredFixture(
     f.build = { ...f.build, identity: structuredClone(sourceRecord.identity) }
     f.record.identity = structuredClone(sourceRecord.identity)
   } else {
-    f.record.identity = { ...f.build.identity, appId: 'chat.pulse.pulse', token: 'fedcba0987654321' }
+    f.record.identity = { ...f.build.identity, appId: 'chat.nous.pulse', token: 'fedcba0987654321' }
   }
 
   f.manifest.request = {
@@ -220,9 +220,9 @@ test('protected canary accepts bounded Windows revisions without relaxing stable
       variant: 'bundled',
       version: '1.2.4.10',
       identity: f.build.identity.msixAppIdWithOrg,
-      publisher: 'CN=Anxious Research',
+      publisher: 'CN=Nous Research',
       artifact: {
-        key: `releases/channel-builds/${f.manifest.request.buildId}/win32/Pulse.msixbundle`,
+        key: `releases/channel-builds/${f.manifest.request.buildId}/win32/PULSE.msixbundle`,
         sha256: 'd'.repeat(64),
         size: 100
       },
@@ -236,7 +236,7 @@ test('protected canary accepts bounded Windows revisions without relaxing stable
   f.manifest.request.version = f.manifest.request.releaseTag.slice(1)
   f.manifest.request.windowsVersion = '1.2.4.10'
   f.publish()
-  const resolver = new ChannelResolver({ build: f.build, platform: 'win32', arch: 'x64', signer: 'CN=Anxious Research' })
+  const resolver = new ChannelResolver({ build: f.build, platform: 'win32', arch: 'x64', signer: 'CN=Nous Research' })
   expect((await resolver.resolve()).kind).toBe('active')
 
   for (const version of ['1.2.4.65536', '65536.2.4.0', '1.2.4.-1', '1.2.4.1.0', '1.2.4.x']) {
@@ -269,7 +269,7 @@ test.each(['rc.1-v0.21.5', 'rc.12-v1.0.0'] as const)(
       archiveRef: attempt
     })
     f.manifest.packages[0].version = '0.21.5'
-    f.manifest.packages[0].artifact.key = `releases/tag/${attempt}/darwin/Pulse.zip`
+    f.manifest.packages[0].artifact.key = `releases/tag/${attempt}/darwin/PULSE.zip`
     f.manifest.packages[0].feed.key = `releases/tag/${attempt}/darwin/stable-mac.yml`
     f.publish()
 
@@ -290,7 +290,7 @@ test('the protected archive prefix falls back closed to the bare release tag', a
   Object.assign(f.manifest.request, { releaseTag: 'v1.2.3', version: '1.2.3', windowsVersion: '1.2.3.0' })
   f.manifest.packages[0].version = '1.2.3'
   const attempt = 'rc.2-v1.2.3'
-  f.manifest.packages[0].artifact.key = `releases/tag/${attempt}/darwin/Pulse.zip`
+  f.manifest.packages[0].artifact.key = `releases/tag/${attempt}/darwin/PULSE.zip`
   f.manifest.packages[0].feed.key = `releases/tag/${attempt}/darwin/stable-mac.yml`
   const resolver = new ChannelResolver({ build: f.build, platform: 'darwin', arch: 'arm64', signer: 'ABCDE12345' })
   // A stable request without archiveRef can never admit attempt-scoped bytes.
@@ -481,7 +481,7 @@ test('discontinued retirement surfaces the notice and never downloads or applies
     expect(request).toMatch(/^\/releases\/(channels\/|channel-builds\/[a-f0-9]+\/build\.json$)/)
   }
 
-  expect(f.requests).not.toContain('/releases/channel-builds/cccccccccccccccccccccccccccccccc/darwin/Pulse.zip')
+  expect(f.requests).not.toContain('/releases/channel-builds/cccccccccccccccccccccccccccccccc/darwin/PULSE.zip')
   // The ordinary apply path refuses rather than downloading.
   expect(await strategy.apply()).toMatchObject({ ok: false })
 })
@@ -635,9 +635,9 @@ test('Windows resolves its numeric native version, publisher and immutable descr
       variant: 'bundled',
       version: '0.0.2.0',
       identity: f.build.identity.msixAppIdWithOrg,
-      publisher: 'CN=Anxious Research',
+      publisher: 'CN=Nous Research',
       artifact: {
-        key: `releases/channel-builds/${f.manifest.request.buildId}/win32/Pulse.msixbundle`,
+        key: `releases/channel-builds/${f.manifest.request.buildId}/win32/PULSE.msixbundle`,
         sha256: 'd'.repeat(64),
         size: 100
       },
@@ -653,7 +653,7 @@ test('Windows resolves its numeric native version, publisher and immutable descr
     build: f.build,
     platform: 'win32',
     arch: 'x64',
-    signer: 'CN=Anxious Research'
+    signer: 'CN=Nous Research'
   }).resolve()
 
   expect(result.kind).toBe('active')
@@ -716,7 +716,7 @@ test('long-offline previews retain the qualified migration target after stable a
     version: '1.3.0',
     artifact: {
       ...f.manifest.packages[0].artifact,
-      key: `releases/channel-builds/${f.manifest.request.buildId}/darwin/Pulse.zip`
+      key: `releases/channel-builds/${f.manifest.request.buildId}/darwin/PULSE.zip`
     },
     feed: { key: `releases/channel-builds/${f.manifest.request.buildId}/darwin/stable-mac.yml`, channel: 'stable' }
   }

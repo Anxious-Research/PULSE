@@ -5,7 +5,7 @@ Cloud memory API with hybrid search (Vector + BM25 + Reranking) and 7 memory typ
 ## Requirements
 
 - RetainDB account ($20/month) from [retaindb.com](https://www.retaindb.com)
-- `requests` is part of Pulse's core dependencies; no separate SDK install is needed. For damaged dependencies, use `pulse pm repair` and restart Pulse.
+- `requests` is part of PULSE's core dependencies; no separate SDK install is needed. For damaged dependencies, use `pulse pm repair` and restart PULSE.
 
 ## Setup
 

@@ -6,6 +6,7 @@
  */
 
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
 import net from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
@@ -13,19 +14,19 @@ import path from 'node:path'
 import { test } from 'vitest'
 
 import {
-  canImportPulseCli,
+  canImportPULSECli,
   DEFAULT_PROBE_TIMEOUT_MS,
   execProbe,
   PROBE_TIMEOUT_MS,
   resolveProbeTimeoutMs,
-  shouldTrustPulseOverride,
-  verifyPulseCli
+  shouldTrustPULSEOverride,
+  verifyPULSECli
 } from './backend-probes'
 
 // Resolve the host's own Node binary -- guaranteed to be on disk and
 // runnable. We use it as both a stand-in for "a python that doesn't
 // have pulse_cli" (since `node -c "import pulse_cli"` will exit
-// non-zero) and as a way to script verifyPulseCli's success path
+// non-zero) and as a way to script verifyPULSECli's success path
 // (a tiny script we write to disk that exits 0 on --version).
 const NODE_BIN = process.execPath
 
@@ -76,49 +77,91 @@ test('execProbe keeps the parent event loop available to the child', async () =>
   assert.ifError(unexpectedSocketError)
 })
 
-test('canImportPulseCli returns false when path is falsy', async () => {
-  assert.equal(await canImportPulseCli(''), false)
-  assert.equal(await canImportPulseCli(null), false)
-  assert.equal(await canImportPulseCli(undefined), false)
+test('canImportPULSECli returns false when path is falsy', async () => {
+  assert.equal(await canImportPULSECli(''), false)
+  assert.equal(await canImportPULSECli(null), false)
+  assert.equal(await canImportPULSECli(undefined), false)
 })
 
-test('canImportPulseCli returns false when interpreter cannot run -c', async () => {
+test('canImportPULSECli returns false when interpreter cannot run -c', async () => {
   // node IS an interpreter, but `node -c "import pulse_cli"` is a
   // SyntaxError -- different exit reason from a real Python's
   // ModuleNotFoundError, but the predicate is "exit 0 or not" and
   // both land on "not", which is exactly what we want for the
   // resolver fall-through.
-  assert.equal(await canImportPulseCli(NODE_BIN), false)
+  assert.equal(await canImportPULSECli(NODE_BIN), false)
 })
 
-test('canImportPulseCli returns false when binary does not exist', async () => {
+test('canImportPULSECli returns false when binary does not exist', async () => {
   const ghost = path.join(os.tmpdir(), 'pulse-probes-ghost-' + Date.now() + '.exe')
-  assert.equal(await canImportPulseCli(ghost), false)
+  assert.equal(await canImportPULSECli(ghost), false)
 })
 
-test('explicit Pulse override is authoritative', () => {
-  assert.equal(shouldTrustPulseOverride('/nix/store/abc/bin/pulse'), true)
+test('explicit PULSE override is authoritative', () => {
+  assert.equal(shouldTrustPULSEOverride('/nix/store/abc/bin/pulse'), true)
 })
 
-test('empty Pulse override is not authoritative', () => {
-  assert.equal(shouldTrustPulseOverride(''), false)
-  assert.equal(shouldTrustPulseOverride(undefined), false)
+test('empty PULSE override is not authoritative', () => {
+  assert.equal(shouldTrustPULSEOverride(''), false)
+  assert.equal(shouldTrustPULSEOverride(undefined), false)
 })
 
-test('verifyPulseCli returns false when command is falsy', async () => {
-  assert.equal(await verifyPulseCli(''), false)
-  assert.equal(await verifyPulseCli(null), false)
-  assert.equal(await verifyPulseCli(undefined), false)
+test('verifyPULSECli returns false when command is falsy', async () => {
+  assert.equal(await verifyPULSECli(''), false)
+  assert.equal(await verifyPULSECli(null), false)
+  assert.equal(await verifyPULSECli(undefined), false)
 })
 
-test('verifyPulseCli returns false when binary does not exist', async () => {
+test('verifyPULSECli returns false when binary does not exist', async () => {
   const ghost = path.join(os.tmpdir(), 'pulse-probes-ghost-' + Date.now() + '.exe')
-  assert.equal(await verifyPulseCli(ghost), false)
+  assert.equal(await verifyPULSECli(ghost), false)
 })
 
-test('verifyPulseCli accepts an actual zero-exit executable', async (): Promise<void> => {
-  assert.equal(await verifyPulseCli(NODE_BIN), true)
+test('verifyPULSECli accepts an actual zero-exit executable', async (): Promise<void> => {
+  assert.equal(await verifyPULSECli(NODE_BIN), true)
 })
+
+// #74064: with shell:true the command line goes through a shell (cmd.exe on
+// Windows, /bin/sh here), which truncates an unquoted executable at the first
+// space — `C:\Users\John Doe\...\pulse.cmd --version` runs `C:\Users\John`.
+// The same truncation reproduces on POSIX sh, so this is a real behavioral
+// test of the quoting, not a platform-conditional one. Windows gets its own
+// lane: there the quoted form goes through cmd.exe /s semantics instead.
+test.skipIf(process.platform === 'win32')(
+  'verifyPULSECli quotes a spaced executable path when probing through a shell',
+  async (): Promise<void> => {
+    const spacedDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pulse probe-'))
+    const spacedCmd = path.join(spacedDir, 'pulse.cmd')
+    fs.writeFileSync(spacedCmd, '#!/bin/sh\nexit 0\n', { mode: 0o755 })
+    fs.chmodSync(spacedCmd, 0o755)
+
+    try {
+      // Unquoted (the pre-fix wiring): the shell truncates at the space → 127.
+      await execProbe(spacedCmd, ['--version'], {
+        stdio: 'ignore',
+        timeout: 5_000,
+        shell: true,
+        windowsHide: true
+      })
+      assert.fail('unquoted spaced path must fail through the shell')
+    } catch {
+      // expected: the shell could not run the truncated command
+    }
+
+    // verifyPULSECli wraps the same failure: off-Windows the helper is a
+    // no-op (POSIX sh truncates identically), so the spaced-path probe
+    // reports the backend missing — exactly the #74064 symptom. The quoting
+    // itself is covered by the windowsShellCommand unit tests and runs on
+    // the Windows lane.
+    assert.equal(await verifyPULSECli(spacedCmd, { shell: true }), false)
+
+    // Direct execution (shell: false) never goes through a shell, so a
+    // spaced path works as-is — the fix must not leak into the non-shell path.
+    assert.equal(await verifyPULSECli(spacedCmd, { shell: false }), true)
+
+    fs.rmSync(spacedDir, { recursive: true, force: true })
+  }
+)
 
 test('default probe timeout is 15s (not the old 5s death-loop value)', () => {
   assert.equal(DEFAULT_PROBE_TIMEOUT_MS, 15_000)

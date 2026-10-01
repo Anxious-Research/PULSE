@@ -130,6 +130,14 @@ export interface Translations {
     /** Multi-profile host whose gateway boots standalone on a guard — optional, English fallback. */
     multiplexStandaloneBanner?: string;
     dismiss?: string;
+    /** First-run shared-metrics offer — optional, English fallback. */
+    sharedMetricsTitle?: string;
+    sharedMetricsBody?: string;
+    sharedMetricsShare?: string;
+    sharedMetricsLocal?: string;
+    sharedMetricsOff?: string;
+    sharedMetricsDetails?: string;
+    sharedMetricsSaveFailed?: string;
   };
 
   // ── Status page ──
@@ -164,11 +172,11 @@ export interface Translations {
     starting: string;
     startedInBackground: string;
     stopped: string;
-    updatePulse: string;
-    updatePulseConfirmMessage?: string;
-    updatePulseConfirmNow?: string;
-    updatePulseConfirmTitle?: string;
-    updatingPulse: string;
+    updatePULSE: string;
+    updatePULSEConfirmMessage?: string;
+    updatePULSEConfirmNow?: string;
+    updatePULSEConfirmTitle?: string;
+    updatingPULSE: string;
     waitingForOutput: string;
   };
 

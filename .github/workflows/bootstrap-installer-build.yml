@@ -1,7 +1,7 @@
 name: Bootstrap installer build
 
 # Hand-dispatched, signed builds of the Tauri bootstrap installer
-# (apps/bootstrap-installer, "Pulse-Setup"): Windows x64 exe signed with
+# (apps/bootstrap-installer, "PULSE-Setup"): Windows x64 exe signed with
 # Azure Trusted Signing, macOS arm64 dmg signed with the Developer ID cert and
 # notarized. Uploaded as run artifacts only; nothing is published.
 #
@@ -40,17 +40,17 @@ env:
 
 jobs:
   windows-x64:
-    name: Pulse-Setup.exe (windows x64, signed)
+    name: PULSE-Setup.exe (windows x64, signed)
     runs-on: windows-latest
     environment: release-signing
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # v7.0.1
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
         with:
           node-version: 24.11.1
 
@@ -90,9 +90,9 @@ jobs:
           npm ci --workspace apps/bootstrap-installer --include-workspace-root=false --prefer-online --no-audit --no-fund
           cd apps/bootstrap-installer
           npx tauri build --target x86_64-pc-windows-msvc --no-bundle
-          exe="$CARGO_TARGET_DIR/x86_64-pc-windows-msvc/release/Pulse-Setup.exe"
+          exe="$CARGO_TARGET_DIR/x86_64-pc-windows-msvc/release/PULSE-Setup.exe"
           mkdir -p "$RUNNER_TEMP/out"
-          cp "$exe" "$RUNNER_TEMP/out/Pulse-Setup.exe"
+          cp "$exe" "$RUNNER_TEMP/out/PULSE-Setup.exe"
 
       - name: Azure login (OIDC)
         uses: azure/login@f5d393ae46f8fde4be8b75f32e3fc50e654ad0ca # v3.0.1
@@ -128,7 +128,7 @@ jobs:
         run: |
           npm ci --workspace apps/desktop --include-workspace-root=false --prefer-online --no-audit --no-fund
           # shellcheck disable=SC2016 # JS template literal, not shell
-          EXE="$(cygpath -w "$RUNNER_TEMP/out/Pulse-Setup.exe")" node --input-type=module -e '
+          EXE="$(cygpath -w "$RUNNER_TEMP/out/PULSE-Setup.exe")" node --input-type=module -e '
             import { pathToFileURL } from "node:url"
             const m = await import(pathToFileURL("apps/desktop/scripts/batch-sign-binaries.mjs").href)
             const r = await m.batchSignBinaries([process.env.EXE], { cache: null })
@@ -138,29 +138,29 @@ jobs:
       - name: Verify signature
         shell: pwsh
         run: |
-          $sig = Get-AuthenticodeSignature "$env:RUNNER_TEMP\out\Pulse-Setup.exe"
+          $sig = Get-AuthenticodeSignature "$env:RUNNER_TEMP\out\PULSE-Setup.exe"
           $sig | Format-List Status, StatusMessage, SignerCertificate, TimeStamperCertificate
           if ($sig.Status -ne 'Valid') { throw "signature status: $($sig.Status)" }
           if (-not $sig.TimeStamperCertificate) { throw "signature is not timestamped" }
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: Pulse-Setup-windows-x64
-          path: ${{ runner.temp }}/out/Pulse-Setup.exe
+          name: PULSE-Setup-windows-x64
+          path: ${{ runner.temp }}/out/PULSE-Setup.exe
           if-no-files-found: error
 
   macos-arm64:
-    name: Pulse-Setup.dmg (macos arm64, signed + notarized)
+    name: PULSE-Setup.dmg (macos arm64, signed + notarized)
     runs-on: macos-latest
     environment: release-signing
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # v7.0.1
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
         with:
           node-version: 24.11.1
 
@@ -227,7 +227,7 @@ jobs:
           dmgs=("$bundle"/dmg/*.dmg)
           test ${#dmgs[@]} -eq 1
           mkdir -p "$RUNNER_TEMP/out"
-          dmg="$RUNNER_TEMP/out/Pulse-Setup.dmg"
+          dmg="$RUNNER_TEMP/out/PULSE-Setup.dmg"
           cp "${dmgs[0]}" "$dmg"
           codesign --force --timestamp --sign "$APPLE_SIGNING_IDENTITY" "$dmg"
           xcrun notarytool submit "$dmg" --wait \
@@ -245,13 +245,13 @@ jobs:
           codesign --verify --strict --verbose=2 "${apps[0]}"
           xcrun stapler validate "${apps[0]}"
           spctl -a -vv -t exec "${apps[0]}"
-          dmg="$RUNNER_TEMP/out/Pulse-Setup.dmg"
+          dmg="$RUNNER_TEMP/out/PULSE-Setup.dmg"
           codesign --verify --verbose=2 "$dmg"
           xcrun stapler validate "$dmg"
           spctl -a -vv -t open --context context:primary-signature "$dmg"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: Pulse-Setup-macos-arm64
-          path: ${{ runner.temp }}/out/Pulse-Setup.dmg
+          name: PULSE-Setup-macos-arm64
+          path: ${{ runner.temp }}/out/PULSE-Setup.dmg
           if-no-files-found: error

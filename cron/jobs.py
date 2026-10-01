@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 
 from pulse_time import now as _pulse_now
 from pulse_time import get_timezone
+from pulse_cli.observability.shared_metrics_gateway import record_cron_missed
 from utils import atomic_replace, atomic_write_text, fsync_directory
 
 # croniter is imported lazily (slow import, only needed for cron exprs). HAS_CRONITER stays a
@@ -802,7 +803,7 @@ def parse_schedule(schedule: str) -> Dict[str, Any]:
     if 'T' in schedule or re.match(r'^\d{4}-\d{2}-\d{2}', schedule):
         try:
             dt = datetime.fromisoformat(schedule.replace('Z', '+00:00'))
-            # Naive timestamps become aware in the CONFIGURED Pulse timezone (not server-local):
+            # Naive timestamps become aware in the CONFIGURED PULSE timezone (not server-local):
             # the due-check compares against pulse_time.now().
             # Make naive timestamps timezone-aware at parse time so the stored value doesn't depend on the
             # system timezone matching at check time. UTC) while now() runs in Asia/Kolkata, the stored
@@ -846,7 +847,7 @@ def parse_schedule(schedule: str) -> Dict[str, Any]:
 
 
 def _ensure_aware(dt: datetime) -> datetime:
-    """Aware datetime in the configured Pulse timezone. Legacy naive values are read as
+    """Aware datetime in the configured PULSE timezone. Legacy naive values are read as
     *system-local* wall time (what created them) then converted, preserving ordering across
     timezone changes and avoiding false not-due results."""
     target_tz = _pulse_now().tzinfo
@@ -3112,6 +3113,7 @@ def _fast_forward_missed_recurring(d: _DueJob, grace: int) -> bool:
             "Job '%s' missed its scheduled time (%s, grace=%ds). "
             "Skipping missed occurrence because cron.catch_up_missed is false; next run: %s",
             d.label, d.next_run, grace, new_next)
+        record_cron_missed(d.job)
         return True
     logger.info(
         "Job '%s' missed its scheduled time (%s, grace=%ds). "
@@ -3133,6 +3135,7 @@ def _retire_expired_oneshot(d: _DueJob) -> bool:
     if not (d.job.get("run_claim") or d.job.get("fire_claim")):
         _write_missed_oneshot_diagnostic(d.job, d.next_run)
         d.scan.retire(d.job["id"])
+        record_cron_missed(d.job)
     return True
 
 
@@ -3459,14 +3462,3 @@ def rewrite_skill_refs(
             save_jobs(jobs)
             logger.info("Curator rewrote skill references in %d cron job(s)", len(rewrites))
         return {"rewrites": rewrites, "jobs_updated": len(rewrites), "jobs_scanned": len(jobs)}
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-def clear_drift_alerted(job_id: str) -> None:
-    """Clear the drift alert-dedup marker (resolution matches again)."""
-    _set_alert_flag(job_id, "drift_alerted", False)
-# ---- END PLUGIN-COMPAT ----

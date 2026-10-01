@@ -6,11 +6,11 @@ import { Input } from '@/components/ui/input'
 import { Tip } from '@/components/ui/tooltip'
 import {
   deleteSession,
-  getPulseConfigRecord,
+  getPULSEConfigRecord,
   listAllProfileSessions,
   peekConfigReadOrigin,
   retainConfigReadOrigin,
-  savePulseConfig,
+  savePULSEConfig,
   setSessionArchived
 } from '@/pulse'
 import { useI18n } from '@/i18n'
@@ -18,12 +18,13 @@ import { sessionTitle } from '@/lib/chat-runtime'
 import { pathLeaf } from '@/lib/display-path'
 import { triggerHaptic } from '@/lib/haptics'
 import { Archive, ArchiveOff, FolderOpen, Loader2, Trash2 } from '@/lib/icons'
+import { purgeInFlightTurnJournals } from '@/lib/inflight-turn-journal'
 import { confirm } from '@/store/confirm'
 import { notify, notifyError } from '@/store/notifications'
 import { applyConfiguredDefaultProjectDir, ensureDefaultWorkspaceCwd } from '@/store/session'
 import { untombstoneSessions } from '@/store/session-removal'
 import { forgetSessionUnread } from '@/store/session-unread'
-import type { PulseConfigRecord, SessionInfo } from '@/types/pulse'
+import type { PULSEConfigRecord, SessionInfo } from '@/types/pulse'
 
 import { EmptyState, ListRow, SectionHeading, SettingsContent, SettingsSkeleton, ToggleRow } from './primitives'
 import { SETTING_IDS, settingElementId } from './settings-manifest'
@@ -117,6 +118,12 @@ function ArchivedSessionsSettings({ includeDefaultDirectory }: { includeDefaultD
         // Permanent delete bypasses removeSession, so retire the persisted
         // unread state here too rather than leaving it to rot.
         forgetSessionUnread([session.id, session._lineage_root_id], session.profile)
+        // Same for the journaled in-flight tail: it holds this session's
+        // prompt and tool calls in localStorage, and a deleted session must
+        // not leave that copy behind to age out on its own. Both ids — the
+        // stored tip and the durable lineage root — the journal keys on the
+        // stored id and the row may carry either.
+        purgeInFlightTurnJournals([session.id, session._lineage_root_id])
         setLocalSessions(prev => prev.filter(s => s.id !== session.id))
         triggerHaptic('warning')
       } catch (err) {
@@ -212,7 +219,7 @@ function ArchivedSessionsSettings({ includeDefaultDirectory }: { includeDefaultD
 function AutoArchiveSetting() {
   const { t } = useI18n()
   const s = t.settings.sessions
-  const [config, setConfig] = useState<PulseConfigRecord | null>(null)
+  const [config, setConfig] = useState<PULSEConfigRecord | null>(null)
   const [enabled, setEnabled] = useState(false)
   const [days, setDays] = useState(DEFAULT_AUTO_ARCHIVE_DAYS)
 
@@ -225,7 +232,7 @@ function AutoArchiveSetting() {
 
     let alive = true
 
-    void getPulseConfigRecord()
+    void getPULSEConfigRecord()
       .then(record => {
         if (!alive) {
           return
@@ -268,7 +275,7 @@ function AutoArchiveSetting() {
       try {
         // Sparse patch: PUT /api/config deep-merges, and echoing the cached
         // snapshot would overwrite keys other surfaces changed since it loaded.
-        await savePulseConfig({ sessions: { auto_archive: autoArchive, auto_archive_days: archiveDays } }, writeScope)
+        await savePULSEConfig({ sessions: { auto_archive: autoArchive, auto_archive_days: archiveDays } }, writeScope)
       } catch (err) {
         notifyError(err, s.autoArchiveFailed)
       }
@@ -319,7 +326,7 @@ function AutoArchiveSetting() {
 
 // Lets the user pin the default cwd for new sessions. Without this, packaged
 // builds on Windows used to spawn sessions in the install dir (`win-unpacked`
-// / Program Files), which buried any files Pulse wrote there.
+// / Program Files), which buried any files PULSE wrote there.
 function DefaultProjectDirSetting() {
   const { t } = useI18n()
   const s = t.settings.sessions

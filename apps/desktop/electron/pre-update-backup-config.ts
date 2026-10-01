@@ -12,7 +12,7 @@ export function preUpdateBackupEnabled(value: unknown): boolean {
   return typeof value !== 'string' || !DISABLED_BACKUP_MODES.has(value.trim().toLowerCase())
 }
 
-export interface PulseConfigRuntime {
+export interface PULSEConfigRuntime {
   command?: string | null
   args?: string[]
   env?: NodeJS.ProcessEnv
@@ -20,7 +20,7 @@ export interface PulseConfigRuntime {
 }
 
 export async function readPreUpdateBackupEnabled(
-  runtime: PulseConfigRuntime | Promise<PulseConfigRuntime>,
+  runtime: PULSEConfigRuntime | Promise<PULSEConfigRuntime>,
   pulseHome: string,
   run = execFileAsync
 ): Promise<boolean> {

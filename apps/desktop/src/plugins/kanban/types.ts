@@ -183,7 +183,7 @@ export interface BoardImportResult {
   warnings: string[]
 }
 
-/** GET /projects — first-class Pulse projects available to scope a board. */
+/** GET /projects — first-class PULSE projects available to scope a board. */
 export interface KanbanProject {
   id: string
   slug: string

@@ -8,7 +8,7 @@ import { test } from 'vitest'
 import {
   appendUniquePathEntries,
   buildDesktopBackendEnv,
-  normalizePulseHomeRoot,
+  normalizePULSEHomeRoot,
   pathEnvKey,
   POSIX_SANE_PATH_ENTRIES,
   profileBackendParentEnv
@@ -73,8 +73,8 @@ test('backend runs the store toolchain even after the login-shell PATH is merged
   ])
 })
 
-test('PULSE_RUNTIME_DIR names the store; look-alike prefixes are not Pulse-owned', () => {
-  const store = '/Applications/Pulse.app/Contents/Resources/agent-payload/tools'
+test('PULSE_RUNTIME_DIR names the store; look-alike prefixes are not PULSE-owned', () => {
+  const store = '/Applications/PULSE.app/Contents/Resources/agent-payload/tools'
 
   const backend = buildDesktopBackendEnv({
     currentEnv: {
@@ -119,32 +119,32 @@ test('buildDesktopBackendEnv forces PYTHONUTF8 unless the user set it explicitly
   assert.equal(optedOut.PYTHONUTF8, '0')
 })
 
-test('normalizePulseHomeRoot expands a literal leading ~ against the home directory, not cwd', () => {
+test('normalizePULSEHomeRoot expands a literal leading ~ against the home directory, not cwd', () => {
   assert.equal(
-    normalizePulseHomeRoot('~/.pulse', { pathModule: path.posix, homedir: '/Users/test' }),
+    normalizePULSEHomeRoot('~/.pulse', { pathModule: path.posix, homedir: '/Users/test' }),
     '/Users/test/.pulse'
   )
   assert.equal(
-    normalizePulseHomeRoot('~/.pulse/profiles/oracle', { pathModule: path.posix, homedir: '/Users/test' }),
+    normalizePULSEHomeRoot('~/.pulse/profiles/oracle', { pathModule: path.posix, homedir: '/Users/test' }),
     '/Users/test/.pulse'
   )
   assert.equal(
-    normalizePulseHomeRoot('~\\.pulse', { pathModule: path.win32, homedir: 'C:\\Users\\test' }),
+    normalizePULSEHomeRoot('~\\.pulse', { pathModule: path.win32, homedir: 'C:\\Users\\test' }),
     'C:\\Users\\test\\.pulse'
   )
-  assert.equal(normalizePulseHomeRoot('~', { pathModule: path.posix, homedir: '/Users/test' }), '/Users/test')
+  assert.equal(normalizePULSEHomeRoot('~', { pathModule: path.posix, homedir: '/Users/test' }), '/Users/test')
 })
 
-test('normalizePulseHomeRoot maps profile homes back to the global Pulse root', () => {
+test('normalizePULSEHomeRoot maps profile homes back to the global PULSE root', () => {
   assert.equal(
-    normalizePulseHomeRoot('/Users/test/.pulse/profiles/oracle', { pathModule: path.posix }),
+    normalizePULSEHomeRoot('/Users/test/.pulse/profiles/oracle', { pathModule: path.posix }),
     '/Users/test/.pulse'
   )
   assert.equal(
-    normalizePulseHomeRoot('C:\\Users\\test\\AppData\\Local\\pulse\\profiles\\oracle', { pathModule: path.win32 }),
+    normalizePULSEHomeRoot('C:\\Users\\test\\AppData\\Local\\pulse\\profiles\\oracle', { pathModule: path.win32 }),
     'C:\\Users\\test\\AppData\\Local\\pulse'
   )
-  assert.equal(normalizePulseHomeRoot('/Users/test/.pulse', { pathModule: path.posix }), '/Users/test/.pulse')
+  assert.equal(normalizePULSEHomeRoot('/Users/test/.pulse', { pathModule: path.posix }), '/Users/test/.pulse')
 })
 
 test('pathEnvKey finds the platform-cased PATH key', () => {
@@ -160,7 +160,7 @@ test('appendUniquePathEntries flattens, dedupes, and preserves first occurrence'
 
 // `pulse desktop` loads its launch profile's .env/.op.env into os.environ and
 // hands that env to Electron; these cover what a profile backend inherits (#68367).
-function withPulseRoot(files: Record<string, string>, run: (root: string) => void) {
+function withPULSERoot(files: Record<string, string>, run: (root: string) => void) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pulse-profile-env-'))
 
   try {
@@ -191,7 +191,7 @@ const ROOT_LAUNCHED_ENV = {
 }
 
 test('a named profile backend does not inherit secrets the root .env/.op.env loaded into Desktop', () => {
-  withPulseRoot(ROOT_SCOPE_FILES, root => {
+  withPULSERoot(ROOT_SCOPE_FILES, root => {
     const env = profileBackendParentEnv({
       pulseHome: root,
       profile: 'urbot',
@@ -205,7 +205,7 @@ test('a named profile backend does not inherit secrets the root .env/.op.env loa
 })
 
 test('the launch profile backend inherits the Desktop env unchanged', () => {
-  withPulseRoot(ROOT_SCOPE_FILES, root => {
+  withPULSERoot(ROOT_SCOPE_FILES, root => {
     for (const profile of ['default', null, undefined]) {
       assert.deepEqual(
         profileBackendParentEnv({ pulseHome: root, profile, currentEnv: ROOT_LAUNCHED_ENV, platform: 'linux' }),
@@ -216,7 +216,7 @@ test('the launch profile backend inherits the Desktop env unchanged', () => {
 })
 
 test('a primary backend without an explicit profile follows the sticky active_profile', () => {
-  withPulseRoot({ ...ROOT_SCOPE_FILES, active_profile: 'urbot\n' }, root => {
+  withPULSERoot({ ...ROOT_SCOPE_FILES, active_profile: 'urbot\n' }, root => {
     const env = profileBackendParentEnv({ pulseHome: root, profile: null, currentEnv: ROOT_LAUNCHED_ENV })
 
     assert.equal(env.TLON_SHIP_CODE, undefined)
@@ -226,7 +226,7 @@ test('a primary backend without an explicit profile follows the sticky active_pr
 })
 
 test('Desktop launched from a named profile keeps that profile out of the default backend', () => {
-  withPulseRoot(
+  withPULSERoot(
     {
       '.env': 'OPENAI_API_KEY=root-key\n',
       'profiles/work/.env': 'TLON_SHIP_CODE=work-code\nOP_SERVICE_ACCOUNT_TOKEN=work-op\n'

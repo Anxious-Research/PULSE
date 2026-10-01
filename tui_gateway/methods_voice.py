@@ -306,7 +306,7 @@ def _voice_status_payload(**extra) -> dict:
     return {"enabled": _voice_mode_enabled(), "record_key": record_key, "tts": _voice_tts_enabled(), **extra}
 
 
-# ── Wake word ("Hey Pulse"): process-global detector (one mic). The first eligible transport
+# ── Wake word ("Hey PULSE"): process-global detector (one mic). The first eligible transport
 # to call wake.start owns it until stop, disconnect, or stream failure; on detection we emit
 # wake.detected and the client opens a session + its own capture. The detector yields the mic
 # to voice.record (pause/resume) and to the desktop's browser mic (wake.pause/resume RPCs).
@@ -447,7 +447,7 @@ def _(rid, params: dict) -> dict:
     from tui_gateway import server_requests
     from tui_gateway.contracts import registry as contracts
     server_requests.advertise(_caller_transport(), bool(params.get("server_requests")))
-    return _ok(rid, {"server_requests": sorted(contracts.SERVER_REQUESTS)})
+    return _ok(rid, {"server_requests": sorted(contracts.SERVER_REQUESTS), "declines_not_shown": True})
 
 
 @method("ping")

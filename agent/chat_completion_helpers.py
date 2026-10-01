@@ -498,20 +498,20 @@ def _prompt_cache_scope_for_agent(agent) -> "str | None":
         return None
 
 
-def _merge_anxious_portal_messages_extra_body(agent, anthropic_kwargs: dict) -> dict:
+def _merge_nous_portal_messages_extra_body(agent, anthropic_kwargs: dict) -> dict:
     """Merge Portal ``tags`` / ``session_id`` onto an Anthropic Messages kwargs dict.
-    The Anxious profile is only consulted by the OpenAI-wire transport; ``session_id``
+    The Nous profile is only consulted by the OpenAI-wire transport; ``session_id``
     only — never ``provider_preferences`` (an OpenAI-wire routing object)."""
-    if getattr(agent, "provider", None) not in {"anxious", "anxious-portal", "anxiousresearchlab"}:
+    if getattr(agent, "provider", None) not in {"nous", "nous-portal", "nousresearch"}:
         return anthropic_kwargs
     try:
         from providers import get_provider_profile
-        anxious_profile = get_provider_profile("anxious")
-        if anxious_profile is not None:
+        nous_profile = get_provider_profile("nous")
+        if nous_profile is not None:
             anthropic_kwargs.setdefault("extra_body", {}).update(
-                anxious_profile.build_extra_body(session_id=getattr(agent, "session_id", None)))
+                nous_profile.build_extra_body(session_id=getattr(agent, "session_id", None)))
     except Exception as exc:  # noqa: BLE001 — never block a turn on tagging
-        logger.debug("Anxious Portal extra_body merge failed: %s", exc)
+        logger.debug("Nous Portal extra_body merge failed: %s", exc)
     return anthropic_kwargs
 
 
@@ -730,7 +730,7 @@ def _bedrock_reasoning_stale_floor(model_id: object) -> "float | None":
 
 
 def _bedrock_converse_call(api_kwargs: dict, *, stream: bool, on_stream_denied=None):
-    """Pop the Pulse routing keys and call ``converse`` / ``converse_stream`` (boto3
+    """Pop the PULSE routing keys and call ``converse`` / ``converse_stream`` (boto3
     directly) with the shared recovery: a cachePoint rejection (Nova: toolConfig.tools,
     #97281) drops the marker and resends once inside the same attempt; a streaming IAM
     denial hands off to ``on_stream_denied(client, kwargs, exc)``; a stale connection
@@ -1422,7 +1422,7 @@ def _build_anthropic_kwargs(agent, api_messages, tools_for_api, reasoning_config
         drop_context_1m_beta=bool(getattr(agent, "_oauth_1m_beta_disabled", False)))
     # Portal reads ``tags`` / ``session_id`` on its Messages route too, but the profile hook
     # is only consulted by the OpenAI-wire transport — merge here to keep sticky routing.
-    return _merge_anxious_portal_messages_extra_body(agent, anthropic_kwargs)
+    return _merge_nous_portal_messages_extra_body(agent, anthropic_kwargs)
 
 
 def _build_bedrock_kwargs(agent, api_messages, tools_for_api):
@@ -1515,7 +1515,7 @@ def _build_chat_completions_kwargs(agent, api_messages, tools_for_api, reasoning
         **_common,
         model_lower=(agent.model or "").lower(),
         is_openrouter=_is_or,
-        is_anxious=base_url_host_matches(_host, "anxiousresearchlab.com"),
+        is_nous=base_url_host_matches(_host, "anxious-research.com"),
         is_qwen_portal=_is_qwen,
         is_github_models=_is_gh,
         is_nvidia_nim=base_url_host_matches(_host, "integrate.api.nvidia.com"),
@@ -1787,15 +1787,15 @@ def _fallback_entry_key(fb: dict) -> tuple[str, str, str]:
 
 def _fallback_entry_unavailable_without_network(agent, fb: dict) -> Optional[str]:
     """Return a skip reason for fallback entries known to be unusable locally."""
-    if (fb.get("provider") or "").strip().lower() != "anxious":
+    if (fb.get("provider") or "").strip().lower() != "nous":
         return None
     try:
         from pulse_cli.auth import get_provider_auth_state
-        state = get_provider_auth_state("anxious") or {}
+        state = get_provider_auth_state("nous") or {}
     except Exception as exc:
-        return f"anxious_auth_unreadable:{type(exc).__name__}"
+        return f"nous_auth_unreadable:{type(exc).__name__}"
     has_token = any(isinstance(t, str) and t.strip() for t in (state.get("access_token"), state.get("refresh_token")))
-    return None if has_token else "anxious_token_missing"
+    return None if has_token else "nous_token_missing"
 
 
 _FALLBACK_REASON_LABELS = {
@@ -1875,10 +1875,10 @@ def _fallback_api_mode_resolved(agent, fb_provider: str, fb_model: str, fb_base_
         # (minimax, qwen) and chat_completions models behind one provider; the primary /model path
         # already re-derives per model — the fallback wire must agree (#102148).
         return opencode_model_api_mode(opencode_family, fb_model)
-    if fb_provider in {"anxious", "anxious-portal", "anxiousresearchlab"}:
+    if fb_provider in {"nous", "nous-portal", "nousresearch"}:
         # Portal is dual-wire: anthropic/* must land on /v1/messages (the swap rebuilds the native client).
-        from pulse_cli.providers import anxious_api_mode
-        return anxious_api_mode(fb_model)
+        from pulse_cli.providers import nous_api_mode
+        return nous_api_mode(fb_model)
     if _is_anthropic_wire_url(fb_base_url):
         # Named custom providers (cron-anthropic) resolve base_url from config; the hint pass never saw it.
         return "anthropic_messages"
@@ -2181,6 +2181,8 @@ def try_activate_fallback(agent, reason: "FailoverReason | None" = None, reset_a
             agent._provider_fallback_active = True
             agent._provider_fallback_route = (str(fb_model), str(fb_provider))
             _log_fallback_activated(agent, reason, old_model, old_provider, fb_model, fb_provider)
+            from pulse_cli.observability.shared_metrics_events import record_fallback
+            record_fallback(from_provider=old_provider, to_provider=fb_provider, reason=reason)
             # The stale-call streak measured the OLD provider; carrying it over would
             # short-circuit the fresh fallback before its first stream attempt.
             _reset_stale_streak(agent)
@@ -2189,7 +2191,7 @@ def try_activate_fallback(agent, reason: "FailoverReason | None" = None, reset_a
                 model=agent.model, base_url=agent.base_url, provider=fb_provider, is_codex_backend=fb_provider == "openai-codex")
             return True
         except Exception as e:
-            if fb_provider == "anxious":
+            if fb_provider == "nous":
                 unavailable.add(fb_key)
             logger.error("Failed to activate fallback %s: %s", fb_model, e)
             continue  # try next in chain
@@ -2235,7 +2237,7 @@ def _iteration_summary_api_messages(agent, messages: list) -> list:
         # chat.completions.create() directly, bypassing the transport — so mirror that sanitization here:
         # tool_name (SQLite FTS bookkeeping), the codex_* reasoning carriers, timestamp (preserved on
         # gateway user replay entries for the stale-confirmation expiry check — #47868 rejection class), and
-        # every Pulse-internal underscore-prefixed scaffolding key.
+        # every PULSE-internal underscore-prefixed scaffolding key.
         substitute_api_content(api_msg)
         if needs_sanitize:
             agent._sanitize_tool_calls_for_strict_api(api_msg, model=sanitize_model)
@@ -2327,7 +2329,7 @@ def _anthropic_summary_attempt(agent, api_messages: list, api_request_id: str):
             model=agent.model, messages=api_messages, tools=None, max_tokens=agent.max_tokens,
             reasoning_config=agent.reasoning_config, is_oauth=agent._is_anthropic_oauth,
             preserve_dots=agent._anthropic_preserve_dots(), base_url=getattr(agent, "_anthropic_base_url", None))
-        ant_kw = _merge_anxious_portal_messages_extra_body(agent, ant_kw)
+        ant_kw = _merge_nous_portal_messages_extra_body(agent, ant_kw)
         response = _managed_summary_call(
             agent, api_request_id, ant_kw, agent._interruptible_api_call, retry_count=retry_count)
         return _summary_text(agent, response, strip_tool_prefix=agent._is_anthropic_oauth)
@@ -3056,7 +3058,7 @@ class _StreamingCall(StreamingWaitMonitor):
             body = _provider_error_body(
                 {"code": _err_type or "provider_in_stream_error", "message": str(_err_msg or chunk)}, _status)
             raise ProviderStreamError(status_code=_status, body=body, raw_text=f"{_err_type}: {_err_msg}")
-        # Anxious Portal usage frames (choices=[] + lastOne=true, no [DONE]) are a
+        # Nous Portal usage frames (choices=[] + lastOne=true, no [DONE]) are a
         # clean terminal, not a drop; relabelled upstreams send 1 / "true".
         # See #90848.
         last_one = getattr(chunk, "lastOne", None)
@@ -3084,7 +3086,7 @@ class _StreamingCall(StreamingWaitMonitor):
         response = self._attempt_stream_response = getattr(raw_stream, "response", None)
         self.agent._capture_rate_limits(response)
         self.agent._capture_credits(response)
-        self.agent._capture_anxious_model_switch(response)
+        self.agent._capture_nous_model_switch(response)
         self.agent._stream_diag_capture_response(self.clients.diag, response)
         self.agent._check_openrouter_cache_status(response)
         self._writer_token = claim_stream_writer(self.agent)
@@ -3187,7 +3189,7 @@ class _StreamingCall(StreamingWaitMonitor):
             completed_response_predicate=lambda value: hasattr(value, "choices"),
             metadata=_relay_stream_metadata(self.agent, "chat_completions"), defer_logical_completion=True))
         if self.agent.provider == "moa":
-            # Pulse interrupts the managed stream; Relay alone closes the provider stream.
+            # PULSE interrupts the managed stream; Relay alone closes the provider stream.
             self.clients.set_stream_handle(stream)
 
         for chunk in _iter_provider_stream_chunks(stream, response=lambda: self._attempt_stream_response):
@@ -3376,7 +3378,8 @@ class _StreamingCall(StreamingWaitMonitor):
                 has_truncated_tool_args = True
             mock_tool_calls.append(SimpleNamespace(
                 id=tc["id"], type=tc["type"], extra_content=tc.get("extra_content"),
-                function=SimpleNamespace(name=tc["function"]["name"], arguments=arguments)))
+                function=SimpleNamespace(name=tc["function"]["name"], arguments=arguments,
+                                         args_repaired=arguments != tc["function"]["arguments"])))
         return mock_tool_calls or None, has_truncated_tool_args
 
     def _finish_chat_stream(self, stream, role, content_parts, reasoning_parts, tool_calls_acc, finish_reason,

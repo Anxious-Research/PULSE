@@ -1,5 +1,5 @@
 #
-# docker-compose.yml for Pulse Agent
+# docker-compose.yml for PULSE Agent
 #
 # Usage:
 #   PULSE_UID=$(id -u) PULSE_GID=$(id -g) docker compose up -d

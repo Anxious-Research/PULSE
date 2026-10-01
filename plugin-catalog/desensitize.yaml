@@ -2,7 +2,7 @@ name: desensitize
 repo: https://github.com/yubingz/pulse-desensitize
 sha: 4f6697c1e45bb224e40b556372f33794f9326c0f
 subdir: src/pulse_desensitize
-description: "Chinese-context desensitization for Pulse chats. Replaces PII and business-sensitive
+description: "Chinese-context desensitization for PULSE chats. Replaces PII and business-sensitive
   entities — person names, company names, addresses, file paths, and magnitude figures — with
   reversible placeholders before a message reaches the model, then restores them in the reply.
   Two layers: an optional local/OpenAI-compatible LLM for semantic entity judgment, plus a

@@ -22,7 +22,7 @@ import { setActiveSessionId } from './session'
 import { dropSessionState, publishSessionState } from './session-states'
 
 const desktopWindow = window as unknown as { pulseDesktop?: Window['pulseDesktop'] }
-const initialPulseDesktop = desktopWindow.pulseDesktop
+const initialPULSEDesktop = desktopWindow.pulseDesktop
 
 const notify = vi.fn().mockResolvedValue(true)
 
@@ -59,8 +59,8 @@ beforeEach(() => {
 afterEach(() => {
   clearPluginNotifyHandlers()
 
-  if (initialPulseDesktop) {
-    desktopWindow.pulseDesktop = initialPulseDesktop
+  if (initialPULSEDesktop) {
+    desktopWindow.pulseDesktop = initialPULSEDesktop
   } else {
     delete desktopWindow.pulseDesktop
   }
@@ -295,7 +295,7 @@ describe('sendTestNativeNotification', () => {
   it('fires regardless of focus or active session', () => {
     setWindowState({ focused: true, hidden: false })
     setActiveSessionId('on-screen')
-    sendTestNativeNotification('Pulse', 'works')
+    sendTestNativeNotification('PULSE', 'works')
     expect(notify).toHaveBeenCalledTimes(1)
   })
 })

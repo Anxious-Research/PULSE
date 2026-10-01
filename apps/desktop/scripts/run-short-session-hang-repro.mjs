@@ -1283,7 +1283,7 @@ async function executeRunInSandboxAttempt(target, index, warmup, mock, output, s
     {
       cwd: target.targetDesktop,
       env: sanitizedEnv({
-        PULSE_DESKTOP_APP_NAME: `PulseShortSession-${target.label}-${process.pid}-${index}-${warmup ? 'w' : 'm'}-${attempt}`,
+        PULSE_DESKTOP_APP_NAME: `PULSEShortSession-${target.label}-${process.pid}-${index}-${warmup ? 'w' : 'm'}-${attempt}`,
         PULSE_DESKTOP_PULSE_ROOT: target.targetRoot,
         PULSE_DESKTOP_IGNORE_EXISTING: '1',
         PULSE_DESKTOP_USER_DATA_DIR: userData,

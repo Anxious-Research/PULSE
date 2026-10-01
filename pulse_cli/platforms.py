@@ -1,4 +1,4 @@
-"""Shared platform registry for Pulse Agent."""
+"""Shared platform registry for PULSE Agent."""
 
 from collections import OrderedDict
 from typing import NamedTuple

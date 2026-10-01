@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { atom } from 'nanostores'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import type * as PulseModule from '@/pulse'
+import type * as PULSEModule from '@/pulse'
 import type { SessionInfo } from '@/pulse'
 import type * as SessionStore from '@/store/session'
 import type * as SessionStatesStore from '@/store/session-states'
@@ -75,7 +75,7 @@ vi.mock('@/i18n', () => ({
 vi.mock('@/app/chat/profile-tag', () => ({ ProfileTag: () => null }))
 vi.mock('@/app/chat/session-drag', () => ({ startSessionDrag: vi.fn() }))
 vi.mock('@/pulse', async importOriginal => ({
-  ...(await importOriginal<typeof PulseModule>()),
+  ...(await importOriginal<typeof PULSEModule>()),
   renameSession: vi.fn(),
   setSessionUnreadRemote: vi.fn(() => Promise.resolve({ ok: true }))
 }))

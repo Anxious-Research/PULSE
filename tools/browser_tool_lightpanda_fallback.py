@@ -62,7 +62,7 @@ def lightpanda_engine_status() -> Tuple[bool, str]:
             return False, "Browser Use cloud (BROWSER_USE_API_KEY) is selected"
     except Exception as e:
         _bt.logger.debug("legacy Browser Use cloud check failed: %s", e)
-    return True, "Browser Use mode: Pulse spawns `lightpanda serve` per session"
+    return True, "Browser Use mode: PULSE spawns `lightpanda serve` per session"
 
 
 def _lightpanda_fallback_reason(engine: str, command: str, result: Dict[str, Any]) -> Optional[str]:
@@ -141,7 +141,7 @@ def _run_chrome_fallback_command(task_id: str, command: str, args: List[str], ti
     if not _install._chromium_installed():
         if _install._running_in_docker():
             hint = ("Chrome fallback requires Chromium, but it is missing. You're running in Docker — "
-                    "pull the latest image: docker pull ghcr.io/anxiousresearchlab/pulse-agent:latest")
+                    "pull the latest image: docker pull ghcr.io/nousresearch/pulse-agent:latest")
         else:
             hint = ("Chrome fallback requires Chromium, but it is missing. Install it with: "
                     "pulse pm install chromium")

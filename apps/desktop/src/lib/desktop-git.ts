@@ -1,11 +1,11 @@
 import type {
-  PulseGitBaseBranch,
-  PulseGitBranch,
-  PulseGitWorktree,
-  PulseRepoPullRequests,
-  PulseRepoStatus,
-  PulseReviewList,
-  PulseReviewShipInfo
+  PULSEGitBaseBranch,
+  PULSEGitBranch,
+  PULSEGitWorktree,
+  PULSERepoPullRequests,
+  PULSERepoStatus,
+  PULSEReviewList,
+  PULSEReviewShipInfo
 } from '@/global'
 import { pulseApi } from '@/pulse'
 
@@ -23,7 +23,7 @@ function desktopApi<T>(path: string, body?: Record<string, unknown>): Promise<T>
   const desktop = window.pulseDesktop
 
   if (!desktop) {
-    throw new Error('Pulse Desktop bridge is unavailable')
+    throw new Error('PULSE Desktop bridge is unavailable')
   }
 
   return pulseApi<T>(
@@ -49,7 +49,7 @@ function gitPost<T>(route: string, body: Record<string, unknown>): Promise<T> {
 
 const remoteGit: GitBridge = {
   worktreeList: async repoPath =>
-    (await gitGet<{ worktrees: PulseGitWorktree[] }>('worktrees', { path: repoPath })).worktrees,
+    (await gitGet<{ worktrees: PULSEGitWorktree[] }>('worktrees', { path: repoPath })).worktrees,
 
   worktreeAdd: (repoPath, options) => gitPost('worktree/add', { path: repoPath, ...options }),
 
@@ -59,19 +59,19 @@ const remoteGit: GitBridge = {
   branchSwitch: (repoPath, branch) => gitPost('branch/switch', { branch, path: repoPath }),
 
   branchList: async repoPath =>
-    (await gitGet<{ branches: PulseGitBranch[] }>('branches', { path: repoPath })).branches,
+    (await gitGet<{ branches: PULSEGitBranch[] }>('branches', { path: repoPath })).branches,
 
   baseBranchList: async repoPath =>
-    (await gitGet<{ branches: PulseGitBaseBranch[] }>('base-branches', { path: repoPath })).branches,
+    (await gitGet<{ branches: PULSEGitBaseBranch[] }>('base-branches', { path: repoPath })).branches,
 
-  repoStatus: repoPath => gitGet<PulseRepoStatus | null>('status', { path: repoPath }),
+  repoStatus: repoPath => gitGet<PULSERepoStatus | null>('status', { path: repoPath }),
 
   fileDiff: async (repoPath, filePath) =>
     (await gitGet<{ diff: string }>('file-diff', { file: filePath, path: repoPath })).diff,
 
   review: {
     list: (repoPath, scope, baseRef) =>
-      gitGet<PulseReviewList>('review/list', { base: baseRef, path: repoPath, scope }),
+      gitGet<PULSEReviewList>('review/list', { base: baseRef, path: repoPath, scope }),
 
     diff: async (repoPath, filePath, scope, baseRef, staged) =>
       (await gitGet<{ diff: string }>('review/diff', { base: baseRef, file: filePath, path: repoPath, scope, staged }))
@@ -92,10 +92,10 @@ const remoteGit: GitBridge = {
 
     push: repoPath => gitPost('review/push', { path: repoPath }),
 
-    shipInfo: repoPath => gitGet<PulseReviewShipInfo>('review/ship-info', { path: repoPath }),
+    shipInfo: repoPath => gitGet<PULSEReviewShipInfo>('review/ship-info', { path: repoPath }),
 
     prList: (repoPath, branches, numbers) =>
-      gitPost<PulseRepoPullRequests>('review/pr-list', { branches, numbers: numbers ?? [], path: repoPath }),
+      gitPost<PULSERepoPullRequests>('review/pr-list', { branches, numbers: numbers ?? [], path: repoPath }),
 
     createPr: repoPath => gitPost('review/create-pr', { path: repoPath })
   },

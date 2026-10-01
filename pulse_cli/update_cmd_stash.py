@@ -173,7 +173,7 @@ def _warn_orphaned_update_autostashes(git_cmd: list[str], cwd: Path) -> int:
     """Print a notice for update autostashes older than the warn threshold; return the count (0 on any git failure).
 
     Autostashes legitimately outlive a run (--keep-stash, failed restore) but nothing re-surfaces them.
-    Deliberately NOT a GC: a stash may be the only copy of the user's work, so Pulse never drops one.
+    Deliberately NOT a GC: a stash may be the only copy of the user's work, so PULSE never drops one.
 
     Autostash entries legitimately outlive an update run (``--keep-stash`` parks them; a conflicted or
     failed restore preserves them for safety), but nothing ever re-surfaces them afterwards — they sit in
@@ -325,7 +325,7 @@ def _reject_unsafe_stash_restore(
     """Restore the clean updated tree, preserve the stash, and abort the update."""
     from pulse_cli.update_cmd import _git_untracked_paths
     print()
-    print("✗ Restored local changes made the Pulse agent unexecutable.")
+    print("✗ Restored local changes made the PULSE agent unexecutable.")
     print(f"  Health check failed: {failing_target}")
     if detail:
         for line in str(detail).splitlines()[:6]:
@@ -361,7 +361,7 @@ def _confirm_restore(stash_ref: str, input_fn) -> bool:
     print()
     print("⚠ Local changes were stashed before updating.")
     print("  Restoring them may reapply local customizations onto the updated codebase.")
-    print("  Review the result afterward if Pulse behaves unexpectedly.")
+    print("  Review the result afterward if PULSE behaves unexpectedly.")
     print(f"Restore local changes now? {prompt_suffix}")
     if remote_prompt:
         response = input_fn(f"Restore local changes now? {prompt_suffix}", "n")
@@ -416,13 +416,13 @@ def _drop_restored_stash(git_cmd: list[str], cwd: Path, stash_ref: str) -> None:
     from pulse_cli.update_cmd_git import _git_run
     stash_selector = _resolve_stash_selector(git_cmd, cwd, stash_ref)
     if stash_selector is None:
-        print("⚠ Local changes were restored, but Pulse couldn't find the stash entry to drop.")
+        print("⚠ Local changes were restored, but PULSE couldn't find the stash entry to drop.")
         print(_STASH_LEFT_IN_PLACE)
         _print_stash_cleanup_guidance(stash_ref)
         return
     drop = _git_run(git_cmd, ["stash", "drop", stash_selector], cwd)
     if drop.returncode != 0:
-        print("⚠ Local changes were restored, but Pulse couldn't drop the saved stash entry.")
+        print("⚠ Local changes were restored, but PULSE couldn't drop the saved stash entry.")
         _print_nonempty(drop.stdout)
         _print_nonempty(drop.stderr)
         print(_STASH_LEFT_IN_PLACE)
@@ -473,7 +473,7 @@ def _restore_stashed_changes(
     _drop_restored_stash(git_cmd, cwd, stash_ref)
     _record_stash_disposition("restored", stash_ref)
     print("⚠ Local changes were restored on top of the updated codebase.")
-    print("  Review `git diff` / `git status` if Pulse behaves unexpectedly.")
+    print("  Review `git diff` / `git status` if PULSE behaves unexpectedly.")
     return True
 
 
@@ -488,13 +488,13 @@ def _discard_stashed_changes(git_cmd: list[str], cwd: Path, stash_ref: str) -> b
     if stash_selector is None:
         print(
             "⚠ Configured to discard local changes on non-interactive update, "
-            "but Pulse couldn't find the stash entry to drop."
+            "but PULSE couldn't find the stash entry to drop."
         )
         _print_stash_cleanup_guidance(stash_ref)
         return False
     drop = _git_run(git_cmd, ["stash", "drop", stash_selector], cwd)
     if drop.returncode != 0:
-        print("⚠ Configured to discard local changes, but Pulse couldn't drop the saved stash entry.")
+        print("⚠ Configured to discard local changes, but PULSE couldn't drop the saved stash entry.")
         _print_first_line(drop.stderr)
         _print_stash_cleanup_guidance(stash_ref, stash_selector)
         _record_stash_disposition("parked", stash_ref, "configured discard failed")

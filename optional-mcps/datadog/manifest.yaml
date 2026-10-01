@@ -1,4 +1,4 @@
-# Anxious-approved MCP catalog entry.
+# Nous-approved MCP catalog entry.
 # Presence in this directory = approval. Merged via PR review.
 manifest_version: 1
 
@@ -8,9 +8,9 @@ description: >-
   Logs, monitors, dashboards, and incidents from Datadog.
 source: https://docs.datadoghq.com/bits_ai/mcp_server/
 
-# Official vendor-hosted remote MCP (URL-only — Pulse never spawns a local
+# Official vendor-hosted remote MCP (URL-only — PULSE never spawns a local
 # process for this entry). Native OAuth 2.1 + Dynamic Client Registration;
-# Pulse's MCP client + mcp_oauth_manager handle discovery, PKCE, token
+# PULSE's MCP client + mcp_oauth_manager handle discovery, PKCE, token
 # exchange, and refresh.
 transport:
   type: http
@@ -29,6 +29,6 @@ suggest:
     - datadoghq.eu
 
 post_install: |
-  On first connection Pulse opens a browser to authorize with
+  On first connection PULSE opens a browser to authorize with
   Datadog (or run `pulse mcp login datadog`). Approve access,
   then restart the session so tools load.

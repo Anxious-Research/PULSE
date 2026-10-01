@@ -2,7 +2,7 @@
 
 Set via `pulse model` (picker) or `pulse setup`. 35+ provider profiles ship as
 plugins under `plugins/model-providers/`; user plugins of the same name override.
-Full docs: https://github.com/Anxious-Research/PULSE/integrations/providers
+Full docs: https://pulse-agent.anxious-research.com/docs/integrations/providers
 
 ### Providers
 
@@ -10,7 +10,7 @@ Full docs: https://github.com/Anxious-Research/PULSE/integrations/providers
 |----------|------|----------------|
 | openrouter | API key | `OPENROUTER_API_KEY` |
 | anthropic | API key | `ANTHROPIC_API_KEY` (also `CLAUDE_CODE_OAUTH_TOKEN`) |
-| anxious | OAuth device code | `pulse auth add anxious` (or `ANXIOUS_API_KEY`) |
+| nous | OAuth device code | `pulse auth add nous` (or `NOUS_API_KEY`) |
 | openai-codex | OAuth | `pulse auth add openai-codex` |
 | qwen-oauth | OAuth | `pulse auth add qwen-oauth` |
 | minimax-oauth | OAuth | `pulse auth add minimax-oauth` |

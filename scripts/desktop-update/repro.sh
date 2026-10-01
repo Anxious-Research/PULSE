@@ -107,7 +107,7 @@ case "$MODE" in
     }
     decide() { bash "$SCRIPT_DIR/posix.sh" --self-test-gate --install-root "$G/pulse-agent" "$@" | cut -d: -f1; }
 
-    expect "appimage (not under unpacked)"      skew     "$(decide --relaunch-target /opt/Pulse/pulse)"
+    expect "appimage (not under unpacked)"      skew     "$(decide --relaunch-target /opt/PULSE/pulse)"
     expect "sibling-prefix dir not fooled"      skew     "$(decide --relaunch-target "$UNPACKED-evil/pulse")"
     expect "no chrome-sandbox (namespace)"      relaunch "$(decide --relaunch-target "$UNPACKED/pulse")"
 
@@ -159,20 +159,20 @@ case "$MODE" in
     if [ "$(uname)" != "Darwin" ]; then
       bash "$SCRIPT_DIR/posix.sh" --no-ui --desktop-pid 0 --install-root "$L/pulse-agent" \
         --relaunch-target "$UNPACKED/pulse" >/dev/null 2>&1 || true
-      expect_msg "instant-exit relaunch downgrades to manual" "d['ok']==True and d['manual']==True and 'Reopen Pulse' in d['message']"
+      expect_msg "instant-exit relaunch downgrades to manual" "d['ok']==True and d['manual']==True and 'Reopen PULSE' in d['message']"
     else
       # mac: a SUPPLIED target that is missing is a REJECTED launch and
       # must downgrade to manual — never a clean "Update complete."
       bash "$SCRIPT_DIR/posix.sh" --no-ui --desktop-pid 0 --install-root "$L/pulse-agent" \
         --relaunch-target "$L/NoSuch.app" >/dev/null 2>&1 || true
-      expect_msg "missing bundle downgrades to manual" "d['ok']==True and d['manual']==True and 'Reopen Pulse' in d['message']"
+      expect_msg "missing bundle downgrades to manual" "d['ok']==True and d['manual']==True and 'Reopen PULSE' in d['message']"
     fi
 
     # 2. gated skew: success result carries the skew message (the manual
     #    event's payload), never a bare "Update complete."
     stub_install
     bash "$SCRIPT_DIR/posix.sh" --no-ui --desktop-pid 0 --install-root "$L/pulse-agent" \
-      --relaunch-target /opt/Pulse/pulse >/dev/null 2>&1 || true
+      --relaunch-target /opt/PULSE/pulse >/dev/null 2>&1 || true
     if [ "$(uname)" != "Darwin" ]; then
       expect_msg "skew outcome surfaces in result message" "d['ok']==True and d['manual']==True and 'was not changed' in d['message']"
     fi

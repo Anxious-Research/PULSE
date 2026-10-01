@@ -101,14 +101,14 @@ def _image_error_max_dimension(error: Exception) -> Optional[int]:
     return max_dimension if 512 <= max_dimension <= 8000 else None
 
 
-def _try_refresh_anxious_paid_entitlement_credentials(agent) -> bool:
-    """Refresh Anxious runtime credentials after a fresh paid-entitlement check."""
+def _try_refresh_nous_paid_entitlement_credentials(agent) -> bool:
+    """Refresh Nous runtime credentials after a fresh paid-entitlement check."""
     try:
-        from pulse_cli.anxious_account import get_anxious_portal_account_info
+        from pulse_cli.nous_account import get_nous_portal_account_info
 
-        if get_anxious_portal_account_info(force_fresh=True).paid_service_access is not True:
+        if get_nous_portal_account_info(force_fresh=True).paid_service_access is not True:
             return False
-        return agent._try_refresh_anxious_client_credentials(force=True)
+        return agent._try_refresh_nous_client_credentials(force=True)
     except Exception:
         return False
 
@@ -315,10 +315,10 @@ def recover_before_classification(
     return False, active_system_prompt
 
 
-def _print_anxious_401_diagnostics(agent: Any, api_error: Exception) -> None:
-    """Anxious 401 that survived a credential refresh: likely Portal OAuth expired/revoked,
+def _print_nous_401_diagnostics(agent: Any, api_error: Exception) -> None:
+    """Nous 401 that survived a credential refresh: likely Portal OAuth expired/revoked,
     no credits, or agent key blocked."""
-    from agent.conversation_loop import _print_anxious_entitlement_guidance
+    from agent.conversation_loop import _print_nous_entitlement_guidance
     from pulse_constants import display_pulse_home
     _body_text = ""
     try:
@@ -327,7 +327,7 @@ def _print_anxious_401_diagnostics(agent: Any, api_error: Exception) -> None:
             _body_text = str(_body)[:200]
     except Exception:
         pass
-    _plines(agent, "🔐 Anxious 401 — Portal authentication failed.")
+    _plines(agent, "🔐 Nous 401 — Portal authentication failed.")
     if _body_text:
         _plines(agent, f"   Response: {_body_text}")
     try:
@@ -335,18 +335,18 @@ def _print_anxious_401_diagnostics(agent: Any, api_error: Exception) -> None:
         if is_anonymous_agent(agent):
             # The free tier has no credits, no agent key and no auth.json to inspect: its session
             # ended and could not be replaced. The two doors are a sign-in or another provider.
-            _plines(agent, "   Your session ended and Pulse couldn't start a new one.",
-                    "   Sign in with a Anxious account (it's free), or switch providers with /model.")
+            _plines(agent, "   Your session ended and PULSE couldn't start a new one.",
+                    "   Sign in with a Nous account (it's free), or switch providers with /model.")
             return
     except Exception:
         pass
-    if not _print_anxious_entitlement_guidance(agent, "Anxious model access"):
+    if not _print_nous_entitlement_guidance(agent, "Nous model access"):
         _plines(agent, "   Most likely: Portal OAuth expired, account out of credits, or agent key revoked.")
     _plines(
         agent,
         "   Troubleshooting:",
-        "     • Re-authenticate: pulse auth add anxious",
-        "     • Check credits / billing: https://portal.anxiousresearchlab.com",
+        "     • Re-authenticate: pulse auth add nous",
+        "     • Check credits / billing: https://portal.anxious-research.com",
         f"     • Verify stored credentials: {display_pulse_home()}/auth.json",
         "     • Switch providers temporarily: /model <model> --provider openrouter",
     )
@@ -378,11 +378,11 @@ def _print_anthropic_401_diagnostics(agent: Any, key: Any) -> None:
     _plines(
         agent,
         "   Troubleshooting:",
-        f"     • Check ANTHROPIC_TOKEN in {_dhh}/.env for Pulse-managed OAuth/setup tokens",
+        f"     • Check ANTHROPIC_TOKEN in {_dhh}/.env for PULSE-managed OAuth/setup tokens",
         f"     • Check ANTHROPIC_API_KEY in {_dhh}/.env for API keys or legacy token values",
         "     • For API keys: verify at https://platform.claude.com/settings/keys",
-        "     • Pulse login (OAuth): run 'pulse auth add anthropic' to sign in again, then retry",
-        "     • Inspect what Pulse holds: pulse auth list anthropic",
+        "     • PULSE login (OAuth): run 'pulse auth add anthropic' to sign in again, then retry",
+        "     • Inspect what PULSE holds: pulse auth list anthropic",
         "     • Legacy cleanup: pulse config set ANTHROPIC_TOKEN \"\"",
         "     • Clear stale keys: pulse config set ANTHROPIC_API_KEY \"\"",
     )
@@ -391,8 +391,8 @@ def _print_anthropic_401_diagnostics(agent: Any, key: Any) -> None:
 def _refresh_credentials_after_401(
     agent: Any, api_error: Exception, _retry: TurnRetryState, status_code: Optional[int]
 ) -> bool:
-    """Per-provider one-shot credential refresh on 401 (codex/xai, vertex, anxious, copilot,
-    anthropic), printing user-facing diagnostics when the anxious/anthropic refresh fails.
+    """Per-provider one-shot credential refresh on 401 (codex/xai, vertex, nous, copilot,
+    anthropic), printing user-facing diagnostics when the nous/anthropic refresh fails.
     Returns True when a refresh succeeded and the call should be retried."""
     from agent.conversation_loop import _is_copilot_provider
 
@@ -415,14 +415,14 @@ def _refresh_credentials_after_401(
             return True
     if (
         agent.api_mode in ("chat_completions", "anthropic_messages")
-        and agent.provider == "anxious"
-        and not _retry.anxious_auth_retry_attempted
+        and agent.provider == "nous"
+        and not _retry.nous_auth_retry_attempted
     ):
-        _retry.anxious_auth_retry_attempted = True
-        if agent._try_refresh_anxious_client_credentials(force=True):
-            agent._buffer_vprint("🔐 Anxious agent key refreshed after 401. Retrying request...")
+        _retry.nous_auth_retry_attempted = True
+        if agent._try_refresh_nous_client_credentials(force=True):
+            agent._buffer_vprint("🔐 Nous agent key refreshed after 401. Retrying request...")
             return True
-        _print_anxious_401_diagnostics(agent, api_error)
+        _print_nous_401_diagnostics(agent, api_error)
     if _is_copilot_provider(agent) and not _retry.copilot_auth_retry_attempted:
         _retry.copilot_auth_retry_attempted = True
         if agent._try_refresh_copilot_client_credentials():
@@ -567,22 +567,22 @@ def _recover_format_errors(
 
 _WELCOME_ROUTE_HEAL_COPY = {
     "anon_on_paid_host": "Reconnected to the free model's own route.",
-    "named_on_welcome_host": "Reconnected to your Anxious account's own route.",
+    "named_on_welcome_host": "Reconnected to your Nous account's own route.",
 }
 
 
 def _recover_welcome_tier(agent: Any, classified: Any, _retry: TurnRetryState) -> bool:
-    """Two one-shot repairs for the Anxious free tier, both silent on the wire and named once in chat.
+    """Two one-shot repairs for the Nous free tier, both silent on the wire and named once in chat.
 
     ``model_not_free``: the session asked the welcome host for a model it does not serve; move
     to the first alternate the gateway named (its own model) and retry, instead of failing the
     turn. ``anon_on_paid_host`` / ``named_on_welcome_host``: this process is pointed at the other
     identity's host (a stale route); re-read the credentials, which heals the URL, and retry. The
     refresh reports False when the store yields the same route, so a user-set
-    ``ANXIOUS_INFERENCE_BASE_URL`` falls straight through to the terminal copy.
+    ``NOUS_INFERENCE_BASE_URL`` falls straight through to the terminal copy.
 
     Reads the CLASSIFIER's context (``classified.error_context``): that is where
-    ``_anxious_welcome_tier`` parks ``welcome_refusal`` / ``welcome_route``. The turn's other context
+    ``_nous_welcome_tier`` parks ``welcome_refusal`` / ``welcome_route``. The turn's other context
     (``extract_api_error_context``) never carries them."""
     ctx = getattr(classified, "error_context", None) or {}
     refusal = ctx.get("welcome_refusal") if isinstance(ctx, dict) else None
@@ -594,7 +594,7 @@ def _recover_welcome_tier(agent: Any, classified: Any, _retry: TurnRetryState) -
         if target and target != requested:
             try:
                 agent.model = target
-                agent._anxious_model_switch = (requested, target)
+                agent._nous_model_switch = (requested, target)
             except Exception:
                 return False
             _vlines(agent, f"↪️  {requested} isn't available without signing in; using {target} for now. Retrying...")
@@ -604,7 +604,7 @@ def _recover_welcome_tier(agent: Any, classified: Any, _retry: TurnRetryState) -
     if route in _WELCOME_ROUTE_HEAL_COPY and not _retry.welcome_route_heal_attempted:
         _retry.welcome_route_heal_attempted = True
         try:
-            healed = bool(agent._try_refresh_anxious_client_credentials(force=True))
+            healed = bool(agent._try_refresh_nous_client_credentials(force=True))
         except Exception:
             healed = False
         if healed:
@@ -620,12 +620,12 @@ def recover_after_classification(
 ) -> Tuple[bool, bool]:
     """One-shot recovery chain that runs AFTER ``classify_api_error`` and before the
     generic retry path. Order is load-bearing (each branch may ``return`` early):
-    Anxious paid-entitlement refresh → Codex stale-reasoning strip on 401 ``token_expired`` →
+    Nous paid-entitlement refresh → Codex stale-reasoning strip on 401 ``token_expired`` →
     credential-pool rotation → image shrink → multimodal-tool-content strip → corrupt-image
     strip → Anthropic OAuth 1M-beta disable → per-provider 401 credential refresh →
     format-recovery strips.
-    Returns ``(retry_now, recovered_with_pool)``; the latter feeds the Anxious rate-limit guard."""
-    from agent.conversation_loop import _is_anxious_inference_route
+    Returns ``(retry_now, recovered_with_pool)``; the latter feeds the Nous rate-limit guard."""
+    from agent.conversation_loop import _is_nous_inference_route
 
     if _recover_welcome_tier(agent, classified, _retry):
         return True, False
@@ -639,14 +639,14 @@ def recover_after_classification(
 
     if (
         classified.reason == FailoverReason.billing
-        and _is_anxious_inference_route(
+        and _is_nous_inference_route(
             getattr(agent, "provider", "") or "", getattr(agent, "base_url", "") or ""
         )
-        and not _retry.anxious_paid_entitlement_refresh_attempted
+        and not _retry.nous_paid_entitlement_refresh_attempted
     ):
-        _retry.anxious_paid_entitlement_refresh_attempted = True
-        if _try_refresh_anxious_paid_entitlement_credentials(agent):
-            _vlines(agent, "🔐 Anxious paid access verified — refreshed runtime credentials and retrying request...")
+        _retry.nous_paid_entitlement_refresh_attempted = True
+        if _try_refresh_nous_paid_entitlement_credentials(agent):
+            _vlines(agent, "🔐 Nous paid access verified — refreshed runtime credentials and retrying request...")
             return True, False
 
     recovered_with_pool, _retry.has_retried_429 = agent._recover_with_credential_pool(
@@ -685,7 +685,7 @@ def recover_after_classification(
             "messages with image parts found; surfacing original error."
         )
 
-    # Route rejecting a reasoning disable: a reasoning-mandatory route (Anxious Portal / OpenRouter,
+    # Route rejecting a reasoning disable: a reasoning-mandatory route (Nous Portal / OpenRouter,
     # e.g. GLM-5.3) 400s on ``reasoning: {enabled: false}``; a chat-only OpenAI-compatible relay
     # 400s on the ``reasoning_effort: none`` the title/continuation disable projects (#114460).
     # The catalog guard in the provider profile normally swallows the first, but a process that
@@ -832,23 +832,23 @@ def _print_nonretryable_auth_guidance(
     agent: Any, classified: Any, *, status_code: Optional[int], provider: Any, base_url: Any, model: Any,
 ) -> None:
     """Actionable guidance for a terminal auth / billing error."""
-    from agent.conversation_loop import _print_billing_or_entitlement_guidance, _print_anxious_entitlement_guidance
+    from agent.conversation_loop import _print_billing_or_entitlement_guidance, _print_nous_entitlement_guidance
 
     if classified.reason == FailoverReason.billing and _print_billing_or_entitlement_guidance(
         agent, capability="model access", provider=provider, base_url=str(base_url),
         model=model, unverified=classified.billing_unverified,
     ):
         return
-    if provider == "anxious" and _print_anxious_entitlement_guidance(agent, "Anxious model access"):
+    if provider == "nous" and _print_nous_entitlement_guidance(agent, "Nous model access"):
         return
-    if provider in {"openai-codex", "xai-oauth", "anxious"} and status_code == 401:
+    if provider in {"openai-codex", "xai-oauth", "nous"} and status_code == 401:
         if provider == "openai-codex":
             from agent.turn_failure_copy import oauth_relogin_command
 
             _vlines(
                 agent,
                 "   💡 Codex OAuth token was rejected (HTTP 401). Your token may have been",
-                "      refreshed by another client (Codex CLI, VS Code) or another Pulse profile.",
+                "      refreshed by another client (Codex CLI, VS Code) or another PULSE profile.",
                 f"      Sign this profile in again: `{oauth_relogin_command(provider)}`",
             )
         elif provider == "xai-oauth":
@@ -857,22 +857,22 @@ def _print_nonretryable_auth_guidance(
                 "   💡 xAI OAuth token was rejected (HTTP 401). To fix:",
                 "      re-authenticate with xAI Grok OAuth (SuperGrok / Premium+) from `pulse model`.",
             )
-        else:  # anxious
+        else:  # nous
             _vlines(
                 agent,
-                "   💡 Anxious Portal OAuth token was rejected (HTTP 401). Your token may be",
+                "   💡 Nous Portal OAuth token was rejected (HTTP 401). Your token may be",
                 "      expired, revoked, or your account may be out of credits. To fix:",
                 "      1. Re-authenticate: pulse portal",
-                "      2. Check your portal account: https://portal.anxiousresearchlab.com",
+                "      2. Check your portal account: https://portal.anxious-research.com",
             )
-            # ``:free`` is OpenRouter slug syntax; Anxious Portal will reject the model
+            # ``:free`` is OpenRouter slug syntax; Nous Portal will reject the model
             # name even after a successful re-auth.
             if isinstance(model, str) and model.endswith(":free"):
                 _vlines(
                     agent,
                     f"      ⚠️  Note: `{model}` looks like an OpenRouter slug (`:free` suffix).",
-                    "         Anxious Portal won't recognize that model name. Either switch to a",
-                    f"         Anxious catalog model, or run `/model openrouter:{model}` to use OpenRouter.",
+                    "         Nous Portal won't recognize that model name. Either switch to a",
+                    f"         Nous catalog model, or run `/model openrouter:{model}` to use OpenRouter.",
                 )
         return
     _vlines(
@@ -886,7 +886,7 @@ def _print_nonretryable_auth_guidance(
 
 
 def _welcome_tier_guidance(classified: Any, *, model: Any, in_chat: bool, door: bool = True) -> str:
-    """Copy for a Anxious free-tier refusal the classifier parsed (``welcome_refusal`` /
+    """Copy for a Nous free-tier refusal the classifier parsed (``welcome_refusal`` /
     ``welcome_route`` in ``error_context``); empty for every other error."""
     ctx = getattr(classified, "error_context", None) or {}
     refusal, route = ctx.get("welcome_refusal"), ctx.get("welcome_route")
@@ -930,7 +930,7 @@ def _stamp_free_tier(result: Dict[str, Any], kind: str, message: str) -> Dict[st
 
 
 def _welcome_outage_copy(base_url: Any, classified: Any, *, anonymous: bool = False) -> str:
-    """On the Anxious free tier, a transport / server failure that outlived every retry reads as one
+    """On the Nous free tier, a transport / server failure that outlived every retry reads as one
     plain sentence (the free model is having trouble) rather than the technical summary. Empty
     for every other route and for rate limits / billing, which have their own copy."""
     try:
@@ -1021,7 +1021,7 @@ def nonretryable_client_error_result(
             agent,
             "   💡 The endpoint's firewall/CDN blocked the request before it reached the model — your key",
             "      and model access are probably fine. Relays often reject the SDK's default User-Agent:",
-            "      set `extra_headers: {User-Agent: PulseAgent/1.0}` on the custom_providers entry,",
+            "      set `extra_headers: {User-Agent: PULSEAgent/1.0}` on the custom_providers entry,",
             "      or check the proxy/WAF rules and your network.",
         )
     # Content-policy blocks: the provider refused this prompt, so recovery is a rephrase
@@ -1036,7 +1036,7 @@ def nonretryable_client_error_result(
     if classified.reason == FailoverReason.ssl_cert_verification:
         _vlines(
             agent,
-            "   💡 Pulse couldn't verify the provider's security certificate. This fails the same",
+            "   💡 PULSE couldn't verify the provider's security certificate. This fails the same",
             "      way on every retry — fix the environment, then try again:",
             "      • Corporate TLS-inspecting proxy? Ask your administrator to install",
             "        its root certificate in the operating system trust store.",
@@ -1226,7 +1226,7 @@ def max_retries_exhausted_result(
         "failure_retryable": bool(classified.retryable),
         # True when the billing verdict rests on an ambiguous body.
         "billing_unverified": _billing_unverified,
-        # Present only for billing walls: (provider, billing_url, is_anxious, message).
+        # Present only for billing walls: (provider, billing_url, is_nous, message).
         "billing_block": _billing_block,
     })
     # Retry-exhaustion after partial delivery (#119001): the text was already
@@ -1622,7 +1622,7 @@ def _failure_hint_for(code: Optional[int], api_duration: float) -> str:
 @dataclass
 class ClassifiedErrorVerdict:
     """Outcome of ``route_classified_error``. ``action``: ``"return"`` (terminal result),
-    ``"break"`` (restart armed on ``_retry``), ``"continue"`` (re-enter the retry loop; Anxious
+    ``"break"`` (restart armed on ``_retry``), ``"continue"`` (re-enter the retry loop; Nous
     guard re-check) or ``"fallthrough"`` (proceed to overflow / client-error / backoff
     handling). The remaining fields are loop locals the router rebound or computed."""
 
@@ -1714,8 +1714,8 @@ def activate_codex_app_server_fallback(agent: Any, result: Dict[str, Any]) -> bo
     return bool(agent._try_activate_fallback(reason=classified.reason))
 
 
-def _is_genuine_anxious_rate_limit(agent: Any, api_error: Exception, error_context: Any, classified: Any = None) -> bool:
-    """Record a genuine account-level Anxious 429 to the cross-session breaker; upstream
+def _is_genuine_nous_rate_limit(agent: Any, api_error: Exception, error_context: Any, classified: Any = None) -> bool:
+    """Record a genuine account-level Nous 429 to the cross-session breaker; upstream
     capacity 429s (no exhausted bucket in headers or last-known state) are left alone.
 
     *error_context* is the turn's (``extract_api_error_context``); *classified* brings the
@@ -1724,8 +1724,8 @@ def _is_genuine_anxious_rate_limit(agent: Any, api_error: Exception, error_conte
     place the user is told that signing in lifts it."""
     _genuine = False
     try:
-        from agent.anxious_rate_guard import (
-            is_genuine_anxious_rate_limit, is_long_welcome_rate_limit, record_anxious_rate_limit)
+        from agent.nous_rate_guard import (
+            is_genuine_nous_rate_limit, is_long_welcome_rate_limit, record_nous_rate_limit)
         _err_resp = getattr(api_error, "response", None)
         _err_hdrs = getattr(_err_resp, "headers", None) if _err_resp else None
         from pulse_cli.anon_auth import is_anonymous_agent
@@ -1735,13 +1735,13 @@ def _is_genuine_anxious_rate_limit(agent: Any, api_error: Exception, error_conte
         # requests keep the exhausted-bucket rule, whatever their host or body says.
         _genuine = (
             (anonymous and is_long_welcome_rate_limit(_classified_ctx))
-            or is_genuine_anxious_rate_limit(headers=_err_hdrs, last_known_state=agent._rate_limit_state))
+            or is_genuine_nous_rate_limit(headers=_err_hdrs, last_known_state=agent._rate_limit_state))
         if _genuine:
             _merged = {**(error_context if isinstance(error_context, dict) else {}), **_classified_ctx}
-            record_anxious_rate_limit(headers=_err_hdrs, error_context=_merged, anonymous=anonymous)
+            record_nous_rate_limit(headers=_err_hdrs, error_context=_merged, anonymous=anonymous)
         else:
             logger.info(
-                "Anxious 429 looks like upstream capacity "
+                "Nous 429 looks like upstream capacity "
                 "(no exhausted bucket in headers or "
                 "last-known state) -- not tripping "
                 "cross-session breaker."
@@ -1764,7 +1764,7 @@ def route_classified_error(
     long-context tier 429 → cap at 200k and compress; eager fallback for rate-limit/billing
     (immediately) and transport failures (after 1 retry) unless credential-pool rotation may
     still recover (upstream-aggregator 429s always fall back); persistent 401/403 → fallback
-    chain once; genuine Anxious 429 → cross-session breaker + re-enter the loop exactly once."""
+    chain once; genuine Nous 429 → cross-session breaker + re-enter the loop exactly once."""
     from agent.conversation_compression import conversation_history_after_compression
     from agent.conversation_loop import _arm_fallback_restart, _ra
     from agent.model_metadata import estimate_request_tokens_rough
@@ -1837,7 +1837,7 @@ def route_classified_error(
                 # from the engine's overflow guard (upstream PR #77169 review).
                 messages, system_message,
                 approx_tokens=estimate_request_tokens_rough(api_messages, tools=agent.tools or None),
-                task_id=effective_task_id,
+                task_id=effective_task_id, trigger="overflow",
             )
             conversation_history = conversation_history_after_compression(agent, messages, conversation_history)
             if len(messages) < original_len or old_ctx > _LONG_CONTEXT_TIER_CAP:
@@ -1908,16 +1908,16 @@ def route_classified_error(
         if agent._try_activate_fallback(reason=classified.reason):
             return _fallback_break()
 
-    # Anxious Portal: a genuine account-level 429 is recorded to a shared file so ALL
-    # sessions back off; is_genuine_anxious_rate_limit excludes upstream 429s.
+    # Nous Portal: a genuine account-level 429 is recorded to a shared file so ALL
+    # sessions back off; is_genuine_nous_rate_limit excludes upstream 429s.
     if (
         is_rate_limited
-        and agent.provider == "anxious"
+        and agent.provider == "nous"
         and classified.reason == FailoverReason.rate_limit
         and not recovered_with_pool
-        and _is_genuine_anxious_rate_limit(agent, api_error, error_context, classified)
+        and _is_genuine_nous_rate_limit(agent, api_error, error_context, classified)
     ):
-        # Re-enter the loop exactly once so the top-of-loop Anxious guard runs
+        # Re-enter the loop exactly once so the top-of-loop Nous guard runs
         # (retry_count = max_retries would skip it entirely).
         retry_count = max(0, max_retries - 1)
         return _verdict("continue")

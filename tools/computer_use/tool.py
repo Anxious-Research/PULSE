@@ -36,7 +36,7 @@ def set_approval_callback(cb) -> None:
     global _approval_callback
     _approval_callback = cb
 
-# Hard-blocked regardless of approval level (e.g. logout kills the session Pulse runs in). Alt is
+# Hard-blocked regardless of approval level (e.g. logout kills the session PULSE runs in). Alt is
 # canonicalized to option, so the Windows variants are blocked before any backend sees them.
 # See #4562.
 _BLOCKED_KEY_COMBOS = {
@@ -76,7 +76,7 @@ def _input_target_mismatch(backend, requested_app: str) -> Optional[str]:
     return None if not current or not wanted or wanted in current or current in wanted else last_app
 
 # ── Backend selection — env-swappable for tests ─────────────────────────────
-# Per-Pulse-session cached backends (own cua-driver session, native target, refs, grant namespace).
+# Per-PULSE-session cached backends (own cua-driver session, native target, refs, grant namespace).
 _backend_lock = threading.Lock()
 _backend: Optional[ComputerUseBackend] = None  # backward-compatible empty-session injection hook (older tests)
 _backends: Dict[str, ComputerUseBackend] = {}
@@ -130,7 +130,7 @@ def reset_screenshot_dedup(session_id: str) -> None:
     _reset_screenshot_dedup(_scoped_sid(session_id))
 
 def _cua_permission_mode(session_id: str) -> str:
-    """Map Pulse's approval bypass onto Cua's immutable mode; fails closed. Both identity namespaces are consulted
+    """Map PULSE's approval bypass onto Cua's immutable mode; fails closed. Both identity namespaces are consulted
     (DB ``session_id`` and gateway ``session_key`` contextvar) or a gateway ``/yolo`` would be invisible here.
     Warns once per session that ``-z``/``--yolo`` swapped the driver onto a private ``unrestricted`` daemon, dropping
     the configured ceiling: deliberate (``unrestricted`` is not a config value) but easy to trigger by accident."""
@@ -198,7 +198,7 @@ def _stop_backend(backend: ComputerUseBackend, call_lock: Optional[threading.RLo
         on_error(e)
 
 def _scoped_sid(session_id: str) -> str:
-    """Cache key for one Pulse session's backend. Outside a served-profile scope it is the bare id
+    """Cache key for one PULSE session's backend. Outside a served-profile scope it is the bare id
     (legacy keys byte-identical); under a multiplexed turn the routed profile's home key is appended
     so two profiles that share a session id (or a DISPLAY) never share one cua-driver (#110032).
     Every cache path — lookup, install, release — goes through this, so release finds what lookup made."""
@@ -211,7 +211,7 @@ def _get_backend(session_id: str = "") -> ComputerUseBackend:
     while True:
         with _backend_lock:
             # Mode resolved under the cache lock; YOLO mutation never holds the approval lock while releasing it.
-            permission_mode = _cua_permission_mode(bare_sid)  # approval state is keyed by the Pulse session id
+            permission_mode = _cua_permission_mode(bare_sid)  # approval state is keyed by the PULSE session id
             if sid == "" and _backend is not None and sid not in _backends:
                 _install_backend(sid, _backend, permission_mode)  # fold the injection hook into the cache
             if (cached := _backends.get(sid)) is None:
@@ -279,7 +279,7 @@ def _shutdown_backend_atexit() -> None:
     Never raises. Drops the global lock before stop(): teardown budgets 5s and must not block spawns.
 
     Each session backend holds a long-lived ``cua-driver`` subprocess, so without this a driver can survive
-    the Pulse process that spawned it (#28152 item 3). #69903 kept the orphan from burning a core by
+    the PULSE process that spawned it (#28152 item 3). #69903 kept the orphan from burning a core by
     disabling the cursor overlay; the process itself still lingered.
     """
     global _backend
@@ -741,12 +741,71 @@ def _maybe_follow_capture(backend: ComputerUseBackend, res: ActionResult, do_cap
     return json.dumps({**json.loads(resp), **payload})  # text capture: merge the action payload in
 
 # ── Cache files (screenshots, element spills, vision temps) ─────────────────
+def _secure_dir_policy(cache_dir) -> None:
+    """Create/reconcile a PULSE media-cache dir owner-only (0700), except managed.
+
+    A capture is as sensitive as the screen it came from — an open password
+    manager, a private chat, a bank tab. The umask-derived 0755 these dirs
+    used to get made every local account able to list (and read) those
+    frames whenever ``PULSE_HOME`` itself is traversable, which is exactly
+    what the documented ``PULSE_HOME_MODE=0701`` web-server escape hatch
+    arranges. Delegates to the same house policy as every PULSE secret dir —
+    ``pulse_cli.config._secure_dir`` — with the mode passed to ``mkdir`` so
+    there is no window between mkdir and chmod; managed/NixOS installs keep
+    their group-share design (the mode is left to the configured umask/setgid
+    because these lazily-created dirs are not covered by the module's
+    ``systemd.tmpfiles`` rules). Best-effort; never breaks a capture.
+    """
+    try:
+        managed = False
+        try:
+            from pulse_cli.config import is_managed
+
+            managed = bool(is_managed())
+        except Exception:  # pragma: no cover - defensive
+            pass
+        if managed:
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            return
+        cache_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+        try:
+            from pulse_cli.config import _secure_dir
+
+            _secure_dir(cache_dir)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.debug("computer_use: cache dir chmod skipped: %s", exc)
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.debug("computer_use: cache dir creation failed for %s: %s", cache_dir, exc)
+        cache_dir.mkdir(parents=True, exist_ok=True)
+
+
+def _write_private_bytes(path, data: bytes) -> None:
+    """Write ``data`` to ``path`` with owner-only (0600) permissions.
+
+    ``Path.write_bytes`` would land 0644 under a default umask. POSIX mode
+    bits are advisory on Windows (``os.chmod`` there only toggles the
+    read-only flag), so this is a best-effort narrowing that falls back to a
+    plain write rather than failing the capture.
+    """
+    import os as _os_priv
+
+    flags = _os_priv.O_WRONLY | _os_priv.O_CREAT | _os_priv.O_TRUNC
+    try:
+        fd = _os_priv.open(str(path), flags, 0o600)
+    except OSError:
+        path.write_bytes(data)
+        return
+    with _os_priv.fdopen(fd, "wb") as handle:
+        handle.write(data)
+
+
 def _cache_file(subdir: str, legacy: str, name: str, pattern: str = "", cap: int = 0):
-    """Path for a new file under ``$PULSE_HOME/<subdir>`` (dir created). With ``pattern``/``cap``, first unlinks the
-    oldest matching files so at most ``cap - 1`` remain (best-effort)."""
+    """Path for a new file under ``$PULSE_HOME/<subdir>`` (dir created owner-only, per #77579).
+    With ``pattern``/``cap``, first unlinks the oldest matching files so at most ``cap - 1`` remain
+    (best-effort)."""
     from pulse_constants import get_pulse_dir  # lazy so tests can patch get_pulse_dir
     cache_dir = get_pulse_dir(subdir, legacy)
-    cache_dir.mkdir(parents=True, exist_ok=True)
+    _secure_dir_policy(cache_dir)
     with contextlib.suppress(Exception):
         files = sorted(cache_dir.glob(pattern), key=lambda p: p.stat().st_mtime) if pattern else []
         for stale in files[: max(0, len(files) - (cap - 1))]:
@@ -765,10 +824,11 @@ def _write_cache_file(what: str, subdir: str, legacy: str, name: str, pattern: s
         return None
 
 def _persist_capture_image(cap: CaptureResult) -> Optional[str]:
-    """Copy of the capture in Pulse' media cache so attachment surfaces can deliver it (None without an image)."""
+    """Copy of the capture in PULSE' media cache so attachment surfaces can deliver it (None without an image)."""
     return _write_cache_file(
         "screenshot persistence", "cache/images", "image_cache", f"computer_use_{uuid.uuid4().hex}{_capture_image_format(cap)[1]}",
-        "computer_use_*.*", _MAX_CAPTURE_FILES, lambda p: p.write_bytes(base64.b64decode(cap.png_b64, validate=False)),
+        "computer_use_*.*", _MAX_CAPTURE_FILES,
+        lambda p: _write_private_bytes(p, base64.b64decode(cap.png_b64, validate=False)),
     ) if cap.png_b64 else None
 
 def _spill_elements_to_file(cap: CaptureResult) -> Optional[str]:
@@ -856,7 +916,7 @@ def _route_capture_through_aux_vision(cap: CaptureResult, summary: str, *, visib
         ext = _capture_image_format(cap)[1]
         temp_image_path = _cache_file("cache/vision", "temp_vision_images", f"computer_use_{uuid.uuid4().hex}{ext}")
         raw, scale_note = _shrink_capture_for_vision(raw, ext)
-        temp_image_path.write_bytes(raw)
+        _write_private_bytes(temp_image_path, raw)
         prompt = _VISION_PROMPT + summary + (f"\n\nNote: {scale_note}" if scale_note else "")
         result_json = _run_async(vision_analyze_tool(str(temp_image_path), prompt))
     except Exception as exc:
@@ -894,7 +954,7 @@ def check_computer_use_requirements() -> bool:
     if cua_driver_binary_available():
         return True
     # No host driver: the tool is still real when the desktop is placed inside a terminal backend whose image
-    # carries cua-driver (anxiousresearchlab/pulse-sandbox:desktop). Placement is config; the binary is probed lazily
+    # carries cua-driver (nousresearch/pulse-sandbox:desktop). Placement is config; the binary is probed lazily
     # at first use, so this stays a cheap check_fn.
     from tools.bot_desktop import placement
     return placement.resolve().where == placement.TERMINAL
@@ -902,11 +962,3 @@ def check_computer_use_requirements() -> bool:
 def get_computer_use_schema() -> Dict[str, Any]:
     from tools.computer_use.schema import COMPUTER_USE_SCHEMA
     return COMPUTER_USE_SCHEMA
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-import struct  # noqa: F401,E402
-# ---- END PLUGIN-COMPAT ----

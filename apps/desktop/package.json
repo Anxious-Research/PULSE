@@ -1,10 +1,10 @@
 {
   "name": "pulse",
-  "productName": "Pulse",
+  "productName": "PULSE",
   "private": true,
   "version": "0.0.0",
-  "description": "Native desktop shell for Pulse Agent.",
-  "author": "Anxious Research",
+  "description": "Native desktop shell for PULSE Agent.",
+  "author": "Nous Research",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Anxious-Research/PULSE.git"

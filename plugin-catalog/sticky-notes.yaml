@@ -1,7 +1,7 @@
 name: sticky-notes
 repo: https://github.com/VGFreakXBL/pulse-sticky-notes
 sha: 54cd588fe417b9745295a916ab15dd7d2f4fee39
-description: In-window sticky notes for Pulse Desktop.
+description: In-window sticky notes for PULSE Desktop.
 maintainer: VGFreakXBL
 tier: community
 category: desktop

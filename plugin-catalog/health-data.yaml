@@ -1,7 +1,7 @@
 name: health-data
 repo: https://github.com/Infinite-Labs-AI/pulse-health-apollo
 sha: 9f2db670a2669c9f3401fecb3b547ed52bcb2c3b
-description: Local health and daily-context data store for Pulse.
+description: Local health and daily-context data store for PULSE.
 maintainer: Infinite-Labs-AI
 tier: community
 category: tools

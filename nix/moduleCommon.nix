@@ -30,7 +30,7 @@ let
   # all of the definitions. Without it, only the last definition applies.
   deepConfigType = types.mkOptionType {
     name = "pulse-config-attrs";
-    description = "Pulse YAML config (attrset), merged deeply via lib.recursiveUpdate.";
+    description = "PULSE YAML config (attrset), merged deeply via lib.recursiveUpdate.";
     check = builtins.isAttrs;
     merge = _loc: defs: lib.foldl' lib.recursiveUpdate { } (map (d: d.value) defs);
   };
@@ -234,7 +234,7 @@ let
       defaultWorkingDirectoryText,
     }:
     {
-      enable = lib.mkEnableOption "Pulse Agent";
+      enable = lib.mkEnableOption "PULSE Agent";
 
       # ── Package ────────────────────────────────────────────────────────
       package = mkOption {
@@ -271,7 +271,7 @@ let
         type = deepConfigType;
         default = { };
         description = ''
-          The Pulse configuration, as an attribute set. The module joins the
+          The PULSE configuration, as an attribute set. The module joins the
           definitions from all modules and writes the result to config.yaml.
 
           The merge into the config.yaml on disk is also a deep merge. These
@@ -299,7 +299,7 @@ let
         description = ''
           The paths to environment files that contain secrets, for example
           API keys and tokens. Activation adds the contents of these files to
-          $PULSE_HOME/.env. Pulse reads that file at each start, with
+          $PULSE_HOME/.env. PULSE reads that file at each start, with
           load_pulse_dotenv().
 
           Each activation writes .env again from the start. Thus a secret
@@ -326,7 +326,7 @@ let
         description = ''
           The path to a file that gives the first contents of auth.json, the
           OAuth credentials. The module copies the file only when auth.json
-          does not exist. Thus a token that Pulse refreshes at runtime stays
+          does not exist. Thus a token that PULSE refreshes at runtime stays
           after an activation.
         '';
       };
@@ -348,7 +348,7 @@ let
 
           Use this option for the project context that the agent reads from
           its working directory, for example AGENTS.md, notes and checklists.
-          Pulse reads SOUL.md and memories/ from PULSE_HOME, so put those
+          PULSE reads SOUL.md and memories/ from PULSE_HOME, so put those
           files in `pulseHomeFiles`.
 
           If you set this option, you must also set `workingDirectory`. The
@@ -371,8 +371,8 @@ let
           relative to that directory, and the module makes the necessary
           subdirectories. Each value is a string or a path.
 
-          Pulse reads SOUL.md and the memory files from PULSE_HOME and not
-          from the working directory. Declare those files here, or Pulse
+          PULSE reads SOUL.md and the memory files from PULSE_HOME and not
+          from the working directory. Declare those files here, or PULSE
           does not load them.
         '';
         example = literalExpression ''
@@ -422,7 +422,7 @@ let
         description = ''
           Directory-based plugin packages to symlink into the pulse plugins
           directory. Each package must contain a plugin.yaml and __init__.py
-          at its root. Pulse discovers these automatically on startup.
+          at its root. PULSE discovers these automatically on startup.
         '';
         example = literalExpression ''
           [
@@ -503,7 +503,7 @@ let
       # `pulse serve` and `pulse dashboard` are the same entry point,
       # pulse_cli.main:cmd_dashboard, with one flag of difference. serve runs
       # without a user interface. dashboard also serves the web application.
-      # Both give the /api/ws and /api/pty sockets that Pulse Desktop
+      # Both give the /api/ws and /api/pty sockets that PULSE Desktop
       # connects to. They are one process, and you can run only one of them.
       # Thus this option is an enum and not two booleans.
       #
@@ -523,7 +523,7 @@ let
 
             - "none"      — no backend
             - "serve"     — the backend without a user interface. It gives
-                            the /api/ws and /api/pty sockets that Pulse
+                            the /api/ws and /api/pty sockets that PULSE
                             Desktop connects to.
             - "dashboard" — all that "serve" gives, and the browser admin
                             panel on the same port
@@ -636,7 +636,7 @@ let
 
             The backend reads the file at each start and gives the value to
             PULSE_DASHBOARD_SESSION_TOKEN. That token authorizes the /api
-            routes and the /api/ws socket. Pulse Desktop presents the same
+            routes and the /api/ws socket. PULSE Desktop presents the same
             value, so the application reaches this backend and starts no
             second one.
 
@@ -664,7 +664,7 @@ let
   installPackageRemovedMessage =
     value:
     ''
-      services.pulse-agent.installPackage was removed. Pulse now
+      services.pulse-agent.installPackage was removed. PULSE now
       separates the installation from the services, which is the
       Home Manager convention:
 
@@ -690,7 +690,7 @@ let
   # replace the default value.
   #
   # The file also carries the `_config_version` of the package. In managed
-  # mode Pulse refuses to write config.yaml, so it cannot stamp the version
+  # mode PULSE refuses to write config.yaml, so it cannot stamp the version
   # itself, and an unstamped file reads as version 0 at every boot. The build
   # reads the version from DEFAULT_CONFIG so it always matches the package.
   mkConfigFiles =
@@ -846,7 +846,7 @@ let
         );
     in
     ''
-      # Directories. The service units and Pulse make most of these
+      # Directories. The service units and PULSE make most of these
       # directories when they first need them. Activation makes them here so
       # that the first activation sets the correct owner and mode, and does
       # not use the umask.
@@ -860,7 +860,7 @@ let
         )
       }
 
-      # config.yaml: merge the Nix settings into the file on disk. Pulse
+      # config.yaml: merge the Nix settings into the file on disk. PULSE
       # writes this file at runtime. A read-only symlink to the Nix store
       # breaks each save from the application. The Nix keys replace the keys
       # on disk, and the module keeps all other keys.
@@ -1054,11 +1054,11 @@ let
   backendDescription =
     cfg:
     if cfg.backend.mode == "dashboard" then
-      "Pulse Agent web dashboard and desktop backend"
+      "PULSE Agent web dashboard and desktop backend"
     else
-      "Pulse Agent backend for Pulse Desktop";
+      "PULSE Agent backend for PULSE Desktop";
 
-  # The environment that each Pulse process needs, from either module.
+  # The environment that each PULSE process needs, from either module.
   #
   # managedSystem gives the value of PULSE_MANAGED. The CLI reads that
   # variable to refuse a configuration change that it cannot keep, and to
@@ -1116,9 +1116,9 @@ let
 
             ${optionPath}.workingDirectory = "/path/you/want";
 
-          To give Pulse an identity and a memory, use
+          To give PULSE an identity and a memory, use
           ${optionPath}.pulseHomeFiles instead. Those files go to
-          PULSE_HOME. Pulse reads SOUL.md and memories/ only from there.
+          PULSE_HOME. PULSE reads SOUL.md and memories/ only from there.
         '';
       }
     ];

@@ -41,7 +41,7 @@ def _token_status(source: str, source_label: str, creds: Dict[str, Any]) -> Dict
 
 
 def _anthropic_oauth_status() -> Dict[str, Any]:
-    """Status for the "Anthropic Account" card: Pulse-managed PKCE file first, then the
+    """Status for the "Anthropic Account" card: PULSE-managed PKCE file first, then the
     registry-ordered env vars (process env — where Bitwarden-sourced secrets land — then .env).
 
     Claude Code's ``~/.claude/.credentials.json`` is deliberately NOT read here; it has its own
@@ -53,7 +53,7 @@ def _anthropic_oauth_status() -> Dict[str, Any]:
     except Exception:
         pulse_creds = None
     if pulse_creds and pulse_creds.get("accessToken"):
-        return _token_status("pulse_pkce", f"Pulse PKCE ({_get_pulse_oauth_file()})", pulse_creds)
+        return _token_status("pulse_pkce", f"PULSE PKCE ({_get_pulse_oauth_file()})", pulse_creds)
 
     env_var_order: tuple = ("ANTHROPIC_API_KEY", "ANTHROPIC_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN")
     try:
@@ -94,7 +94,7 @@ def _claude_code_only_status() -> Dict[str, Any]:
 
 def _copilot_acp_status() -> Dict[str, Any]:
     """Status for copilot-acp. ``logged_in`` only on positive evidence (env token or known on-disk
-    store); the CLI may hold its session in an OS keychain Pulse can't read, so the unverified
+    store); the CLI may hold its session in an OS keychain PULSE can't read, so the unverified
     state reads "managed by the Copilot CLI" — never signed out."""
     try:
         from pulse_cli.auth import get_external_process_provider_status
@@ -143,8 +143,8 @@ def _external_process_cli_command(provider_id: str, default: str) -> str:
 # ``flow``: ``device_code`` = show code + URL + poll; ``external`` = delegated to a terminal/CLI.
 _OAUTH_PROVIDER_CATALOG: tuple[Dict[str, Any], ...] = (
     # status_fn None → dispatched via auth.get_<provider>_auth_status.
-    {"id": "anxious", "name": "Anxious Portal", "flow": "device_code", "cli_command": "pulse auth add anxious",
-     "docs_url": "https://portal.anxiousresearchlab.com", "status_fn": None},
+    {"id": "nous", "name": "Nous Portal", "flow": "device_code", "cli_command": "pulse auth add nous",
+     "docs_url": "https://portal.anxious-research.com", "status_fn": None},
     {"id": "openai-codex", "name": "ChatGPT or Codex Subscription", "flow": "device_code",
      "cli_command": "pulse auth add openai-codex", "docs_url": "https://platform.openai.com/docs",
      "status_fn": None},
@@ -158,7 +158,7 @@ _OAUTH_PROVIDER_CATALOG: tuple[Dict[str, Any], ...] = (
     # Device code works in remote shells/containers without a reachable 127.0.0.1 callback.
     {"id": "xai-oauth", "name": "xAI Grok OAuth (SuperGrok / Premium+)", "flow": "device_code",
      "cli_command": "pulse auth add xai-oauth",
-     "docs_url": "https://pulse-agent.anxiousresearchlab.com/docs/guides/xai-grok-oauth", "status_fn": None},
+     "docs_url": "https://pulse-agent.anxious-research.com/docs/guides/xai-grok-oauth", "status_fn": None},
     # `copilot login` is the non-interactive subcommand; `copilot /login` is not valid
     # (slash-commands only exist inside an interactive session).
     {"id": "copilot-acp", "name": "GitHub Copilot (ACP)", "flow": "external", "cli_command": "copilot login",
@@ -182,14 +182,6 @@ def _oauth_profile_name(profile: Optional[str]) -> Optional[str]:
     if not requested or requested.lower() == "current":
         return None
     return requested
-
-
-def _oauth_session_profile(session_id: str, fallback: Optional[str] = None) -> Optional[str]:
-    """Return the profile that owns an OAuth session, if one was provided."""
-    with _oauth_sessions_lock:
-        sess = _oauth_sessions.get(session_id)
-        profile = sess.get("profile") if sess else None
-    return profile or _oauth_profile_name(fallback)
 
 
 def _oauth_poller(label: str):
@@ -278,11 +270,11 @@ def _record_sign_in_state(sess: Dict[str, Any], state: Any) -> None:
         sess["error_message"] = state.copy
 
 
-@_oauth_poller("anxious")
-def _anxious_promotion_poller(session_id: str, sess: Dict[str, Any]) -> None:
+@_oauth_poller("nous")
+def _nous_promotion_poller(session_id: str, sess: Dict[str, Any]) -> None:
     """Drain the sign-in the start route began: one shared flow, rendered onto the session.
 
-    The generator was created and advanced to its ``Code`` state by ``_start_anxious_device_code``, so
+    The generator was created and advanced to its ``Code`` state by ``_start_nous_device_code``, so
     it is already holding the transfer's codes and its HTTP client. Nothing here is wrapped in
     ``_profile_scope``: that context manager holds a process-global lock and swaps module
     attributes across its ``yield``, and this loop can last the sign-in code's whole expiry. The
@@ -299,15 +291,15 @@ def _anxious_promotion_poller(session_id: str, sess: Dict[str, Any]) -> None:
             gen.close()     # unwinds the suspended HTTP client if we leave early
 
 
-@_oauth_poller("anxious")
-def _anxious_plain_poller(session_id: str, sess: Dict[str, Any]) -> None:
-    """Background poller for a plain Anxious device-code login (no free-tier identity to transfer).
+@_oauth_poller("nous")
+def _nous_plain_poller(session_id: str, sess: Dict[str, Any]) -> None:
+    """Background poller for a plain Nous device-code login (no free-tier identity to transfer).
 
     A sign-in that carries the free tier's connectors runs through ``anon_auth.run_sign_in`` and
-    ``_anxious_promotion_poller`` instead; this is the "connect another Anxious account" path.
+    ``_nous_promotion_poller`` instead; this is the "connect another Nous account" path.
     """
     from pulse_cli.web_server_profiles import _profile_scope
-    from pulse_cli.auth import _poll_for_token, persist_anxious_credentials, refresh_anxious_oauth_from_state
+    from pulse_cli.auth import _poll_for_token, persist_nous_credentials, refresh_nous_oauth_from_state
     from pulse_cli import anon_auth
     import httpx
     portal_base_url, client_id = sess["portal_base_url"], sess["client_id"]
@@ -329,7 +321,7 @@ def _anxious_plain_poller(session_id: str, sess: Dict[str, Any]) -> None:
         )
     if _cancelled():
         return
-    # Same post-processing as _anxious_device_code_login (validate/refresh JWT)
+    # Same post-processing as _nous_device_code_login (validate/refresh JWT)
     now = datetime.now(timezone.utc)
     token_ttl = int(token_data.get("expires_in") or 0)
     auth_state = {
@@ -347,15 +339,17 @@ def _anxious_plain_poller(session_id: str, sess: Dict[str, Any]) -> None:
         ),
         "expires_in": token_ttl,
     }
-    with _profile_scope(_oauth_session_profile(session_id)):
-        full_state = refresh_anxious_oauth_from_state(auth_state, timeout_seconds=15.0, force_refresh=False)
+    # The profile comes from the poller's own session dict: a cancel or the 15-minute sweep drops
+    # the registry entry, and a lookup by id would then save into the dashboard's launch profile.
+    with _profile_scope(sess.get("profile")):
+        full_state = refresh_nous_oauth_from_state(auth_state, timeout_seconds=15.0, force_refresh=False)
         # The final cancellation check and the save share the session lock, so a cancel cannot
         # land between them.
         with _oauth_sessions_lock:
             if sess.get("cancelled"):
                 sess["status"] = "cancelled"
                 return
-            persist_anxious_credentials(full_state)
+            persist_nous_credentials(full_state)
         # A config left on the free tier's route by a retired identity still has to move.
         settled = anon_auth.settle_after_upgrade(full_state)
     with _oauth_sessions_lock:
@@ -365,7 +359,7 @@ def _anxious_plain_poller(session_id: str, sess: Dict[str, Any]) -> None:
 
 @_oauth_poller("minimax")
 def _minimax_poller(session_id: str, sess: Dict[str, Any]) -> None:
-    """MiniMax poller: PKCE-style ``code_verifier`` + ``user_code`` instead of Anxious's
+    """MiniMax poller: PKCE-style ``code_verifier`` + ``user_code`` instead of Nous's
     ``device_code``. Builds the same auth_state as the CLI's ``_minimax_oauth_login`` and persists
     via ``_minimax_save_auth_state`` so the system ends up as after ``pulse auth add minimax-oauth``.
     Region is fixed to "global" here; cn-region operators use the CLI's ``--region cn``."""
@@ -401,8 +395,14 @@ def _minimax_poller(session_id: str, sess: Dict[str, Any]) -> None:
         "expires_at": datetime.fromtimestamp(expires_at_ts, tz=timezone.utc).isoformat(),
         "expires_in": max(0, int(expires_at_ts - now.timestamp())),
     }
-    with _profile_scope(_oauth_session_profile(session_id)):
-        _minimax_save_auth_state(auth_state)
+    with _profile_scope(sess.get("profile")):
+        # The cancellation check and the save share the session lock, so a cancel cannot land
+        # between them (the same contract as the Nous and Codex savers).
+        with _oauth_sessions_lock:
+            if sess.get("cancelled"):
+                sess["status"] = "cancelled"
+                return
+            _minimax_save_auth_state(auth_state)
 
 
 @_oauth_poller("xai")
@@ -428,7 +428,11 @@ def _xai_device_poller(session_id: str, sess: Dict[str, Any]) -> None:
         "expires_in": token_data.get("expires_in"),
         "token_type": str(token_data.get("token_type") or "Bearer").strip() or "Bearer",
     }
-    with _profile_scope(_oauth_session_profile(session_id)):
+    with _profile_scope(sess.get("profile")), _oauth_sessions_lock:
+        # One critical section with the cancel check, as in the Nous and Codex savers.
+        if sess.get("cancelled"):
+            sess["status"] = "cancelled"
+            return
         # set_active=False: persist without hijacking an existing active chat provider.
         _save_xai_oauth_tokens(
             tokens, discovery=discovery, auth_mode="oauth_device_code", set_active=False,

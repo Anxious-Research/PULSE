@@ -28,10 +28,10 @@ def probe_with_rollback(
     values there, so they land with the authorization and never before it."""
     from pulse_cli.mcp_config import _oauth_tokens_present, _probe_single_server
     from tools.mcp_dashboard_oauth import exception_message
-    from tools.mcp_oauth import PulseTokenStorage, login_connect_timeout
+    from tools.mcp_oauth import PULSETokenStorage, login_connect_timeout
     from tools.mcp_oauth_manager import get_manager
     manager = get_manager()
-    storage = PulseTokenStorage(server_name)
+    storage = PULSETokenStorage(server_name)
     # An attempt that replaced a still-running one starts from that one's half-written files, so
     # it carries the older attempt's snapshot: the state from before either of them.
     backup = getattr(flow, "inherited_backup", None) or storage.snapshot()
@@ -219,7 +219,7 @@ def _start_loopback_receiver(flow) -> "http.server.HTTPServer":
                 self.send_response(404)
                 self.end_headers()
                 return
-            body = b"<h1>Authorization received</h1><p>You can close this tab and return to Pulse.</p>"
+            body = b"<h1>Authorization received</h1><p>You can close this tab and return to PULSE.</p>"
             status = 200
             try:
                 flow.deliver_callback(**_parse_redirect_query(parsed.query))

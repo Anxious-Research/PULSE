@@ -1,7 +1,7 @@
 import { LOCAL_CONNECTION_ID, registryBackendScopeKey } from '@pulse/shared'
 import { atom, batch, computed } from 'nanostores'
 
-import type { PulseConnection } from '@/global'
+import type { PULSEConnection } from '@/global'
 import { getProfiles, pulseApi, setApiRequestProfile, STARTUP_REQUEST_TIMEOUT_MS } from '@/pulse'
 import { sortByProfileOrder as sortProfilesByOrder } from '@/lib/profile-order'
 import { invalidateProfileScopedQueries } from '@/lib/query-client'
@@ -70,7 +70,7 @@ export const $profilesByConnection = atom<ReadonlyMap<string, ProfileInfo[]>>(ne
 // Registry descriptors carry their connection id (a slug, so it never contains
 // ':'); legacy primaries are keyed by endpoint. Null is a reconnect blip (see
 // setConnection), not a source.
-function profileListSource(connection: PulseConnection | null): null | string {
+function profileListSource(connection: PULSEConnection | null): null | string {
   if (!connection) {
     return null
   }
@@ -570,7 +570,7 @@ const DESCRIPTOR_LOOKUP_TIMEOUT_MS = 20_000
 // and its decline path turned routine registry churn into dead profile
 // clicks (#89622) — reverted in #89785. Do not reintroduce fail-closed
 // switching at this seam.
-async function resolveConnectionForProfile(profile: string): Promise<PulseConnection | null> {
+async function resolveConnectionForProfile(profile: string): Promise<PULSEConnection | null> {
   const getConnection = window.pulseDesktop?.getConnection
 
   if (!getConnection) {
@@ -731,7 +731,7 @@ export async function ensureGatewayProfile(
 // getConnection (the local pool). Same best-effort, fail-open contract as
 // resolveConnectionForProfile: a failed lookup resolves null and keeps the
 // previous descriptor.
-async function resolveConnectionForAgent(connectionId: string, profile: string): Promise<PulseConnection | null> {
+async function resolveConnectionForAgent(connectionId: string, profile: string): Promise<PULSEConnection | null> {
   const getConnectionFor = window.pulseDesktop?.getConnectionFor
 
   if (!getConnectionFor) {

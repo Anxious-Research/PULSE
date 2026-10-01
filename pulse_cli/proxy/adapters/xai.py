@@ -21,7 +21,7 @@ _ALLOWED_PATHS: FrozenSet[str] = frozenset(
 
 
 class XAIGrokAdapter(UpstreamAdapter):
-    """Proxy upstream for xAI Grok via Pulse-managed OAuth credentials."""
+    """Proxy upstream for xAI Grok via PULSE-managed OAuth credentials."""
 
     auth_hint = "pulse auth add xai-oauth --type oauth"
 

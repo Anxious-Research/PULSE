@@ -3,9 +3,9 @@
 
 ``/tmp`` is not portable: Termux has no ``/tmp`` at all, native Windows has no such directory,
 macOS aliases it to ``/private/tmp`` (breaking naive path comparisons), and on most Linux
-distributions it is a RAM-backed tmpfs that fills under Pulse load. Pulse resolves scratch
+distributions it is a RAM-backed tmpfs that fills under PULSE load. PULSE resolves scratch
 space through one helper (``pulse_constants.get_scratch_dir()`` → ``PULSE_HOME/cache/scratch``,
-which every Pulse process also exports as ``TMPDIR``/``TMP``/``TEMP``), and prompts + skills
+which every PULSE process also exports as ``TMPDIR``/``TMP``/``TEMP``), and prompts + skills
 must steer the model the same way, because a literal ``/tmp`` in a SKILL.md or system prompt
 becomes a literal ``/tmp`` in the model's shell commands on every platform.
 
@@ -273,7 +273,7 @@ def main(argv: list[str] | None = None) -> int:
     print("\n".join(problems))
     print(
         f"\n{total} literal /tmp path(s) flagged. Resolve scratch space through "
-        f"pulse_constants.get_scratch_dir() (or $TMPDIR / tempfile, which Pulse points there), tell the "
+        f"pulse_constants.get_scratch_dir() (or $TMPDIR / tempfile, which PULSE points there), tell the "
         f"model to do the same in skills and prompts, or mark a deliberate line with `{MARKER} — <why>` (same line or the line above). "
         f"See scripts/check_no_tmp_literals.py."
     )

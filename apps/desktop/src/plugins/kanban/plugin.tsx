@@ -14,7 +14,7 @@ import './kanban.css'
 import {
   cn,
   Codicon,
-  type PulsePlugin,
+  type PULSEPlugin,
   host,
   type KeybindContribution,
   KEYBINDS_AREA,
@@ -78,7 +78,7 @@ function KanbanCount() {
   )
 }
 
-const plugin: PulsePlugin = {
+const plugin: PULSEPlugin = {
   id: 'kanban',
   name: 'Kanban',
   description: 'Multi-agent task board — board page, sidebar entry, and a live in-flight count in the status bar.',

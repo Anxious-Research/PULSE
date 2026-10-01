@@ -1,6 +1,6 @@
 # Desktop Engineering Guide
 
-How to build Pulse Desktop well. This is a judgment guide, not an inventory —
+How to build PULSE Desktop well. This is a judgment guide, not an inventory —
 it teaches the invariants and the reasoning behind them so a change fits the app
 even as files move. Read it with the repository `AGENTS.md` (root rules still
 apply), [`DESIGN.md`](./DESIGN.md) for the visual and interaction contract, and
@@ -30,7 +30,7 @@ change blurs a seam, that is the smell — fix the seam, don't widen it.
 The first question for any piece of state is *who is allowed to be right about
 it*, not where it is convenient to store it. Put state with its authority:
 
-- The **backend** is authoritative for anything another Pulse surface can also
+- The **backend** is authoritative for anything another PULSE surface can also
   change. Treat the renderer's copy as a cache of that truth.
 - **Electron** is authoritative for machine and runtime facts.
 - The **renderer** owns only what is purely about this window's presentation.
@@ -207,7 +207,7 @@ lean on an existing seam — before you invent a framework. The shell's internal
 registries are composition seams, not a public plugin ABI; do not build a
 universal extension system, a manifest, or a plugin adapter for a single
 consumer. Design a shared contract only once more than one real consumer proves
-its shape. "Plugin" means several unrelated things across Pulse — do not assume
+its shape. "Plugin" means several unrelated things across PULSE — do not assume
 one surface's extension model runs in another.
 
 When the new capability is an **agent-callable** one — a tool that acts on this
@@ -274,16 +274,16 @@ before `npm run dev`. Stop Electron and its dev server after the run.
 
 If any answer is "not sure," that's the part to go verify.
 
-## Pulse free tier: state is pulled, never latched in the renderer
+## Nous free tier: state is pulled, never latched in the renderer
 
-The free tier (a Pulse identity with no account, `pulse_cli/anon_auth.py`) reaches the renderer
+The free tier (a Nous identity with no account, `pulse_cli/anon_auth.py`) reaches the renderer
 through one JSON-RPC pair: `free_tier.status` (has_guest, enabled, available,
 notice_pending, model, label) read from local auth state with zero network, and
 `free_tier.ack_notice`, which persists the one-time notice flag on the identity itself. The
 first-launch ready screen and the own-key strip are the SAME state rendered for two situations,
 keyed on `notice_pending`; there is no localStorage latch, so the CLI and the desktop cannot
 disagree about whether the notice was shown. Sign-in goes through the existing
-`POST /api/providers/oauth/pulse/start` + poll route, which over a free-tier identity registers the
+`POST /api/providers/oauth/nous/start` + poll route, which over a free-tier identity registers the
 connector transfer and reports `reason`, `account_email` and `model` on completion; every entry
 point (Billing, status chip, ready screen) opens the one free-tier sign-in dialog. Never branch on
 provider display names: the picker row carries `free_tier_row`, status cards carry `free_tier`.

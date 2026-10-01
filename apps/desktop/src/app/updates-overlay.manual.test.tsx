@@ -49,7 +49,7 @@ it('shows manual recovery guidance without claiming the help command installs an
 })
 
 it('titles a command-less backend refusal honestly and offers nothing to copy', async (): Promise<void> => {
-  const message: string = 'Pulse updates are managed outside this dashboard in containerized environments.'
+  const message: string = 'PULSE updates are managed outside this dashboard in containerized environments.'
   $updateOverlayTarget.set('backend')
   $updateOverlayOpen.set(true)
   $backendUpdateApply.set({
@@ -83,7 +83,7 @@ it('names the backend, not a local install, when a remote refusal carries a bare
     message: '',
     percent: null,
     error: null,
-    command: 'docker pull anxious-research/pulse-agent:latest',
+    command: 'docker pull nousresearch/pulse-agent:latest',
     log: []
   })
   await act(async (): Promise<void> => {
@@ -93,7 +93,7 @@ it('names the backend, not a local install, when a remote refusal carries a bare
       </I18nProvider>
     )
   })
-  expect(screen.getByText('docker pull anxious-research/pulse-agent:latest')).toBeTruthy()
+  expect(screen.getByText('docker pull nousresearch/pulse-agent:latest')).toBeTruthy()
   expect(screen.getByText(en.updates.manualBodyBackend)).toBeTruthy()
   expect(screen.getByText(en.updates.manualPickedUpBackend)).toBeTruthy()
   expect(screen.queryByText(en.updates.manualBody)).toBeNull()
@@ -105,7 +105,7 @@ it('keeps the client title for a command-less client manual stage', async (): Pr
   $updateApply.set({
     applying: false,
     stage: 'manual',
-    message: 'Pulse will pick up the new version next time you launch it.',
+    message: 'PULSE will pick up the new version next time you launch it.',
     percent: null,
     error: null,
     command: null,

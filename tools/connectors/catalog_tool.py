@@ -21,7 +21,7 @@ _ITEM_KEYS = frozenset({"kind", "id"})
 SEARCH_LIMIT = 10
 
 NOT_HERE = (
-    "manage_catalog is available only in the Pulse desktop app, where the approval card can be drawn. "
+    "manage_catalog is available only in the PULSE desktop app, where the approval card can be drawn. "
     "Tell the user to install from a terminal instead: `pulse plugins install <id>` for a plugin, "
     "`pulse skills install <id>` for a skill."
 )
@@ -36,7 +36,7 @@ NOTE = (
 MANAGE_CATALOG_SCHEMA = {
     "name": "manage_catalog",
     "description": (
-        "Find and install Pulse catalog plugins and hub skills for the user. 'search' lists matches "
+        "Find and install PULSE catalog plugins and hub skills for the user. 'search' lists matches "
         "(id, kind, display, tier, platforms, installed) and changes nothing. 'install' shows the user "
         "one approval card with a row per item and blocks until every row is installed, skipped, or "
         "the card is closed; the host installs each approved row into the user's default profile at "

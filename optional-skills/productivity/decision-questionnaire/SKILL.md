@@ -2,7 +2,7 @@
 name: decision-questionnaire
 description: "Turn an unanswerable decision into a questionnaire doc."
 version: 1.0.0
-author: "Matt Pocock (mattpocock/skills, to-questionnaire) + Pulse Agent"
+author: "Matt Pocock (mattpocock/skills, to-questionnaire) + PULSE Agent"
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

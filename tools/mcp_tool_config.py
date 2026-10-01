@@ -206,7 +206,7 @@ def _which_with_config_pathext(command: str, path_arg, env: dict):
     return None
 
 
-# Bare MCP launchers Pulse ships through PM, keyed to the package that provides them.
+# Bare MCP launchers PULSE ships through PM, keyed to the package that provides them.
 _MANAGED_LAUNCHERS = {"npx": "npm", "npm": "npm", "node": "npm", "uv": "uv", "uvx": "uv"}
 
 
@@ -230,14 +230,14 @@ def _managed_launcher(command: str) -> Optional[tuple[str, list[str]]]:
         dirs = [d for d in with_pulse_node_path({"PATH": ""})["PATH"].split(os.pathsep) if d]
     executable = shutil.which(command, path=os.pathsep.join(dirs)) if dirs else None
     if executable is None:
-        raise RuntimeError(f"Pulse-managed {command} is not installed; run `pulse pm install {package}`")
+        raise RuntimeError(f"PULSE-managed {command} is not installed; run `pulse pm install {package}`")
     return executable, dirs
 
 
 def _resolve_stdio_command(command: str, env: dict) -> tuple[str, dict]:
     """Resolve a stdio command against the exact subprocess env (bare launchers under a filtered PATH).
 
-    Bare ``npx``/``npm``/``node``/``uv``/``uvx`` resolve to Pulse's PM-managed copies with their
+    Bare ``npx``/``npm``/``node``/``uv``/``uvx`` resolve to PULSE's PM-managed copies with their
     toolchain dirs first on the child PATH, never the user's (an absolute ``command:`` stays the
     user's choice). Anything else resolves on the child env's PATH only: ``shutil.which`` with
     ``path=None`` silently falls back to the PARENT's ``os.environ["PATH"]``, letting a command
@@ -284,7 +284,7 @@ def _npx_cached_bin(args: list) -> Optional[tuple]:
     """Resolve ``npx -y <pkg>`` to the already-installed binary, or None.
 
     ``npx`` resolves the package and then FORKS, staying resident as the real server's parent
-    for nothing (~48 MB private memory per MCP server, measured); Pulse already supervises the
+    for nothing (~48 MB private memory per MCP server, measured); PULSE already supervises the
     child (shared death supervisor). When the package is in npx's cache we spawn its binary
     directly. Deliberately conservative — None (caller keeps plain ``npx``, so a cold machine
     still installs) for a cache miss, a version pin (``pkg@1.2.3``), extra npx flags, a manifest

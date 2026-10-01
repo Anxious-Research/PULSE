@@ -37,20 +37,20 @@ STEWARD_APT_TERMUX = "apt-termux"
 # code).
 STEWARD_UPDATE_MESSAGES = {
     STEWARD_DESKTOP: (
-        "✗ This Pulse runs from inside the desktop app bundle.\n"
+        "✗ This PULSE runs from inside the desktop app bundle.\n"
         "\n"
         "Manage updates from within the desktop app.\n"
         "Prefer a self-managed source install? See:\n"
-        "  https://pulse-agent.anxiousresearchlab.com/docs/user-guide/switching-to-source"
+        "  https://pulse-agent.anxious-research.com/docs/user-guide/switching-to-source"
     ),
     STEWARD_NIX: (
-        "✗ This Pulse runs from the Nix store.\n"
+        "✗ This PULSE runs from the Nix store.\n"
         "\n"
         "The store path is immutable. Update through your flake:\n"
         "  nix flake update && rebuild your profile or system"
     ),
     STEWARD_APT_TERMUX: (
-        "✗ This Pulse runs from a Termux APT package.\n"
+        "✗ This PULSE runs from a Termux APT package.\n"
         "\n"
         "The package manager owns the code tree. Update with:\n"
         "  pkg upgrade pulse-agent"
@@ -61,7 +61,7 @@ STEWARD_UPDATE_MESSAGES = {
 # pins a bionic CPython with no Android wheels, so a source sync would
 # build sdists on the phone. The APT package is the only supported shape.
 SOURCE_ON_TERMUX_UPDATE_MESSAGE = (
-    "✗ This Pulse is a source checkout running under Termux.\n"
+    "✗ This PULSE is a source checkout running under Termux.\n"
     "\n"
     "Source installs are not supported on Termux — `pulse update` would\n"
     "build Python packages on the device. Switch to the APT package:\n"
@@ -71,7 +71,7 @@ SOURCE_ON_TERMUX_UPDATE_COMMAND = "pkg install pulse-agent"
 
 
 _STEWARD_UPDATE_FALLBACK = (
-    "✗ This Pulse install is managed by {steward}.\n"
+    "✗ This PULSE install is managed by {steward}.\n"
     "\n"
     "The tree has no git checkout, so `pulse update` cannot update it.\n"
     "Update it with the tool that installed it."
@@ -81,22 +81,22 @@ _STEWARD_UPDATE_FALLBACK = (
 # tree. The steward put the code there; the steward removes it. The
 # desktop-app message is per-OS because each OS owns app removal
 # differently.
-_STEWARD_DELETE_DATA_PREAMBLE = "To delete your Pulse data (chats, configuration, etc),\n"
+_STEWARD_DELETE_DATA_PREAMBLE = "To delete your PULSE data (chats, configuration, etc),\n"
 _STEWARD_DELETE_DATA_CLI = "run:\n$ pulse uninstall --data\n"
-_STEWARD_DELETE_DATA_DESKTOP = "Open Pulse Desktop, go to Settings -> About, and delete your data from there.\n"
+_STEWARD_DELETE_DATA_DESKTOP = "Open PULSE Desktop, go to Settings -> About, and delete your data from there.\n"
 
 _STEWARD_UNINSTALL_MESSAGES = {
     STEWARD_DOCKER: (
-        "✗ This Pulse runs from a Docker image.\n"
+        "✗ This PULSE runs from a Docker image.\n"
         "\n"
         "There is no code to uninstall — remove the container and image:\n"
-        "  docker rm <container> && docker rmi anxiousresearchlab/pulse-agent\n"
+        "  docker rm <container> && docker rmi nousresearch/pulse-agent\n"
         "\n" +
         _STEWARD_DELETE_DATA_PREAMBLE +
         _STEWARD_DELETE_DATA_CLI
     ),
     STEWARD_APT_TERMUX: (
-        "✗ This Pulse was installed by a Termux APT package.\n"
+        "✗ This PULSE was installed by a Termux APT package.\n"
         "\n"
         "The package manager owns the code tree — uninstall it with:\n"
         "  pkg uninstall pulse-agent\n"
@@ -105,7 +105,7 @@ _STEWARD_UNINSTALL_MESSAGES = {
         _STEWARD_DELETE_DATA_CLI
     ),
     STEWARD_NIX: (
-        "✗ This Pulse was installed by Nix.\n"
+        "✗ This PULSE was installed by Nix.\n"
         "\n"
         "The store path is immutable — uninstall it the same way you\n"
         "installed it: remove pulse-agent from your flake / profile\n"
@@ -116,7 +116,7 @@ _STEWARD_UNINSTALL_MESSAGES = {
     ),
 }
 
-_STEWARD_MANAGED_BY_DESKTOP = "✗ Pulse is managed by the desktop app.\n"
+_STEWARD_MANAGED_BY_DESKTOP = "✗ PULSE is managed by the desktop app.\n"
 
 _STEWARD_DESKTOP_UNINSTALL_BY_PLATFORM = {
     "win32": (
@@ -129,7 +129,7 @@ _STEWARD_DESKTOP_UNINSTALL_BY_PLATFORM = {
     "darwin": (
         _STEWARD_MANAGED_BY_DESKTOP +
         "\n"
-        "Quit the app and drag Pulse.app from Applications to the Trash.\n" +
+        "Quit the app and drag PULSE.app from Applications to the Trash.\n" +
         _STEWARD_DELETE_DATA_PREAMBLE +
         _STEWARD_DELETE_DATA_DESKTOP
     ),
@@ -138,14 +138,14 @@ _STEWARD_DESKTOP_UNINSTALL_BY_PLATFORM = {
 _STEWARD_DESKTOP_UNINSTALL_DEFAULT = (
     _STEWARD_MANAGED_BY_DESKTOP +
     "\n"
-    "Delete the Pulse AppImage (or app directory) from wherever you\n"
+    "Delete the PULSE AppImage (or app directory) from wherever you\n"
     "saved it.\n" +
     _STEWARD_DELETE_DATA_PREAMBLE +
     _STEWARD_DELETE_DATA_DESKTOP
 )
 
 _STEWARD_UNINSTALL_FALLBACK = (
-    "✗ Pulse is managed by {steward}.\n"
+    "✗ PULSE is managed by {steward}.\n"
     "\n"
     "The tree has no git checkout, so the uninstaller will not remove it.\n"
     "Remove it with the tool that installed it.\n"

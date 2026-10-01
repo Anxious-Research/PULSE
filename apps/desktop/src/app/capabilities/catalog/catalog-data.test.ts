@@ -66,7 +66,7 @@ describe('public catalog data', () => {
       maintainer: `${tier} maintainer`,
       overview: `Overview for ${tier}`,
       version: '1.2.3',
-      requiresPulse: '>=0.17',
+      requiresPULSE: '>=0.17',
       platforms: ['macos', 'linux'],
       docsUrl: `https://example.com/${tier}/docs`,
       capabilities: {
@@ -90,7 +90,7 @@ describe('public catalog data', () => {
         author: row.maintainer,
         overview: row.overview,
         version: row.version,
-        requiresPulse: row.requiresPulse,
+        requiresPULSE: row.requiresPULSE,
         platforms: row.platforms,
         docsUrl: row.docsUrl,
         sourceUrl: row.repo,
@@ -119,7 +119,7 @@ describe('public catalog data', () => {
 
     expect(await fetchCatalog(kind)).toEqual(parseCatalog(kind, rows))
     expect(fetch).toHaveBeenCalledExactlyOnceWith(
-      `https://anxious-research.github.io/pulse-agent/docs/api/${kind}.json`,
+      `https://nousresearch.github.io/pulse-agent/docs/api/${kind}.json`,
       expect.objectContaining({ credentials: 'omit', signal: expect.any(AbortSignal) })
     )
   })

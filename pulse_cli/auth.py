@@ -1,4 +1,4 @@
-"""Multi-provider authentication system for Pulse Agent.
+"""Multi-provider authentication system for PULSE Agent.
 
 - ``ProviderConfig`` / ``PROVIDER_REGISTRY`` describe every known inference provider.
 - The auth store (``~/.pulse/auth.json``) holds per-provider state, the credential pool and
@@ -6,12 +6,13 @@
   only I/O primitives (cross-process flock, atomic 0o600 writes).
 - ``resolve_provider()`` picks the active provider via the documented priority chain.
 - ``OAUTH_PROVIDER_FLOWS`` maps each OAuth provider to its resolver/status builder; the flows live in
-  ``auth_anxious``/``auth_codex``/``auth_xai``/``auth_qwen``/``auth_minimax``/``auth_spotify``/``auth_openrouter`` and are
+  ``auth_nous``/``auth_codex``/``auth_xai``/``auth_qwen``/``auth_minimax``/``auth_spotify``/``auth_openrouter`` and are
   re-imported here so ``pulse_cli.auth.<name>`` stays the public/patchable surface."""
 
 from __future__ import annotations
 
 from pm import install_hint
+import errno
 import json
 import logging
 import os
@@ -39,7 +40,7 @@ from pulse_cli.auth_model_picker import (  # noqa: F401  re-exported
     _prompt_model_selection, _save_model_choice)
 from pulse_cli.auth_device_flow import (  # noqa: F401  re-exported
     _can_open_graphical_browser, _default_verify, _is_remote_session,
-    _anxious_device_auth_timeout_message, _offer_existing_oauth_credentials,
+    _nous_device_auth_timeout_message, _offer_existing_oauth_credentials,
     _poll_device_token_generic, _poll_for_token, _print_device_code_instructions,
     _print_login_success, _print_loopback_ssh_hint, _prompt_yes_no, _request_device_code,
     _resolve_verify, _ssh_user_at_host)
@@ -47,20 +48,20 @@ from pulse_cli.auth_oauth_grants import (  # noqa: F401  re-exported
     SINGLE_USE_REFRESH_POOL_PROVIDERS, _oauth_heal_clean_marks, _oauth_heal_notices,
     consume_oauth_heal_notices, heal_forked_single_use_oauth_grants,
     strip_cloned_single_use_oauth_grants)
-from pulse_cli.auth_anxious import (  # noqa: F401  re-exported
-    ANXIOUS_SESSION_TERMINAL, ANXIOUS_SESSION_UNKNOWN, ANXIOUS_SESSION_VALID, _ALLOWED_ANXIOUS_INFERENCE_HOSTS,
-    _agent_key_is_usable, _apply_anxious_refreshed_tokens, _assert_anxious_inference_jwt_usable,
-    _compute_anxious_auth_status, _format_anxious_entitlement_auth_error, _healed_anxious_inference_url,
-    _login_anxious, _merge_shared_anxious_oauth_state, _migrate_stale_anxious_portal_url,
-    _anxious_device_code_login, _anxious_inference_env_override, _anxious_invoke_jwt_is_usable,
-    _anxious_invoke_jwt_status, _anxious_portal_env_override, _anxious_shared_store_lock,
-    _anxious_shared_store_path, _pool_first_oauth_status, _quarantine_anxious_oauth_state,
-    _quarantine_anxious_pool_entries, _read_shared_anxious_state, _refresh_access_token,
-    _refresh_anxious_or_quarantine, _select_anxious_invoke_jwt, _sync_anxious_pool_from_auth_store,
-    _token_fingerprint, _try_import_shared_anxious_state, _validate_anxious_inference_url_from_network,
-    _write_shared_anxious_state, fetch_anxious_models, get_anxious_auth_status_local,
-    get_anxious_session_validity, persist_anxious_credentials, refresh_anxious_oauth_from_state,
-    resolve_anxious_runtime_credentials, step_up_anxious_billing_scope)
+from pulse_cli.auth_nous import (  # noqa: F401  re-exported
+    NOUS_SESSION_TERMINAL, NOUS_SESSION_UNKNOWN, NOUS_SESSION_VALID, _ALLOWED_NOUS_INFERENCE_HOSTS,
+    _agent_key_is_usable, _apply_nous_refreshed_tokens, _assert_nous_inference_jwt_usable,
+    _compute_nous_auth_status, _format_nous_entitlement_auth_error, _healed_nous_inference_url,
+    _login_nous, _merge_shared_nous_oauth_state, _migrate_stale_nous_portal_url,
+    _nous_device_code_login, _nous_inference_env_override, _nous_invoke_jwt_is_usable,
+    _nous_invoke_jwt_status, _nous_portal_env_override, _nous_shared_store_lock,
+    _nous_shared_store_path, _pool_first_oauth_status, _quarantine_nous_oauth_state,
+    _quarantine_nous_pool_entries, _read_shared_nous_state, _refresh_access_token,
+    _refresh_nous_or_quarantine, _select_nous_invoke_jwt, _sync_nous_pool_from_auth_store,
+    _token_fingerprint, _try_import_shared_nous_state, _validate_nous_inference_url_from_network,
+    _write_shared_nous_state, fetch_nous_models, get_nous_auth_status_local,
+    get_nous_session_validity, persist_nous_credentials, refresh_nous_oauth_from_state,
+    resolve_nous_runtime_credentials, step_up_nous_billing_scope)
 from pulse_cli.auth_minimax import (  # noqa: F401  re-exported
     _MINIMAX_OAUTH_ERROR_BODY_LIMIT, _login_minimax_oauth, _minimax_oauth_login, _minimax_pkce_pair,
     _minimax_poll_token, _minimax_post_form, _minimax_request_user_code,
@@ -89,10 +90,10 @@ from pulse_cli.auth_qwen import (  # noqa: F401  re-exported
     _refresh_qwen_cli_tokens, _save_qwen_cli_tokens, get_qwen_auth_status,
     resolve_qwen_runtime_credentials)
 from pulse_cli.auth_constants import (  # noqa: F401  re-exported
-    _decode_jwt_claims, AUTH_STORE_VERSION, AUTH_LOCK_TIMEOUT_SECONDS, DEFAULT_ANXIOUS_PORTAL_URL,
-    DEFAULT_ANXIOUS_INFERENCE_URL, DEFAULT_ANXIOUS_CLIENT_ID, ANXIOUS_BILLING_MANAGE_SCOPE,
-    DEFAULT_ANXIOUS_SCOPE, ANXIOUS_DEVICE_CODE_SOURCE, ANXIOUS_AUTH_PATH_INVOKE_JWT,
-    ACCESS_TOKEN_REFRESH_SKEW_SECONDS, ANXIOUS_INVOKE_JWT_MIN_TTL_SECONDS, DEFAULT_CODEX_BASE_URL,
+    _decode_jwt_claims, AUTH_STORE_VERSION, AUTH_LOCK_TIMEOUT_SECONDS, DEFAULT_NOUS_PORTAL_URL,
+    DEFAULT_NOUS_INFERENCE_URL, DEFAULT_NOUS_CLIENT_ID, NOUS_BILLING_MANAGE_SCOPE,
+    DEFAULT_NOUS_SCOPE, NOUS_DEVICE_CODE_SOURCE, NOUS_AUTH_PATH_INVOKE_JWT,
+    ACCESS_TOKEN_REFRESH_SKEW_SECONDS, NOUS_INVOKE_JWT_MIN_TTL_SECONDS, DEFAULT_CODEX_BASE_URL,
     DEFAULT_XAI_OAUTH_BASE_URL, MINIMAX_OAUTH_CLIENT_ID, MINIMAX_OAUTH_SCOPE,
     MINIMAX_OAUTH_GLOBAL_BASE, MINIMAX_OAUTH_CN_BASE, MINIMAX_OAUTH_GLOBAL_INFERENCE,
     MINIMAX_OAUTH_CN_INFERENCE, MINIMAX_OAUTH_REFRESH_SKEW_SECONDS, DEFAULT_QWEN_BASE_URL,
@@ -103,7 +104,7 @@ from pulse_cli.auth_constants import (  # noqa: F401  re-exported
     XAI_ACCESS_TOKEN_REFRESH_SKEW_SECONDS, QWEN_ACCESS_TOKEN_REFRESH_SKEW_SECONDS,
     DEFAULT_SPOTIFY_ACCOUNTS_BASE_URL, DEFAULT_SPOTIFY_API_BASE_URL, SPOTIFY_DOCS_URL,
     DEFAULT_SPOTIFY_SCOPE, SERVICE_PROVIDER_NAMES, LMSTUDIO_NOAUTH_PLACEHOLDER,
-    ACTUAL_LOCAL_NOAUTH_PLACEHOLDER, CODEX_RATE_LIMITED_CODE, AuthError, _anxious_err, httpx)
+    ACTUAL_LOCAL_NOAUTH_PLACEHOLDER, CODEX_RATE_LIMITED_CODE, AuthError, _nous_err, httpx)
 
 logger = logging.getLogger(__name__)
 
@@ -173,9 +174,9 @@ def _api_key_provider(
 # [, auth_type]])``; OAuth / bespoke rows are full ``ProviderConfig`` objects.
 _REGISTRY_ROWS: Tuple[Any, ...] = (
     ProviderConfig(
-        "anxious", "Anxious Portal", "oauth_device_code", portal_base_url=DEFAULT_ANXIOUS_PORTAL_URL,
-        inference_base_url=DEFAULT_ANXIOUS_INFERENCE_URL, client_id=DEFAULT_ANXIOUS_CLIENT_ID,
-        scope=DEFAULT_ANXIOUS_SCOPE),
+        "nous", "Nous Portal", "oauth_device_code", portal_base_url=DEFAULT_NOUS_PORTAL_URL,
+        inference_base_url=DEFAULT_NOUS_INFERENCE_URL, client_id=DEFAULT_NOUS_CLIENT_ID,
+        scope=DEFAULT_NOUS_SCOPE),
     ProviderConfig("openai-codex", "OpenAI Codex", "oauth_external", inference_base_url=DEFAULT_CODEX_BASE_URL),
     ("openai-api", "OpenAI API", "https://api.openai.com/v1", ("OPENAI_API_KEY",), "OPENAI_BASE_URL"),
     ProviderConfig(
@@ -257,7 +258,7 @@ BUILTIN_PROVIDER_IDS = frozenset(PROVIDER_REGISTRY)
 # a plugin never observes a partially initialized auth module (CONTRACT: during discovery a plugin may
 # rely only on ``ProviderConfig`` and ``PROVIDER_REGISTRY`` from here — nothing defined below).
 from pulse_cli.config import (  # noqa: E402
-    atomic_config_write, get_pulse_home, get_config_path, read_raw_config, require_readable_config_before_write)
+    atomic_config_replace, get_pulse_home, get_config_path, read_raw_config, require_readable_config_before_write)
 
 # Plugin profiles (plugins/model-providers/<name>/) are mirrored into PROVIDER_REGISTRY with the
 # auth_type they declare; the mirror lives in the sibling so it can be re-run after discovery.
@@ -456,7 +457,7 @@ def primary_failure_wording(error: Exception) -> tuple[str, str]:
     return "auth failed", "Primary auth failed"
 
 
-# Entitlement failures: Anxious gets a Portal-aware message; other providers a fixed generic one (or
+# Entitlement failures: Nous gets a Portal-aware message; other providers a fixed generic one (or
 # the raw error when no generic text exists for the code).
 _GENERIC_ENTITLEMENT_MESSAGES = {
     "subscription_required": "No active paid subscription found. Please purchase/activate a subscription, then retry.",
@@ -476,8 +477,8 @@ def format_auth_error(error: Exception) -> str:
 
         return f"{error} Run `pulse {profile_cli_selector()}model` to re-authenticate."
     if error.code in _ENTITLEMENT_ERROR_CODES:
-        if error.provider == "anxious":
-            return _format_anxious_entitlement_auth_error(error)
+        if error.provider == "nous":
+            return _format_nous_entitlement_auth_error(error)
         generic = _GENERIC_ENTITLEMENT_MESSAGES.get(error.code)
         if generic:
             return generic
@@ -601,6 +602,63 @@ def _kernel_lock(lock_file: Any, acquire: bool) -> None:
         msvcrt.locking(lock_file.fileno(), msvcrt.LK_NBLCK if acquire else msvcrt.LK_UNLCK, 1)
 
 
+# Errnos that mean the lock is held rather than broken. POSIX flock contention is a
+# ``BlockingIOError`` (EAGAIN); msvcrt reports contention as EACCES — which a real ACL denial
+# also uses, so EACCES stays retried rather than aborting every Windows lock. Anything else
+# (ENOSYS, EOPNOTSUPP, EIO, ...) cannot clear by retrying and must propagate immediately.
+_LOCK_CONTENTION_ERRNOS = frozenset(
+    code for code in (errno.EACCES, errno.EAGAIN, getattr(errno, "EDEADLK", None)) if code is not None)
+
+
+def _is_lock_contention(exc: OSError) -> bool:
+    if isinstance(exc, BlockingIOError):
+        return True
+    return exc.errno in _LOCK_CONTENTION_ERRNOS
+
+
+def _lock_holder_hint(lock_path: Path) -> str:
+    """Live-holder hint from the pid a holder stamps into the lock file; empty when there is none.
+
+    Holders stamp their pid on acquire and clear it on release, so a leftover pid from a dead
+    process is filtered by a liveness probe — stay silent instead of blaming a ghost."""
+    try:
+        first_token = lock_path.read_text(encoding="utf-8-sig", errors="replace").split()[0]
+        pid = int(first_token)
+    except (OSError, ValueError, IndexError):
+        return ""
+    if pid <= 0 or pid == os.getpid():
+        return ""
+    if os.name == "posix":
+        try:
+            os.kill(pid, 0)  # windows-footgun: ok — inside `if os.name == "posix"` gate
+        except ProcessLookupError:
+            return ""
+        except OSError:
+            pass  # exists but is not signalable (e.g. EPERM): still a live holder
+    return (f"another pulse process (pid {pid}) probably still holds it "
+            "(e.g. a dashboard or a slow credential refresh)")
+
+
+def _stamp_lock_holder_pid(lock_file: Any) -> None:
+    """Best-effort pid stamp so a timing-out waiter can name the holder (#124533)."""
+    try:
+        lock_file.truncate(0)
+        lock_file.write(f"{os.getpid()}\n")  # "a+" writes land at the (now empty) end
+        lock_file.flush()
+    except OSError:
+        pass
+
+
+def _clear_stamped_lock_holder_pid(lock_file: Any) -> None:
+    try:
+        lock_file.truncate(0)
+        if msvcrt:
+            lock_file.write(" ")  # msvcrt.locking needs a non-empty file
+        lock_file.flush()
+    except OSError:
+        pass
+
+
 @contextmanager
 def _file_lock(
     lock_path: Path, holder: threading.local, timeout_seconds: float, timeout_message: str):
@@ -608,7 +666,7 @@ def _file_lock(
 
     Falls back to a depth-only guard when neither ``fcntl`` nor ``msvcrt`` is available. Callers
     supply their own ``threading.local`` so independent locks (profile store vs global root vs the
-    shared Anxious store) track reentrancy separately."""
+    shared Nous store) track reentrancy separately."""
     if getattr(holder, "depth", 0) > 0:
         holder.depth += 1
         try:
@@ -636,17 +694,26 @@ def _file_lock(
                 try:
                     _kernel_lock(lock_file, True)
                     break
-                except (BlockingIOError, OSError, PermissionError):
+                except (BlockingIOError, OSError, PermissionError) as exc:
+                    if not _is_lock_contention(exc):
+                        # Permanent failure (flock-unsupported filesystem, bad fd, ...): retrying
+                        # to the deadline would burn the timeout blaming a holder that does not
+                        # exist. Let the original error through instead.
+                        raise
                     if time.monotonic() >= deadline:
-                        raise TimeoutError(timeout_message)
+                        hint = _lock_holder_hint(lock_path)
+                        raise TimeoutError(f"{timeout_message}; {hint}" if hint else timeout_message)
                     time.sleep(0.05)
 
         holder.depth = 1
         try:
+            if lock_file is not None:
+                _stamp_lock_holder_pid(lock_file)
             yield
         finally:
             holder.depth = 0
             if lock_file is not None:
+                _clear_stamped_lock_holder_pid(lock_file)
                 try:
                     _kernel_lock(lock_file, False)
                 except (OSError, IOError):
@@ -660,11 +727,12 @@ def _auth_store_lock(
 
     ``target_path`` is required for profile-to-global write-throughs: each path has its own
     reentrancy tracker and kernel lock. Lock ordering invariant: ``_auth_store_lock`` FIRST (outer),
-    ``_anxious_shared_store_lock`` SECOND (inner), else deadlock against a concurrent shared import."""
+    ``_nous_shared_store_lock`` SECOND (inner), else deadlock against a concurrent shared import."""
     auth_path = target_path if target_path is not None else _auth_file_path()
+    lock_path = auth_path.with_suffix(".lock")
     with _file_lock(
-        auth_path.with_suffix(".lock"), _auth_lock_holder_for(auth_path), timeout_seconds,
-        "Timed out waiting for auth store lock"):
+        lock_path, _auth_lock_holder_for(auth_path), timeout_seconds,
+        f"Timed out waiting for auth store lock ({lock_path})"):
         yield
 
 
@@ -709,14 +777,14 @@ def _load_auth_store(auth_file: Optional[Path] = None) -> Dict[str, Any]:
         isinstance(raw.get("providers"), dict) or isinstance(raw.get("credential_pool"), dict)):
         raw.setdefault("providers", {})
         if isinstance(raw.get("providers"), dict):
-            _migrate_stale_anxious_portal_url(raw["providers"])
+            _migrate_stale_nous_portal_url(raw["providers"])
         return raw
 
     if isinstance(raw, dict) and isinstance(raw.get("systems"), dict):  # legacy "systems" format
         systems = raw["systems"]
-        providers = {"anxious": systems["anxious_portal"]} if "anxious_portal" in systems else {}
+        providers = {"nous": systems["nous_portal"]} if "nous_portal" in systems else {}
         return {**_empty_auth_store(), "providers": providers,
-                "active_provider": "anxious" if providers else None}
+                "active_provider": "nous" if providers else None}
     return _empty_auth_store()
 
 
@@ -834,7 +902,7 @@ def _save_provider_state_to_source(
     """Persist provider state back to the auth store it was read from.
 
     A token refresh rewrites credentials, not the user's choice of provider: ``active_provider`` is
-    left as it is (a Anxious free-tier identity refreshed for a connector call must not become the
+    left as it is (a Nous free-tier identity refreshed for a connector call must not become the
     inference provider of an install that has its own key)."""
     if source_path is None or _same_path(source_path, _auth_file_path()):
         _store_provider_state(auth_store, provider_id, state, set_active=False)
@@ -915,7 +983,7 @@ _POOL_TOKEN_GENERATION_FIELDS = (
     "access_token", "refresh_token", "expires_at", "expires_at_ms", "expires_in", "obtained_at",
     "last_refresh", "agent_key", "agent_key_expires_at", "agent_key_expires_in", "agent_key_id",
     "agent_key_obtained_at", "agent_key_reused",
-    # Refresh-coupled metadata: a Anxious refresh rewrites scope and the validated
+    # Refresh-coupled metadata: a Nous refresh rewrites scope and the validated
     # inference route together with the new pair, so they travel with it.
     "scope", "inference_base_url",
 )
@@ -1129,8 +1197,8 @@ def get_provider_auth_state(provider_id: str) -> Optional[Dict[str, Any]]:
     return _load_provider_state(_load_auth_store(), provider_id)
 
 
-def anxious_token_has_billing_scope() -> bool:
-    """Return True if the currently-held Anxious token carries ``billing:manage``.
+def nous_token_has_billing_scope() -> bool:
+    """Return True if the currently-held Nous token carries ``billing:manage``.
 
     Reads the persisted ``scope`` string saved at login (``_save_provider_state``
     stores ``token_data.get("scope") or scope``). A space-delimited match. Used by
@@ -1138,13 +1206,13 @@ def anxious_token_has_billing_scope() -> bool:
     anyway, but checking up front lets a surface skip a doomed round-trip.
     """
     try:
-        state = get_provider_auth_state("anxious") or {}
+        state = get_provider_auth_state("nous") or {}
     except Exception:
         return False
     scope = state.get("scope")
     if not isinstance(scope, str):
         return False
-    return ANXIOUS_BILLING_MANAGE_SCOPE in scope.split()
+    return NOUS_BILLING_MANAGE_SCOPE in scope.split()
 
 
 def get_active_provider() -> Optional[str]:
@@ -1192,12 +1260,12 @@ def _config_selects_provider(normalized: str) -> bool:
 
 
 def _explicit_pool_entry_present(normalized: str) -> bool:
-    """Pool rows from EXPLICIT Pulse flows (manual add / device-code / PKCE) or live env keys;
+    """Pool rows from EXPLICIT PULSE flows (manual add / device-code / PKCE) or live env keys;
     ambient borrowed sources (gh_cli / claude_code / qwen-cli) are deliberately excluded."""
     return any(_pool_entry_is_explicit(entry) for entry in read_credential_pool(normalized))
 
 
-# Set by Claude Code itself, not by the user explicitly configuring anthropic in Pulse.
+# Set by Claude Code itself, not by the user explicitly configuring anthropic in PULSE.
 _IMPLICIT_ENV_VARS = frozenset({"CLAUDE_CODE_OAUTH_TOKEN"})
 _EXPLICIT_POOL_SOURCES = frozenset({"device_code", "loopback_pkce", "pulse_pkce", "manual"})
 _VERTEX_PROVIDER_IDS = ("vertex", "google-vertex", "vertex-ai", "gcp-vertex", "vertexai")
@@ -1240,7 +1308,7 @@ def _explicit_env_credentials_present(normalized: str) -> bool:
 
 
 def _pool_entry_is_explicit(entry: Any) -> bool:
-    """True for pool rows the user created via an explicit Pulse flow (or a still-live env key)."""
+    """True for pool rows the user created via an explicit PULSE flow (or a still-live env key)."""
     if not isinstance(entry, dict):
         return False
     source = str(entry.get("source") or "").strip().lower()
@@ -1254,11 +1322,11 @@ def _pool_entry_is_explicit(entry: Any) -> bool:
 
 
 def _keyless_provider_has_explicit_config(normalized: str) -> bool:
-    """Vertex / Bedrock count as explicit when Pulse-scoped routing config is present.
+    """Vertex / Bedrock count as explicit when PULSE-scoped routing config is present.
 
     Uses has_explicit_vertex_config(), NOT has_vertex_credentials(): the latter also counts an
     ambient GOOGLE_APPLICATION_CREDENTIALS path (commonly set for unrelated GCP work). Only
-    Pulse-scoped signals (VERTEX_PROJECT_ID / vertex.project_id / VERTEX_CREDENTIALS_PATH) count
+    PULSE-scoped signals (VERTEX_PROJECT_ID / vertex.project_id / VERTEX_CREDENTIALS_PATH) count
     here."""
     if normalized in _VERTEX_PROVIDER_IDS:
         from agent.vertex_adapter import has_explicit_vertex_config
@@ -1282,7 +1350,7 @@ _EXPLICIT_CONFIG_CHECKS: Tuple[Tuple[Callable[[str], bool], bool], ...] = (
 def is_provider_explicitly_configured(provider_id: str) -> bool:
     """True only if the user explicitly configured this provider: auth.json ``active_provider``,
     config.yaml ``model.provider`` / MoA slots, a pasted provider env var, a pool entry from a
-    Pulse-initiated flow, or Pulse-scoped routing config for keyless cloud-SDK providers. Ambient
+    PULSE-initiated flow, or PULSE-scoped routing config for keyless cloud-SDK providers. Ambient
     borrowed credentials (gh CLI, qwen-cli, ~/.claude/.credentials.json) never count."""
     normalized = (provider_id or "").strip().lower()
     for check, best_effort in _EXPLICIT_CONFIG_CHECKS:
@@ -1479,7 +1547,7 @@ def _logged_in_oauth_active_provider(*, skip_free_tier: bool = False) -> Optiona
     """auth.json ``active_provider`` when it is a registry provider that reports logged in."""
     try:
         _maybe = _load_auth_store().get("active_provider")
-        if _maybe == "anxious":
+        if _maybe == "nous":
             from pulse_cli.anon_auth import guest_enabled, has_guest
             if has_guest() and (skip_free_tier or not guest_enabled()):
                 return None  # the free tier is off (or being discounted), so a guest is not a login
@@ -1573,7 +1641,7 @@ def resolve_provider(
     "auto" priority (explicit intent beats a stale OAuth login): 1. CLI api_key/base_url ->
     "openrouter"; 2. config.yaml ``model.provider``; 3. OPENROUTER_API_KEY (or an sk-or- key in
     OPENAI_API_KEY) -> "openrouter"; 4. OpenRouter pool; 5. provider env keys; 6. auth.json ``active_provider``;
-    7. Anxious free tier when it is on and its identity exists (never created here);
+    7. Nous free tier when it is on and its identity exists (never created here);
     8. AWS Bedrock chain; 9. AuthError(no_provider_configured).
 
     ``skip_free_tier`` hides rungs 6-for-a-free-tier-identity and 7: the boot bootstrap asks
@@ -1626,7 +1694,7 @@ def resolve_provider(
                 _oauth_active)
         return _oauth_active
 
-    # Anxious free tier, when it is on and its identity already exists. This rung sits ABOVE the Bedrock
+    # Nous free tier, when it is on and its identity already exists. This rung sits ABOVE the Bedrock
     # chain on purpose: every rung above this line is explicit user intent (CLI creds, config, env
     # keys, a sign-in); the boto chain below is implicit host state, and a leftover ~/.aws profile
     # used to win the first turn of a fresh install (NS-829). The rung never CREATES the identity:
@@ -1636,7 +1704,7 @@ def resolve_provider(
         try:
             from pulse_cli.anon_auth import guest_enabled, has_guest
             if guest_enabled() and has_guest():
-                return "anxious"
+                return "nous"
         except Exception as exc:
             logger.debug("free tier check during provider resolution skipped: %s", exc)
     # AWS Bedrock via the boto3 credential chain (IAM roles, SSO, env vars): implicit host state,
@@ -1649,8 +1717,8 @@ def resolve_provider(
         pass  # boto3 not installed
     from pulse_constants import display_pulse_home
     raise AuthError(
-        "Pulse is not connected to any AI provider yet. Run `pulse model` to pick one (the free "
-        "Anxious tier needs no API key), type `/login` in chat, or add a key with "
+        "PULSE is not connected to any AI provider yet. Run `pulse model` to pick one (the free "
+        "Nous tier needs no API key), type `/login` in chat, or add a key with "
         f"`pulse auth add <provider>`. (Advanced: put an API key such as OPENROUTER_API_KEY in "
         f"{display_pulse_home()}/.env.)",
         code="no_provider_configured")
@@ -1703,7 +1771,7 @@ _FLAT_OAUTH_TOKEN_KEYS = ("access_token", "refresh_token", "expires_at", "expire
 
 def _quarantine_flat_oauth_state(state: Dict[str, Any], provider: str, exc: "AuthError") -> None:
     """Strip dead tokens from a flat OAuth state after a terminal runtime refresh failure so
-    subsequent calls fail fast without a network retry (mirrors the Anxious / xAI / Codex pattern)."""
+    subsequent calls fail fast without a network retry (mirrors the Nous / xAI / Codex pattern)."""
     for _k in _FLAT_OAUTH_TOKEN_KEYS:
         state.pop(_k, None)
     state["last_auth_error"] = _last_auth_error_marker(
@@ -1722,14 +1790,14 @@ def _optional_base_url(value: Any) -> Optional[str]:
     return cleaned or None
 
 
-# Valid Anxious Portal hosts; a stored portal_base_url outside this set is a misconfiguration and falls
+# Valid Nous Portal hosts; a stored portal_base_url outside this set is a misconfiguration and falls
 # back to the default. localhost / 127.0.0.1 are for local development and testing.
-_ANXIOUS_PORTAL_ALLOWED_HOSTS: FrozenSet[str] = frozenset({
-    "portal.anxiousresearchlab.com", "localhost", "127.0.0.1"})
+_NOUS_PORTAL_ALLOWED_HOSTS: FrozenSet[str] = frozenset({
+    "portal.anxious-research.com", "localhost", "127.0.0.1"})
 
-# Per-process memo for resolve_anxious_access_token: startup runs one check_fn per managed tool and
+# Per-process memo for resolve_nous_access_token: startup runs one check_fn per managed tool and
 # each would trigger its own ~15s blocking refresh of an expired token; a short-TTL memo collapses
-# the burst into one round-trip. Callers needing freshness use force_fresh/refresh_anxious_oauth_pure.
+# the burst into one round-trip. Callers needing freshness use force_fresh/refresh_nous_oauth_pure.
 # Keyed by pulse_home_key(): the resolution itself is profile-scoped (_auth_file_path reads the
 # per-turn PULSE_HOME override a multiplex gateway sets), so a single slot would hand profile A's
 # Portal bearer to profile B for up to the TTL.
@@ -1738,31 +1806,31 @@ _RESOLVE_TOKEN_CACHE: "dict[str, tuple[float, str]]" = {}
 _RESOLVE_TOKEN_CACHE_TTL_S = 5.0
 
 
-def _anxious_portal_base_url(state: Dict[str, Any]) -> str:
-    """PULSE_PORTAL_BASE_URL / ANXIOUS_PORTAL_BASE_URL is the trusted operator override and wins
+def _nous_portal_base_url(state: Dict[str, Any]) -> str:
+    """PULSE_PORTAL_BASE_URL / NOUS_PORTAL_BASE_URL is the trusted operator override and wins
     OUTRIGHT, bypassing the host allowlist (which exists to reject an untrusted network-provided
     value, not one the operator configured). Otherwise the stored/default value, allowlist-gated."""
-    env_portal_override = _anxious_portal_env_override()
+    env_portal_override = _nous_portal_env_override()
     if env_portal_override:
         return env_portal_override.rstrip("/")
-    portal_base_url = _optional_base_url(state.get("portal_base_url")) or DEFAULT_ANXIOUS_PORTAL_URL
+    portal_base_url = _optional_base_url(state.get("portal_base_url")) or DEFAULT_NOUS_PORTAL_URL
     portal_base_url = portal_base_url.rstrip("/")
     host = urlparse(portal_base_url).hostname
-    if host and host not in _ANXIOUS_PORTAL_ALLOWED_HOSTS:
+    if host and host not in _NOUS_PORTAL_ALLOWED_HOSTS:
         logger.warning(
             "auth: ignoring invalid portal_base_url %r (host %r not in allowlist), using default",
             portal_base_url, host)
-        return DEFAULT_ANXIOUS_PORTAL_URL
+        return DEFAULT_NOUS_PORTAL_URL
     return portal_base_url
 
 
-def resolve_anxious_access_token(
+def resolve_nous_access_token(
     *,
     timeout_seconds: float = 15.0,
     insecure: Optional[bool] = None,
     ca_bundle: Optional[str] = None,
     refresh_skew_seconds: int = ACCESS_TOKEN_REFRESH_SKEW_SECONDS) -> str:
-    """Resolve a refresh-aware Anxious Portal access token for managed tool gateways."""
+    """Resolve a refresh-aware Nous Portal access token for managed tool gateways."""
     # Only a default-TLS resolution is memoised; error paths never populate the memo.
     memoable = not insecure and ca_bundle is None
     cache_key = pulse_home_key()
@@ -1778,17 +1846,17 @@ def resolve_anxious_access_token(
                 _RESOLVE_TOKEN_CACHE[cache_key] = (time.monotonic(), token)
         return token
 
-    with _provider_state_transaction("anxious") as (auth_store, state, state_source_path):
+    with _provider_state_transaction("nous") as (auth_store, state, state_source_path):
         if not state:
-            raise _anxious_err("Pulse is not logged into Anxious Portal.", "anxious_auth_missing", relogin=True)
-        portal_base_url = _anxious_portal_base_url(state)
-        client_id = str(state.get("client_id") or DEFAULT_ANXIOUS_CLIENT_ID)
+            raise _nous_err("PULSE is not logged into Nous Portal.", "nous_auth_missing", relogin=True)
+        portal_base_url = _nous_portal_base_url(state)
+        client_id = str(state.get("client_id") or DEFAULT_NOUS_CLIENT_ID)
         verify = _resolve_verify(insecure=insecure, ca_bundle=ca_bundle, auth_state=state)
         persist = lambda: _save_provider_state_to_source(  # noqa: E731
-            auth_store, "anxious", state, state_source_path)
+            auth_store, "nous", state, state_source_path)
 
         lock_timeout = max(timeout_seconds + 5.0, AUTH_LOCK_TIMEOUT_SECONDS)
-        with _anxious_shared_store_lock(timeout_seconds=lock_timeout):
+        with _nous_shared_store_lock(timeout_seconds=lock_timeout):
             from pulse_cli.anon_auth import is_guest_state, refresh_guest_state
             if is_guest_state(state):
                 # Guest seam: the anon_ credential is the identity; a first use has no access token
@@ -1801,15 +1869,15 @@ def resolve_anxious_access_token(
                                   headers={"Accept": "application/json"}, verify=verify) as client:
                     refresh_guest_state(state, client)
                 persist()
-                _write_shared_anxious_state(state)
+                _write_shared_nous_state(state)
                 return _memo(state["access_token"])
 
-            merged_shared = _merge_shared_anxious_oauth_state(state)
+            merged_shared = _merge_shared_nous_oauth_state(state)
             access_token = state.get("access_token")
             refresh_token = state.get("refresh_token")
             if not isinstance(access_token, str) or not access_token:
-                raise _anxious_err(
-                    "No access token found for Anxious Portal login.", "anxious_auth_missing_access_token", relogin=True)
+                raise _nous_err(
+                    "No access token found for Nous Portal login.", "nous_auth_missing_access_token", relogin=True)
 
             if not _is_expiring(state.get("expires_at"), refresh_skew_seconds):
                 if merged_shared:
@@ -1820,34 +1888,34 @@ def resolve_anxious_access_token(
                 return _memo(access_token)
 
             if not isinstance(refresh_token, str) or not refresh_token:
-                raise _anxious_err(
-                    "Session expired and no refresh token is available.", "anxious_auth_missing_refresh_token",
+                raise _nous_err(
+                    "Session expired and no refresh token is available.", "nous_auth_missing_refresh_token",
                     relogin=True)
 
             with httpx.Client(timeout=httpx.Timeout(timeout_seconds or 15.0),
                               headers={"Accept": "application/json"}, verify=verify) as client:
-                refreshed = _refresh_anxious_or_quarantine(
+                refreshed = _refresh_nous_or_quarantine(
                     client=client, auth_store=auth_store, state=state, portal_base_url=portal_base_url,
                     client_id=client_id, refresh_token=refresh_token,
                     reason="managed_access_token_refresh_failure", persist=persist)
 
-            _apply_anxious_refreshed_tokens(state, refreshed, refresh_token)
+            _apply_nous_refreshed_tokens(state, refreshed, refresh_token)
             state["portal_base_url"] = portal_base_url
             state["client_id"] = client_id
             state["tls"] = _tls_state_from_verify(verify)
             persist()
-            _write_shared_anxious_state(state)
+            _write_shared_nous_state(state)
             return _memo(state["access_token"])
 
 
 # ── Status helpers ──────────────────────────────────────────────────────────────────────────────────
 
-# Process-level memo for get_anxious_auth_status(): it validates via a synchronous refresh POST
+# Process-level memo for get_nous_auth_status(): it validates via a synchronous refresh POST
 # (~350ms) and read-only UI surfaces call it many times per render (~31x per menu paint), burning
 # single-use refresh tokens. Keyed on auth.json path + mtime so profile switches don't share a memo
 # and login/logout/add/remove invalidate naturally.
-_ANXIOUS_AUTH_STATUS_CACHE_TTL = 15.0  # seconds
-_anxious_auth_status_cache: Optional[Tuple[float, str, Optional[float], Dict[str, Any]]] = None
+_NOUS_AUTH_STATUS_CACHE_TTL = 15.0  # seconds
+_nous_auth_status_cache: Optional[Tuple[float, str, Optional[float], Dict[str, Any]]] = None
 
 # mtime-keyed memo for _load_global_auth_store(): (path, mtime_ns, store); same invalidation rule.
 _global_auth_store_cache: Optional[Tuple[str, int, Dict[str, Any]]] = None
@@ -1861,27 +1929,27 @@ def _auth_file_cache_key() -> Tuple[str, Optional[float]]:
         return _resolved_key(auth_file), None
 
 
-def invalidate_anxious_auth_status_cache() -> None:
-    """Clear the get_anxious_auth_status() memo (for code paths that mutate Anxious auth state without
+def invalidate_nous_auth_status_cache() -> None:
+    """Clear the get_nous_auth_status() memo (for code paths that mutate Nous auth state without
     touching auth.json, e.g. tests; login/logout invalidate via the mtime check automatically)."""
-    global _anxious_auth_status_cache
-    _anxious_auth_status_cache = None
+    global _nous_auth_status_cache
+    _nous_auth_status_cache = None
 
 
-def get_anxious_auth_status() -> Dict[str, Any]:
-    """Status snapshot for Anxious auth, memoised ~15s keyed on the auth.json mtime.
+def get_nous_auth_status() -> Dict[str, Any]:
+    """Status snapshot for Nous auth, memoised ~15s keyed on the auth.json mtime.
 
     Prefers the auth-store provider state (the live source of truth for refresh) and validates it by
     resolving runtime credentials so revoked refresh sessions do not show up as a healthy login."""
-    global _anxious_auth_status_cache
+    global _nous_auth_status_cache
     now = time.monotonic()
     auth_file_key, mtime = _auth_file_cache_key()
-    cached = _anxious_auth_status_cache
+    cached = _nous_auth_status_cache
     if (cached is not None and cached[1:3] == (auth_file_key, mtime)
-            and (now - cached[0]) < _ANXIOUS_AUTH_STATUS_CACHE_TTL):
+            and (now - cached[0]) < _NOUS_AUTH_STATUS_CACHE_TTL):
         return dict(cached[3])
-    status = _compute_anxious_auth_status()
-    _anxious_auth_status_cache = (now, auth_file_key, mtime, dict(status))
+    status = _compute_nous_auth_status()
+    _nous_auth_status_cache = (now, auth_file_key, mtime, dict(status))
     return status
 
 
@@ -1913,15 +1981,15 @@ class OAuthProviderFlow:
 
 _OAUTH_GRANT_DEAD_CODES = frozenset({"invalid_grant", "invalid_token", "refresh_token_reused"})
 
-# Anxious state-shape failures raised BEFORE any refresh POST (no login, no token pair): retrying
+# Nous state-shape failures raised BEFORE any refresh POST (no login, no token pair): retrying
 # cannot succeed either, so the pool must not bench them as a transient outage (#113718).
-_ANXIOUS_AUTH_MISSING_CODES = frozenset({
-    "anxious_auth_missing", "anxious_auth_missing_access_token", "anxious_auth_missing_refresh_token"})
+_NOUS_AUTH_MISSING_CODES = frozenset({
+    "nous_auth_missing", "nous_auth_missing_access_token", "nous_auth_missing_refresh_token"})
 
 OAUTH_PROVIDER_FLOWS: Dict[str, OAuthProviderFlow] = {
-    "anxious": OAuthProviderFlow(
-        "anxious", "resolve_anxious_runtime_credentials", "get_anxious_auth_status",
-        terminal_refresh_codes=_OAUTH_GRANT_DEAD_CODES | _ANXIOUS_AUTH_MISSING_CODES, logout_from_config=True),
+    "nous": OAuthProviderFlow(
+        "nous", "resolve_nous_runtime_credentials", "get_nous_auth_status",
+        terminal_refresh_codes=_OAUTH_GRANT_DEAD_CODES | _NOUS_AUTH_MISSING_CODES, logout_from_config=True),
     "openai-codex": OAuthProviderFlow(
         "openai-codex", "resolve_codex_runtime_credentials", "get_codex_auth_status",
         terminal_refresh_codes=_OAUTH_GRANT_DEAD_CODES | {"codex_refresh_failed", "codex_auth_missing_refresh_token"},
@@ -1942,7 +2010,7 @@ def _is_terminal_refresh_error(exc: Exception, provider: str) -> bool:
     return OAUTH_PROVIDER_FLOWS[provider].is_terminal_refresh_error(exc)
 
 
-_is_terminal_anxious_refresh_error = partial(_is_terminal_refresh_error, provider="anxious")
+_is_terminal_nous_refresh_error = partial(_is_terminal_refresh_error, provider="nous")
 _is_terminal_xai_oauth_refresh_error = partial(_is_terminal_refresh_error, provider="xai-oauth")
 _is_terminal_codex_oauth_refresh_error = partial(
     _is_terminal_refresh_error, provider="openai-codex")
@@ -2024,7 +2092,7 @@ def _external_process_auth_evidence(provider_id: str, resolved_command: Optional
 
     False means "not verifiable from here", NOT "signed out". Subprocess-free (spawning the CLI from
     status endpoints/pickers re-creates the cold-start stall copilot_auth.py avoids). Generic evidence
-    for any external-process profile is its binary resolving: the subprocess owns real auth and Pulse
+    for any external-process profile is its binary resolving: the subprocess owns real auth and PULSE
     has nothing else to inspect, so out-of-tree ACP rows pass credential-gated surfaces (Desktop
     ``explicit_only`` picker) like the bundled one, whose CLI additionally exposes readable token stores."""
     if provider_id == "copilot-acp":
@@ -2180,9 +2248,9 @@ def _get_azure_foundry_auth_status() -> Dict[str, Any]:
                     "azure-identity is installed; live credential validation "
                     "is skipped here. Run `pulse doctor` to verify token acquisition."
                 ) if installed else (
-                    "azure-identity not installed. From the Pulse environment, run: "
+                    "azure-identity not installed. From the PULSE environment, run: "
                     f"{install_hint('azure-identity')}. "
-                    "Then restart Pulse."))
+                    "Then restart PULSE."))
         except Exception as exc:
             info["logged_in"] = False
             info["error"] = f"azure-identity check failed: {exc}"
@@ -2328,7 +2396,7 @@ def _update_config_for_provider(
     elif clear_default:
         model_cfg.pop("default", None)
     config["model"] = model_cfg
-    atomic_config_write(config_path, config)
+    atomic_config_replace(config_path, config)
     return config_path
 
 
@@ -2372,7 +2440,7 @@ def _reset_config_provider() -> Path:
         model["provider"] = "auto"
         if "base_url" in model:
             model["base_url"] = OPENROUTER_BASE_URL
-    atomic_config_write(config_path, config)
+    atomic_config_replace(config_path, config)
     return config_path
 
 
@@ -2407,9 +2475,9 @@ def logout_command(args) -> None:
     if not target:
         print("No provider is currently logged in.")
         return
-    if target == "anxious":
+    if target == "nous":
         from pulse_cli.anon_auth import FREE_TIER_NOT_SIGNED_IN, is_guest_state
-        if is_guest_state(get_provider_auth_state("anxious")):
+        if is_guest_state(get_provider_auth_state("nous")):
             # Free tier is not a login; there is nothing to log out of and nothing is cleared.
             print(FREE_TIER_NOT_SIGNED_IN)
             return
@@ -2418,64 +2486,16 @@ def logout_command(args) -> None:
     if not (clear_provider_auth(target) or should_reset_config):
         print(f"No auth state found for {provider_name}.")
         return
-    if target == "anxious":
+    if target == "nous":
         # A profile logout must not be re-adopted from the cross-profile store on the next boot.
-        from pulse_cli.auth_anxious import _clear_shared_anxious_state
-        _clear_shared_anxious_state("logout")
+        from pulse_cli.auth_nous import _clear_shared_nous_state
+        _clear_shared_nous_state("logout")
     if should_reset_config:
         _reset_config_provider()
     print(f"Logged out of {provider_name}.")
     if not should_reset_config:
         print("Model provider configuration was unchanged.")
     elif os.getenv("OPENROUTER_API_KEY"):
-        print("Pulse will use OpenRouter for inference.")
+        print("PULSE will use OpenRouter for inference.")
     else:
-        print("Run `pulse model` or configure an API key to use Pulse.")
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from http.server import BaseHTTPRequestHandler  # noqa: F401,E402
-from http.server import HTTPServer  # noqa: F401,E402
-from typing import TYPE_CHECKING  # noqa: F401,E402
-import base64  # noqa: F401,E402
-import hashlib  # noqa: F401,E402
-from urllib.parse import parse_qs  # noqa: F401,E402
-import ssl  # noqa: F401,E402
-import subprocess  # noqa: F401,E402
-import sys  # noqa: F401,E402
-from urllib.parse import urlencode  # noqa: F401,E402
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'CODEX_OAUTH_USER_AGENT': ('pulse_cli.auth_constants', 'CODEX_OAUTH_USER_AGENT'),
-    'CODEX_QUOTA_PROBE_MIN_INTERVAL_SECONDS': ('pulse_cli.auth_codex', 'CODEX_QUOTA_PROBE_MIN_INTERVAL_SECONDS'),
-    'DEFAULT_SPOTIFY_REDIRECT_URI': ('pulse_cli.auth_constants', 'DEFAULT_SPOTIFY_REDIRECT_URI'),
-    'DEVICE_AUTH_POLL_INTERVAL_CAP_SECONDS': ('pulse_cli.auth_constants', 'DEVICE_AUTH_POLL_INTERVAL_CAP_SECONDS'),
-    'MINIMAX_OAUTH_GRANT_TYPE': ('pulse_cli.auth_constants', 'MINIMAX_OAUTH_GRANT_TYPE'),
-    'ANXIOUS_INFERENCE_INVOKE_SCOPE': ('pulse_cli.auth_constants', 'ANXIOUS_INFERENCE_INVOKE_SCOPE'),
-    'ANXIOUS_SHARED_STORE_FILENAME': ('pulse_cli.auth_anxious', 'ANXIOUS_SHARED_STORE_FILENAME'),
-    'OAUTH_OVER_SSH_DOCS_URL': ('pulse_cli.auth_constants', 'OAUTH_OVER_SSH_DOCS_URL'),
-    'QWEN_OAUTH_CLIENT_ID': ('pulse_cli.auth_constants', 'QWEN_OAUTH_CLIENT_ID'),
-    'QWEN_OAUTH_TOKEN_URL': ('pulse_cli.auth_constants', 'QWEN_OAUTH_TOKEN_URL'),
-    'SINGLE_USE_OAUTH_SINGLETON_FILES': ('pulse_cli.auth_oauth_grants', 'SINGLE_USE_OAUTH_SINGLETON_FILES'),
-    'SPOTIFY_ACCESS_TOKEN_REFRESH_SKEW_SECONDS': ('pulse_cli.auth_constants', 'SPOTIFY_ACCESS_TOKEN_REFRESH_SKEW_SECONDS'),
-    'SPOTIFY_DASHBOARD_URL': ('pulse_cli.auth_constants', 'SPOTIFY_DASHBOARD_URL'),
-    'XAI_OAUTH_DEVICE_CODE_URL': ('pulse_cli.auth_constants', 'XAI_OAUTH_DEVICE_CODE_URL'),
-    'XAI_OAUTH_DISCOVERY_URL': ('pulse_cli.auth_constants', 'XAI_OAUTH_DISCOVERY_URL'),
-    'XAI_OAUTH_ISSUER': ('pulse_cli.auth_constants', 'XAI_OAUTH_ISSUER'),
-    'refresh_anxious_oauth_pure': ('pulse_cli.auth_anxious', 'refresh_anxious_oauth_pure'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----
+        print("Run `pulse model` or configure an API key to use PULSE.")

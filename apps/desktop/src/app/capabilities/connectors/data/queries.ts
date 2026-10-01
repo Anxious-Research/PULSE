@@ -157,7 +157,7 @@ export function useHostedConnectors(scope: ProfileScope): HostedConnectorsView {
     retryRules,
     rows: blanked ? [] : joined.rows,
     rulesFailed,
-    rulesSignedOut: policyError?.reason === 'NEEDS_PULSE_AUTH',
+    rulesSignedOut: policyError?.reason === 'NEEDS_NOUS_AUTH',
     titles: joined.titles
   }
 }
@@ -223,7 +223,7 @@ export function useConnectorTools(scope: ProfileScope, slug: null | string, list
   return {
     refresh: () => revalidate.mutate(),
     retry: () => invalidateConnectorApp(scope, slug ?? ''),
-    signedOut: reason === 'NEEDS_PULSE_AUTH',
+    signedOut: reason === 'NEEDS_NOUS_AUTH',
     status:
       slug === null
         ? null

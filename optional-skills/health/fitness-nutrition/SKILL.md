@@ -3,7 +3,7 @@ name: fitness-nutrition
 description: "Workout planning, macros, and body metrics via wger/USDA."
 platforms: [linux, macos, windows]
 version: 1.0.0
-author: Hailey Marshall (haileymarshall), Pulse Agent
+author: Hailey Marshall (haileymarshall), PULSE Agent
 authors:
   - haileymarshall
 license: MIT

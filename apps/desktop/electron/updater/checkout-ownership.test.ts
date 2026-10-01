@@ -21,7 +21,7 @@ it.each(['not-a-git-checkout', 'update-root-steward-owned-git-tree', 'fetch-fail
       remoteGatewayActive: (): boolean => false,
       emitUpdateProgress: vi.fn(),
       rememberLog: vi.fn(),
-      startPulse: vi.fn(async (): Promise<void> => {}),
+      startPULSE: vi.fn(async (): Promise<void> => {}),
       stopBackendsForUpdate: vi.fn(async (): Promise<void> => {}),
       repairMacUpdaterHelper: vi.fn(),
       preflightStateDb: vi.fn(),

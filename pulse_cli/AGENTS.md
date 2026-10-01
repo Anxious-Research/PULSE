@@ -4,7 +4,7 @@ Applies on top of the root `AGENTS.md`. Long-form: `website/docs/developer-guide
 
 ## CLI architecture
 
-`cli.py` holds `PulseCLI` (REPL loop, config, slash dispatch); behaviour lives in mixins
+`cli.py` holds `PULSECLI` (REPL loop, config, slash dispatch); behaviour lives in mixins
 `pulse_cli/cli_commands_mixin.py`, `cli_stream_mixin.py`, `cli_status_bar_mixin.py`,
 `cli_billing_mixin.py`, `cli_tui_mixin.py` (widgets, keybindings, panels), `cli_tui_runtime_mixin.py`
 (run-loop phases: input dispatch, startup, signals, shutdown), `cli_init_mixin.py` (the `__init__`
@@ -28,7 +28,7 @@ generation/refresh, command dispatch); topical siblings re-exported by the facad
 (late binding on `pulse_cli.gateway`), so monkeypatch on the facade; mutable state such as
 `_resolved_launchd_domain` stays a facade global.
 `process_command()` resolves the canonical name via `resolve_command()` then dispatches through
-`PulseCLI._SLASH_DISPATCH` (`canonical -> (method name, pass_arg)`), falling back to a
+`PULSECLI._SLASH_DISPATCH` (`canonical -> (method name, pass_arg)`), falling back to a
 `_handle_<name>_command` method by naming convention. **There is no `elif` ladder — do not add one.**
 Skill slash commands (`agent/skill_commands.py`) scan `~/.pulse/skills/` and inject as a **user
 message**, never into the system prompt (prompt caching).
@@ -87,11 +87,12 @@ archive_after_days, backup.*`.
 set/get/unset <NAME>` route any bare name registered in `OPTIONAL_ENV_VARS` / `_EXTRA_ENV_KEYS`
   (or carrying a `setup_hidden_env` platform suffix) to `.env` via `config_env_routing.py` — the
   file the platform setup flows write — never to the top level of config.yaml.
-- **One writer.** Every write of a `config.yaml` (main or profile) goes through
-  `pulse_cli.config.atomic_config_write` (→ `utils.atomic_roundtrip_yaml_save`, ruamel
-  round-trip merge): comments, key order, quoting and blank lines survive, absent keys are
-  deleted, and the fail-closed unreadable-file guard runs first. `save_config`, `config set/unset`,
-  migrations, plugin bookkeeping, gateway/TUI RPCs and auth resets all reach it; never call
+- **One writer seam.** Every write of a `config.yaml` (main or profile) goes through
+  `pulse_cli.config.atomic_config_write` (refuses deletion by omission) or the explicit
+  `atomic_config_replace` full-state path (→ `utils.atomic_roundtrip_yaml_save`, ruamel
+  round-trip): comments, key order, quoting and blank lines survive, and the fail-closed unreadable-file
+  guard runs first. Deliberate `pop()`/unset/migration paths use `atomic_config_replace`; additive
+  writers stay on `atomic_config_write`. Never call
   `atomic_yaml_write` / `yaml.dump` / `yaml.safe_dump` on a config path — `scripts/check_config_yaml_writers.py`
   (CI lint) rejects it, and `tests/pulse_cli/test_config_yaml_comment_preservation.py` guards each
   path (#92554). The commented example blocks are appended only when the file is created.
@@ -236,7 +237,7 @@ other service domain / UNIX user / PULSE_HOME outside `profiles/` — notices fo
 blockers for the hook) and the `gateway.auto_multiplex_migration` opt-out (#109954). Blockers reuse `GatewayRunner._adapter_credential_fingerprint` and `platform_binds_port`;
 "has a `/p/<profile>/` ingress" is the adapter class attribute `serves_profile_prefix` — set it on a
 new HTTP-inbound adapter when it answers the prefix, never extend a list here.
-`pulse gateway restart` for a gateway Pulse did not install (custom launchd agent / unit running
+`pulse gateway restart` for a gateway PULSE did not install (custom launchd agent / unit running
 `gateway run --external-supervisor`): `gateway_supervised_restart.py` — the gateway's SELF-declared
 supervisor (control-socket `identify` answering anything but `manual`, OR the argv marker) decides; hand back via SIGUSR1 and wait
 for a fresh supervised PID, never stop + foreground `run_gateway` (that stamps the CLI's PID and wedges
@@ -254,12 +255,12 @@ change to install/restart/status regenerates and diffs every kind; both user and
 recorded when both exist. Process liveness is `(pid, start_time)` or the canonical matchers
 (`gateway.status.live_gateway_pid_for_home`), never bare PID existence.
 
-## Anxious free tier (`pulse_cli/anon_auth.py`)
+## Nous free tier (`pulse_cli/anon_auth.py`)
 
 Sign-in completion is one function, `settle_after_upgrade`, called by every caller that persists an
 account over a free-tier identity (CLI `upgrade_guest`, the desktop poller): it moves a config on the
 welcome route to the account's host and the tier's recommended default
-(`models.recommended_anxious_default_model`, shared with `GET /api/model/recommended-default`).
+(`models.recommended_nous_default_model`, shared with `GET /api/model/recommended-default`).
 
 The shared flow, states, and copy live in `anon_sign_in.py`; CLI rendering lives in
 `anon_sign_in_cli.py`. `anon_auth.py` keeps identity, promotion polling, and settlement, and
@@ -280,5 +281,5 @@ transfer the user actually approved). `scope` is entered only around the precond
 blocks, never across a `yield` or a network wait, because `run_in_executor` does not carry
 contextvars. `upgrade_guest` (`pulse auth upgrade`), the CLI `/login` handler and the desktop
 promotion poller are renderers over it; a surface that needs the cancel check and the save to be
-atomic passes `persist_guard`. The desktop's plain "connect another Anxious account" device-code login
-is a separate path (`_anxious_plain_poller`) and must stay one.
+atomic passes `persist_guard`. The desktop's plain "connect another Nous account" device-code login
+is a separate path (`_nous_plain_poller`) and must stay one.

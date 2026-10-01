@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# MIT License. Part of the Pulse docx skill.
+# MIT License. Part of the PULSE docx skill.
 """Read a .docx: text, structure outline, styles, images, revision detection.
 
 Usage:

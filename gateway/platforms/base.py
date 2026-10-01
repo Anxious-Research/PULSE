@@ -21,6 +21,7 @@ from abc import ABC, abstractmethod
 from urllib.parse import urlsplit
 
 from utils import normalize_proxy_url
+from agent.i18n import t
 from agent.retry_utils import jittered_backoff
 from agent.proxy_bypass import first_proxy_env_value, should_bypass_proxy as _should_bypass_proxy
 
@@ -38,7 +39,7 @@ def _consume_detached_handler_exception(task: "asyncio.Task") -> None:
 
 
 # Audio exts for native audio delivery; Telegram's narrower sets stay separate (.m2a is audio to
-# Pulse but not to sendAudio).
+# PULSE but not to sendAudio).
 _AUDIO_MIME_TYPES = {
     ".ogg": "audio/ogg", ".opus": "audio/opus", ".mp3": "audio/mpeg", ".m2a": "audio/mpeg",
     ".wav": "audio/wav", ".m4a": "audio/m4a", ".flac": "audio/flac"}
@@ -178,10 +179,15 @@ def _reply_anchor_for_event(event) -> str | None:
     return getattr(event, "message_id", None)
 
 
+_MEDIA_KIND_KEYS = frozenset({"audio", "video", "file", "image"})
+
+
 def _media_failure_text(kind: str, file_name: "str | None" = None) -> str:
     """User-facing "couldn't deliver" notice; ``file_name`` is the only name ever shown."""
-    suffix = f" ({file_name})" if file_name else ""
-    return f"⚠️ Couldn't deliver the {kind} attachment{suffix}."
+    kind_label = t(f"gateway.notify.media_kind.{kind}") if kind in _MEDIA_KIND_KEYS else kind
+    if file_name:
+        return t("gateway.notify.media_delivery_failed_with_name", kind=kind_label, file_name=file_name)
+    return t("gateway.notify.media_delivery_failed", kind=kind_label)
 
 
 def should_send_media_as_audio(platform, ext: str, is_voice: bool = False) -> bool:
@@ -333,7 +339,7 @@ def resolve_proxy_url(
     process env another profile's ``TELEGRAM_PROXY``/``DISCORD_PROXY``/etc. may hold; the YAML
     value is the same profile's, so a secondary keeps its configured route without any env
     bridge (#108440). The generic ``HTTPS_PROXY``/``HTTP_PROXY``/``ALL_PROXY`` fallback stays a raw
-    process-env read — those are OS/system-level network settings, not a per-profile Pulse concept."""
+    process-env read — those are OS/system-level network settings, not a per-profile PULSE concept."""
     from gateway.platforms._shared import get_scoped_secret as _get_scoped_proxy_var
     value = (_get_scoped_proxy_var(platform_env_var, "") or "").strip() if platform_env_var else ""
     if not value:
@@ -420,9 +426,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from gateway.config import Platform, PlatformConfig
 from gateway.platforms.helpers import fence_state_after
 from gateway.platforms.base_exec_approval import (
-    EA_HEADER_TEXT, EA_REASON_LABEL_TEXT, approval_timeout_seconds, format_approval_deadline_line)
+    approval_timeout_seconds, ea_action_labels, ea_default_reason_text, ea_header_text,
+    ea_reason_label_text, ea_smart_deny_line_text, format_approval_deadline_line)
 from gateway.platforms.event import MessageEvent, MessageType, ProcessingOutcome
 from gateway.warning_notifications import diagnostic_wake_muted
+from pulse_cli.observability.shared_metrics_gateway import records_delivery, stop_reply_clock
 from gateway.session import SessionSource, build_session_key
 from gateway.session_transcript import TranscriptReadError
 from pulse_constants import get_default_pulse_root, get_pulse_dir, get_pulse_home
@@ -485,9 +493,10 @@ UNAUTHORIZED_ACTION_NOTICE = (
 
 
 def unauthorized_action_notice(platform: Any) -> str:
-    """``UNAUTHORIZED_ACTION_NOTICE`` for a ``Platform`` member or its string name."""
+    """Localized ``UNAUTHORIZED_ACTION_NOTICE`` for a ``Platform`` member or its string name.
+    Call it per refusal — never bind the result at import, or the language freezes."""
     name = getattr(platform, "value", platform)
-    return UNAUTHORIZED_ACTION_NOTICE.format(platform=str(name or "<platform>"))
+    return t("gateway.unauthorized.action_notice", platform=str(name or "<platform>"))
 
 
 def safe_url_for_log(url: str, max_len: int = 80) -> str:
@@ -587,7 +596,7 @@ def _cache_dir_accessors(kind: str, constant_name: str, new_subpath: str, old_na
         default = _CACHE_DIR_IMPORT_DEFAULTS.get(constant_name)
         if current is not None and default is not None and current != default:
             d = Path(current)
-        d.mkdir(parents=True, exist_ok=True)
+        _secure_media_cache_dir(d)
         return d
 
     def cleanup(max_age_hours: int = 24) -> int:
@@ -608,10 +617,60 @@ def _looks_like_image(data: bytes) -> bool:
                or (data[:4] == b"RIFF" and len(data) >= 12 and data[8:12] == b"WEBP"))
 
 
+def _secure_media_cache_dir(cache_dir: Path) -> None:
+    """Create/reconcile a gateway media-cache dir owner-only (0700), except managed.
+
+    Inbound media (photos, voice notes, documents a user sent through a
+    messaging platform) is user content, not regenerable cache: the
+    umask-derived 0755 these dirs inherited made them readable by every other
+    local account whenever ``PULSE_HOME`` is traversable — the documented
+    ``PULSE_HOME_MODE=0701`` web-server hatch. The mode is passed to ``mkdir``
+    so it is set at creation, then reconciled by the house policy helper
+    ``pulse_cli.config._secure_dir`` (managed/NixOS installs keep their
+    group-share design: these lazily-created dirs are not covered by the
+    module's ``systemd.tmpfiles`` rules, so the mode is left to the
+    configured umask/setgid). Best-effort: never fails a media write.
+    """
+    try:
+        managed = False
+        try:
+            from pulse_cli.config import is_managed
+
+            managed = bool(is_managed())
+        except Exception:  # pragma: no cover - defensive
+            pass
+        if managed:
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            return
+        cache_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+        try:
+            from pulse_cli.config import _secure_dir
+
+            _secure_dir(cache_dir)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.debug("media cache dir chmod skipped: %s", exc)
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.debug("media cache dir creation failed for %s: %s", cache_dir, exc)
+        cache_dir.mkdir(parents=True, exist_ok=True)
+
+
 def _write_cache_file(cache_dir: Path, prefix: str, ext: str, data: bytes) -> str:
-    """Write ``data`` to ``<cache_dir>/<prefix>_<uuid12><ext>``; return the path string."""
+    """Write ``data`` to ``<cache_dir>/<prefix>_<uuid12><ext>``; return the path string.
+
+    The file is written owner-only (0600) — inbound media is private user
+    content and the cache dir is hardened to 0700 by ``_secure_media_cache_dir``;
+    one directory should not carry two file-mode conventions. Best-effort on
+    platforms where POSIX mode bits are advisory (Windows): falls back to a
+    plain write rather than failing the media write.
+    """
     filepath = cache_dir / f"{prefix}_{uuid.uuid4().hex[:12]}{ext}"
-    filepath.write_bytes(data)
+    try:
+        fd = os.open(str(filepath), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    except OSError:
+        filepath.write_bytes(data)
+        return str(filepath)
+    with os.fdopen(fd, "wb") as handle:
+        handle.write(data)
     return str(filepath)
 
 
@@ -638,7 +697,7 @@ async def _cache_media_from_url(url: str, ext: str, retries: int, *, media_type:
     import httpx
     if not is_safe_url(url):
         raise ValueError(f"Blocked unsafe URL (SSRF protection): {safe_url_for_log(url)}")
-    headers = {"User-Agent": "Mozilla/5.0 (compatible; PulseAgent/1.0)", "Accept": accept}
+    headers = {"User-Agent": "Mozilla/5.0 (compatible; PULSEAgent/1.0)", "Accept": accept}
     async with create_ssrf_safe_async_client(
         timeout=30.0, follow_redirects=True, event_hooks={"response": [_ssrf_redirect_guard]},
     ) as client:
@@ -815,7 +874,7 @@ def _profile_dirs() -> List[Path]:
 
 
 def _credential_home_roots() -> List[Path]:
-    """Every Pulse home whose credential stores the denylist must cover: the ACTIVE home
+    """Every PULSE home whose credential stores the denylist must cover: the ACTIVE home
     (the per-turn PULSE_HOME override under ``gateway.multiplex_profiles``), the shared root
     and every ``<root>/profiles/*``. Enumerated at check time like ``_profile_cache_roots`` on
     the allow side — a denylist frozen at import covers only the launch profile, so a
@@ -1038,7 +1097,7 @@ def _default_docker_workspace_host_roots(session_key: str = "") -> List[Path]:
 
 
 def _cache_dir_container_mounts() -> List[Tuple[Path, Path]]:
-    """(host, container) pairs for the auto-mounted Pulse cache dirs (``/root/.pulse/...`` in
+    """(host, container) pairs for the auto-mounted PULSE cache dirs (``/root/.pulse/...`` in
     MEDIA tags); longer prefixes than the ``/root`` home mount, so longest-prefix match wins."""
     if not _docker_env_active():
         return []
@@ -1108,7 +1167,7 @@ def validate_media_delivery_path(path: str, session_key: str = "") -> Optional[s
     """Safe absolute file path for native media delivery, else None. Default: any existing
     regular file outside the credential / system denylist (symmetric with inbound). Strict
     (``PULSE_MEDIA_DELIVERY_STRICT=1``, public bots where prompt injection must not exfiltrate
-    host secrets): MUST be under a Pulse cache, an operator root (``PULSE_MEDIA_ALLOW_DIRS``),
+    host secrets): MUST be under a PULSE cache, an operator root (``PULSE_MEDIA_ALLOW_DIRS``),
     or freshly produced within the recency window. Symlinks are resolved before any check."""
     candidate = _normalize_media_tag_path(path)
     if not candidate:
@@ -1131,7 +1190,7 @@ def validate_media_delivery_path(path: str, session_key: str = "") -> Optional[s
         resolved_root = _resolve_path(root, expand=True)
         if resolved_root is not None and _path_is_within(resolved, resolved_root):
             return str(resolved)
-    # Non-strict (default): anything not denylisted (/etc, /proc, ~/.ssh, Pulse-root secrets).
+    # Non-strict (default): anything not denylisted (/etc, /proc, ~/.ssh, PULSE-root secrets).
     from gateway.media_policy import media_delivery_strict
     if not media_delivery_strict():
         return None if _path_under_denied_prefix(resolved) else str(resolved)
@@ -1879,7 +1938,7 @@ class BasePlatformAdapter(ABC):
     supports_async_delivery: bool = True
     # ``send()`` chunks natively via ``truncate_message()`` -> the router skips its truncation.
     splits_long_messages: bool = False
-    # Prefix users can always TYPE for Pulse commands ("!" where the client eats a leading "/").
+    # Prefix users can always TYPE for PULSE commands ("!" where the client eats a leading "/").
     typed_command_prefix: str = "/"
     # ``in_channel`` continuable-cron surface: job delivered FLAT, plain replies continue it via
     # the whole-channel bucket ``(platform, chat_id, None)``; needs a flat-reply outbound gate too
@@ -2057,22 +2116,23 @@ class BasePlatformAdapter(ABC):
         if not isinstance(event, ToolCallChunk):
             return None
         from agent.display import get_tool_emoji, prepare_tool_preview
-        head = f"{get_tool_emoji(event.tool_name, default='⚙️')} {event.tool_name}"
+        emoji, tool = get_tool_emoji(event.tool_name, default='⚙️'), event.tool_name
         if mode == "verbose" and event.args:
             import json
             args_str = json.dumps(event.args, ensure_ascii=False, default=str)
             if preview_max_len > 0 and len(args_str) > preview_max_len:
                 args_str = args_str[:preview_max_len - 3] + "..."
-            return f"{head}({list(event.args.keys())})\n{args_str}"
+            return t("gateway.progress.tool_verbose", emoji=emoji, tool=tool, keys=list(event.args.keys()), args=args_str)
         if not event.preview:
-            return f"{head}..."
+            return t("gateway.progress.tool_pending", emoji=emoji, tool=tool)
         if mode == "verbose":
-            return f'{head}: "{event.preview}"'
+            return t("gateway.progress.tool_preview", emoji=emoji, tool=tool, preview=event.preview)
         # "all" / "new": short capped preview (default 40; progress bubbles persist as messages).
         cap = preview_max_len if preview_max_len > 0 else 40
         prepared = prepare_tool_preview(
             event.tool_name, event.args, fallback=event.preview, max_len=cap)
-        return f'{head}: "{self.format_tool_preview(prepared)}"'
+        return t("gateway.progress.tool_preview", emoji=emoji, tool=tool, preview=self.format_tool_preview(prepared))
+
 
     def format_tool_preview(self, preview: "ToolPreview") -> str:
         """Platform-native formatting of a compact tool preview; rich-text adapters may use
@@ -2728,14 +2788,26 @@ class BasePlatformAdapter(ABC):
     # ── ``_format_exec_approval`` templates; adapters override only the MARKUP (bold, HTML,
     # fences) — the words come from ``gateway.platforms.base_exec_approval`` so every surface
     # says the same thing.
-    _EA_HEADER: str = f"⚠️ {EA_HEADER_TEXT}\n\n"
+    # ``_EA_HEADER`` / ``_EA_REASON_LABEL`` / ``_EA_SMART_DENY_LINE`` / ``_EA_ACTION_LABELS`` are
+    # properties (not class attrs) so the active ``display.language`` is read per render;
+    # subclasses may still shadow them with plain class attributes carrying their own markup.
     _EA_CODE_OPEN: str = "```\n"
     _EA_CODE_CLOSE: str = "\n```\n"
-    _EA_REASON_LABEL: str = f"{EA_REASON_LABEL_TEXT}: "
     _EA_DEADLINE_PREFIX: str = "\n\n"  # separates the deadline line from the reason line
-    _EA_SMART_DENY_LINE: str = "\n\nSmart DENY: owner override applies to this one operation only."
     _EA_CMD_BUDGET: int = 3000
     _EA_REASON_BUDGET: int = 0  # 0 = the reason is never truncated
+
+    @property
+    def _EA_HEADER(self) -> str:  # noqa: N802 — adapter-override contract name
+        return f"⚠️ {ea_header_text()}\n\n"
+
+    @property
+    def _EA_REASON_LABEL(self) -> str:  # noqa: N802
+        return f"{ea_reason_label_text()}: "
+
+    @property
+    def _EA_SMART_DENY_LINE(self) -> str:  # noqa: N802
+        return f"\n\n{ea_smart_deny_line_text()}"
 
     @staticmethod
     def _truncate_preview(text: str, budget: int, suffix: str = "...") -> str:
@@ -2775,10 +2847,12 @@ class BasePlatformAdapter(ABC):
         return self._EA_DEADLINE_PREFIX + self._ea_escape(format_approval_deadline_line(approval_timeout_seconds()))
 
     def _format_exec_approval(
-        self, command: str, description: str = "dangerous command", smart_denied: bool = False) -> str:
+        self, command: str, description: Optional[str] = None, smart_denied: bool = False) -> str:
         """Shared exec-approval prompt text: header + fenced (truncated) command + why it was
         flagged + the deadline line, plus the smart-deny line. Buttons/trailing instructions stay
-        platform-local."""
+        platform-local. ``description=None`` renders the localized default reason."""
+        if description is None:
+            description = ea_default_reason_text()
         if self._EA_REASON_BUDGET:
             description = self._ea_fit(str(description or ""), self._EA_REASON_BUDGET)
         cmd_preview = self._ea_fit(
@@ -2791,9 +2865,11 @@ class BasePlatformAdapter(ABC):
 
     # ── Exec-approval prompt (template method). The choice set is one rule for every button
     # surface — three separate "same fix × N adapters" commits motivated lifting it here.
-    _EA_ACTION_LABELS: Dict[str, str] = {
-        "once": "Allow Once", "session": "Allow Session", "always": "Always Allow", "deny": "Deny"}
     _EA_ACTION_STYLES: Dict[str, str] = {"once": "primary", "deny": "danger"}
+
+    @property
+    def _EA_ACTION_LABELS(self) -> Dict[str, str]:  # noqa: N802 — adapter-override contract name
+        return ea_action_labels()
 
     def _exec_approval_actions(
             self, *, allow_permanent: bool, allow_session: bool, smart_denied: bool) -> List[Tuple[str, str, str]]:
@@ -2815,13 +2891,15 @@ class BasePlatformAdapter(ABC):
         return cls._send_exec_approval_prompt is not BasePlatformAdapter._send_exec_approval_prompt
 
     async def send_exec_approval(
-        self, chat_id: str, command: str, session_key: str, description: str = "dangerous command",
+        self, chat_id: str, command: str, session_key: str, description: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None, allow_permanent: bool = True, allow_session: bool = True,
         smart_denied: bool = False,
     ) -> SendResult:
         """Interactive exec-approval prompt; a press resolves via
         ``tools.approval.resolve_gateway_approval``. Text and choice set are shared; adapters
         render them natively in ``_send_exec_approval_prompt``."""
+        if description is None:
+            description = ea_default_reason_text()
         prompt = ExecApprovalPrompt(
             chat_id=chat_id, session_key=session_key, metadata=metadata, command=str(command or ""),
             description=description, smart_denied=smart_denied,
@@ -2843,7 +2921,7 @@ class BasePlatformAdapter(ABC):
         total_pages = max(1, (total + per_page - 1) // per_page)
         page = max(0, min(page, total_pages - 1))
         start, end = page * per_page, min(page * per_page + per_page, total)
-        page_info = f" ({start + 1}–{end} of {total})" if total_pages > 1 else ""
+        page_info = t("gateway.picker.page_info", start=start + 1, end=end, total=total) if total_pages > 1 else ""
         meta: Dict[str, Any] = {"page": page, "total_pages": total_pages, "start": start,
                    "end": end, "total": total, "page_info": page_info}
         return options[start:end], meta
@@ -2877,17 +2955,15 @@ class BasePlatformAdapter(ABC):
                     _is_multi = bool(getattr(_cg._entries.get(clarify_id), "multi_select", False))
             except Exception:
                 _is_multi = False
-            hint = "Reply with the number, the option text, or your own answer."
-            if _is_multi:
-                hint = ("Multiple selections allowed — reply with the numbers separated by commas "
-                        "or spaces (e.g. \"1, 3\"), the option text, or your own answer.")
-            numbered = [f"  {i}. {choice}" for i, choice in enumerate(choices, start=1)]
-            text = "\n".join([f"❓ {question}", "", *numbered, "", hint])
+            hint = t("gateway.clarify.hint_multi") if _is_multi else t("gateway.clarify.hint_single")
+            numbered = [t("gateway.clarify.option_line", index=i, choice=choice)
+                        for i, choice in enumerate(choices, start=1)]
+            text = "\n".join([t("gateway.clarify.question", question=question), "", *numbered, "", hint])
             # Text fallback: let the gateway intercept capture the typed reply.
             from tools.clarify_gateway import mark_awaiting_text
             mark_awaiting_text(clarify_id)
         else:
-            text = f"❓ {question}"
+            text = t("gateway.clarify.question", question=question)
         return await self.send(chat_id=chat_id, content=text, metadata=metadata)
 
     async def send_private_notice(
@@ -3567,6 +3643,7 @@ class BasePlatformAdapter(ABC):
             return live_adapter
         return self
 
+    @records_delivery
     async def _send_with_retry(
         self, chat_id: str, content: str, reply_to: Optional[str] = None, metadata: Any = None,
         max_retries: int = 2, base_delay: float = 2.0) -> "SendResult":
@@ -3670,9 +3747,7 @@ class BasePlatformAdapter(ABC):
                     return result
                 logger.error("[%s] Failed to deliver response after %d retries: %s", self.name, max_retries, error_str)
                 # Not a diagnostic: the requested result itself was lost and this is its only signal.
-                notice = (
-                    "\u26a0\ufe0f Message delivery failed after multiple attempts. "
-                    "Please try again \u2014 your request was processed but the response could not be sent.")
+                notice = t("gateway.notify.delivery_failed_retry")
                 try:
                     await _send(notice)
                 except Exception as notify_err:
@@ -3717,7 +3792,7 @@ class BasePlatformAdapter(ABC):
         likely culprit override it (Photon drops rich links instead of adding the banner)."""
         return await self.send(
             chat_id=chat_id, content=self.warning_text(
-                f"(Response formatting failed, plain text:)\n\n{content[:3500]}", content[:3500],
+                t("gateway.notify.plain_fallback_prefix", content=content[:3500]), content[:3500],
                 chat_id=chat_id, metadata=metadata),
             reply_to=reply_to, metadata=metadata)
 
@@ -4299,6 +4374,7 @@ class BasePlatformAdapter(ABC):
             await self._release_turn_marker(event)  # the ledger now owns the crash recovery
         result = await delivery_adapter._send_with_retry(
             chat_id=event.source.chat_id, content=text_content, reply_to=reply_to, metadata=metadata)
+        stop_reply_clock(delivery_adapter, event.source.chat_id, result)
         if obligation_id is not None:
             await self._finalize_delivery_obligation(obligation_id, result, event, delivery_adapter)
         return result, delivery_adapter
@@ -4327,14 +4403,13 @@ class BasePlatformAdapter(ABC):
         _thread_metadata = None
         try:
             _thread_metadata = _thread_metadata_for_event(event)
-            error_detail = str(e)[:300] if str(e) else "no details available"
+            error_detail = str(e)[:300] if str(e) else t("gateway.notify.turn_error_no_details")
             # Only the policy reads bind the routed profile; the send stays in the launch scope
             # as before, so delivery bookkeeping keeps landing where boot-time recovery reads it.
             with self._media_delivery_scope(event.source):
                 content = None if diagnostic_wake_muted(event) else self.warning_text(
-                    f"Sorry, I encountered an error ({type(e).__name__}).\n{error_detail}\n"
-                    "Try again or use /reset to start a fresh session.",
-                    "Sorry, I encountered an error.",
+                    t("gateway.notify.turn_error_detailed", error_type=type(e).__name__, error_detail=error_detail),
+                    t("gateway.notify.turn_error"),
                     logical_platform=event.source.platform, chat_id=event.source.chat_id, metadata=_thread_metadata)
             if content is None:
                 return _thread_metadata

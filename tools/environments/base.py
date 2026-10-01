@@ -1,4 +1,4 @@
-"""Base class for all Pulse execution environment backends.
+"""Base class for all PULSE execution environment backends.
 
 Unified spawn-per-call model: every command spawns a fresh ``bash -c`` process.
 A session snapshot (env vars, functions, aliases) is captured once at init and
@@ -223,7 +223,7 @@ def _file_mtime_key(host_path: str) -> tuple[float, int] | None:
 
 
 class BaseEnvironment(ABC):
-    """Common interface and unified execution flow for all Pulse backends. Subclasses
+    """Common interface and unified execution flow for all PULSE backends. Subclasses
     implement ``_run_bash()`` and ``cleanup()``; the base provides ``execute()`` with
     snapshot sourcing, CWD tracking, interrupt handling and timeout enforcement."""
 
@@ -233,7 +233,7 @@ class BaseEnvironment(ABC):
     # "heredoc" (embedded in the command; no built-in backend, plugins only).
     _stdin_mode: str = "pipe"  # "pipe" | "payload" | "heredoc"
 
-    # True only when commands execute on the SAME host as the Pulse process
+    # True only when commands execute on the SAME host as the PULSE process
     # (LocalEnvironment); controller-host facts then describe the execution target.
     is_local: bool = False
 
@@ -493,7 +493,8 @@ class BaseEnvironment(ABC):
                 if is_interrupted() or is_thread_interrupted(watch_interrupt_tid):
                     trace.interrupted()
                     _kill_and_join()
-                    return self._finalize_wait_result(output, output.render(suffix="\n[Command interrupted]"), 130)
+                    return {**self._finalize_wait_result(output, output.render(suffix="\n[Command interrupted]"), 130),
+                            "pulse_interrupted": True}
                 if yield_handler is not None and consume_yield(watch_interrupt_tid):
                     drain_stop.set()
                     drain_thread.join(timeout=1)
@@ -513,7 +514,8 @@ class BaseEnvironment(ABC):
                     rendered = output.render(suffix=f"\n[Command timed out after {timeout}s]")
                     if output.total_chars == 0:
                         rendered = rendered.lstrip()
-                    return self._finalize_wait_result(output, rendered, 124)
+                    # The flag tells PULSE' own deadline apart from a command's own ``exit 124``.
+                    return {**self._finalize_wait_result(output, rendered, 124), "pulse_timed_out": True}
                 touch_activity_if_due(_activity_state, "terminal command running")
                 trace.heartbeat()
                 time.sleep(_poll_sleep)
@@ -706,6 +708,7 @@ class BaseEnvironment(ABC):
                 result = self._finalize_wait_result(collector, collector.render(suffix=suffix).lstrip("\n"), 124)
             else:
                 result = {"output": suffix.lstrip(), "returncode": 124}
+            result["pulse_timed_out"] = True
         else:
             result = bounded.value
         self._update_cwd(result)
@@ -753,33 +756,3 @@ class BaseEnvironment(ABC):
             return self._wait_for_process(proc, timeout=self._SUDO_PROBE_TIMEOUT_S).get("returncode") == 0
         except Exception:
             return False
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from typing import IO  # noqa: F401,E402
-from typing import Protocol  # noqa: F401,E402
-import codecs  # noqa: F401,E402
-from collections import deque  # noqa: F401,E402
-import re  # noqa: F401,E402
-import select  # noqa: F401,E402
-import subprocess  # noqa: F401,E402
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'sanitize_task_id_for_path': ('tools.environments.path_utils', 'sanitize_task_id_for_path'),
-    'windows_hide_flags': ('pulse_cli._subprocess_compat', 'windows_hide_flags'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

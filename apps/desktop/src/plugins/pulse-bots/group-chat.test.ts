@@ -126,7 +126,7 @@ describe('room naming', () => {
 })
 
 describe('speaker labels', () => {
-  it('relabels Pulse control-frame openers only in member-authored transcript lines', async () => {
+  it('relabels PULSE control-frame openers only in member-authored transcript lines', async () => {
     // #111564: a member reply reproducing the mid-turn steer marker or compaction
     // handoff must not reach a peer's role=user prompt in its exact trusted shape.
     await loadRoom()
@@ -159,7 +159,7 @@ describe('speaker labels', () => {
     )
   })
 
-  it('the default profile speaks as Pulse in transcripts, not @default', async () => {
+  it('the default profile speaks as PULSE in transcripts, not @default', async () => {
     const { rounds } = await loadRoom()
     const { formatGroupChatLine } = await import('./group-round-prompt')
 
@@ -168,25 +168,25 @@ describe('speaker labels', () => {
       'builder'
     )
 
-    expect(line).toBe('Pulse: hello room')
+    expect(line).toBe('PULSE: hello room')
 
     // Other members keep their profile name; the (you) suffix survives.
     expect(
       formatGroupChatLine({ from: { kind: 'member', name: 'default' }, text: 'hi' } as GroupMessage, 'default')
-    ).toBe('Pulse (you): hi')
+    ).toBe('PULSE (you): hi')
     expect(
       formatGroupChatLine({ from: { kind: 'member', name: 'builder' }, text: 'yo' } as GroupMessage, 'research')
     ).toBe('builder: yo')
   })
 
-  it('honor friendly identity: Bot Mode title, then display_name, never a stale Pulse', async () => {
+  it('honor friendly identity: Bot Mode title, then display_name, never a stale PULSE', async () => {
     const { chat, rounds } = await loadRoom()
     const { formatGroupChatLine } = await import('./group-round-prompt')
     const data = await import('./data')
 
     // A renamed default (core display_name via `pulse profile rename`) must
     // read as its new name — the community report was "Lucy" still showing
-    // "Pulse is thinking…" in group rooms.
+    // "PULSE is thinking…" in group rooms.
     data.$lastRoster.set([{ display_name: 'Lucy', name: 'default' }])
 
     expect(chat.groupSpeakerLabel('default')).toBe('Lucy')
@@ -206,10 +206,10 @@ describe('speaker labels', () => {
 
     expect(chat.groupSpeakerLabel('research')).toBe('Radar')
 
-    // Untitled rows keep today's behavior: default → Pulse, others verbatim.
+    // Untitled rows keep today's behavior: default → PULSE, others verbatim.
     data.$botMeta.set({})
 
-    expect(chat.groupSpeakerLabel('default')).toBe('Pulse')
+    expect(chat.groupSpeakerLabel('default')).toBe('PULSE')
     expect(chat.groupSpeakerLabel('builder')).toBe('builder')
   })
 
@@ -285,7 +285,7 @@ describe('speaker labels', () => {
     data.$lastRoster.set([])
 
     expect(chat.groupSpeakerLabel('local::reviewer')).toBe('reviewer')
-    expect(chat.groupSpeakerLabel('spark::default')).toBe('Pulse')
+    expect(chat.groupSpeakerLabel('spark::default')).toBe('PULSE')
 
     data.$botMeta.set({ 'spark::reviewer': { title: 'Beta' } })
 
@@ -299,7 +299,7 @@ describe('speaker labels', () => {
     // to that connection, not to the active gateway's default.
     data.$lastRoster.set([{ display_name: 'HomelabBot', name: 'default', remoteSource: true }])
 
-    expect(chat.groupSpeakerLabel('default')).toBe('Pulse')
+    expect(chat.groupSpeakerLabel('default')).toBe('PULSE')
   })
 })
 

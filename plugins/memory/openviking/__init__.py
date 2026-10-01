@@ -124,7 +124,7 @@ _OPENVIKING_RESPONDED_FAILURE_PREFIX = "OpenViking server responded"
 # Identity probe states; "modern" and "legacy" are the two identified ones.
 _OPENVIKING_IDENTIFIED_STATES = frozenset({"modern", "legacy"})
 _RETRY_LATER = (
-    "OpenViking memory is temporarily unavailable; Pulse will retry on a later access or when the config changes."
+    "OpenViking memory is temporarily unavailable; PULSE will retry on a later access or when the config changes."
 )
 _FIX_ENDPOINT = "OpenViking memory is temporarily unavailable; correct the endpoint and reload the configuration."
 _HTTPX_MISSING = "httpx not installed — OpenViking plugin disabled"
@@ -187,7 +187,7 @@ def _format_openviking_exception(error: Exception) -> str:
 
 
 def _derive_openviking_user_text(content: Any) -> str:
-    """Strip Pulse slash-skill scaffolding before sending content to OpenViking
+    """Strip PULSE slash-skill scaffolding before sending content to OpenViking
     (MemoryManager already does this for the fan-out; kept for direct hook callers)."""
     return extract_user_instruction_from_skill_message(content) or ""
 
@@ -199,7 +199,7 @@ def _preview(value: Any, limit: int = 160) -> str:
 
 # atexit safety net: commit pending sessions even if shutdown_memory_provider
 # never runs (gateway crash, exception in the session expiry watcher, ...).
-# One entry per Pulse home: a multiplexed gateway initializes a provider per profile and every
+# One entry per PULSE home: a multiplexed gateway initializes a provider per profile and every
 # one of them holds pending sessions worth committing, not just the last to initialize.
 _active_providers_by_home: Dict[str, "OpenVikingMemoryProvider"] = {}
 
@@ -645,7 +645,7 @@ def _normalize_openviking_url(url: str) -> str:
         blocked = _openviking_endpoint_is_always_blocked(candidate)
     except Exception as exc:
         logger.debug("OpenViking endpoint safety validation failed", exc_info=True)
-        raise _OpenVikingEndpointError("OpenViking endpoint safety validation failed; Pulse refused the connection.") from exc
+        raise _OpenVikingEndpointError("OpenViking endpoint safety validation failed; PULSE refused the connection.") from exc
     if blocked:
         raise _OpenVikingEndpointError(
             f"OpenViking endpoint {_openviking_endpoint_label(candidate)} targets a blocked metadata address."
@@ -963,7 +963,7 @@ def _start_local_openviking_server(endpoint: str) -> tuple[str, str]:
     # An occupied port only prevents spawning — it never proves the listener is OpenViking.
     if _local_openviking_port_is_open(host, port):
         return _LOCAL_SERVER_OCCUPIED, (
-            f"Port {host}:{port} is occupied by {_describe_local_port_listener(host, port)}. Pulse did not start "
+            f"Port {host}:{port} is occupied by {_describe_local_port_listener(host, port)}. PULSE did not start "
             "openviking-server because the listener has not passed OpenViking's /health check."
         )
     server_cmd = shutil.which("openviking-server")
@@ -972,14 +972,23 @@ def _start_local_openviking_server(endpoint: str) -> tuple[str, str]:
     log_path = get_pulse_home() / _OPENVIKING_SERVER_LOG_RELATIVE_PATH
     try:
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        # Strip PYTHONPATH: the Desktop backend puts the Pulse venv on it, which
+        # Strip PYTHONPATH: the Desktop backend puts the PULSE venv on it, which
         # would shadow openviking-server's own site-packages (and on Windows lock
-        # the Pulse venv's .pyd files, breaking `pulse update`).
+        # the PULSE venv's .pyd files, breaking `pulse update`).
         # Do not let the server child inherit this process's PYTHONPATH. If inherited, openviking-server
-        # would import aiohttp and friends from the Pulse venv instead of its own (its venv's site-packages
+        # would import aiohttp and friends from the PULSE venv instead of its own (its venv's site-packages
         # are shadowed because PYTHONPATH precedes them) — and on Windows the loaded DLLs then lock the
-        # Pulse venv, aborting `pulse update` with access-denied on .pyd files. (#78153)
-        child_env = os.environ.copy()
+        # PULSE venv, aborting `pulse update` with access-denied on .pyd files. (#78153)
+        # The server's embedding/VLM models may read provider keys, so the bound profile's pass
+        # (never the launch profile's: under multiplex the process env belongs to whoever started
+        # the gateway, and with no bound profile the builder refuses); bot, gateway and relay
+        # tokens never do. HOME stays the user's: ov.conf defaults to ~/.openviking.
+        from tools.environments.local import pulse_subprocess_env, served_profile_child_env
+        # The profile overlay re-adds everything in its .env, bot tokens included; the second pass
+        # drops Tier 1 again while keeping the provider keys.
+        child_env = pulse_subprocess_env(
+            inherit_credentials=True, base_env=served_profile_child_env(inherit_credentials=True))
+        child_env["HOME"] = child_env["PULSE_REAL_HOME"]
         child_env.pop("PYTHONPATH", None)
         with log_path.open("ab") as log_file:
             subprocess.Popen([server_cmd, "--host", host, "--port", str(port)], stdout=log_file, stderr=log_file,
@@ -1492,7 +1501,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         self._failed_refresh = (settings_key, time.monotonic())
         if health_state == "responded":
             logger.warning(
-                "%s OpenViking memory is temporarily unavailable; Pulse will retry on a later access (after cooldown) or when the config changes.",
+                "%s OpenViking memory is temporarily unavailable; PULSE will retry on a later access (after cooldown) or when the config changes.",
                 health_message,
             )
         else:
@@ -1939,7 +1948,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
 
     @staticmethod
     def _extract_current_turn_messages(messages: Optional[List[Dict[str, Any]]], user_content: str, assistant_content: str) -> List[Dict[str, Any]]:
-        """Slice the completed turn out of Pulse' full canonical transcript: the last
+        """Slice the completed turn out of PULSE' full canonical transcript: the last
         assistant message matching assistant_content (else the last assistant message,
         else the transcript end) back to the matching (else nearest) user message."""
         if not messages:
@@ -1959,7 +1968,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
 
     @staticmethod
     def _messages_to_openviking_batch(messages: List[Dict[str, Any]], *, assistant_peer_id: str = "") -> List[Dict[str, Any]]:
-        """Convert Pulse canonical messages into OpenViking batch payloads.
+        """Convert PULSE canonical messages into OpenViking batch payloads.
 
         Recall-tool calls/results are dropped (re-ingesting recalled memory would
         re-store it); tool results are grouped into assistant messages; a tool call
@@ -2593,7 +2602,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         return json.dumps(result, ensure_ascii=False)
 
     def _tool_remember(self, args: dict) -> str:
-        """Submit content through a dedicated session so it never touches the live Pulse session."""
+        """Submit content through a dedicated session so it never touches the live PULSE session."""
         content = args.get("content", "")
         if not content:
             return tool_error("content is required")
@@ -2611,7 +2620,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
                 recovery_note=(
                     "Inspect session_uri before recovery. If history/archive_* exists, do not retry. If messages.jsonl contains "
                     "the fact and no archive exists, run recovery_command with the same OpenViking profile and credentials as "
-                    "Pulse. Otherwise, do not resubmit automatically; report the uncertain state to the user."
+                    "PULSE. Otherwise, do not resubmit automatically; report the uncertain state to the user."
                 ),
             )
         try:

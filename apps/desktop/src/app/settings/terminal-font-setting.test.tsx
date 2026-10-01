@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@/pulse', () => ({
-  savePulseConfig: (config: Record<string, unknown>) => mocks.save(config)
+  savePULSEConfig: (config: Record<string, unknown>) => mocks.save(config)
 }))
 
 vi.mock('@/i18n', () => ({
@@ -41,8 +41,8 @@ vi.mock('@/store/notifications', () => ({
 }))
 
 vi.mock('../hooks/use-config-record', () => ({
-  setPulseConfigCache: (config: Record<string, unknown>) => mocks.cache(config),
-  usePulseConfigRecord: () => ({ data: mocks.loadedConfig, dataUpdatedAt: mocks.configUpdatedAt })
+  setPULSEConfigCache: (config: Record<string, unknown>) => mocks.cache(config),
+  usePULSEConfigRecord: () => ({ data: mocks.loadedConfig, dataUpdatedAt: mocks.configUpdatedAt })
 }))
 
 vi.mock('../hooks/use-on-profile-switch', () => ({

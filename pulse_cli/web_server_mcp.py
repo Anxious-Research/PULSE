@@ -123,7 +123,7 @@ def _run_dashboard_mcp_oauth(flow, cfg: dict) -> None:
         from agent.secret_scope import build_profile_secret_scope, reset_secret_scope, set_secret_scope
         from pulse_constants import reset_pulse_home_override, set_pulse_home_override
         from tools.mcp_dashboard_oauth import dashboard_oauth_flow
-        from tools.mcp_oauth import PulseTokenStorage, force_interactive_oauth, login_connect_timeout
+        from tools.mcp_oauth import PULSETokenStorage, force_interactive_oauth, login_connect_timeout
         from tools.mcp_oauth_manager import get_manager
 
         home_token = secret_token = None
@@ -134,7 +134,7 @@ def _run_dashboard_mcp_oauth(flow, cfg: dict) -> None:
             transaction = _mcp_oauth_transaction(flow)
             with transaction, force_interactive_oauth(), dashboard_oauth_flow(flow):
                 manager = get_manager()
-                storage = PulseTokenStorage(flow.server_name)
+                storage = PULSETokenStorage(flow.server_name)
                 backup = storage.snapshot()
                 previous_entry = None
                 try:

@@ -75,6 +75,8 @@ class DurableTurnLease:
         # Stamp the activity clock at turn entry: `_last_activity_ts` persists across turns, so
         # without this the watchdog would measure idle from the PREVIOUS turn and abort a fresh one.
         self.agent._touch_activity("starting new turn")
+        from pulse_cli.observability.shared_metrics_process import arm_turn
+        arm_turn(self.agent)
         from agent.periodic_scheduler import schedule
 
         self.timer_handles.append(schedule(self.refresh_tick, self.refresh_interval))
@@ -252,27 +254,35 @@ def admit_durable_turn_lease(
     ):
         return admission
     # A session id without a row still takes the lease: client-addressed ids (API server
-    # X-Pulse-Session-Id, /v1/runs session_id, fingerprint-derived chat ids) are not
+    # X-PULSE-Session-Id, /v1/runs session_id, fingerprint-derived chat ids) are not
     # process-unique, and the first turn creates the row mid-turn, so a second writer would
     # otherwise find the row, take an unheld lease and interleave its turn into this one.
     holder = (
         f"pid={os.getpid()}:turn={relay_turn_id}:platform={task_context['platform'] or 'unknown'}"
     )
-    waited = False
+    reload_needed = announced = False
+
+    def _on_contended() -> None:
+        # A busy state.db, not a known holder: say nothing, but still reload after admission,
+        # since the busy writer may have been the previous holder's final flush (one that fits
+        # inside the write patience never gets here, before or after this signal existed).
+        nonlocal reload_needed
+        reload_needed = True
 
     def _on_wait(elapsed: float) -> None:
-        nonlocal waited
-        waited = True
+        nonlocal reload_needed, announced
+        reload_needed = announced = True
         agent._emit_status(
-            "⏳ Another Pulse process is using this session; "
+            "⏳ Another PULSE process is using this session; "
             "waiting for it to finish before starting your turn..."
             if elapsed < 1.0 else
-            f"⏳ Still waiting for the other Pulse process on this session ({int(elapsed)}s)..."
+            f"⏳ Still waiting for the other PULSE process on this session ({int(elapsed)}s)..."
         )
 
     if not db.acquire_session_turn_lease(
         session_id, holder, ttl_seconds=LEASE_TTL_SECONDS, wait_seconds=LEASE_WAIT_SECONDS,
-        on_wait=_on_wait, should_abort=lambda: getattr(agent, "_interrupt_requested", False),
+        on_wait=_on_wait, on_contended=_on_contended,
+        should_abort=lambda: getattr(agent, "_interrupt_requested", False),
     ):
         admission.early_result = _lease_not_acquired_result(agent, session_id, conversation_history)
         return admission
@@ -295,8 +305,9 @@ def admit_durable_turn_lease(
         # row is written, and reloading an absent row would erase that seed. An unknown row still
         # reads the transcript after a wait and adopts it only if it returns rows; that read
         # raising ends the turn.
-        if waited and durable is not False:
-            agent._emit_status("Session is free; loading the latest transcript...")
+        if reload_needed and durable is not False:
+            if announced:
+                agent._emit_status("Session is free; loading the latest transcript...")
             # The holder may have compressed/rotated the session while we waited: reload only
             # AFTER admission; an immediate acquisition skips this (needless prompt-cache miss).
             latest_session_id = db.resolve_resume_session_id(session_id)
@@ -371,7 +382,7 @@ def _lease_not_acquired_result(agent, session_id: str, conversation_history) -> 
         )
         result = {
             "final_response": (
-                "Stopped waiting for another Pulse process on this session. "
+                "Stopped waiting for another PULSE process on this session. "
                 "Your message was not processed."
             ),
             **base,
@@ -391,7 +402,7 @@ def _lease_not_acquired_result(agent, session_id: str, conversation_history) -> 
         return result
     # Fail closed like gateway TurnLeaseTimeoutError: surface a resend notice, not a bare TimeoutError.
     timeout_msg = (
-        "⏳ Another Pulse process kept this session busy too long. Your message was not "
+        "⏳ Another PULSE process kept this session busy too long. Your message was not "
         "processed - wait for the other process to finish, then send it again."
     )
     logger.error("session turn lease wait timed out for %s", session_id)

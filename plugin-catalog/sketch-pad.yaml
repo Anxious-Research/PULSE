@@ -1,7 +1,7 @@
 name: sketch-pad
 repo: https://github.com/aydnOktay/pulse-sketch-pad
 sha: de7cd07ff29666ca1bcc3897f13b39f9472fab55
-description: Draw a shape on a Desktop pad and attach the PNG to the next Pulse
+description: Draw a shape on a Desktop pad and attach the PNG to the next PULSE
   chat message. For "what is this shape" when you have no photo.
 maintainer: aydnOktay
 tier: community

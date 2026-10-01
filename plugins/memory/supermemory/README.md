@@ -4,7 +4,7 @@ Semantic long-term memory with profile recall, semantic search, explicit memory 
 
 ## Requirements
 
-- The `supermemory` SDK, prepared through PM by `pulse memory setup` when you select Supermemory. Restart Pulse after preparation; do not install into its selected environment with pip.
+- The `supermemory` SDK, prepared through PM by `pulse memory setup` when you select Supermemory. Restart PULSE after preparation; do not install into its selected environment with pip.
 - Hosted: API key from [app.supermemory.ai/integrations?connect=pulse](http://app.supermemory.ai/integrations?connect=pulse)
 - Self-hosted: a running [Supermemory local](https://supermemory.ai/docs/self-hosting/overview) server and the API key it prints on first boot
 
@@ -66,7 +66,7 @@ Config file: `$PULSE_HOME/supermemory.json`
 | `SUPERMEMORY_CONTAINER_TAG` | Override container tag (takes priority over config file) |
 
 Base URL precedence is `supermemory.json` → `SUPERMEMORY_BASE_URL` →
-`https://api.supermemory.ai`. Pulse resolves it once and uses the same endpoint
+`https://api.supermemory.ai`. PULSE resolves it once and uses the same endpoint
 for SDK operations and setup/status probes.
 
 ## Tools
@@ -84,13 +84,13 @@ Kebab-case names are registered for the agent; snake_case aliases remain support
 
 All Supermemory API calls send `x-sm-source: pulse`, and document writes stamp
 `metadata.sm_source: pulse`. This is a **functional routing key, not telemetry**:
-it groups Pulse-written memories into a dedicated "Pulse" Space in the
+it groups PULSE-written memories into a dedicated "PULSE" Space in the
 Supermemory app, so you can filter, browse, and bulk-manage them per source agent
 (alongside Codex, Claude Code, etc.) from the Supermemory UI.
 
 ## Behavior
 
-When enabled, Pulse can:
+When enabled, PULSE can:
 
 - prefetch relevant memory context before each turn
 - write each completed user/assistant turn to **one document per session per 4-hour window** (`customId` = `<session>_<date>_b<0-5>`, so the API appends deltas), matching the capture shape of the other Supermemory agent integrations
@@ -101,7 +101,7 @@ When enabled, Pulse can:
 
 ## Profile-Scoped Containers
 
-Use `{identity}` in the `container_tag` to scope memories per Pulse profile:
+Use `{identity}` in the `container_tag` to scope memories per PULSE profile:
 
 ```json
 {

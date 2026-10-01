@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { stubThreadEnvironment } from '@/components/assistant-ui/test-utils'
 import { type TranscriptWindowValue, useTranscriptWindow } from '@/components/assistant-ui/thread/transcript-window'
-import type * as PulseApi from '@/pulse'
+import type * as PULSEApi from '@/pulse'
 import type { ChatMessage } from '@/lib/chat-messages'
 import type * as SessionStates from '@/store/session-states'
 import { $transcriptTailBySessionId, recordTranscriptTail } from '@/store/transcript-tail'
@@ -15,7 +15,7 @@ import { _resetTranscriptBackfillForTests } from './transcript-backfill'
 import { ChatRuntimeBoundary } from '.'
 
 vi.mock('@/pulse', async importOriginal => ({
-  ...(await importOriginal<typeof PulseApi>()),
+  ...(await importOriginal<typeof PULSEApi>()),
   getOlderSessionMessages: vi.fn()
 }))
 vi.mock('@/store/session-states', async importOriginal => ({

@@ -62,6 +62,21 @@ def _direct(wire: str, provider: str, base_url: Any, api_key: str, model: Any, *
             "api_key": api_key, "model": model, **extra}
 
 
+def stt_hallucination_filter() -> Dict[str, Any]:
+    """The Whisper-silence hallucination contract the relay path applies
+    (``transcribe_recording`` → ``is_whisper_hallucination``), shipped to the
+    client so a client-direct transcription agrees with a relayed one instead
+    of submitting "thank you" on silence as a real turn."""
+    from tools.voice_mode_transcript import WHISPER_HALLUCINATIONS
+
+    return {
+        "phrases": sorted(WHISPER_HALLUCINATIONS),
+        # Python's _HALLUCINATION_REPEAT_RE (IGNORECASE) for repetitive filler
+        # like "OK. OK. OK." — a JS regex source, so a single backslash.
+        "repeat_regex": "^(?:thank you|thanks|bye|you|ok|okay|the end|[.,!\\s])+$",
+    }
+
+
 def _deepinfra_model(section: Dict[str, Any], kind: str) -> Optional[str]:
     """Configured model, else the first catalog model of ``kind`` (stt/tts)."""
     from pulse_cli.models import deepinfra_model_ids
@@ -101,7 +116,8 @@ def _resolve_stt_client_config() -> Dict[str, Any]:
     timeout_s = tc._config_number(_section(stt_config, "openai"), "timeout", 60.0)
 
     def direct(wire: str, base_url: Any, api_key: str, model: Any) -> Dict[str, Any]:
-        return _direct(wire, provider, base_url, api_key, model, language=language, timeout_s=timeout_s)
+        return _direct(wire, provider, base_url, api_key, model, language=language, timeout_s=timeout_s,
+                       hallucination_filter=stt_hallucination_filter())
 
     def env_base_url(env_var: str, default: str) -> str:
         from pulse_cli.config import get_env_value
@@ -115,7 +131,7 @@ def _resolve_stt_client_config() -> Dict[str, Any]:
         return direct(STT_WIRE_OPENAI, getattr(tc, base, base), api_key,
                       section.get("model") or getattr(tc, default_model))
     if provider == "openai":
-        # Covers the Anxious-managed selection too: the resolver returns the user's
+        # Covers the Nous-managed selection too: the resolver returns the user's
         # own gateway token + managed base URL — exactly what the client should use.
         try:
             api_key, base_url = tt._resolve_openai_audio_client_config()
@@ -163,7 +179,7 @@ def _resolve_tts_client_config() -> Dict[str, Any]:
     min_len = SentenceChunker.from_config(tts_config).min_len
 
     if provider == "openai":
-        # Covers the direct-key, custom-base_url, and Anxious-managed selections.
+        # Covers the direct-key, custom-base_url, and Nous-managed selections.
         try:
             api_key, base_url, is_managed = tts_tool_openai._resolve_openai_audio_client_config()
         except ValueError as exc:

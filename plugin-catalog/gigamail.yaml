@@ -12,7 +12,7 @@ description: >-
   or credentials and downloads nothing, but it starts that third-party executable from PATH
   or a configured path, points it at GigaMail's own data directory under your user profile
   (%APPDATA%\ADE or ~/.ade), and send, delete and calendar writes are gated by that backend's
-  out-of-band approval rather than by Pulse.
+  out-of-band approval rather than by PULSE.
 maintainer: adecubed
 tier: community
 category: tools

@@ -2,7 +2,7 @@ name: filebox
 repo: https://github.com/AndreasHiltner/pulse-filebox
 sha: 718c595d2737a5eecc9ab14c45cd6d8fa7d372a7
 version: "0.3.0"
-description: Dual-panel commander file browser for Pulse Desktop — whitelist-guarded file CRUD, copy/move/symlink, media preview, multi-select, rename, and trash. No network I/O, no model tokens.
+description: Dual-panel commander file browser for PULSE Desktop — whitelist-guarded file CRUD, copy/move/symlink, media preview, multi-select, rename, and trash. No network I/O, no model tokens.
 maintainer: Andreas Hiltner
 tier: community
 category: desktop

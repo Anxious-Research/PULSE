@@ -2,7 +2,7 @@
 name: gitnexus-explorer
 description: Serve an interactive codebase knowledge graph web UI.
 version: 1.0.0
-author: Pulse Agent + Teknium
+author: PULSE Agent + Teknium
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

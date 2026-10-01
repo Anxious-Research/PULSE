@@ -40,7 +40,7 @@ export interface GatewayEventDeps {
     runtimeSessionId?: string | null
   ) => Promise<void>
   queryClient: QueryClient
-  refreshPulseConfig: () => Promise<void>
+  refreshPULSEConfig: () => Promise<void>
   scheduleSessionsRefresh: () => void
   sessionInterrupted: (sessionId: string) => boolean
   sessionStateByRuntimeIdRef: MutableRefObject<Map<string, ClientSessionState>>
@@ -74,7 +74,7 @@ export interface GatewayEventContext {
   occurredAt: number
   /** The event came from the active (connection, profile) source. */
   fromActiveSource: () => boolean
-  /** Coalesced trailing refreshPulseConfig (one per session.info burst). */
+  /** Coalesced trailing refreshPULSEConfig (one per session.info burst). */
   scheduleConfigRefresh: () => void
 }
 

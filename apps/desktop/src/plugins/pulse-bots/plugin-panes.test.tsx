@@ -16,7 +16,7 @@
  *    bot-scoped, so the tile must not sit beside a group chat.
  */
 
-import type * as PulseSdk from '@pulse/plugin-sdk'
+import type * as PULSESdk from '@pulse/plugin-sdk'
 import type { PluginContext } from '@pulse/plugin-sdk'
 import { atom } from 'nanostores'
 import type { ReactNode } from 'react'
@@ -39,7 +39,7 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@pulse/plugin-sdk', async importOriginal => {
-  const original = await importOriginal<typeof PulseSdk>()
+  const original = await importOriginal<typeof PULSESdk>()
 
   return {
     ...original,

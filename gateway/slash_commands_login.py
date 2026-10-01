@@ -12,8 +12,9 @@ from contextvars import copy_context
 from typing import Any
 from uuid import uuid4
 
+from agent.i18n import t
 from gateway.run_agent_cache import _first_agent
-from gateway.slash_access import policy_for_source
+from gateway.slash_access import policy_for_runner_source
 from pulse_cli import anon_auth
 
 logger = logging.getLogger("gateway.run")
@@ -71,7 +72,7 @@ class GatewayLoginCommandsMixin:
         if not paired_dm:
             return anon_auth.LOGIN_DM_ONLY
 
-        policy = policy_for_source(self.config, src)
+        policy = policy_for_runner_source(self, src)
         if policy.enabled and not policy.is_admin(getattr(src, "user_id", None)):
             return anon_auth.LOGIN_NOT_ALLOWED
 
@@ -88,7 +89,7 @@ class GatewayLoginCommandsMixin:
             if live is not None:
                 live.cancelled = True
 
-        state = await self._run_login_blocking(anon_auth.current_anxious_state)
+        state = await self._run_login_blocking(anon_auth.current_nous_state)
         if state and not anon_auth.is_guest_state(state):
             return anon_auth.UPGRADE_ALREADY_SIGNED_IN
 
@@ -168,7 +169,7 @@ class GatewayLoginCommandsMixin:
             if state.model_changed and state.model:
                 failed = await self._sweep_sessions_off_welcome()
                 if failed:
-                    copy += "\nSome chats are still on the free tier; use /model in those chats to switch."
+                    copy += t("gateway.login.free_tier_remaining")
             await self._push_login(attempt, copy)
             return
         await self._push_login(attempt, state.copy)
@@ -182,7 +183,7 @@ class GatewayLoginCommandsMixin:
         keys = [
             key for key, entry in entries
             if (agent := _first_agent(entry)) is not None
-            and str(getattr(agent, "provider", "")) == "anxious"
+            and str(getattr(agent, "provider", "")) == "nous"
             and str(getattr(agent, "model", "")) == anon_auth.GUEST_MODEL
         ]
         failed = 0

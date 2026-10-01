@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 import { setApiRequestConnection, setApiRequestProfile } from '@/api/client'
 import { setEnvVar } from '@/api/config'
-import type { PulseApiRequest } from '@/global'
+import type { PULSEApiRequest } from '@/global'
 import { makeOAuthProvider } from '@/test/oauth-provider'
 
 import {
@@ -26,7 +26,7 @@ vi.mock('@/store/gateway', async importOriginal => ({
 }))
 
 const owner = { connectionId: 'athena', profile: 'leverage-ai' }
-const requests: PulseApiRequest[] = []
+const requests: PULSEApiRequest[] = []
 let authFlow: 'device_code' | 'pkce'
 let deferStart: (() => Promise<void>) | undefined
 
@@ -41,7 +41,7 @@ beforeEach(() => {
     configurable: true,
     value: {
       openExternal: vi.fn(async () => undefined),
-      api: vi.fn(async (request: PulseApiRequest) => {
+      api: vi.fn(async (request: PULSEApiRequest) => {
         requests.push(request)
         const { path } = request
 

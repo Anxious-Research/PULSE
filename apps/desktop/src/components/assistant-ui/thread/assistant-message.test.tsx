@@ -139,8 +139,8 @@ function oauthExpiredMessage(): ThreadMessage {
           authKind: 'oauth',
           code: 'auth',
           layer: 'auth',
-          provider: 'pulse',
-          providerLabel: 'Pulse Portal',
+          provider: 'nous',
+          providerLabel: 'Nous Portal',
           retryable: false
         }
       }
@@ -212,6 +212,23 @@ describe('AssistantMessage branch button visibility (bug #2 fix)', () => {
     await screen.findByText('done')
 
     expect(screen.queryByRole('button', { name: 'Branch in new chat' })).toBeNull()
+  })
+})
+
+describe('stopped reply marker', () => {
+  it('marks a reply the user stopped', async () => {
+    const base = assistantMessage()
+    const stopped = { ...base, metadata: { ...base.metadata, custom: { interrupted: true } } } as ThreadMessage
+    render(<Harness assistant={stopped} />)
+
+    expect(await screen.findByText(en.assistant.thread.responseStopped)).toBeTruthy()
+  })
+
+  it('leaves a finished reply unmarked', async () => {
+    render(<Harness />)
+    await screen.findByText('done')
+
+    expect(screen.queryByText(en.assistant.thread.responseStopped)).toBeNull()
   })
 })
 
@@ -399,7 +416,9 @@ describe('rejected API key recovery', () => {
     expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy()
 
     screen.getByRole('button', { name: 'Update API key' }).click()
-    await waitFor(() => expect(screen.getByTestId('location').textContent).toMatch(/\?tab=keys&key=OPENAI_API_KEY$/))
+    await waitFor(() =>
+      expect(screen.getByTestId('location').textContent).toMatch(/\?tab=providers&pview=keys&key=OPENAI_API_KEY$/)
+    )
   })
 })
 
@@ -445,12 +464,12 @@ describe('expired OAuth grant recovery', () => {
   it('explains the expiry and re-runs that provider sign-in in one click', async () => {
     render(<Harness assistant={oauthExpiredMessage()} />)
 
-    expect(await screen.findByText(/Pulse Portal sign-in has expired/)).toBeTruthy()
+    expect(await screen.findByText(/Nous Portal sign-in has expired/)).toBeTruthy()
     // Signing in changes the outcome, so Retry stays as the follow-up click.
     expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy()
 
-    screen.getByRole('button', { name: 'Sign in to Pulse Portal again' }).click()
-    expect(startManualProviderOAuth).toHaveBeenCalledWith('pulse', undefined)
+    screen.getByRole('button', { name: 'Sign in to Nous Portal again' }).click()
+    expect(startManualProviderOAuth).toHaveBeenCalledWith('nous', undefined)
   })
 })
 

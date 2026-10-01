@@ -1,5 +1,7 @@
 import type { BillingBlock } from '@pulse/shared/billing'
 
+import { t } from '../i18n/runtime.js'
+
 export interface BillingDialogCopy {
   cancelLabel: string
   confirmLabel: string
@@ -11,26 +13,28 @@ export interface BillingDialogCopy {
  * Copy for the out-of-credits confirm dialog (the TUI's billing wall). The
  * dialog is the actionable layer — the full provider guidance already lands in
  * the transcript — so `detail` stays to one concise, non-truncating line and the
- * confirm button carries the recovery: Anxious → `/topup`, other providers → their
+ * confirm button carries the recovery: Nous → `/topup`, other providers → their
  * billing page (or `/model` to switch when we have no URL). Pure + exported so
  * the wording is unit-tested without driving the gateway.
  */
 export function billingDialogCopy(block: BillingBlock): BillingDialogCopy {
-  if (block.is_anxious) {
+  if (block.is_nous) {
     return {
-      cancelLabel: 'Dismiss',
-      confirmLabel: 'Top up',
-      detail: 'Your Anxious credit balance is exhausted — top up to keep going.',
-      title: 'Out of Anxious credits'
+      cancelLabel: t('libText.billingDialog.dismiss'),
+      confirmLabel: t('libText.billingDialog.topUp'),
+      detail: t('libText.billingDialog.nousDetail'),
+      title: t('libText.billingDialog.nousTitle')
     }
   }
 
-  const label = block.provider_label || 'your provider'
+  const label = block.provider_label || t('libText.billingDialog.yourProvider')
 
   return {
-    cancelLabel: 'Dismiss',
-    confirmLabel: block.billing_url ? 'Open billing page' : 'Switch provider',
-    detail: `${label} reports your credits or billing are exhausted.`,
-    title: `Out of credits · ${label}`
+    cancelLabel: t('libText.billingDialog.dismiss'),
+    confirmLabel: block.billing_url
+      ? t('libText.billingDialog.openBillingPage')
+      : t('libText.billingDialog.switchProvider'),
+    detail: t('libText.billingDialog.providerDetail', label),
+    title: t('libText.billingDialog.providerTitle', label)
   }
 }

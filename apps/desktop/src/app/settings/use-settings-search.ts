@@ -4,13 +4,13 @@ import { useCallback, useEffect } from 'react'
 
 import { useGatewayRequest } from '@/app/gateway/hooks/use-gateway-request'
 import { $pluginRecords } from '@/contrib/plugins-store'
-import { getEnvVars, getPulseConfigSchema } from '@/pulse'
+import { getEnvVars, getPULSEConfigSchema } from '@/pulse'
 import { useI18n } from '@/i18n'
 import { type IconComponent, Monitor, Package, Settings2, Wrench } from '@/lib/icons'
 import { $agentPlugins, isDesktopRelevantPlugin, loadAgentPlugins } from '@/store/agent-plugins'
 import { $gatewayState } from '@/store/session'
 
-import { usePulseConfigRecord } from '../hooks/use-config-record'
+import { usePULSEConfigRecord } from '../hooks/use-config-record'
 import { useOnProfileSwitch } from '../hooks/use-on-profile-switch'
 
 import { SECTIONS } from './constants'
@@ -39,11 +39,11 @@ export interface PluginSearchEntry {
  */
 export function useSettingsSearchCatalog(enabled: boolean) {
   const { t } = useI18n()
-  const configQuery = usePulseConfigRecord()
+  const configQuery = usePULSEConfigRecord()
 
   const schemaQuery = useQuery({
     queryKey: ['pulse-config-schema'],
-    queryFn: () => getPulseConfigSchema(),
+    queryFn: () => getPULSEConfigSchema(),
     enabled,
     staleTime: 5 * 60 * 1000
   })

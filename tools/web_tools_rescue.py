@@ -35,7 +35,7 @@ def _ring_vendor_keyless(name: str) -> bool:
 
     Mirrors the predicate each ring provider evaluates before calling, so eligibility reflects what
     actually happened. Firecrawl owns extra routes that bypass the ring without a key — the managed
-    Anxious Tool Gateway (persisted ``anxious`` selection, or the legacy never-configured fallback when the
+    Nous Tool Gateway (persisted ``nous`` selection, or the legacy never-configured fallback when the
     gateway is ready) and a self-hosted ``FIRECRAWL_API_URL`` — so it is asked directly.
     """
     if name == "firecrawl":

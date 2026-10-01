@@ -64,7 +64,7 @@ describe('artifact version identity', (): void => {
           artifactNamePascal: 'Preview',
           cliName: 'preview',
           windowsExecutableName: 'Preview.exe',
-          msixAppIdWithOrg: 'Pulse.Preview'
+          msixAppIdWithOrg: 'Nous.Preview'
         }
       }
     }

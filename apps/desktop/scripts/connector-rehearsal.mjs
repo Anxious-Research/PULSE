@@ -17,7 +17,7 @@ const sandbox = process.argv[2] ? path.resolve(process.argv[2]) : fs.mkdtempSync
 const port = 5194
 const url = `http://127.0.0.1:${port}`
 const python = process.env.PULSE_DESKTOP_PYTHON
-if (!python || !fs.existsSync(python)) throw new Error('Set PULSE_DESKTOP_PYTHON to your installed Pulse Python executable.')
+if (!python || !fs.existsSync(python)) throw new Error('Set PULSE_DESKTOP_PYTHON to your installed PULSE Python executable.')
 if (!fs.existsSync(path.join(desktop, 'dist/electron-main.mjs'))) throw new Error('Run node scripts/bundle-electron-main.mjs --dev first.')
 await new Promise((resolve, reject) => {
   const probe = net.createServer()
@@ -30,7 +30,7 @@ Object.assign(env, {
   HOME: sandbox, PULSE_HOME: path.join(sandbox, '.pulse'), PULSE_SHARED_AUTH_DIR: path.join(sandbox, '.pulse/shared'),
   PULSE_DESKTOP_USER_DATA_DIR: path.join(sandbox, 'electron'), PULSE_DESKTOP_CWD: path.join(sandbox, 'work'),
   PULSE_DESKTOP_PULSE_ROOT: root, PULSE_DESKTOP_PYTHON: python,
-  PULSE_DESKTOP_IGNORE_EXISTING: '1', PULSE_DESKTOP_APP_NAME: 'Pulse Connector Rehearsal',
+  PULSE_DESKTOP_IGNORE_EXISTING: '1', PULSE_DESKTOP_APP_NAME: 'PULSE Connector Rehearsal',
   PULSE_GUEST_ONBOARDING: '1', PULSE_DESKTOP_DEV_SERVER: url, PULSE_DESKTOP_CDP_PORT: '9344'
 })
 const entry = path.join(desktop, 'dist/connector-rehearsal.mjs')

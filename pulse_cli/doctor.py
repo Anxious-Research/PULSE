@@ -1,4 +1,4 @@
-"""``pulse doctor`` — diagnose (and with --fix, repair) a Pulse install.
+"""``pulse doctor`` — diagnose (and with --fix, repair) a PULSE install.
 
 ``run_doctor`` walks ``DOCTOR_CHECKS`` in order; each check prints its own rows and returns a ``Finding``.
 Check bodies live in the ``doctor_*`` siblings.
@@ -29,9 +29,9 @@ from pulse_cli.doctor_config import (
     _check_config_file,
     _check_env_file,
     _check_mcp_security,
+    _check_relay_plugins,
     _check_xai_retirement,
     _check_retired_session_reset,
-    _check_plugin_compat,
 )
 from pulse_cli.doctor_platform import (
     _check_certificates,
@@ -60,7 +60,7 @@ from pulse_cli.doctor_state import (
 
 _PROVIDER_ENV_HINTS = (
     "DEEPINFRA_API_KEY", "OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "ANTHROPIC_TOKEN",
-    "OPENAI_BASE_URL", "ANXIOUS_API_KEY", "GLM_API_KEY", "ZAI_API_KEY", "Z_AI_API_KEY", "KIMI_API_KEY",
+    "OPENAI_BASE_URL", "NOUS_API_KEY", "GLM_API_KEY", "ZAI_API_KEY", "Z_AI_API_KEY", "KIMI_API_KEY",
     "KIMI_CN_API_KEY", "GMI_API_KEY", "FIREWORKS_API_KEY", "ACTUAL_API_KEY", "ACTUAL_BASE_URL", "MINIMAX_API_KEY",
     "MINIMAX_CN_API_KEY", "KILOCODE_API_KEY", "DEEPSEEK_API_KEY", "DASHSCOPE_API_KEY", "HF_TOKEN",
     "AI_GATEWAY_API_KEY", "OPENCODE_ZEN_API_KEY", "OPENCODE_GO_API_KEY", "COMMANDCODE_API_KEY", "XIAOMI_API_KEY",
@@ -71,9 +71,9 @@ _PROVIDER_ENV_HINTS = (
 def _check_auth_providers(should_fix: bool, f: Finding) -> None:
     """Refresh-free OAuth status snapshot (doctor must never trigger a token refresh)."""
     with warn_on_error("Auth provider status", "(could not check: {e})"):
-        from pulse_cli.auth import get_anxious_auth_status_local, get_codex_auth_status, get_minimax_oauth_auth_status
-        _login_row("Anxious Portal auth", get_anxious_auth_status_local())
-        # Native OAuth is Pulse' own device-code flow; the Codex CLI only imports existing ~/.codex/auth.json
+        from pulse_cli.auth import get_nous_auth_status_local, get_codex_auth_status, get_minimax_oauth_auth_status
+        _login_row("Nous Portal auth", get_nous_auth_status_local())
+        # Native OAuth is PULSE' own device-code flow; the Codex CLI only imports existing ~/.codex/auth.json
         # tokens, so the hint sits under the Codex row (not as another provider's remedy).
         if not _login_row("OpenAI Codex auth", get_codex_auth_status(), show_error=True) and not _safe_which("codex"):
             check_info("codex CLI not installed (optional — only required to import tokens from an existing Codex CLI login)")
@@ -116,13 +116,14 @@ DOCTOR_CHECKS = (
     (None, _check_config_file), (None, _check_config_drift),
     ('xAI Model Retirement (May 15, 2026)', _check_xai_retirement),
     ('Session Reset (timers removed Sep 7, 2026)', _check_retired_session_reset),
-    ('Plugin import paths (removed Sep 14, 2026)', _check_plugin_compat), ('Auth Providers', _check_auth_providers),
+    ('Auth Providers', _check_auth_providers),
     ('Directory Structure', _check_directory_structure), (None, _check_state_db), (None, _check_checkpoint_store),
     (None, _check_gateway_supervision), (None, _check_command_installation),
     ('External Tools', _check_git_and_rg), (None, _check_terminal_backend), (None, _check_node_and_browser),
     (None, _check_npm_audit), ('API Connectivity', _check_api_connectivity),
     ('Tool Availability', _check_tool_availability), ('Skills Hub', _check_skills_hub),
-    ('Memory Provider', _check_memory_provider), (None, _check_profiles),
+    ('Memory Provider', _check_memory_provider), ('NeMo Relay Plugins', _check_relay_plugins),
+    (None, _check_profiles),
 )
 
 
@@ -175,7 +176,7 @@ def run_doctor(args):
         return _ack_advisory(args.ack)
     print()
     for line in ("┌─────────────────────────────────────────────────────────┐",
-                 "│                 🩺 Pulse Doctor                        │",
+                 "│                 🩺 PULSE Doctor                        │",
                  "└─────────────────────────────────────────────────────────┘"):
         print(color(line, Colors.CYAN))
     total = Finding()
@@ -189,55 +190,3 @@ def run_doctor(args):
         maybe_run_live_checks(args, total.manual_issues)
     _print_summary(should_fix, total)
     return int(bool(total.issues or total.manual_issues))
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from pathlib import Path  # noqa: F401,E402
-import importlib.util  # noqa: F401,E402
-import shutil  # noqa: F401,E402
-import subprocess  # noqa: F401,E402
-
-def check_fail(text: str, detail: str = ""):
-    print(f"  {color('✗', Colors.RED)} {text}" + (f" {color(detail, Colors.DIM)}" if detail else ""))
-
-def check_ok(text: str, detail: str = ""):
-    print(f"  {color('✓', Colors.GREEN)} {text}" + (f" {color(detail, Colors.DIM)}" if detail else ""))
-
-def check_warn(text: str, detail: str = ""):
-    print(f"  {color('⚠', Colors.YELLOW)} {text}" + (f" {color(detail, Colors.DIM)}" if detail else ""))
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'FTS_STORAGE_VERSION': ('pulse_state_common', 'FTS_STORAGE_VERSION'),
-    'OPENROUTER_MODELS_URL': ('pulse_constants', 'OPENROUTER_MODELS_URL'),
-    'STATE_DB_SIZE_WARN_BYTES': ('pulse_cli.doctor_state', 'STATE_DB_SIZE_WARN_BYTES'),
-    'agent_browser_runnable': ('pulse_constants', 'agent_browser_runnable'),
-    'base_url_host_matches': ('utils', 'base_url_host_matches'),
-    'check_certificates': ('pulse_cli.doctor_platform', 'check_certificates'),
-    'check_macos_full_disk_access': ('pulse_cli.doctor_platform', 'check_macos_full_disk_access'),
-    'check_macos_tcc_anchor': ('pulse_cli.doctor_platform', 'check_macos_tcc_anchor'),
-    'check_macos_tcc_grants': ('pulse_cli.doctor_platform', 'check_macos_tcc_grants'),
-    'collect_deprecated_config_keys': ('pulse_cli.doctor_config', 'collect_deprecated_config_keys'),
-    'collect_deprecated_env_vars': ('pulse_cli.doctor_config', 'collect_deprecated_env_vars'),
-    'collect_relay_plugin_cutover_findings': ('pulse_cli.doctor_config', 'collect_relay_plugin_cutover_findings'),
-    'describe_vercel_auth': ('pulse_cli.vercel_auth', 'describe_vercel_auth'),
-    'detect_install_method': ('pulse_cli.config', 'detect_install_method'),
-    'is_nix_install_method': ('pulse_cli.config', 'is_nix_install_method'),
-    'managed_scope_check': ('pulse_cli.doctor_config', 'managed_scope_check'),
-    'recommended_update_command_for_method': ('pulse_cli.config', 'recommended_update_command_for_method'),
-    'report_deprecated_config_and_env': ('pulse_cli.doctor_config', 'report_deprecated_config_and_env'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

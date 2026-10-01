@@ -83,7 +83,7 @@ def require_activation() -> None:
         return
     script = os.path.basename(sys.argv[0]) or "this script"
     print(
-        f"{script}: the Pulse environment is not activated.\n"
+        f"{script}: the PULSE environment is not activated.\n"
         "From the repository root, run:\n"
         "\n"
         f"    {activation_command()}\n"

@@ -3,7 +3,7 @@ pre/post_tool_call, timeout clamped to [1, 60], name) -> notify-only callbacks o
 manager, so every ``invoke_hook()`` site can POST lifecycle events (mirror of
 ``gateway/platforms/webhook.py``).  Fire-and-forget through a bounded queue + one daemon worker,
 so a target can never block a tool call or influence agent flow.  HMAC-SHA256 signed
-(``X-Pulse-Signature-256: sha256=<hex>`` over the raw body) when a secret is configured;
+(``X-PULSE-Signature-256: sha256=<hex>`` over the raw body) when a secret is configured;
 ``PULSE_SAFE_MODE=1`` skips registration; registration is idempotent.
 """
 
@@ -240,7 +240,7 @@ def _make_callback(event: str, target: WebhookTarget):
 
 def _serialize_payload(event: str, kwargs: Dict[str, Any], delivery_id: str) -> bytes:
     """Render the POST body: shell-hooks stdin shape plus delivery metadata.  ``delivery_id``
-    (also the ``X-Pulse-Delivery`` header) and ``timestamp`` live inside the HMAC-signed
+    (also the ``X-PULSE-Delivery`` header) and ``timestamp`` live inside the HMAC-signed
     body, so they double as replay protection."""
     # Profile resolved at fire time so a multiplexed gateway's receivers can tell which profile emitted.
     # See #92674.
@@ -254,12 +254,12 @@ def _serialize_payload(event: str, kwargs: Dict[str, Any], delivery_id: str) -> 
 
 def _build_delivery(event: str, target: WebhookTarget, body: bytes, delivery_id: str) -> Dict[str, Any]:
     headers = {
-        "Content-Type": "application/json", "User-Agent": "Pulse-Agent-Outbound-Webhook",
-        "X-Pulse-Event": event, "X-Pulse-Delivery": delivery_id,
+        "Content-Type": "application/json", "User-Agent": "PULSE-Agent-Outbound-Webhook",
+        "X-PULSE-Event": event, "X-PULSE-Delivery": delivery_id,
     }
     if target.secret:
         digest = hmac.new(target.secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
-        headers["X-Pulse-Signature-256"] = f"sha256={digest}"
+        headers["X-PULSE-Signature-256"] = f"sha256={digest}"
     return {"url": target.url, "label": target.label, "event": event, "body": body, "headers": headers, "timeout": target.timeout}
 
 
@@ -338,13 +338,3 @@ def _deliver(delivery: Dict[str, Any]) -> None:
         "outbound webhook delivery failed after %d attempt(s) (event=%s target=%s): %s",
         MAX_DELIVERY_ATTEMPTS, event, label, last_error,
     )
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from pathlib import Path  # noqa: F401,E402
-from datetime import datetime  # noqa: F401,E402
-from datetime import timezone  # noqa: F401,E402
-# ---- END PLUGIN-COMPAT ----

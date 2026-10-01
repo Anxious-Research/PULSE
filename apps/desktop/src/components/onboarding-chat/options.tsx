@@ -36,13 +36,13 @@ export function orderConnectorPicks<T extends { connector: string; enabled?: boo
     })
 }
 
-export const PULSE_ACCENT = '#0053fd'
+export const NOUS_ACCENT = '#0053fd'
 
 export const accentsFor = (dark: boolean): Array<{ hex: string; name: string }> => [
   { hex: dark ? '#ffffff' : '#000000', name: 'Mono' },
   { hex: '#2ea043', name: 'GitHub green' },
   { hex: '#00d5ff', name: 'Cyber cyan' },
-  { hex: PULSE_ACCENT, name: 'Pulse blue' },
+  { hex: NOUS_ACCENT, name: 'Nous blue' },
   { hex: '#8a2be2', name: 'Ultraviolet' },
   { hex: '#e0218a', name: 'Barbie pink' },
   { hex: '#ff073a', name: 'Electric red' },
@@ -107,7 +107,7 @@ export const ELITE_LAYOUT_ID = 'terminal-deck'
 
 export const LAYOUTS: Array<{ description: string; id: string; mode: InterfaceMode; name: string; tree: MiniNode }> = [
   {
-    description: 'For talking to Pulse.',
+    description: 'For talking to PULSE.',
     id: 'sidebar-left',
     mode: 'simple',
     name: 'Basic',

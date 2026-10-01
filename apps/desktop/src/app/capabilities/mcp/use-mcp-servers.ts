@@ -20,9 +20,9 @@ import { setDisabledTools, toggleToolInServer } from '@/lib/mcp-tool-filter'
 import { notify, notifyError } from '@/store/notifications'
 import { $activeGatewayProfile, normalizeProfileKey } from '@/store/profile'
 import { $activeSessionId } from '@/store/session'
-import type { PulseConfigRecord } from '@/types/pulse'
+import type { PULSEConfigRecord } from '@/types/pulse'
 
-import { pulseConfigCacheWriter, usePulseConfigRecord } from '../../hooks/use-config-record'
+import { pulseConfigCacheWriter, usePULSEConfigRecord } from '../../hooks/use-config-record'
 import { useOnProfileSwitch } from '../../hooks/use-on-profile-switch'
 import { useProfileSwitchLatch } from '../../hooks/use-profile-switch-latch'
 import { seedOptions } from '../connectors/data/persist'
@@ -41,7 +41,7 @@ export interface McpServersController extends McpDraft, PublishedProbes {
   availableCatalog: McpCatalogEntry[]
   catalog: McpCatalogEntry[]
   catalogLoading: boolean
-  config: PulseConfigRecord | null
+  config: PULSEConfigRecord | null
   configError: unknown
   configFailed: boolean
   configLoading: boolean
@@ -81,7 +81,7 @@ export function useMcpServers({ gateway, profile }: UseMcpServersOptions): McpSe
     refetch: refetchConfigQuery,
     dataUpdatedAt: configUpdatedAt,
     errorUpdatedAt: configErroredAt
-  } = usePulseConfigRecord(profile)
+  } = usePULSEConfigRecord(profile)
 
   const setConfig = pulseConfigCacheWriter(profile)
 

@@ -6,7 +6,7 @@ description: Privacy-first agent email inboxes and workspace automation through 
   `pulse mcp login mermail`. No credentials are stored in mcp.json. Disclosure — the bundled skills also
   expose Mermail's paybox wallet tools over the hosted MCP (x402 payments, xStocks trading, standing grants);
   the skills allow the agent to move funds without a same-turn confirmation when your message already
-  states exact terms, so spending controls live on your Mermail account, not in Pulse.
+  states exact terms, so spending controls live on your Mermail account, not in PULSE.
 maintainer: Nudgen-Marketing
 tier: community
 category: platform

@@ -40,32 +40,18 @@ def main(argv=None) -> int:
         from scripts.bundles.payload import snapshot
         from scripts.build.icon_environment import prepare_icon_environment
         snapshot(ROOT, args.ref, source)
-        # The staging interpreter need not be a Pulse runtime; render icons on one.
+        # The staging interpreter need not be a PULSE runtime; render icons on one.
         icon_python = prepare_icon_environment(source, products / "icon-environment", args.cache)
         env = {**os.environ, "PULSE_PYTHON": str(icon_python)}
-        # Copy pre-built icons from source instead of regenerating (bypasses girl SVG complexity)
-        icons_dest = products / "icons"
-        icons_dest.mkdir(parents=True, exist_ok=True)
-        for icon_file in (source / "apps/desktop/public").glob("*.png"):
-            shutil.copy2(icon_file, icons_dest / icon_file.name)
-
-        # Build web only (skip TUI due to pulse-ink dist/ missing in snapshot)
         commands = [
-            ["scripts/build/node-deps.mjs", "--source", str(source), "--workspace", "web"],
-            ["scripts/build/web.mjs", "--source", str(source), "--icons", str(icons_dest), "--out", str(products / "web")],
+            ["scripts/build/node-deps.mjs", "--source", str(source), "--workspace", "ui-tui", "--workspace", "web"],
+            ["scripts/generate-icons.mjs", "--source", str(source), "--out", str(products / "icons")],
+            ["scripts/build/tui.mjs", "--source", str(source), "--out", str(products / "tui")],
+            ["scripts/build/web.mjs", "--source", str(source), "--icons", str(products / "icons"), "--out", str(products / "web")],
         ]
         for command in commands:
             subprocess.run([node, *command], cwd=ROOT, env=env, check=True)
-
-        # Copy pre-built TUI from checkout or create placeholder
-        tui_dest = products / "tui"
-        if (ROOT / "ui-tui/dist").exists():
-            shutil.copytree(ROOT / "ui-tui/dist", tui_dest)
-        else:
-            tui_dest.mkdir(parents=True)
-            (tui_dest / "entry.js").write_text("// TUI placeholder\nconsole.log('TUI not bundled');")
-
-        args.frontends = {"tui": tui_dest, "web": products / "web"}
+        args.frontends = {"tui": products / "tui", "web": products / "web"}
         return stage_native(args)
 
 

@@ -1,4 +1,4 @@
-"""Session-scoped context variables for the Pulse gateway.
+"""Session-scoped context variables for the PULSE gateway.
 
 Replaces the old ``os.environ``-based ``PULSE_SESSION_*`` state with task-local ``ContextVar``s
 (inherited by ``run_in_executor`` threads), so concurrently handled messages no longer clobber each

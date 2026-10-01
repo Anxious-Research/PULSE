@@ -96,7 +96,7 @@ def _spawn_worker(env: dict[str, str]) -> subprocess.Popen:
 
     # pm store PATH: the worker runs under the STORE python, whose third-party
     # imports (ddgs/primp) arrive via the launcher-composed PYTHONPATH. The
-    # sanitizer strips Pulse-owned entries (cross-version protection); this
+    # sanitizer strips PULSE-owned entries (cross-version protection); this
     # worker is the SAME interpreter, so merge the ambient PYTHONPATH back in.
     _ambient_pp = os.environ.get("PYTHONPATH")
     if _ambient_pp:
@@ -198,7 +198,7 @@ class DDGSWebSearchProvider(BaseWebSearchProvider):
 
     def search(self, query: str, limit: int = 5) -> Dict[str, Any]:
         """Run the search in a disposable child with a hard wall-clock timeout so a
-        hung native ``primp`` call cannot freeze the Pulse process.
+        hung native ``primp`` call cannot freeze the PULSE process.
 
         See #36776, #68096.
         """
@@ -228,25 +228,3 @@ class DDGSWebSearchProvider(BaseWebSearchProvider):
             "DuckDuckGo (ddgs)", "free · no key · search only",
             "Search via the ddgs Python package — no API key (pair with any extract provider)", post_setup="ddgs",
         )
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'WebSearchProvider': ('agent.web_search_provider', 'WebSearchProvider'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

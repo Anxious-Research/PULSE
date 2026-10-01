@@ -1,7 +1,7 @@
 # Design System: Sanity
 
 
-> **Pulse Agent — Implementation Notes**
+> **PULSE Agent — Implementation Notes**
 >
 > The original site uses proprietary fonts. For self-contained HTML output, use these CDN substitutes:
 > - **Primary:** `Space Grotesk` | **Mono:** `IBM Plex Mono`

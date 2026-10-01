@@ -1,5 +1,5 @@
 /**
- * "Open recent session" on a bot row : opens the profile's
+ * "Open recent session" on a bot row (pulse-agent#93054): opens the profile's
  * newest LISTED session as a tab in the bot's workspace — never in place of
  * the canonical Bot Chat — and hands a bot with nothing listable back to the
  * ordinary row click.
@@ -19,7 +19,11 @@ vi.mock('@pulse/plugin-sdk', () => ({
   host: { openSession, notifyError: vi.fn() }
 }))
 vi.mock('./bot-state', () => ({ saveSelectedRosterBot: () => undefined }))
-vi.mock('./canonical-chat', () => ({ prepareBotSource }))
+vi.mock('./canonical-chat', () => ({
+  prepareBotSource,
+  resolveExpectHistory: (summary: { message_count?: number; live_message_count?: number } | null | undefined) =>
+    (summary?.live_message_count ?? summary?.message_count ?? 1) > 0
+}))
 vi.mock('./roster-actions', () => ({ openRosterBot }))
 vi.mock('./routing', () => ({
   botConnectionRoute: () => ({ connectionId: 'local', mode: 'local', profile: 'researcher' }),

@@ -279,9 +279,9 @@ def _probe_bedrock() -> ProbeResult:
         n = len(client.list_foundation_models().get("modelSummaries", []))
         return _row(name, "ok", f"({auth_var}, {region}, {n} models)", label=label)
     except ImportError:
-        hint = ("From the Pulse environment, run: "
+        hint = ("From the PULSE environment, run: "
                 f"{install_hint('bedrock')}. "
-                "Then restart Pulse.")
+                "Then restart PULSE.")
         return _row(name, "warn", "(boto3 not installed)", [hint], label=label)
     except Exception as e:
         err_name = type(e).__name__
@@ -313,9 +313,9 @@ def _probe_azure_entra() -> ProbeResult:
     except Exception as exc:
         return _row(name, "warn", f"(adapter import failed: {exc})", [f"Azure Foundry adapter import failed: {exc}"], label=label)
     if not has_azure_identity_installed():
-        return _row(name, "warn", "(azure-identity not installed)", ["From the Pulse environment, run: "
+        return _row(name, "warn", "(azure-identity not installed)", ["From the PULSE environment, run: "
                      f"{install_hint('azure-identity')}. "
-                     "Then restart Pulse."], label=label)
+                     "Then restart PULSE."], label=label)
     entra_cfg = model_cfg.get("entra") or {}
     scope = (str(entra_cfg.get("scope") or "").strip() if isinstance(entra_cfg, dict) else "") or SCOPE_AI_AZURE_DEFAULT
     info = describe_active_credential(config=EntraIdentityConfig(scope=scope), timeout_seconds=10.0)

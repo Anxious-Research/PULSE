@@ -30,7 +30,7 @@ def _header_mode(db_path: Path) -> str:
 def _refusal(target: str, current: str, *, on_cross_vm_fs: bool) -> Optional[str]:
     """Admission checks independent of holder discovery, which is enforced for every platform."""
     if current == "not-a-database" or current.startswith("unknown("):
-        return (f"its file header reads {current}, so it is not a Pulse SQLite store this command can convert "
+        return (f"its file header reads {current}, so it is not a PULSE SQLite store this command can convert "
                 "(pass --db PATH to point at one).")
     if target == "wal" and on_cross_vm_fs:
         return ("WAL shared memory silently corrupts on cross-VM filesystems (virtiofs/9p — Docker Desktop, "

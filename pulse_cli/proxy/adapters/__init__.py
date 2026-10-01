@@ -3,11 +3,11 @@
 from typing import Dict, Type
 
 from pulse_cli.proxy.adapters.base import UpstreamAdapter
-from pulse_cli.proxy.adapters.anxious_portal import AnxiousPortalAdapter
+from pulse_cli.proxy.adapters.nous_portal import NousPortalAdapter
 from pulse_cli.proxy.adapters.xai import XAIGrokAdapter
 
 # Keyed by the ``pulse proxy start --provider <name>`` value.
-ADAPTERS: Dict[str, Type[UpstreamAdapter]] = {"anxious": AnxiousPortalAdapter, "xai": XAIGrokAdapter}
+ADAPTERS: Dict[str, Type[UpstreamAdapter]] = {"nous": NousPortalAdapter, "xai": XAIGrokAdapter}
 
 
 def get_adapter(name: str) -> UpstreamAdapter:

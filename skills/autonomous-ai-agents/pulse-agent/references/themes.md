@@ -1,6 +1,6 @@
-# Themes / Skins — Author a Pulse Color Theme
+# Themes / Skins — Author a PULSE Color Theme
 
-Author a Pulse **skin** — one YAML file that themes the CLI, the TUI, and the
+Author a PULSE **skin** — one YAML file that themes the CLI, the TUI, and the
 desktop GUI at once. The skin engine (`pulse_cli/skin_engine.py`) resolves the
 active skin and the gateway pushes it to every surface, so a file dropped in
 `~/.pulse/skins/` is the theme analogue of a plugin: no code, all surfaces. This
@@ -10,14 +10,14 @@ editors or ship built-in presets.
 ## When to Use
 
 - The user asks for a custom look ("make me a synthwave theme", "dark forest
-  vibes", "match my brand colors") for Pulse itself.
+  vibes", "match my brand colors") for PULSE itself.
 - The user wants the CLI/TUI/desktop to share one coordinated palette.
 - The user wants to iterate live ("that coral is too loud, make it teal") — edit
   the active skin's YAML and every surface repaints as your tool finishes.
 
 ## Prerequisites
 
-- Write access to the Pulse home dir — `~/.pulse` by default, or `$PULSE_HOME`
+- Write access to the PULSE home dir — `~/.pulse` by default, or `$PULSE_HOME`
   / the active profile's dir. Skins live in `<pulse-home>/skins/`.
 - Native tools: `write_file` (create the YAML), `read_file` / `search_files`
   (inspect existing skins), `terminal` (activate via `pulse config set`).
@@ -106,7 +106,7 @@ enumerate.
 - **Set `background`.** Without it the GUI has to guess a base surface from text
   luminance — usable, but you lose control of the app background.
 - **Name collisions**: a skin named like a desktop built-in (`mono`, `slate`,
-  `cyberpunk`, `anxious`, `midnight`, `ember`) won't override that built-in on the
+  `cyberpunk`, `nous`, `midnight`, `ember`) won't override that built-in on the
   GUI. Pick a fresh name.
 - **Never hand-edit `config.yaml` to activate.** Use `pulse config set
   display.skin <name>` — a stray indent in a manual edit corrupts the file and

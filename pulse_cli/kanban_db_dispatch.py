@@ -122,7 +122,7 @@ class DispatchResult:
     acting on the fallback rule rather than explicit assignments."""
     skipped_nonspawnable: list[str] = field(default_factory=list)
     """Ready task ids whose assignee names a control-plane lane (e.g. a Claude
-    Code terminal like ``orion-cc``), not a Pulse profile. Expected steady-state
+    Code terminal like ``orion-cc``), not a PULSE profile. Expected steady-state
     on multi-lane setups, NOT operator-actionable; tracked apart so health
     telemetry can tell "stuck" from "correctly idle"."""
     skipped_per_profile_capped: list[tuple[str, str, int]] = field(default_factory=list)
@@ -974,10 +974,19 @@ _PROTOCOL_VIOLATION_ERROR = (
 )
 
 
-_EXIT_SUMMARY_MARKER = "Resume this session with:"
 # Rich panel/rule chrome around the rendered response, and the CLI's own preamble lines.
-_LOG_CHROME = re.compile(r"[─━═╭╮╰╯│┃┌┐└┘]+|☤\s*Pulse")
-_LOG_NOISE_PREFIXES = ("session_id:", "Query:", "Initializing agent")
+_LOG_CHROME = re.compile(r"[─━═╭╮╰╯│┃┌┐└┘]+|☤\s*PULSE")
+
+
+def _exit_summary_marker() -> str:
+    """The CLI exit-summary header (``cli_session_mixin.show_exit_summary``), in the active language."""
+    from agent.i18n import t
+    return t("cli.session.exit_resume_hint")
+
+
+def _log_noise_prefixes() -> tuple[str, ...]:
+    from agent.i18n import t
+    return ("session_id:", "Query:", t("cli.chat.initializing_agent"))
 
 
 def _worker_final_output(task_id: str, board: Optional[str] = None) -> str:
@@ -1002,13 +1011,13 @@ def _worker_final_output(task_id: str, board: Optional[str] = None) -> str:
     if not raw:
         return ""
     raw = _EXIT_TRAILER_RE.sub("", raw)
-    cut = raw.rfind(_EXIT_SUMMARY_MARKER)
+    cut = raw.rfind(_exit_summary_marker())
     if cut != -1:
         raw = raw[:cut]
     lines = []
     for ln in raw.splitlines():
         ln = _LOG_CHROME.sub("", ln).strip()
-        if ln and not ln.startswith(_LOG_NOISE_PREFIXES):
+        if ln and not ln.startswith(_log_noise_prefixes()):
             lines.append(ln)
     return " ".join(lines)[-400:]
 
@@ -1686,7 +1695,7 @@ def _profile_exists_fn() -> Optional[Callable[[str], bool]]:
 def _dispatch_profile_allowlist(normalize_profile_name) -> Optional[frozenset]:
     """Per-home claim allowlist ``kanban.dispatch_profiles`` (#110995).
 
-    On a shared board (one ``kanban.db`` mounted across several Pulse homes),
+    On a shared board (one ``kanban.db`` mounted across several PULSE homes),
     every home's ``profile_exists`` returns True for ``default`` — the root
     profile every home has — so a card assigned to ``default`` is claimable by
     every home's dispatcher. A home opts out of foreign claims by declaring
@@ -1768,7 +1777,7 @@ def _has_spawnable(conn: sqlite3.Connection, status: str) -> bool:
 
 
 def has_spawnable_ready(conn: sqlite3.Connection) -> bool:
-    """True iff a ready+assigned+unclaimed task maps to a real Pulse profile.
+    """True iff a ready+assigned+unclaimed task maps to a real PULSE profile.
 
     Lets health telemetry tell "stuck" (``0 spawned`` with spawnable work) from
     "correctly idle" (only control-plane lanes waiting on ``claim_task``). Falls
@@ -1783,7 +1792,7 @@ def has_spawnable_review(conn: sqlite3.Connection) -> bool:
 
 
 def review_dispatch_enabled() -> bool:
-    """Whether review tasks dispatch automatically. Default true (Pulse ships
+    """Whether review tasks dispatch automatically. Default true (PULSE ships
     ``sdlc-review``); operators disable it for human-only review boards.
     """
     try:
@@ -2481,7 +2490,7 @@ def _rotate_worker_log(
 
 
 def _module_pulse_argv() -> list[str]:
-    """Interpreter-bound Pulse CLI invocation (``pulse_cli.main`` is the
+    """Interpreter-bound PULSE CLI invocation (``pulse_cli.main`` is the
     console-script target — there is no top-level ``pulse`` package)."""
     return [sys.executable, "-m", "pulse_cli.main"]
 
@@ -2507,7 +2516,7 @@ def _propagate_module_import_root(cmd: list[str], env: dict[str, str]) -> None:
 
 
 def _absolute_pulse_path(path: str) -> str:
-    """Return an absolute filesystem path for a resolved Pulse shim."""
+    """Return an absolute filesystem path for a resolved PULSE shim."""
     expanded = os.path.expanduser(path)
     return expanded if os.path.isabs(expanded) else os.path.abspath(expanded)
 
@@ -2556,7 +2565,7 @@ def _safe_which_no_cwd(command: str) -> Optional[str]:
 
 
 def _pulse_path_argv(path: str) -> list[str]:
-    """argv for a resolved Pulse executable path. Windows batch shims
+    """argv for a resolved PULSE executable path. Windows batch shims
     (``.cmd``/``.bat``) are unsafe as argv[0] because the argument vector
     includes task-derived values; prefer the module form."""
     if _kb._IS_WINDOWS and _is_windows_batch_shim(path):
@@ -2954,7 +2963,7 @@ def _default_spawn(task: Task, workspace: str, *, board: Optional[str] = None) -
         log_f.close()
         raise RuntimeError(
             "`pulse` executable not found on PATH. "
-            "Install Pulse Agent or activate its venv before running the kanban dispatcher."
+            "Install PULSE Agent or activate its venv before running the kanban dispatcher."
         )
     # Intentionally NOT closing log_f: the child keeps writing after return;
     # the OS-level FD stays open in the child until it exits.

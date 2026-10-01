@@ -5,7 +5,7 @@
 // how the two halves drift.
 //
 // A .cjs module (not JSON) so the variant is decided at require time:
-// PULSE_DESKTOP_VARIANT=light builds "Pulse Light". The whole config
+// PULSE_DESKTOP_VARIANT=light builds "PULSE Light". The whole config
 // derives from that one flag.
 // @ts-check
 'use strict'
@@ -25,7 +25,8 @@ const {
   artifactNamePascal,
   windowsExecutableName,
   channel,
-  msixAppIdWithOrg
+  msixAppIdWithOrg,
+  token
 } = require('./product-identity.cjs')
 
 // `storeMsix` is optional on the identity type but guaranteed present when
@@ -102,7 +103,8 @@ module.exports = {
     name: appNamePascal,
     // Electron bootstrap reads package.productName before main.ts. Keep the
     // shipped stable default, but isolate nonstable userData from first access.
-    ...(channelRequest || appNamePascal !== artifactNamePascal ? { productName: displayName } : {}),
+    // A stable-branded channel has no token and keeps stable's userData.
+    ...((channelRequest && token) || appNamePascal !== artifactNamePascal ? { productName: displayName } : {}),
     desktopName: appId
   },
   directories: {
@@ -187,13 +189,13 @@ module.exports = {
   dmg: {
     // Avoid the failing optional APFS shrink pass; keep compressed conversion.
     shrink: false,
-    title: 'Pulse Agent Installer',
+    title: 'PULSE Agent Installer',
     // A prebuilt .tiff on purpose, not a PNG plus a @2x sibling: dmg-builder's
     // PNG path runs `tiffutil -cathidpicheck`, which on macOS 26 rewrites both
     // frames to 72 dpi and silently drops the 2x representation. A .tiff is
     // handed to dmgbuild untouched (dmg-builder/dist/dmgUtil.js), and living
     // outside assets/ keeps it out of the app bundle via the `files` whitelist.
-    background: 'packaging/pulse-dmg-2b.tiff',
+    background: 'packaging/nous-dmg-2b.tiff',
     iconSize: 96,
     iconTextSize: 11,
     window: {
@@ -228,7 +230,7 @@ module.exports = {
     applicationId: appNamePascal,
     displayName,
     publisher: store ? mustStoreMsix(storeMsixWhenStore).publisher : OUT_OF_STORE_PUBLISHER,
-    publisherDisplayName: store ? mustStoreMsix(storeMsixWhenStore).publisherDisplayName : 'Anxious Research',
+    publisherDisplayName: store ? mustStoreMsix(storeMsixWhenStore).publisherDisplayName : 'Nous Research',
     // The native quad is the build time (scripts/msix-shared.mjs::nativeQuad),
     // baked into the manifest template, so the builder's own build-number
     // override would stamp a second, conflicting version.
@@ -250,7 +252,7 @@ module.exports = {
     customManifestPath: store ? 'build/store-msix-manifest.xml'
       : releaseBuild || channelRequest || appNamePascal !== artifactNamePascal
         ? 'build/msix-manifest.xml' : 'assets/msix-manifest.xml',
-    // Pulse state is deliberately shared with unpackaged CLI/gateway
+    // PULSE state is deliberately shared with unpackaged CLI/gateway
     // processes. Pair the manifest's disabled virtualization properties with
     // the restricted capability that permits unvirtualized AppData/HKCU writes.
     capabilities: ['unvirtualizedResources'],
@@ -258,10 +260,10 @@ module.exports = {
   },
   linux: {
     category: 'Development',
-    maintainer: 'Anxious Research <support@anxious-research.com>',
+    maintainer: 'Nous Research <support@anxious-research.com>',
     synopsis: light
-      ? 'Remote-only desktop client for Pulse Agent.'
-      : 'Native desktop shell for Pulse Agent.',
+      ? 'Remote-only desktop client for PULSE Agent.'
+      : 'Native desktop shell for PULSE Agent.',
     target: ['AppImage']
   }
 }

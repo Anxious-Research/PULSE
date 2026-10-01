@@ -11,8 +11,8 @@ from pulse_cli.subcommands._shared import add_yes_flag
 def build_uninstall_parser(subparsers, *, cmd_uninstall: Callable) -> None:
     """Attach the ``uninstall`` subcommand to ``subparsers``."""
     uninstall_parser = subparsers.add_parser(
-        "uninstall", help="Uninstall Pulse Agent",
-        description="Remove Pulse Agent from your system. Can keep configs/data for reinstall.")
+        "uninstall", help="Uninstall PULSE Agent",
+        description="Remove PULSE Agent from your system. Can keep configs/data for reinstall.")
     modes = uninstall_parser.add_mutually_exclusive_group()
     modes.add_argument(
         "--full", action="store_true",
@@ -23,7 +23,7 @@ def build_uninstall_parser(subparsers, *, cmd_uninstall: Callable) -> None:
     modes.add_argument(
         "--data",
         action="store_true",
-        help="Remove only the active Pulse home's user data, leaving installed code "
+        help="Remove only the active PULSE home's user data, leaving installed code "
         "intact — the one mode that works on Nix / bundled-app / Docker installs",
     )
     uninstall_parser.add_argument(

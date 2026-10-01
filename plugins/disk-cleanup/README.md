@@ -1,6 +1,6 @@
 # disk-cleanup
 
-Auto-tracks and cleans up ephemeral files created during Pulse Agent
+Auto-tracks and cleans up ephemeral files created during PULSE Agent
 sessions — test scripts, temp outputs, cron logs, stale chrome profiles.
 <!-- no-tmp: ok — documents the legacy scratch scope this plugin cleans up -->
 Scoped strictly to `$PULSE_HOME` and `/tmp/pulse-*`.

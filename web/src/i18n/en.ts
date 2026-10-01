@@ -55,12 +55,12 @@ export const en: Translations = {
   },
 
   app: {
-    brand: "Pulse Agent",
+    brand: "PULSE Agent",
     brandShort: "HA",
     closeNavigation: "Close navigation",
     closeModelTools: "Close model and tools",
     footer: {
-      org: "Anxious Research Lab",
+      org: "Nous Research",
     },
     activeSessionsLabel: "Active Sessions:",
     gatewayStatusLabel: "Gateway Status:",
@@ -113,6 +113,14 @@ export const en: Translations = {
     multiplexStandaloneBanner:
       "Your gateway serves only one profile. Not served: {profiles}. Why: {reason}. Fix: pulse gateway migrate --multiplex",
     dismiss: "Dismiss",
+    sharedMetricsTitle: "Help improve PULSE?",
+    sharedMetricsBody:
+      "Shared metrics are bounded counters, never prompts, files, paths or error text. Collection stays on this machine; sending to Nous is a separate choice.",
+    sharedMetricsShare: "Send to Nous",
+    sharedMetricsLocal: "Local only",
+    sharedMetricsOff: "No thanks",
+    sharedMetricsDetails: "Details",
+    sharedMetricsSaveFailed: "Couldn't save your choice",
   },
 
   status: {
@@ -138,7 +146,7 @@ export const en: Translations = {
     recentSessions: "Recent Sessions",
     restartGateway: "Restart Gateway",
     restartGatewayConfirmMessage:
-      "This restarts the Pulse gateway process. Connected channels and active sessions will reconnect afterward.",
+      "This restarts the PULSE gateway process. Connected channels and active sessions will reconnect afterward.",
     restartGatewayConfirmTitle: "Restart gateway?",
     restartingGateway: "Restarting gateway…",
     running: "Running",
@@ -147,12 +155,12 @@ export const en: Translations = {
     starting: "Starting",
     startedInBackground: "Started in background — check logs for progress",
     stopped: "Stopped",
-    updatePulse: "Update Pulse",
-    updatePulseConfirmMessage:
+    updatePULSE: "Update PULSE",
+    updatePULSEConfirmMessage:
       "This runs pulse update and restarts the gateway when it finishes. Active sessions keep their prompt cache until then.",
-    updatePulseConfirmNow: "Update now",
-    updatePulseConfirmTitle: "Update Pulse?",
-    updatingPulse: "Updating Pulse…",
+    updatePULSEConfirmNow: "Update now",
+    updatePULSEConfirmTitle: "Update PULSE?",
+    updatingPULSE: "Updating PULSE…",
     waitingForOutput: "Waiting for output…",
   },
 
@@ -410,7 +418,7 @@ export const en: Translations = {
       "Saved — restart the gateway to apply the change.",
     forceReinstall: "Force reinstall (delete existing folder first)",
     headline:
-      "Discover, install, enable, and update Pulse plugins (`pulse plugins` parity).",
+      "Discover, install, enable, and update PULSE plugins (`pulse plugins` parity).",
     identifierLabel: "Git URL or owner/repo",
     inactive: "inactive",
     installBtn: "Install",
@@ -445,10 +453,10 @@ export const en: Translations = {
     hideFromSidebar: "Hide from sidebar",
     catalogHeading: "Plugin catalog",
     catalogHint:
-      "Curated, Anxious-reviewed plugins pinned to exact commits. Install from here for supply-chain-safe versions.",
+      "Curated, Nous-reviewed plugins pinned to exact commits. Install from here for supply-chain-safe versions.",
     catalogSearchPlaceholder: "Search catalog...",
     catalogEmpty: "No catalog entries match.",
-    catalogEmptyDocsLink: "Learn about Pulse plugins",
+    catalogEmptyDocsLink: "Learn about PULSE plugins",
     catalogInstallBtn: "Install",
     catalogInstalledBadge: "Installed ✓",
     catalogUpdateBtn: "Update available",
@@ -548,7 +556,7 @@ export const en: Translations = {
     showValue: "Show real value",
     hideValue: "Hide value",
     customTitle: "Custom Keys",
-    customHint: "Arbitrary environment variables stored in your .env that Pulse doesn't recognise. Use these to inject env vars for skills, MCP servers, or your own tooling.",
+    customHint: "Arbitrary environment variables stored in your .env that PULSE doesn't recognise. Use these to inject env vars for skills, MCP servers, or your own tooling.",
     customConfigured: "{count} custom key{s} set",
     addCustomKey: "Add a custom key",
     customKeyName: "Variable name",
@@ -619,11 +627,11 @@ export const en: Translations = {
   achievements: {
     hero: {
       kicker: "Agentic Gamerscore",
-      title: "Pulse Achievements",
+      title: "PULSE Achievements",
       subtitle:
-        "Collectible Pulse badges earned from real session history. Known unfinished achievements are shown as Discovered; Secret achievements stay hidden until the first matching behavior appears.",
+        "Collectible PULSE badges earned from real session history. Known unfinished achievements are shown as Discovered; Secret achievements stay hidden until the first matching behavior appears.",
       scan_subtitle:
-        "Scanning Pulse session history. First scan can take 5–10 seconds on large histories.",
+        "Scanning PULSE session history. First scan can take 5–10 seconds on large histories.",
     },
     actions: {
       rescan: "Rescan",
@@ -638,7 +646,7 @@ export const en: Translations = {
       highest_tier: "Highest tier",
       highest_tier_hint: "Copper → Silver → Gold → Diamond → Olympian",
       latest: "Latest",
-      latest_hint_empty: "run Pulse more",
+      latest_hint_empty: "run PULSE more",
       none_yet: "None yet",
     },
     state: {
@@ -669,10 +677,10 @@ export const en: Translations = {
       tiers_header: "Tiers",
       secret_header: "Secret achievements",
       secret_body:
-        "Secrets hide their exact trigger. Once Pulse sees a related signal, the card becomes Discovered and shows its requirement.",
+        "Secrets hide their exact trigger. Once PULSE sees a related signal, the card becomes Discovered and shows its requirement.",
       scan_status_header: "Scan status",
       scan_status_body:
-        "Pulse is scanning local history once, then cards will appear automatically. Nothing is stuck if this takes a few seconds.",
+        "PULSE is scanning local history once, then cards will appear automatically. Nothing is stuck if this takes a few seconds.",
       what_scanned_header: "What is scanned",
       what_scanned_body:
         "Sessions, tool calls, model metadata, errors, achievements, and local unlock state.",
@@ -719,7 +727,7 @@ export const en: Translations = {
         "Share on X opens a pre-filled post in a new tab. Click Copy image first if you want the 1200×630 badge attached — X lets you paste it right into the tweet composer. Download PNG saves the file for use anywhere.",
       clipboard_unsupported:
         "Clipboard image copy not supported in this browser — use Download instead.",
-      tweet_text: "Just unlocked {tier_part}\"{name}\" in Pulse Agent ☤",
+      tweet_text: "Just unlocked {tier_part}\"{name}\" in PULSE Agent ☤",
     },
   },
 

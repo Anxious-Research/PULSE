@@ -1,4 +1,4 @@
-"""Markdown/QMD export helpers for Pulse sessions.
+"""Markdown/QMD export helpers for PULSE sessions.
 
 Filesystem-only: formats already-exported SessionDB dicts and writes them to user-selected export
 directories. Must not mutate state.db or call delete/prune/archive APIs.

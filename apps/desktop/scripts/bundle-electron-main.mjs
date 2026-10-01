@@ -36,10 +36,14 @@ export async function bundleElectronMain({ source, out, stamp, dev = false }) {
   // Dev bundles leave the environment alone so source-tree resolution keeps working.
   const envBanner = dev ? '' : environmentDefaultsBanner(process.env.PULSE_BUNDLE_ENV_JSON || '{}')
   const define = {}
+  let bakedStamp = null
   if (!dev) {
     if (!stamp) throw new Error('A prepared install stamp is required')
     const raw = readFileSync(stamp, 'utf8')
     const metadata = JSON.parse(raw)
+    // The baked bytes, and the clock the caller must record: re-reading the stamp
+    // after this point would report a restamp the output never saw.
+    bakedStamp = metadata.builtAt ?? null
     define['process.env.PULSE_DESKTOP_IS_PACKAGED'] = JSON.stringify(true)
     define.__PULSE_INSTALL_STAMP__ = raw
     define.__PULSE_PRODUCT_IDENTITY__ = productIdentity(source, metadata)
@@ -77,6 +81,7 @@ export async function bundleElectronMain({ source, out, stamp, dev = false }) {
     format: 'cjs',
     outfile: join(out, 'preview-guest-preload.js'),
   })
+  return { stampClock: bakedStamp }
 }
 
 if (isMain(import.meta.url)) {

@@ -1,14 +1,14 @@
 /**
- * Raw palette table for every built-in Pulse theme preset — the single source
+ * Raw palette table for every built-in PULSE theme preset — the single source
  * of truth shared by the desktop app (which layers OKLCH synthesis, terminal
  * palettes and typography on top) and the web dashboard (which projects each
  * preset down to its 3-slot background/midground/foreground model via
  * `webPresetFromShared`). Edit a preset's colours HERE; both surfaces follow.
  *
- * The palette-bearing presets (pulse, github, catppuccin, everforest, solarized)
+ * The palette-bearing presets (nous, github, catppuccin, everforest, solarized)
  * are forks of their VS Code originals converted by the desktop's
  * `buildThemeFromMarketplace`; re-convert from the upstream extension rather
- * than hand-editing hexes. `pulse-alt` is first-party — do not re-derive it.
+ * than hand-editing hexes. `nous-alt` is first-party — do not re-derive it.
  */
 
 /** Tailwind-style colour slots a preset carries (light palette, or the only palette). */
@@ -52,16 +52,16 @@ export interface ThemePresetColors {
 export interface ThemePresetPalette {
   /** Light palette (also reused for dark when `darkColors` is omitted). */
   colors: ThemePresetColors
-  /** Hand-tuned dark palette. Skins like `pulse` ship one. */
+  /** Hand-tuned dark palette. Skins like `nous` ship one. */
   darkColors?: ThemePresetColors
 }
 
-const PULSE_ALT_BLUE = '#0053FD'
-const PULSE_ALT_NAVY = '#1540B1'
-const PULSE_ALT_CREAM = '#FFE6CB'
+const NOUS_ALT_BLUE = '#0053FD'
+const NOUS_ALT_NAVY = '#1540B1'
+const NOUS_ALT_CREAM = '#FFE6CB'
 
-const pulseAltTint = (pct: number) => `color-mix(in srgb, ${PULSE_ALT_BLUE} ${pct}%, #FFFFFF)`
-const pulseAltTintTransparent = (pct: number) => `color-mix(in srgb, ${PULSE_ALT_BLUE} ${pct}%, transparent)`
+const nousAltTint = (pct: number) => `color-mix(in srgb, ${NOUS_ALT_BLUE} ${pct}%, #FFFFFF)`
+const nousAltTintTransparent = (pct: number) => `color-mix(in srgb, ${NOUS_ALT_BLUE} ${pct}%, transparent)`
 
 export const THEME_PRESET_PALETTES = {
   github: {
@@ -122,7 +122,7 @@ export const THEME_PRESET_PALETTES = {
       userBubbleBorder: '#30363d'
     }
   },
-  pulse: {
+  nous: {
     colors: {
       background: '#ffffff',
       foreground: '#1f2328',
@@ -354,54 +354,54 @@ export const THEME_PRESET_PALETTES = {
       userBubbleBorder: '#234751'
     }
   },
-  'pulse-alt': {
+  'nous-alt': {
     colors: {
       background: '#F8FAFF',
       foreground: '#17171A',
       card: '#FFFFFF',
       cardForeground: '#17171A',
-      muted:  pulseAltTint(5),
+      muted: nousAltTint(5),
       mutedForeground: '#666678',
       popover: '#FFFFFF',
       popoverForeground: '#17171A',
-      primary: PULSE_ALT_BLUE,
+      primary: NOUS_ALT_BLUE,
       primaryForeground: '#FCFCFC',
-      secondary:  pulseAltTint(7),
+      secondary: nousAltTint(7),
       secondaryForeground: '#242432',
-      accent:  pulseAltTint(10),
+      accent: nousAltTint(10),
       accentForeground: '#202030',
-      border:  pulseAltTintTransparent(22),
-      input:  pulseAltTintTransparent(30),
-      ring: PULSE_ALT_BLUE,
-      midground: PULSE_ALT_BLUE,
-      composerRing: PULSE_ALT_BLUE,
+      border: nousAltTintTransparent(22),
+      input: nousAltTintTransparent(30),
+      ring: NOUS_ALT_BLUE,
+      midground: NOUS_ALT_BLUE,
+      composerRing: NOUS_ALT_BLUE,
       destructive: '#C72E4D',
       destructiveForeground: '#FFFFFF',
       sidebarBackground: '#F3F7FF',
-      sidebarBorder:  pulseAltTintTransparent(18),
-      userBubble:  pulseAltTint(6),
-      userBubbleBorder:  pulseAltTintTransparent(24)
+      sidebarBorder: nousAltTintTransparent(18),
+      userBubble: nousAltTint(6),
+      userBubbleBorder: nousAltTintTransparent(24)
     },
     darkColors: {
       background: '#0D2F86',
-      foreground: PULSE_ALT_CREAM,
+      foreground: NOUS_ALT_CREAM,
       card: '#12378F',
-      cardForeground: PULSE_ALT_CREAM,
+      cardForeground: NOUS_ALT_CREAM,
       muted: '#183F9A',
       mutedForeground: '#B5C7F3',
       popover: '#123A96',
-      popoverForeground: PULSE_ALT_CREAM,
-      primary: PULSE_ALT_CREAM,
+      popoverForeground: NOUS_ALT_CREAM,
+      primary: NOUS_ALT_CREAM,
       primaryForeground: '#0D2F86',
       secondary: '#1B45A4',
       secondaryForeground: '#E0E8FF',
-      accent: PULSE_ALT_NAVY,
+      accent: NOUS_ALT_NAVY,
       accentForeground: '#F0F4FF',
       border: '#3158AD',
       input: '#0B2566',
-      ring: PULSE_ALT_CREAM,
-      midground: PULSE_ALT_BLUE,
-      composerRing: PULSE_ALT_CREAM,
+      ring: NOUS_ALT_CREAM,
+      midground: NOUS_ALT_BLUE,
+      composerRing: NOUS_ALT_CREAM,
       destructive: '#C0473A',
       destructiveForeground: '#FEF2F2',
       sidebarBackground: '#09286F',

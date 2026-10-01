@@ -1364,13 +1364,13 @@ The main pipeline above targets empirical ML papers. Other paper types require d
 
 ---
 
-## Pulse Agent Integration
+## PULSE Agent Integration
 
-This skill is designed for the Pulse agent. It uses Pulse tools, delegation, scheduling, and memory for the full research lifecycle.
+This skill is designed for the PULSE agent. It uses PULSE tools, delegation, scheduling, and memory for the full research lifecycle.
 
 ### Related Skills
 
-Compose this skill with other Pulse skills for specific phases:
+Compose this skill with other PULSE skills for specific phases:
 
 | Skill | When to Use | How to Load |
 |-------|-------------|-------------|
@@ -1383,7 +1383,7 @@ Compose this skill with other Pulse skills for specific phases:
 
 **This skill supersedes `ml-paper-writing`** — it contains all of ml-paper-writing's content plus the full experiment/analysis pipeline and autoreason methodology.
 
-### Pulse Tools Reference
+### PULSE Tools Reference
 
 | Tool | Usage in This Pipeline |
 |------|----------------------|

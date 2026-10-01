@@ -203,7 +203,7 @@ python3 ~/.pulse/skills/productivity/memento-flashcards/scripts/youtube_quiz.py 
 This returns `{"title": "...", "transcript": "..."}` or an error.
 
 If the script reports `missing_dependency`, use `terminal` with a PM-prepared
-Pulse checkout to prepare the declared `youtube` extra, then reactivate:
+PULSE checkout to prepare the declared `youtube` extra, then reactivate:
 
 ```bash
 python -c "import pm; pm.sync_venv(['youtube'], explicit=True)"
@@ -212,11 +212,11 @@ python -c "import youtube_transcript_api; print(youtube_transcript_api.__file__)
 ```
 
 Follow the isolated development-home setup in
-Package Management
+[Package Management](https://pulse-agent.anxious-research.com/docs/reference/package-management#developer-workflow)
 before preparation. Retry `youtube_quiz.py` with that Python and the actual
 skill directory returned by `skill_view`. For a remote or sandbox terminal,
 prepare an independent helper environment on that host. Never pip-install into
-Pulse's selected environment.
+PULSE's selected environment.
 
 **Step 3:** Generate 5 quiz questions from the transcript. Use these rules:
 

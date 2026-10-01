@@ -1,5 +1,5 @@
 # ============================================================================
-# Pulse Agent Setup Script (Windows) — THE dev-environment entry point.
+# PULSE Agent Setup Script (Windows) — THE dev-environment entry point.
 # ============================================================================
 # Sets up the pm-managed development environment from a fresh clone:
 #   1. Stage the pinned uv from pm/lock.json (sha256-verified, into the pm
@@ -16,7 +16,7 @@ param([switch]$RuntimeOnly, [string]$TestExtras = '')
 $ErrorActionPreference = 'Stop'
 
 Write-Host ''
-Write-Host 'Pulse Agent Setup' -ForegroundColor Cyan
+Write-Host 'PULSE Agent Setup' -ForegroundColor Cyan
 Write-Host ''
 
 $repo = $PSScriptRoot

@@ -1,6 +1,6 @@
 """Coding-context awareness: the single place that decides "are we coding?".
 
-In a code workspace on an interactive surface Pulse adopts a **coding posture**: a
+In a code workspace on an interactive surface PULSE adopts a **coding posture**: a
 frozen :class:`RuntimeMode` built from a :class:`ContextProfile` (pure data). The
 system prompt reads ``system_prompt_parts()``; the toolset collapses ONLY under opt-in
 ``focus`` (never strips a user-enabled toolset). ``agent.coding_context``: ``auto``
@@ -387,7 +387,7 @@ def resolve_runtime_mode(
 # ── Functional API (thin wrappers over RuntimeMode) ──────────────────────────
 
 def is_coding_context(*, platform: Optional[str] = None, cwd: Optional[str | Path] = None, config: Optional[dict[str, Any]] = None) -> bool:
-    """Whether Pulse should operate in its coding posture right now."""
+    """Whether PULSE should operate in its coding posture right now."""
     return resolve_runtime_mode(platform=platform, cwd=cwd, config=config).is_coding
 
 
@@ -561,35 +561,3 @@ def build_coding_workspace_block(cwd: Optional[str | Path] = None) -> str:
     if f.context_files:
         lines.append(f"- Context files: {', '.join(f.context_files)}")
     return "\n".join(lines)
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-def coding_system_blocks(
-    *,
-    platform: Optional[str] = None,
-    cwd: Optional[str | Path] = None,
-    config: Optional[dict[str, Any]] = None,
-    model: Optional[str] = None,
-) -> list[str]:
-    """Stable system-prompt blocks for the current posture (empty when general).
-
-    ``model`` steers the brief's edit-format nudge toward the model's family.
-    """
-    return resolve_runtime_mode(
-        platform=platform, cwd=cwd, config=config, model=model
-    ).system_blocks()
-
-_PROFILES: dict[str, ContextProfile] = {
-    GENERAL_PROFILE.name: GENERAL_PROFILE,
-    CODING_PROFILE.name: CODING_PROFILE,
-}
-
-
-def get_profile(name: str) -> ContextProfile:
-    """Return a registered profile, falling back to ``general``."""
-    return _PROFILES.get(name, GENERAL_PROFILE)
-# ---- END PLUGIN-COMPAT ----

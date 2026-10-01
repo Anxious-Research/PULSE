@@ -2,4 +2,4 @@ name: bedrock-provider
 kind: model-provider
 version: 1.0.0
 description: AWS Bedrock
-author: Anxious Research Lab
+author: Nous Research

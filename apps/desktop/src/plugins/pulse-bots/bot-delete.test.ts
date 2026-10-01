@@ -1,5 +1,5 @@
 /**
- * Deleting a bot deletes its Pulse profile, then everything plugin-local
+ * Deleting a bot deletes its PULSE profile, then everything plugin-local
  * that would otherwise leave stale appearance/unread data behind.
  *
  * `host.deleteProfile` is preferred whenever the Desktop build ships it: it
@@ -7,13 +7,13 @@
  * pool backend down FIRST. The older `cli.exec` path bypasses that
  * interception, so a backend the roster's hover pre-warm just woke (a
  * right-click hovers the row!) holds the profile dir open and the CLI's rmtree
- * races it — that is the "can't delete a bot" error.
+ * races it — that is the "can't delete a bot" error (pulse-agent#52279).
  *
  * Ported from tests/bot-delete.test.mjs, which ran the whole plugin.js bundle
  * under `vm`.
  */
 
-import type * as PulseSdk from '@pulse/plugin-sdk'
+import type * as PULSESdk from '@pulse/plugin-sdk'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { ProfileRoute, RosterRow } from './types'
@@ -51,7 +51,7 @@ const { forgetSessionUnread, invalidateQueries, newChat, overrides, request, sta
 })
 
 vi.mock('@pulse/plugin-sdk', async importOriginal => {
-  const sdk = await importOriginal<typeof PulseSdk>()
+  const sdk = await importOriginal<typeof PULSESdk>()
 
   overrides.newChat = newChat
   overrides.request = request

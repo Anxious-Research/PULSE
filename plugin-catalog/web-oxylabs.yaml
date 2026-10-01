@@ -1,7 +1,7 @@
 name: web-oxylabs
 repo: https://github.com/oxylabs/pulse-web-oxylabs
 sha: e6a5ee8fbabae43a7cd7f77610f187dbc890e76a
-description: Oxylabs AI Studio web search and extraction provider for Pulse Agent. Requires OXYLABS_API_KEY
+description: Oxylabs AI Studio web search and extraction provider for PULSE Agent. Requires OXYLABS_API_KEY
   (sign up at https://aistudio.oxylabs.io/api-key).
 maintainer: oxylabs
 tier: community

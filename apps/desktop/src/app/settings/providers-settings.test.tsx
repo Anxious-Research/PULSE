@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { atom } from 'nanostores'
+import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ConfirmHost } from '@/components/confirm-host'
@@ -52,7 +53,7 @@ function provider(id: string, loggedIn: boolean, patch: Partial<OAuthProvider> =
     docs_url: '',
     flow: 'device_code',
     id,
-    name: id === 'pulse' ? 'Pulse Portal' : 'MiniMax',
+    name: id === 'nous' ? 'Nous Portal' : 'MiniMax',
     status: {
       logged_in: loggedIn
     },
@@ -82,11 +83,11 @@ function keyVar(patch: Partial<EnvVarInfo> = {}): EnvVarInfo {
 beforeEach(() => {
   onboarding.set({ manual: false })
   getEnvVars.mockResolvedValue({})
-  disconnectOAuthProvider.mockResolvedValue({ ok: true, provider: 'pulse' })
+  disconnectOAuthProvider.mockResolvedValue({ ok: true, provider: 'nous' })
   revealEnvVar.mockResolvedValue({ value: 'old-secret' })
   setEnvVar.mockResolvedValue({ ok: true })
   listOAuthProviders.mockResolvedValue({
-    providers: [provider('pulse', true), provider('minimax-oauth', false)]
+    providers: [provider('nous', true), provider('minimax-oauth', false)]
   })
 })
 
@@ -159,11 +160,11 @@ describe('ProvidersSettings', () => {
       await renderProvidersSettings()
       expect(getEnvVars).toHaveBeenCalledWith('beta')
       expect(listOAuthProviders).toHaveBeenCalledWith('beta')
-      fireEvent.click(await screen.findByText('Pulse Portal'))
-      expect(startManualProviderOAuth).toHaveBeenCalledWith('pulse', 'beta')
-      fireEvent.click(await screen.findByRole('button', { name: 'Remove Pulse Portal' }))
+      fireEvent.click(await screen.findByText('Nous Portal'))
+      expect(startManualProviderOAuth).toHaveBeenCalledWith('nous', 'beta')
+      fireEvent.click(await screen.findByRole('button', { name: 'Remove Nous Portal' }))
       fireEvent.click(await screen.findByRole('button', { name: 'Disconnect' }))
-      await waitFor(() => expect(disconnectOAuthProvider).toHaveBeenCalledWith('pulse', 'beta'))
+      await waitFor(() => expect(disconnectOAuthProvider).toHaveBeenCalledWith('nous', 'beta'))
     } finally {
       $settingsScopeOverride.set(null)
     }
@@ -172,7 +173,7 @@ describe('ProvidersSettings', () => {
   it('disconnects a connected provider account and refreshes the accounts list', async () => {
     await renderProvidersSettings()
 
-    const remove = await screen.findByRole('button', { name: 'Remove Pulse Portal' })
+    const remove = await screen.findByRole('button', { name: 'Remove Nous Portal' })
     await act(async () => {
       fireEvent.click(remove)
     })
@@ -185,7 +186,7 @@ describe('ProvidersSettings', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }))
     })
 
-    await waitFor(() => expect(disconnectOAuthProvider).toHaveBeenCalledWith('pulse', 'default'))
+    await waitFor(() => expect(disconnectOAuthProvider).toHaveBeenCalledWith('nous', 'default'))
     expect(listOAuthProviders).toHaveBeenCalledTimes(2)
   })
 
@@ -193,7 +194,7 @@ describe('ProvidersSettings', () => {
     await renderProvidersSettings()
 
     await act(async () => {
-      fireEvent.click(await screen.findByRole('button', { name: 'Remove Pulse Portal' }))
+      fireEvent.click(await screen.findByRole('button', { name: 'Remove Nous Portal' }))
     })
 
     await act(async () => {
@@ -425,6 +426,25 @@ describe('ProvidersSettings', () => {
       fireEvent.change(search, { target: { value: 'nonesuch-xyz' } })
     })
     expect(await screen.findByText('No providers match your search.')).toBeTruthy()
+  })
+
+  it('expands and scrolls to the provider named by a ?key= deep link', async () => {
+    Element.prototype.scrollIntoView = vi.fn()
+    getEnvVars.mockResolvedValue({
+      ACME_API_KEY: keyVar({ description: 'Acme blurb', provider: 'acme', provider_label: 'Acme' }),
+      ZEBRA_API_KEY: keyVar({ description: 'Zebra blurb', provider: 'zebra', provider_label: 'Zebra' })
+    })
+    listOAuthProviders.mockResolvedValue({ providers: [] })
+
+    render(
+      <MemoryRouter initialEntries={['/settings?tab=providers&pview=keys&key=ZEBRA_API_KEY']}>
+        <ProvidersSettings onClose={vi.fn()} onViewChange={vi.fn()} view="keys" />
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('Zebra blurb')).toBeTruthy()
+    expect(screen.queryByText('Acme blurb')).toBeNull()
+    await waitFor(() => expect(Element.prototype.scrollIntoView).toHaveBeenCalled())
   })
 
   it('offers a Local / custom endpoint entry in the API-keys tab that opens the custom-endpoint flow', async () => {

@@ -5,7 +5,7 @@ import { loadErrorCopy } from "./load-error-copy";
 
 describe("loadErrorCopy", () => {
   it("fills the translated template with what failed and the detail line", () => {
-    const copy = loadErrorCopy(en.common, en.cron.loadWhat!, "The Pulse service hit an internal error.");
+    const copy = loadErrorCopy(en.common, en.cron.loadWhat!, "The PULSE service hit an internal error.");
     expect(copy.title).toContain(en.cron.loadWhat!);
     expect(copy.title).not.toContain("{what}");
     expect(copy.title).toContain(en.common.retry);

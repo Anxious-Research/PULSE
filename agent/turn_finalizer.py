@@ -578,6 +578,9 @@ def finalize_turn(
 
     _rollback_interrupted_preflight_display(agent, interrupted)
 
+    from pulse_cli.observability.shared_metrics_harness import finish_turn
+    finish_turn(agent, _turn_exit_reason, final_response, interrupted=interrupted, failed=failed)
+
     _cleanup_errors: List[str] = []
     # The model has answered (or the loop gave up): a title upgrade held back because it shares a
     # self-hosted endpoint with the main request (#117296) may go out now.
@@ -679,7 +682,7 @@ def finalize_turn(
         "pre_transform_response": _pre_transform_response,
         "response_previewed": getattr(agent, "_response_was_previewed", False),
         "model": agent.model,
-        # requested_model / served_model: proxy-reported deployment or Pulse' own fallback route.
+        # requested_model / served_model: proxy-reported deployment or PULSE' own fallback route.
         **result_model_fields(agent),
         "provider": agent.provider,
         "base_url": agent.base_url,

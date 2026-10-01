@@ -270,7 +270,7 @@ def register_send_subparser(subparsers) -> argparse.ArgumentParser:
         "send",
         help="Send a message to a configured platform (scripts, cron jobs, CI).",
         description=(
-            "Pipe text from any shell script to any messaging platform Pulse "
+            "Pipe text from any shell script to any messaging platform PULSE "
             "is already configured for. Reuses the gateway's platform "
             f"credentials ({pulse_home / '.env'} + "
             f"{pulse_home / 'config.yaml'}) — no LLM, "

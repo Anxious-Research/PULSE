@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# MIT License. Part of the Pulse docx skill.
+# MIT License. Part of the PULSE docx skill.
 """Create a .docx document from a JSON spec.
 
 Usage: docx_create.py spec.json output.docx

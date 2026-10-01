@@ -32,7 +32,7 @@ export async function requestOnboardingGateway<T>(
   const desktop = window.pulseDesktop
 
   if (scope.connectionId && !desktop.getConnectionFor) {
-    throw new Error('This Desktop build cannot dial registry connections. Update Pulse Desktop.')
+    throw new Error('This Desktop build cannot dial registry connections. Update PULSE Desktop.')
   }
 
   const connection = await withTimeout(

@@ -1,4 +1,4 @@
-export interface PulseNotification {
+export interface PULSENotification {
   title?: string
   body?: string
   silent?: boolean

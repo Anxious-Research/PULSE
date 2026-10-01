@@ -1,4 +1,4 @@
-"""Pulse Agent — Web UI server: FastAPI app assembly, auth/host middleware, ``start_server``.
+"""PULSE Agent — Web UI server: FastAPI app assembly, auth/host middleware, ``start_server``.
 
 Route handlers live in ``web_routers/``; their helpers live in the sibling
 ``web_server_<concern>`` modules and are re-imported here so ``web_server.<name>``
@@ -55,7 +55,7 @@ except ImportError:
     except Exception:
         raise SystemExit(
             "Web UI requires fastapi and uvicorn.\n"
-            "Run pulse pm repair, then restart Pulse."
+            "Run pulse pm repair, then restart PULSE."
         )
 
 WEB_DIST = Path(os.environ["PULSE_WEB_DIST"]) if "PULSE_WEB_DIST" in os.environ else Path(__file__).parent / "web_dist"
@@ -77,6 +77,16 @@ from pulse_cli.web_server_lifecycle import (  # noqa: E402
 )
 
 
+def _gateway_owns_cron(name: str, home) -> bool:
+    """A gateway already ticks this profile's store with live adapters: its OWN process, or the
+    live default multiplexer (a served satellite has no gateway.pid of its own). Winning the
+    tick-lock race here would deliver through the standalone path (#52202, #100489, #107485)."""
+    from pulse_cli.profiles import _check_gateway_running, _served_by_running_multiplexer
+
+    return _check_gateway_running(Path(home)) or (
+        name != "default" and _served_by_running_multiplexer(name))
+
+
 def _start_desktop_cron_ticker(stop_event: "threading.Event", interval: int = 60) -> None:
     """Tick the cron scheduler from inside the desktop dashboard backend.
 
@@ -94,34 +104,19 @@ def _start_desktop_cron_ticker(stop_event: "threading.Event", interval: int = 60
     ("tasks on the sleeping profile could be idle" — community report, Aug 2026).
     """
     from cron.scheduler_provider import InProcessCronScheduler, resolve_cron_scheduler
-
-    # A live gateway on THIS backend's PULSE_HOME owns cron delivery with live platform
-    # adapters (#52202): let it tick, and start nothing here. Without this, the fail-open
-    # paths below (profile enumeration failure, empty served set, external provider) start
-    # an ungated single-store ticker that races the gateway's tick-lock; when the desktop
-    # wins, delivery has no live adapter and the cold send hangs until script_timeout.
-    try:
-        from pulse_constants import get_pulse_home
-        from pulse_cli.profiles import _check_gateway_running
-
-        if _check_gateway_running(Path(get_pulse_home())):
-            _log.info(
-                "Desktop cron scheduler not started: live gateway owns cron on this "
-                "PULSE_HOME; the gateway ticks with live adapters"
-            )
-            return
-    except Exception:
-        # Liveness probe failed: fall through to the existing per-tick gating, which
-        # still stands down profile-by-profile for gateway-owned homes.
-        _log.warning("Desktop cron: gateway-ownership probe failed; using per-tick gating only", exc_info=True)
+    from pulse_constants import get_pulse_home, profile_name_for_home
 
     provider = resolve_cron_scheduler()
+    own_home = Path(get_pulse_home())
+    own_name = profile_name_for_home(own_home) or "default"
+    # Ownership is re-checked every tick, not once at startup, so Desktop takes over when the
+    # gateway stops (#126822).
+    profile_gate = lambda name, home: not _gateway_owns_cron(name, home)
 
     start_kwargs: dict = {"interval": interval}
     if isinstance(provider, InProcessCronScheduler):
         try:
-            from pulse_cli.profiles import (
-                _check_gateway_running, _served_by_running_multiplexer, profiles_to_serve)
+            from pulse_cli.profiles import profiles_to_serve
 
             # Same served set as the multiplexer: default + every live profile under profiles/.
             # The ticker re-enumerates this callable every cycle. Passing a
@@ -134,13 +129,7 @@ def _start_desktop_cron_ticker(stop_event: "threading.Event", interval: int = 60
                 # Even one profile needs the per-tick gateway gate; otherwise
                 # Desktop races its dedicated gateway for the same cron store.
                 start_kwargs["profile_homes"] = profile_homes
-                # Stand down, per tick, for a profile already owned by a gateway — its OWN
-                # process, or the live default multiplexer (a served satellite has no gateway.pid
-                # of its own). That gateway ticks with live adapters; winning the tick-lock race
-                # here would deliver through the standalone path (#100489, #107485).
-                start_kwargs["profile_gate"] = lambda name, home: not (
-                    _check_gateway_running(Path(home))
-                    or (name != "default" and _served_by_running_multiplexer(name)))
+                start_kwargs["profile_gate"] = profile_gate
                 from pulse_logging import enable_profile_log_routing
 
                 enable_profile_log_routing(initial_profile_homes)
@@ -152,6 +141,31 @@ def _start_desktop_cron_ticker(stop_event: "threading.Event", interval: int = 60
         except Exception:
             # Fail open to the single-store ticker so the active profile keeps firing.
             _log.exception("Desktop cron: profile enumeration failed; ticking active profile only")
+        if "profile_homes" not in start_kwargs:
+            # Fail open to this backend's own store behind the same gate. A gated-out profile is
+            # neither ticked nor heartbeated, so Desktop never marks the gateway's store healthy.
+            start_kwargs["profile_homes"] = lambda: [(own_name, own_home)]
+            start_kwargs["profile_gate"] = profile_gate
+    else:
+        # External providers take no per-tick gate: defer their start until the gateway is gone.
+        def _owned() -> bool:
+            try:
+                return _gateway_owns_cron(own_name, own_home)
+            except Exception:
+                # Start the ticker rather than silently stand down.
+                _log.warning("Desktop cron: gateway-ownership probe failed; starting the ticker", exc_info=True)
+                return False
+
+        if _owned():
+            _log.info(
+                "Desktop cron scheduler waiting: live gateway owns cron on this PULSE_HOME; "
+                "the gateway ticks with live adapters (re-probing every %ds)", interval,
+            )
+            while True:
+                if stop_event.wait(interval):
+                    return
+                if not _owned():
+                    break
 
     _log.info("Desktop cron scheduler started (provider=%s, interval=%ds)", provider.name, interval)
     provider.start(stop_event, **start_kwargs)
@@ -281,7 +295,7 @@ async def _lifespan(app: "FastAPI"):
 
     threading.Thread(target=_boot_local_runtime, daemon=True, name="local-runtime-boot").start()
 
-    # Anxious free tier: the ONE place its identity is created. Inventories credentials, mints only
+    # Nous free tier: the ONE place its identity is created. Inventories credentials, mints only
     # when PULSE_GUEST_ONBOARDING=1, records the answer for setup.status / free_tier.status and
     # broadcasts `setup.ready`. Off-thread so a slow portal never delays the socket; the desktop's
     # first setup.status waits on the record (bounded) instead.
@@ -339,7 +353,7 @@ def _get_pty_active_session_files(app: "FastAPI") -> dict[str, Path]:
     return _app_state_default(app, "pty_active_session_files", dict)
 
 
-app = FastAPI(title="Pulse Agent", version=get_version_info().base_version, lifespan=_lifespan)
+app = FastAPI(title="PULSE Agent", version=get_version_info().base_version, lifespan=_lifespan)
 
 
 # Memory-provider OAuth connect routes live in the memory layer, not here.
@@ -355,7 +369,7 @@ def _resolve_session_token() -> str:
 
 
 _SESSION_TOKEN = _resolve_session_token()
-_SESSION_HEADER_NAME = "X-Pulse-Session-Token"
+_SESSION_HEADER_NAME = "X-PULSE-Session-Token"
 _SSH_OWNER_NONCE: Optional[str] = None
 _SSH_RUNTIME_PURELIB: Optional[Tuple[str, int, int]] = None
 _SSH_RUNTIME_MARKER: Optional[str] = None
@@ -860,7 +874,7 @@ _FS_DATA_URL_MAX_BYTES = 16 * 1024 * 1024
 _UPLOAD_CHUNK_BYTES = 1024 * 1024
 
 # Stable install identity for /api/status: one uuid4 hex per physical install,
-# persisted under the ROOT Pulse home (not the profile PULSE_HOME) so every
+# persisted under the ROOT PULSE home (not the profile PULSE_HOME) so every
 # profile reports the same id and the desktop can collapse duplicate roster rows
 # for one backend. Must never change across restarts, so cached per process.
 _INSTALL_ID_CACHE: Dict[str, Optional[str]] = {"root": None, "value": None}
@@ -990,6 +1004,7 @@ from pulse_cli.web_routers import (  # noqa: E402
     chat_ws as _chat_ws_routes,
     chat_workspaces as _chat_workspaces_routes,
     dashboard_ui as _dashboard_ui_routes,
+    shared_metrics as _shared_metrics_routes,
 )
 
 app.include_router(_files_routes.router)
@@ -1022,6 +1037,7 @@ app.include_router(_analytics_routes.router)
 app.include_router(_chat_ws_routes.router)
 app.include_router(_chat_workspaces_routes.router)
 app.include_router(_dashboard_ui_routes.router)
+app.include_router(_shared_metrics_routes.router)
 
 # Plugin API routes and the dashboard auth routes (/login, /auth/*, /api/auth/*)
 # mount before the SPA catch-all so /{full_path:path} doesn't swallow them. Auth
@@ -1043,10 +1059,10 @@ def _no_auth_provider_message(host: str) -> str:
     """
     skip_reasons: list[str] = []
     try:
-        from plugins.dashboard_auth import anxious as _anxious_plugin
+        from plugins.dashboard_auth import nous as _nous_plugin
 
-        if _anxious_plugin.LAST_SKIP_REASON:
-            skip_reasons.append(f"  • anxious: {_anxious_plugin.LAST_SKIP_REASON}")
+        if _nous_plugin.LAST_SKIP_REASON:
+            skip_reasons.append(f"  • nous: {_nous_plugin.LAST_SKIP_REASON}")
     except Exception:
         pass
 
@@ -1081,7 +1097,7 @@ def _no_auth_provider_message(host: str) -> str:
         "    (hash with: python -c \"from "
         "plugins.dashboard_auth.basic import hash_password; "
         "print(hash_password('your-password'))\")\n"
-        "  • OAuth: run `pulse dashboard register` (Anxious Portal) or "
+        "  • OAuth: run `pulse dashboard register` (Nous Portal) or "
         "install a DashboardAuthProvider plugin.\n"
         "There is no unauthenticated public-dashboard option. For "
         "local-only use, bind 127.0.0.1 and leave dashboard.public_url "
@@ -1229,6 +1245,11 @@ def _build_uvicorn_server(host: str, port: int, *, ssh_isolated: bool = False):
         ws_ping_interval=ping_interval,
         ws_ping_timeout=ping_timeout,
         ws_max_size=_DESKTOP_ATTACHMENT_WS_MAX_BYTES,
+        # Desktop sends a single SIGTERM and escalates to SIGKILL ~5s later;
+        # uvicorn's default (None) waits on lingering ASGI tasks forever, so a
+        # mid-turn request orphans the backend past that budget (#76244). 3s
+        # leaves room for lifespan shutdown + cron_stop before the kill.
+        timeout_graceful_shutdown=3,
     )
     return config, uvicorn.Server(config)
 
@@ -1336,8 +1357,13 @@ def _on_server_started(
         except (TypeError, ValueError):
             grace = DEFAULT_IDLE_GRACE_S
         start_idle_watchdog(server, app.state.ssh_isolated_clients, grace_s=grace)
-        # A connected client keeps the idle watchdog quiet forever, and the host's updater may not
-        # restart this backend, so it retires itself (between turns) when the install moves on.
+    if getattr(app.state, "ssh_isolated_clients", None) is not None or is_desktop_owned_backend():
+        # The host's updater never restarts this backend (SSH-isolated: only the remote Desktop
+        # client holds its token and owner nonce, #91668/#101626; Desktop-owned local serve:
+        # the updater defers to the app's ledger-verified restart and the backend otherwise
+        # outlives the handoff, #99859), so it retires itself (between turns) when the install
+        # moves on. The retirement fence closes admission process-wide before the exit, so a
+        # connected Desktop just sees its next request reconnect-respawn the backend on new code.
         from pulse_cli.web_server_skew_exit import start_code_skew_watchdog
 
         start_code_skew_watchdog(server)
@@ -1385,9 +1411,9 @@ def _on_server_started(
     if headless:
         # Auth-gated JSON-RPC/WS only — announce the bind, not a URL. flush:
         # a piped stdout otherwise surfaces this minutes after the sentinel.
-        print(f"  Pulse backend listening on {host}:{actual_port}", flush=True)
+        print(f"  PULSE backend listening on {host}:{actual_port}", flush=True)
     else:
-        print(f"  Pulse Web UI → http://{host}:{actual_port}")
+        print(f"  PULSE Web UI → http://{host}:{actual_port}")
     _maybe_open_browser(host, actual_port, open_browser, initial_profile)
 
     if start_mcp_discovery_after_bind:
@@ -1528,11 +1554,11 @@ def start_server(
     import uvicorn  # noqa: F401 — fail fast (before any side effects) when the dashboard extra is missing
 
     try:
-        from pulse_cli.anxious_auth_keepalive import start_anxious_auth_keepalive
+        from pulse_cli.nous_auth_keepalive import start_nous_auth_keepalive
 
-        start_anxious_auth_keepalive()
+        start_nous_auth_keepalive()
     except Exception as exc:
-        _log.debug("Anxious auth keepalive did not start: %s", exc)
+        _log.debug("Nous auth keepalive did not start: %s", exc)
 
     _configure_auth_gate(host, allow_public, ssh_session_token, ssh_owner_nonce)
 
@@ -1600,416 +1626,12 @@ def start_server(
                 initial_profile=initial_profile,
                 start_mcp_discovery_after_bind=start_mcp_discovery_after_bind,
             )
+            if headless:
+                from pulse_cli.observability.shared_metrics_startup import record_process_ready
+                record_process_ready("serve_boot", background=True)
 
             await server.main_loop()
             if server.started:
                 await server.shutdown()
 
     _run_serve(_serve, config, host, port)
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from typing import List  # noqa: F401,E402
-from typing import Literal  # noqa: F401,E402
-import atexit  # noqa: F401,E402
-import base64  # noqa: F401,E402
-import binascii  # noqa: F401,E402
-import concurrent.futures  # noqa: F401,E402
-import contextlib  # noqa: F401,E402
-from contextlib import contextmanager  # noqa: F401,E402
-from dataclasses import dataclass  # noqa: F401,E402
-from datetime import datetime  # noqa: F401,E402
-import functools  # noqa: F401,E402
-import hashlib  # noqa: F401,E402
-import importlib.util  # noqa: F401,E402
-import inspect  # noqa: F401,E402
-import ipaddress  # noqa: F401,E402
-import json  # noqa: F401,E402
-import math  # noqa: F401,E402
-import mimetypes  # noqa: F401,E402
-import queue  # noqa: F401,E402
-import shlex  # noqa: F401,E402
-import shutil  # noqa: F401,E402
-import stat  # noqa: F401,E402
-import tempfile  # noqa: F401,E402
-from datetime import timezone  # noqa: F401,E402
-import pulse_yaml as yaml  # noqa: F401,E402
-import zipfile  # noqa: F401,E402
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'AudioTranscriptionRequest': ('pulse_cli.web_models', 'AudioTranscriptionRequest'),
-    'AutomationBlueprintInstantiate': ('pulse_cli.web_models', 'AutomationBlueprintInstantiate'),
-    'BackupRequest': ('pulse_cli.web_models', 'BackupRequest'),
-    'BulkDeleteSessions': ('pulse_cli.web_models', 'BulkDeleteSessions'),
-    'CONFIG_SCHEMA': ('pulse_cli.web_server_config', 'CONFIG_SCHEMA'),
-    'ChatImageUpload': ('pulse_cli.web_models', 'ChatImageUpload'),
-    'ConfigUpdate': ('pulse_cli.web_models', 'ConfigUpdate'),
-    'CredentialPoolAdd': ('pulse_cli.web_models', 'CredentialPoolAdd'),
-    'CronJobCreate': ('pulse_cli.web_models', 'CronJobCreate'),
-    'CronJobUpdate': ('pulse_cli.web_models', 'CronJobUpdate'),
-    'CuratorPause': ('pulse_cli.web_models', 'CuratorPause'),
-    'CustomEndpointUpdate': ('pulse_cli.web_models', 'CustomEndpointUpdate'),
-    'DEFAULT_CONFIG': ('pulse_cli.config', 'DEFAULT_CONFIG'),
-    'DebugShareRequest': ('pulse_cli.web_models', 'DebugShareRequest'),
-    'EnvVarDelete': ('pulse_cli.web_models', 'EnvVarDelete'),
-    'EnvVarReveal': ('pulse_cli.web_models', 'EnvVarReveal'),
-    'EnvVarUpdate': ('pulse_cli.web_models', 'EnvVarUpdate'),
-    'FontSetBody': ('pulse_cli.web_models', 'FontSetBody'),
-    'FsWriteText': ('pulse_cli.web_models', 'FsWriteText'),
-    'GitBranchSwitchBody': ('pulse_cli.web_models', 'GitBranchSwitchBody'),
-    'GitCommitBody': ('pulse_cli.web_models', 'GitCommitBody'),
-    'GitFileBody': ('pulse_cli.web_models', 'GitFileBody'),
-    'GitPathBody': ('pulse_cli.web_models', 'GitPathBody'),
-    'GitWorktreeAddBody': ('pulse_cli.web_models', 'GitWorktreeAddBody'),
-    'GitWorktreeRemoveBody': ('pulse_cli.web_models', 'GitWorktreeRemoveBody'),
-    'HookCreate': ('pulse_cli.web_models', 'HookCreate'),
-    'HookDelete': ('pulse_cli.web_models', 'HookDelete'),
-    'ImportRequest': ('pulse_cli.web_models', 'ImportRequest'),
-    'LearningNodeEdit': ('pulse_cli.web_models', 'LearningNodeEdit'),
-    'LearningNodeRef': ('pulse_cli.web_models', 'LearningNodeRef'),
-    'MCPCatalogInstall': ('pulse_cli.web_models', 'MCPCatalogInstall'),
-    'MCPEnabledToggle': ('pulse_cli.web_models', 'MCPEnabledToggle'),
-    'MCPServerCreate': ('pulse_cli.web_models', 'MCPServerCreate'),
-    'MCPServersReplace': ('pulse_cli.web_models', 'MCPServersReplace'),
-    'ManagedDirectoryCreate': ('pulse_cli.web_models', 'ManagedDirectoryCreate'),
-    'ManagedFileDelete': ('pulse_cli.web_models', 'ManagedFileDelete'),
-    'ManagedFileUpload': ('pulse_cli.web_models', 'ManagedFileUpload'),
-    'ManagedFilesPolicy': ('pulse_cli.web_server_files', 'ManagedFilesPolicy'),
-    'MemoryProviderConfigUpdate': ('pulse_cli.web_models', 'MemoryProviderConfigUpdate'),
-    'MemoryProviderSelect': ('pulse_cli.web_models', 'MemoryProviderSelect'),
-    'MemoryProviderSetupRequest': ('pulse_cli.web_models', 'MemoryProviderSetupRequest'),
-    'MemoryReset': ('pulse_cli.web_models', 'MemoryReset'),
-    'MessagingPlatformUpdate': ('pulse_cli.web_models', 'MessagingPlatformUpdate'),
-    'MoaConfigPayload': ('pulse_cli.web_models', 'MoaConfigPayload'),
-    'MoaModelSlot': ('pulse_cli.web_models', 'MoaModelSlot'),
-    'MoaPresetPayload': ('pulse_cli.web_models', 'MoaPresetPayload'),
-    'ModelAssignment': ('pulse_cli.web_models', 'ModelAssignment'),
-    'OAuthSubmitBody': ('pulse_cli.web_models', 'OAuthSubmitBody'),
-    'OPTIONAL_ENV_VARS': ('pulse_cli.config', 'OPTIONAL_ENV_VARS'),
-    'PairingApprove': ('pulse_cli.web_models', 'PairingApprove'),
-    'PairingRevoke': ('pulse_cli.web_models', 'PairingRevoke'),
-    'ProfileActiveUpdate': ('pulse_cli.web_models', 'ProfileActiveUpdate'),
-    'ProfileCreate': ('pulse_cli.web_models', 'ProfileCreate'),
-    'ProfileDescribeAuto': ('pulse_cli.web_models', 'ProfileDescribeAuto'),
-    'ProfileDescriptionUpdate': ('pulse_cli.web_models', 'ProfileDescriptionUpdate'),
-    'ProfileModelUpdate': ('pulse_cli.web_models', 'ProfileModelUpdate'),
-    'ProfileRename': ('pulse_cli.web_models', 'ProfileRename'),
-    'ProfileSoulUpdate': ('pulse_cli.web_models', 'ProfileSoulUpdate'),
-    'ProviderConfigSchema': ('plugins.memory.config_schema', 'ProviderConfigSchema'),
-    'ProviderField': ('plugins.memory.config_schema', 'ProviderField'),
-    'PtyBridge': ('pulse_cli.pty_bridge', 'PtyBridge'),
-    'PtySessionRegistry': ('pulse_cli.pty_session', 'PtySessionRegistry'),
-    'PtyUnavailableError': ('pulse_cli.pty_bridge', 'PtyUnavailableError'),
-    'RawConfigUpdate': ('pulse_cli.web_models', 'RawConfigUpdate'),
-    'RegistryFull': ('pulse_cli.pty_session', 'RegistryFull'),
-    'STORAGE_HONCHO_HOST_BLOCK': ('plugins.memory.config_schema', 'STORAGE_HONCHO_HOST_BLOCK'),
-    'SessionImport': ('pulse_cli.web_models', 'SessionImport'),
-    'SessionPrune': ('pulse_cli.web_models', 'SessionPrune'),
-    'SessionRename': ('pulse_cli.web_models', 'SessionRename'),
-    'SkillContentUpdate': ('pulse_cli.web_models', 'SkillContentUpdate'),
-    'SkillCreate': ('pulse_cli.web_models', 'SkillCreate'),
-    'SkillInstallRequest': ('pulse_cli.web_models', 'SkillInstallRequest'),
-    'SkillToggle': ('pulse_cli.web_models', 'SkillToggle'),
-    'SkillUninstallRequest': ('pulse_cli.web_models', 'SkillUninstallRequest'),
-    'SkillsUpdateRequest': ('pulse_cli.web_models', 'SkillsUpdateRequest'),
-    'TTSLeaseRequest': ('pulse_cli.web_models', 'TTSLeaseRequest'),
-    'TTSSpeakRequest': ('pulse_cli.web_models', 'TTSSpeakRequest'),
-    'TelegramOnboardingApply': ('pulse_cli.web_models', 'TelegramOnboardingApply'),
-    'TelegramOnboardingStart': ('pulse_cli.web_models', 'TelegramOnboardingStart'),
-    'TerminalBackendSelect': ('pulse_cli.web_models', 'TerminalBackendSelect'),
-    'ThemeSetBody': ('pulse_cli.web_models', 'ThemeSetBody'),
-    'ToolsetEnvUpdate': ('pulse_cli.web_models', 'ToolsetEnvUpdate'),
-    'ToolsetModelSelect': ('pulse_cli.web_models', 'ToolsetModelSelect'),
-    'ToolsetPostSetup': ('pulse_cli.web_models', 'ToolsetPostSetup'),
-    'ToolsetProviderSelect': ('pulse_cli.web_models', 'ToolsetProviderSelect'),
-    'ToolsetToggle': ('pulse_cli.web_models', 'ToolsetToggle'),
-    'WebhookCreate': ('pulse_cli.web_models', 'WebhookCreate'),
-    'WebhookEnabledToggle': ('pulse_cli.web_models', 'WebhookEnabledToggle'),
-    'WhatsAppOnboardingApply': ('pulse_cli.web_models', 'WhatsAppOnboardingApply'),
-    'WhatsAppOnboardingStart': ('pulse_cli.web_models', 'WhatsAppOnboardingStart'),
-    'activate_custom_endpoint': ('pulse_cli.web_routers.config_env', 'activate_custom_endpoint'),
-    'add_credential_pool_entry': ('pulse_cli.web_routers.ops', 'add_credential_pool_entry'),
-    'add_mcp_server': ('pulse_cli.web_routers.mcp', 'add_mcp_server'),
-    'apply_telegram_onboarding': ('pulse_cli.web_routers.messaging', 'apply_telegram_onboarding'),
-    'apply_whatsapp_onboarding': ('pulse_cli.web_routers.messaging', 'apply_whatsapp_onboarding'),
-    'approve_pairing': ('pulse_cli.web_routers.ops', 'approve_pairing'),
-    'auth_mcp_server': ('pulse_cli.web_routers.mcp', 'auth_mcp_server'),
-    'bulk_delete_sessions_endpoint': ('pulse_cli.web_routers.sessions', 'bulk_delete_sessions_endpoint'),
-    'cancel_oauth_session': ('pulse_cli.web_routers.oauth', 'cancel_oauth_session'),
-    'cancel_telegram_onboarding': ('pulse_cli.web_routers.messaging', 'cancel_telegram_onboarding'),
-    'cancel_whatsapp_onboarding': ('pulse_cli.web_routers.messaging', 'cancel_whatsapp_onboarding'),
-    'cfg_get': ('pulse_cli.config', 'cfg_get'),
-    'check_config_version': ('pulse_cli.config', 'check_config_version'),
-    'check_pulse_update': ('pulse_cli.web_routers.actions', 'check_pulse_update'),
-    'clear_model_endpoint_credentials': ('pulse_cli.config', 'clear_model_endpoint_credentials'),
-    'clear_pending_pairing': ('pulse_cli.web_routers.ops', 'clear_pending_pairing'),
-    'coerce_provider_id': ('pulse_cli.config', 'coerce_provider_id'),
-    'console_ws': ('pulse_cli.web_routers.chat_ws', 'console_ws'),
-    'count_empty_sessions_endpoint': ('pulse_cli.web_routers.sessions', 'count_empty_sessions_endpoint'),
-    'create_cron_job': ('pulse_cli.web_routers.cron', 'create_cron_job'),
-    'create_hook': ('pulse_cli.web_routers.ops', 'create_hook'),
-    'create_managed_directory': ('pulse_cli.web_routers.files', 'create_managed_directory'),
-    'create_profile_endpoint': ('pulse_cli.web_routers.profiles', 'create_profile_endpoint'),
-    'create_skill': ('pulse_cli.web_routers.skills', 'create_skill'),
-    'create_webhook': ('pulse_cli.web_routers.ops', 'create_webhook'),
-    'cron_fire_webhook': ('pulse_cli.web_routers.cron', 'cron_fire_webhook'),
-    'custom_endpoint_key_env': ('pulse_cli.config', 'custom_endpoint_key_env'),
-    'delete_agent_plugin': ('pulse_cli.web_routers.dashboard_ui', 'delete_agent_plugin'),
-    'delete_cron_job': ('pulse_cli.web_routers.cron', 'delete_cron_job'),
-    'delete_custom_endpoint': ('pulse_cli.web_routers.config_env', 'delete_custom_endpoint'),
-    'delete_empty_sessions_endpoint': ('pulse_cli.web_routers.sessions', 'delete_empty_sessions_endpoint'),
-    'delete_hook': ('pulse_cli.web_routers.ops', 'delete_hook'),
-    'delete_learning_node': ('pulse_cli.web_routers.status', 'delete_learning_node'),
-    'delete_managed_file': ('pulse_cli.web_routers.files', 'delete_managed_file'),
-    'delete_profile_endpoint': ('pulse_cli.web_routers.profiles', 'delete_profile_endpoint'),
-    'delete_session_endpoint': ('pulse_cli.web_routers.sessions', 'delete_session_endpoint'),
-    'delete_webhook': ('pulse_cli.web_routers.ops', 'delete_webhook'),
-    'derive_gateway_busy': ('gateway.status', 'derive_gateway_busy'),
-    'derive_gateway_drainable': ('gateway.status', 'derive_gateway_drainable'),
-    'describe_profile_auto_endpoint': ('pulse_cli.web_routers.profiles', 'describe_profile_auto_endpoint'),
-    'detect_install_method': ('pulse_cli.config', 'detect_install_method'),
-    'disconnect_oauth_provider': ('pulse_cli.web_routers.oauth', 'disconnect_oauth_provider'),
-    'download_dashboard_backup': ('pulse_cli.web_routers.ops', 'download_dashboard_backup'),
-    'download_managed_file': ('pulse_cli.web_routers.files', 'download_managed_file'),
-    'enable_webhooks': ('pulse_cli.web_routers.ops', 'enable_webhooks'),
-    'env_var_enabled': ('utils', 'env_var_enabled'),
-    'events_ws': ('pulse_cli.web_routers.chat_ws', 'events_ws'),
-    'export_session_endpoint': ('pulse_cli.web_routers.sessions', 'export_session_endpoint'),
-    'find_provider_entry': ('pulse_cli.config', 'find_provider_entry'),
-    'format_docker_update_message': ('pulse_cli.config', 'format_docker_update_message'),
-    'fs_default_cwd': ('pulse_cli.web_routers.files', 'fs_default_cwd'),
-    'fs_download': ('pulse_cli.web_routers.files', 'fs_download'),
-    'fs_git_root': ('pulse_cli.web_routers.files', 'fs_git_root'),
-    'fs_list': ('pulse_cli.web_routers.files', 'fs_list'),
-    'fs_read_data_url': ('pulse_cli.web_routers.files', 'fs_read_data_url'),
-    'fs_read_text': ('pulse_cli.web_routers.files', 'fs_read_text'),
-    'fs_write_text': ('pulse_cli.web_routers.files', 'fs_write_text'),
-    'gateway_drain': ('pulse_cli.web_routers.actions', 'gateway_drain'),
-    'gateway_ws': ('pulse_cli.web_routers.chat_ws', 'gateway_ws'),
-    'get_action_status': ('pulse_cli.web_routers.actions', 'get_action_status'),
-    'get_active_profile_endpoint': ('pulse_cli.web_routers.profiles', 'get_active_profile_endpoint'),
-    'get_auxiliary_models': ('pulse_cli.web_routers.models', 'get_auxiliary_models'),
-    'get_client_voice_config': ('pulse_cli.web_routers.audio', 'get_client_voice_config'),
-    'get_computer_use_status': ('pulse_cli.web_routers.tools', 'get_computer_use_status'),
-    'get_config': ('pulse_cli.web_routers.config_env', 'get_config'),
-    'get_config_path': ('pulse_cli.config', 'get_config_path'),
-    'get_config_raw': ('pulse_cli.web_routers.analytics', 'get_config_raw'),
-    'get_cron_delivery_targets': ('pulse_cli.web_routers.cron', 'get_cron_delivery_targets'),
-    'get_cron_job': ('pulse_cli.web_routers.cron', 'get_cron_job'),
-    'get_curator_status': ('pulse_cli.web_routers.status', 'get_curator_status'),
-    'get_dashboard_font': ('pulse_cli.web_routers.dashboard_ui', 'get_dashboard_font'),
-    'get_dashboard_plugins': ('pulse_cli.web_routers.dashboard_ui', 'get_dashboard_plugins'),
-    'get_dashboard_themes': ('pulse_cli.web_routers.dashboard_ui', 'get_dashboard_themes'),
-    'get_defaults': ('pulse_cli.web_routers.config_env', 'get_defaults'),
-    'get_egress_status': ('pulse_cli.web_routers.config_env', 'get_egress_status'),
-    'get_elevenlabs_voices': ('pulse_cli.web_routers.audio', 'get_elevenlabs_voices'),
-    'get_env_path': ('pulse_cli.config', 'get_env_path'),
-    'get_env_vars': ('pulse_cli.web_routers.config_env', 'get_env_vars'),
-    'get_health': ('pulse_cli.web_routers.status', 'get_health'),
-    'get_pulse_home': ('pulse_cli.config', 'get_pulse_home'),
-    'get_learning_graph': ('pulse_cli.web_routers.status', 'get_learning_graph'),
-    'get_learning_node': ('pulse_cli.web_routers.status', 'get_learning_node'),
-    'get_logs': ('pulse_cli.web_routers.status', 'get_logs'),
-    'get_media': ('pulse_cli.web_routers.files', 'get_media'),
-    'get_memory_provider_config': ('pulse_cli.web_routers.memory_providers', 'get_memory_provider_config'),
-    'get_memory_status': ('pulse_cli.web_routers.ops', 'get_memory_status'),
-    'get_messaging_platforms': ('pulse_cli.web_routers.messaging', 'get_messaging_platforms'),
-    'get_moa_models': ('pulse_cli.web_routers.models', 'get_moa_models'),
-    'get_model_info': ('pulse_cli.web_routers.models', 'get_model_info'),
-    'get_model_options': ('pulse_cli.web_routers.models', 'get_model_options'),
-    'get_models_analytics': ('pulse_cli.web_routers.analytics', 'get_models_analytics'),
-    'get_plugins_hub': ('pulse_cli.web_routers.dashboard_ui', 'get_plugins_hub'),
-    'get_portal_status': ('pulse_cli.web_routers.status', 'get_portal_status'),
-    'get_process_pulse_home': ('pulse_cli.config', 'get_process_pulse_home'),
-    'get_profile_setup_command': ('pulse_cli.web_routers.profiles', 'get_profile_setup_command'),
-    'get_profile_soul': ('pulse_cli.web_routers.profiles', 'get_profile_soul'),
-    'get_profiles_sessions': ('pulse_cli.web_routers.profiles', 'get_profiles_sessions'),
-    'get_profiles_sessions_sidebar': ('pulse_cli.web_routers.profiles', 'get_profiles_sessions_sidebar'),
-    'get_provider_config_schema': ('plugins.memory.config_schema', 'get_provider_config_schema'),
-    'get_recommended_default_model': ('pulse_cli.web_routers.models', 'get_recommended_default_model'),
-    'get_running_pid': ('gateway.status', 'get_running_pid'),
-    'get_running_pid_cached': ('gateway.status', 'get_running_pid_cached'),
-    'get_runtime_status_running_pid': ('gateway.status', 'get_runtime_status_running_pid'),
-    'get_schema': ('pulse_cli.web_routers.config_env', 'get_schema'),
-    'get_session_detail': ('pulse_cli.web_routers.sessions', 'get_session_detail'),
-    'get_session_latest_descendant': ('pulse_cli.web_routers.sessions', 'get_session_latest_descendant'),
-    'get_session_messages': ('pulse_cli.web_routers.sessions', 'get_session_messages'),
-    'get_session_stats': ('pulse_cli.web_routers.sessions', 'get_session_stats'),
-    'get_sessions': ('pulse_cli.web_routers.sessions', 'get_sessions'),
-    'get_skill_content': ('pulse_cli.web_routers.skills', 'get_skill_content'),
-    'get_skills': ('pulse_cli.web_routers.skills', 'get_skills'),
-    'get_ssh_ownership': ('pulse_cli.web_routers.status', 'get_ssh_ownership'),
-    'get_status': ('pulse_cli.web_routers.status', 'get_status'),
-    'get_system_stats': ('pulse_cli.web_routers.status', 'get_system_stats'),
-    'get_telegram_onboarding_status': ('pulse_cli.web_routers.messaging', 'get_telegram_onboarding_status'),
-    'get_terminal_backends': ('pulse_cli.web_routers.tools', 'get_terminal_backends'),
-    'get_toolset_config': ('pulse_cli.web_routers.tools', 'get_toolset_config'),
-    'get_toolset_models': ('pulse_cli.web_routers.tools', 'get_toolset_models'),
-    'get_toolsets': ('pulse_cli.web_routers.tools', 'get_toolsets'),
-    'get_update_receipt': ('pulse_cli.web_routers.actions', 'get_update_receipt'),
-    'get_usage_analytics': ('pulse_cli.web_routers.analytics', 'get_usage_analytics'),
-    'get_whatsapp_onboarding_status': ('pulse_cli.web_routers.messaging', 'get_whatsapp_onboarding_status'),
-    'git_base_branches_route': ('pulse_cli.web_routers.git', 'git_base_branches_route'),
-    'git_branch_switch_route': ('pulse_cli.web_routers.git', 'git_branch_switch_route'),
-    'git_branches_route': ('pulse_cli.web_routers.git', 'git_branches_route'),
-    'git_commit_context_route': ('pulse_cli.web_routers.git', 'git_commit_context_route'),
-    'git_commit_route': ('pulse_cli.web_routers.git', 'git_commit_route'),
-    'git_create_pr_route': ('pulse_cli.web_routers.git', 'git_create_pr_route'),
-    'git_file_diff_route': ('pulse_cli.web_routers.git', 'git_file_diff_route'),
-    'git_push_route': ('pulse_cli.web_routers.git', 'git_push_route'),
-    'git_rev_parse_route': ('pulse_cli.web_routers.git', 'git_rev_parse_route'),
-    'git_revert_route': ('pulse_cli.web_routers.git', 'git_revert_route'),
-    'git_review_diff_route': ('pulse_cli.web_routers.git', 'git_review_diff_route'),
-    'git_review_list_route': ('pulse_cli.web_routers.git', 'git_review_list_route'),
-    'git_ship_info_route': ('pulse_cli.web_routers.git', 'git_ship_info_route'),
-    'git_stage_route': ('pulse_cli.web_routers.git', 'git_stage_route'),
-    'git_status_route': ('pulse_cli.web_routers.git', 'git_status_route'),
-    'git_unstage_route': ('pulse_cli.web_routers.git', 'git_unstage_route'),
-    'git_worktree_add_route': ('pulse_cli.web_routers.git', 'git_worktree_add_route'),
-    'git_worktree_remove_route': ('pulse_cli.web_routers.git', 'git_worktree_remove_route'),
-    'git_worktrees_route': ('pulse_cli.web_routers.git', 'git_worktrees_route'),
-    'grant_computer_use_permissions': ('pulse_cli.web_routers.tools', 'grant_computer_use_permissions'),
-    'import_sessions_endpoint': ('pulse_cli.web_routers.sessions', 'import_sessions_endpoint'),
-    'install_mcp_catalog_entry': ('pulse_cli.web_routers.mcp', 'install_mcp_catalog_entry'),
-    'install_skill_hub': ('pulse_cli.web_routers.skills', 'install_skill_hub'),
-    'instantiate_blueprint': ('pulse_cli.web_routers.cron', 'instantiate_blueprint'),
-    'is_nix_install_method': ('pulse_cli.config', 'is_nix_install_method'),
-    'list_checkpoints': ('pulse_cli.web_routers.ops', 'list_checkpoints'),
-    'list_credential_pool': ('pulse_cli.web_routers.ops', 'list_credential_pool'),
-    'list_cron_blueprints': ('pulse_cli.web_routers.cron', 'list_cron_blueprints'),
-    'list_cron_job_runs': ('pulse_cli.web_routers.cron', 'list_cron_job_runs'),
-    'list_cron_jobs': ('pulse_cli.web_routers.cron', 'list_cron_jobs'),
-    'list_custom_endpoints': ('pulse_cli.web_routers.config_env', 'list_custom_endpoints'),
-    'list_hooks': ('pulse_cli.web_routers.ops', 'list_hooks'),
-    'list_managed_files': ('pulse_cli.web_routers.files', 'list_managed_files'),
-    'list_mcp_catalog': ('pulse_cli.web_routers.mcp', 'list_mcp_catalog'),
-    'list_mcp_servers': ('pulse_cli.web_routers.mcp', 'list_mcp_servers'),
-    'list_oauth_providers': ('pulse_cli.web_routers.oauth', 'list_oauth_providers'),
-    'list_pairing': ('pulse_cli.web_routers.ops', 'list_pairing'),
-    'list_profiles_endpoint': ('pulse_cli.web_routers.profiles', 'list_profiles_endpoint'),
-    'list_skills_hub_sources': ('pulse_cli.web_routers.skills', 'list_skills_hub_sources'),
-    'list_webhooks': ('pulse_cli.web_routers.ops', 'list_webhooks'),
-    'load_env': ('pulse_cli.config', 'load_env'),
-    'mcp_oauth_callback': ('pulse_cli.web_routers.mcp', 'mcp_oauth_callback'),
-    'mcp_oauth_flow_status': ('pulse_cli.web_routers.mcp', 'mcp_oauth_flow_status'),
-    'normalize_updated_at': ('gateway.status', 'normalize_updated_at'),
-    'open_profile_terminal_endpoint': ('pulse_cli.web_routers.profiles', 'open_profile_terminal_endpoint'),
-    'parse_active_agents': ('gateway.status', 'parse_active_agents'),
-    'pause_cron_job': ('pulse_cli.web_routers.cron', 'pause_cron_job'),
-    'poll_oauth_session': ('pulse_cli.web_routers.oauth', 'poll_oauth_session'),
-    'post_agent_plugin_disable': ('pulse_cli.web_routers.dashboard_ui', 'post_agent_plugin_disable'),
-    'post_agent_plugin_enable': ('pulse_cli.web_routers.dashboard_ui', 'post_agent_plugin_enable'),
-    'post_agent_plugin_install': ('pulse_cli.web_routers.dashboard_ui', 'post_agent_plugin_install'),
-    'post_agent_plugin_update': ('pulse_cli.web_routers.dashboard_ui', 'post_agent_plugin_update'),
-    'post_plugin_visibility': ('pulse_cli.web_routers.dashboard_ui', 'post_plugin_visibility'),
-    'preview_skill_hub': ('pulse_cli.web_routers.skills', 'preview_skill_hub'),
-    'prune_checkpoints': ('pulse_cli.web_routers.ops', 'prune_checkpoints'),
-    'prune_sessions_endpoint': ('pulse_cli.web_routers.sessions', 'prune_sessions_endpoint'),
-    'pty_ws': ('pulse_cli.web_routers.chat_ws', 'pty_ws'),
-    'pub_ws': ('pulse_cli.web_routers.chat_ws', 'pub_ws'),
-    'put_plugin_providers': ('pulse_cli.web_routers.dashboard_ui', 'put_plugin_providers'),
-    'read_managed_file': ('pulse_cli.web_routers.files', 'read_managed_file'),
-    'read_raw_config': ('pulse_cli.config', 'read_raw_config'),
-    'read_runtime_status': ('gateway.status', 'read_runtime_status'),
-    'recommended_update_command_for_method': ('pulse_cli.config', 'recommended_update_command_for_method'),
-    'redact_key': ('pulse_cli.config', 'redact_key'),
-    'remove_credential_pool_entry': ('pulse_cli.web_routers.ops', 'remove_credential_pool_entry'),
-    'remove_env_value': ('pulse_cli.config', 'remove_env_value'),
-    'remove_env_var': ('pulse_cli.web_routers.config_env', 'remove_env_var'),
-    'remove_mcp_server': ('pulse_cli.web_routers.mcp', 'remove_mcp_server'),
-    'rename_profile_endpoint': ('pulse_cli.web_routers.profiles', 'rename_profile_endpoint'),
-    'rename_session_endpoint': ('pulse_cli.web_routers.sessions', 'rename_session_endpoint'),
-    'replace_mcp_servers': ('pulse_cli.web_routers.mcp', 'replace_mcp_servers'),
-    'rescan_dashboard_plugins': ('pulse_cli.web_routers.dashboard_ui', 'rescan_dashboard_plugins'),
-    'reset_memory': ('pulse_cli.web_routers.ops', 'reset_memory'),
-    'resolve_gateway_liveness': ('gateway.status', 'resolve_gateway_liveness'),
-    'restart_gateway': ('pulse_cli.web_routers.actions', 'restart_gateway'),
-    'resume_cron_job': ('pulse_cli.web_routers.cron', 'resume_cron_job'),
-    'reveal_env_var': ('pulse_cli.web_routers.config_env', 'reveal_env_var'),
-    'revoke_pairing': ('pulse_cli.web_routers.ops', 'revoke_pairing'),
-    'run_backup': ('pulse_cli.web_routers.ops', 'run_backup'),
-    'run_config_migrate': ('pulse_cli.web_routers.status', 'run_config_migrate'),
-    'run_curator': ('pulse_cli.web_routers.status', 'run_curator'),
-    'run_debug_share_endpoint': ('pulse_cli.web_routers.status', 'run_debug_share_endpoint'),
-    'run_doctor': ('pulse_cli.doctor', 'run_doctor'),
-    'run_dump': ('pulse_cli.dump', 'run_dump'),
-    'run_import': ('pulse_cli.web_routers.ops', 'run_import'),
-    'run_import_upload': ('pulse_cli.web_routers.ops', 'run_import_upload'),
-    'run_prompt_size': ('pulse_cli.web_routers.status', 'run_prompt_size'),
-    'run_security_audit': ('pulse_cli.web_routers.ops', 'run_security_audit'),
-    'run_toolset_post_setup': ('pulse_cli.web_routers.tools', 'run_toolset_post_setup'),
-    'save_config': ('pulse_cli.config', 'save_config'),
-    'save_env_value': ('pulse_cli.config', 'save_env_value'),
-    'save_toolset_env': ('pulse_cli.web_routers.tools', 'save_toolset_env'),
-    'scan_skill_hub': ('pulse_cli.web_routers.skills', 'scan_skill_hub'),
-    'search_sessions': ('pulse_cli.web_routers.sessions', 'search_sessions'),
-    'search_skills_hub': ('pulse_cli.web_routers.skills', 'search_skills_hub'),
-    'select_terminal_backend': ('pulse_cli.web_routers.tools', 'select_terminal_backend'),
-    'select_toolset_model': ('pulse_cli.web_routers.tools', 'select_toolset_model'),
-    'select_toolset_provider': ('pulse_cli.web_routers.tools', 'select_toolset_provider'),
-    'serve_plugin_asset': ('pulse_cli.web_routers.dashboard_ui', 'serve_plugin_asset'),
-    'set_active_profile_endpoint': ('pulse_cli.web_routers.profiles', 'set_active_profile_endpoint'),
-    'set_curator_paused': ('pulse_cli.web_routers.status', 'set_curator_paused'),
-    'set_dashboard_font': ('pulse_cli.web_routers.dashboard_ui', 'set_dashboard_font'),
-    'set_dashboard_theme': ('pulse_cli.web_routers.dashboard_ui', 'set_dashboard_theme'),
-    'set_env_var': ('pulse_cli.web_routers.config_env', 'set_env_var'),
-    'set_mcp_server_enabled': ('pulse_cli.web_routers.mcp', 'set_mcp_server_enabled'),
-    'set_memory_provider': ('pulse_cli.web_routers.ops', 'set_memory_provider'),
-    'set_moa_models': ('pulse_cli.web_routers.models', 'set_moa_models'),
-    'set_model_assignment': ('pulse_cli.web_routers.models', 'set_model_assignment'),
-    'set_webhook_enabled': ('pulse_cli.web_routers.ops', 'set_webhook_enabled'),
-    'setup_memory_provider': ('pulse_cli.web_routers.memory_providers', 'setup_memory_provider'),
-    'speak_stream_ws': ('pulse_cli.web_routers.audio', 'speak_stream_ws'),
-    'speak_text': ('pulse_cli.web_routers.audio', 'speak_text'),
-    'start_gateway': ('pulse_cli.web_routers.ops', 'start_gateway'),
-    'start_oauth_login': ('pulse_cli.web_routers.oauth', 'start_oauth_login'),
-    'start_telegram_onboarding': ('pulse_cli.web_routers.messaging', 'start_telegram_onboarding'),
-    'start_whatsapp_onboarding': ('pulse_cli.web_routers.messaging', 'start_whatsapp_onboarding'),
-    'stop_gateway': ('pulse_cli.web_routers.ops', 'stop_gateway'),
-    'stream_managed_file': ('pulse_cli.web_routers.files', 'stream_managed_file'),
-    'submit_oauth_code': ('pulse_cli.web_routers.oauth', 'submit_oauth_code'),
-    'test_mcp_server': ('pulse_cli.web_routers.mcp', 'test_mcp_server'),
-    'test_messaging_platform': ('pulse_cli.web_routers.messaging', 'test_messaging_platform'),
-    'toggle_skill': ('pulse_cli.web_routers.skills', 'toggle_skill'),
-    'toggle_toolset': ('pulse_cli.web_routers.tools', 'toggle_toolset'),
-    'transcribe_audio_upload': ('pulse_cli.web_routers.audio', 'transcribe_audio_upload'),
-    'trigger_cron_job': ('pulse_cli.web_routers.cron', 'trigger_cron_job'),
-    'tts_lease': ('pulse_cli.web_routers.audio', 'tts_lease'),
-    'uninstall_skill_hub': ('pulse_cli.web_routers.skills', 'uninstall_skill_hub'),
-    'update_config': ('pulse_cli.web_routers.config_env', 'update_config'),
-    'update_config_raw': ('pulse_cli.web_routers.analytics', 'update_config_raw'),
-    'update_cron_job': ('pulse_cli.web_routers.cron', 'update_cron_job'),
-    'update_pulse': ('pulse_cli.web_routers.actions', 'update_pulse'),
-    'update_learning_node': ('pulse_cli.web_routers.status', 'update_learning_node'),
-    'update_memory_provider_config': ('pulse_cli.web_routers.memory_providers', 'update_memory_provider_config'),
-    'update_messaging_platform': ('pulse_cli.web_routers.messaging', 'update_messaging_platform'),
-    'update_profile_description_endpoint': ('pulse_cli.web_routers.profiles', 'update_profile_description_endpoint'),
-    'update_profile_model_endpoint': ('pulse_cli.web_routers.profiles', 'update_profile_model_endpoint'),
-    'update_profile_soul': ('pulse_cli.web_routers.profiles', 'update_profile_soul'),
-    'update_skill_content': ('pulse_cli.web_routers.skills', 'update_skill_content'),
-    'update_skills_hub': ('pulse_cli.web_routers.skills', 'update_skills_hub'),
-    'upload_chat_image': ('pulse_cli.web_routers.files', 'upload_chat_image'),
-    'upload_managed_file': ('pulse_cli.web_routers.files', 'upload_managed_file'),
-    'upload_managed_file_stream': ('pulse_cli.web_routers.files', 'upload_managed_file_stream'),
-    'upsert_custom_endpoint': ('pulse_cli.web_routers.config_env', 'upsert_custom_endpoint'),
-    'validate_custom_endpoint': ('pulse_cli.web_routers.config_env', 'validate_custom_endpoint'),
-    'validate_provider_credential': ('pulse_cli.web_routers.config_env', 'validate_provider_credential'),
-    'windows_detach_flags': ('pulse_cli._subprocess_compat', 'windows_detach_flags'),
-    'windows_hide_flags': ('pulse_cli._subprocess_compat', 'windows_hide_flags'),
-    'write_platform_config_field': ('pulse_cli.config', 'write_platform_config_field'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

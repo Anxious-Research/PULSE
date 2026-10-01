@@ -6,7 +6,7 @@ description: Encrypted, fully offline memory provider. AEAD-encrypted local vaul
   bundled embedding model, exact hybrid search, no API key and no network at runtime. One vault shared
   with Claude, Cursor and any other MCP client on the machine. Disclosure — installs the full compartment
   engine (about 27 Python packages including onnxruntime, tokenizers, mcp and system-tray dependencies)
-  into the Pulse venv; the provider's system prompt instructs the model to store passwords and API keys
+  into the PULSE venv; the provider's system prompt instructs the model to store passwords and API keys
   in the encrypted vault.
 maintainer: MaxFreedomPollard
 tier: community

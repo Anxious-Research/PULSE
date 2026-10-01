@@ -10,7 +10,7 @@ def build_debug_parser(subparsers, *, cmd_debug: Callable) -> None:
     """Attach the ``debug`` subcommand to ``subparsers``."""
     debug_parser = subparsers.add_parser(
         "debug", help="Debug tools — upload logs and system info for support",
-        description="Debug utilities for Pulse Agent. Use 'pulse debug share' to "
+        description="Debug utilities for PULSE Agent. Use 'pulse debug share' to "
         "upload a debug report (system info + recent logs) to a paste "
         "service and get a shareable URL.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -22,7 +22,7 @@ Examples:
     pulse debug share --expire 30  Keep dpaste.com fallback pastes for 30 days
     pulse debug share --local      Print report locally (no upload)
     pulse debug share --no-redact  Disable upload-time secret redaction
-    pulse debug share --anxious       Upload to Anxious-internal storage (private)
+    pulse debug share --nous       Upload to Nous-internal storage (private)
     pulse debug delete <url>       Delete a previously uploaded paste
 """)
     debug_sub = debug_parser.add_subparsers(dest="debug_command")
@@ -51,10 +51,10 @@ Examples:
             "with force=True before upload so credentials are not leaked "
             "into the public paste service.")
     share_parser.add_argument(
-        "--anxious", action="store_true",
-        help="Upload the debug bundle to Anxious-internal storage (AWS S3) instead "
+        "--nous", action="store_true",
+        help="Upload the debug bundle to Nous-internal storage (AWS S3) instead "
             "of a public paste service. The bundle is private — viewable only "
-            "by Anxious staff (and allowlisted Discord mods) via a Google-login-"
+            "by Nous staff (and allowlisted Discord mods) via a Google-login-"
             "gated viewer — and auto-deletes after 14 days. Still force-redacts "
             "secrets unless --no-redact is also passed.")
     delete_parser = debug_sub.add_parser(

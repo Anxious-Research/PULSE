@@ -3,21 +3,21 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { createElement } from 'react'
 import { afterEach, expect, it, vi } from 'vitest'
 
-import type * as PulseApi from '@/pulse'
-import { bindConfigReadOrigin, getPulseConfigRecord } from '@/pulse'
+import type * as PULSEApi from '@/pulse'
+import { bindConfigReadOrigin, getPULSEConfigRecord } from '@/pulse'
 import { queryClient } from '@/lib/query-client'
 import { $connection } from '@/store/session'
 
 import {
   PULSE_CONFIG_KEY,
   pulseConfigCacheWriter,
-  setPulseConfigCache,
-  usePulseConfigRecord
+  setPULSEConfigCache,
+  usePULSEConfigRecord
 } from './use-config-record'
 
 vi.mock('@/pulse', async importOriginal => ({
-  ...(await importOriginal<typeof PulseApi>()),
-  getPulseConfigRecord: vi.fn()
+  ...(await importOriginal<typeof PULSEApi>()),
+  getPULSEConfigRecord: vi.fn()
 }))
 
 afterEach(() => {
@@ -35,9 +35,9 @@ it('updates the write origin when a refetch replaces the displayed record', asyn
   const second = { display: { theme: 'light' } }
   bindConfigReadOrigin(first, { connectionId: 'connection-a', profile: 'worker' })
   bindConfigReadOrigin(second, { connectionId: 'connection-b', profile: 'worker' })
-  vi.mocked(getPulseConfigRecord).mockResolvedValueOnce(first).mockResolvedValueOnce(second)
+  vi.mocked(getPULSEConfigRecord).mockResolvedValueOnce(first).mockResolvedValueOnce(second)
 
-  const { result } = renderHook(() => usePulseConfigRecord(), { wrapper })
+  const { result } = renderHook(() => usePULSEConfigRecord(), { wrapper })
 
   // Before the first GET resolves the scope must be `undefined` (not `null`):
   // profileScoped(null) drops the active profile and targets the PRIMARY.
@@ -67,12 +67,12 @@ it('does not share one config record across two gateways', async () => {
     releaseDevbox = resolve
   })
 
-  vi.mocked(getPulseConfigRecord).mockImplementation(() =>
+  vi.mocked(getPULSEConfigRecord).mockImplementation(() =>
     $connection.get()?.connectionId === 'devbox' ? devboxFetch : Promise.resolve(laptop)
   )
 
   useGateway('laptop')
-  const { result } = renderHook(() => usePulseConfigRecord(), { wrapper })
+  const { result } = renderHook(() => usePULSEConfigRecord(), { wrapper })
 
   await waitFor(() => expect(result.current.data).toEqual(laptop))
 
@@ -105,11 +105,11 @@ it('a settings cache write after switching gateways does not replace the other g
   const writer = pulseConfigCacheWriter('default')
 
   useGateway('laptop')
-  setPulseConfigCache(laptop)
+  setPULSEConfigCache(laptop)
   writer({ agent: { model: 'laptop-model' } })
 
   useGateway('devbox')
-  setPulseConfigCache(devbox)
+  setPULSEConfigCache(devbox)
   writer({ agent: { model: 'devbox-model' } })
 
   const cached = queryClient.getQueriesData({ queryKey: PULSE_CONFIG_KEY }).map(([, data]) => data)

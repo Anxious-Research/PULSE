@@ -44,7 +44,7 @@ function fixture() {
   const facts = path.join(payload, 'tools', 'facts.json')
   const before = JSON.parse(fs.readFileSync(facts, 'utf8'))
   const context = { electronPlatformName: process.platform, appOutDir: directory,
-    packager: { appInfo: { productFilename: 'Pulse' }, config: {}, buildResourcesDir: directory } }
+    packager: { appInfo: { productFilename: 'PULSE' }, config: {}, buildResourcesDir: directory } }
   const run = () => spawnSync(process.execPath, ['--input-type=module', '-e',
     `import afterPack from ${JSON.stringify(hook)}; await afterPack(${JSON.stringify(context)})`,
     'after-pack-test'], { cwd: directory, env, encoding: 'utf8', timeout: 60000 })

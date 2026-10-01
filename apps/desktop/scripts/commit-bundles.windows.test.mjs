@@ -73,7 +73,7 @@ function makePackage(makeappx, root, release, metadata, variant, arch, env) {
   }
   const name = metadata.identity.store ? metadata.identity.storeMsix.identityName : metadata.identity.msixAppIdWithOrg
   const publisher = metadata.identity.store ? metadata.identity.storeMsix.publisher : 'CN=Fixture'
-  fs.writeFileSync(path.join(content, 'index.html'), '<!doctype html><title>Assembly fixture</title>Not an installed Pulse application.')
+  fs.writeFileSync(path.join(content, 'index.html'), '<!doctype html><title>Assembly fixture</title>Not an installed PULSE application.')
   fs.writeFileSync(path.join(content, 'AppxManifest.xml'), `<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" IgnorableNamespaces="uap">
   <Identity Name="${name}" Publisher="${publisher}" Version="${metadata.version}" ProcessorArchitecture="${arch}" />

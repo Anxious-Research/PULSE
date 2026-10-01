@@ -47,8 +47,8 @@ IGNORED_PATTERNS = [
     re.compile(r"^github-actions(\[bot\])?$", re.IGNORECASE),
     re.compile(r"^dependabot", re.IGNORECASE),
     re.compile(r"^renovate", re.IGNORECASE),
-    re.compile(r"^Pulse\s+(Agent|Audit)$", re.IGNORECASE),
-    re.compile(r"^anxiousbot(-eng)?$", re.IGNORECASE),
+    re.compile(r"^PULSE\s+(Agent|Audit)$", re.IGNORECASE),
+    re.compile(r"^nousbot(-eng)?$", re.IGNORECASE),
     re.compile(r"^Ubuntu$", re.IGNORECASE),
     # v0.20.0 audit additions:
     re.compile(r"^Blut-?Agent$", re.IGNORECASE),          # self-described AI agent account
@@ -65,11 +65,11 @@ IGNORED_PATTERNS = [
 IGNORED_EMAILS = {
     "noreply@anthropic.com",
     "noreply@github.com",
-    "noreply@anxiousresearchlab.com",
+    "noreply@anxious-research.com",
     "cursoragent@cursor.com",
-    "pulse@anxiousresearchlab.com",
+    "pulse@anxious-research.com",
     "pulse-audit@example.com",
-    "anxiousbot@anxiousresearchlab.com",
+    "nousbot@anxious-research.com",
     "pulse@habibilabs.dev",
     "omx@oh-my-codex.dev",
     "codex@openai.com",

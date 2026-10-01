@@ -29,7 +29,7 @@ class FalImageGenProvider(StaticImageGenProvider):
         key="FAL_KEY", prompt="FAL API key", url="https://fal.ai/dashboard/keys")
 
     def is_available(self) -> bool:
-        # Direct FAL_KEY or a managed Anxious fal-queue origin, per the legacy module.
+        # Direct FAL_KEY or a managed Nous fal-queue origin, per the legacy module.
         import tools.image_generation_tool as _it
 
         try:
@@ -111,26 +111,3 @@ class FalImageGenProvider(StaticImageGenProvider):
 def register(ctx) -> None:
     """Plugin entry point — wire ``FalImageGenProvider`` into the registry."""
     ctx.register_image_gen_provider(FalImageGenProvider())
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-import os  # noqa: F401,E402
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'ImageGenProvider': ('agent.image_gen_provider', 'ImageGenProvider'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

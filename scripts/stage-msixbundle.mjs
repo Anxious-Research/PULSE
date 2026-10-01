@@ -43,7 +43,7 @@ if (!commitBuild && !channelRequest && (values.version !== undefined || noUpload
 }
 
 // product-identity.cjs keys the app name off PULSE_DESKTOP_VARIANT — the
-// artifact filenames (PulseBundled-*-win-x64.msix) carry the bundled
+// artifact filenames (PULSEBundled-*-win-x64.msix) carry the bundled
 // identity, so the env var MUST match the variant or the msix lookup
 // fails. Set it before anything requires the identity.
 process.env.PULSE_DESKTOP_VARIANT = variant

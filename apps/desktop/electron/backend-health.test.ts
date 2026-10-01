@@ -7,12 +7,12 @@ import {
   isAuthRejectionError,
   isGatedMissingHealthError,
   isMissingHealthEndpointError,
-  isPulseCloudAgentUrl,
+  isNousCloudAgentUrl,
   isReauthRequiredError,
   isServerSideHttpError,
-  makePulseCloudBackendDownError,
+  makeNousCloudBackendDownError,
   makeUnsignedOauthError,
-  waitForPulseReady
+  waitForPULSEReady
 } from './backend-health'
 
 const GATE_401 = '401: {"error":"unauthenticated","detail":"Unauthorized","reason":"no_cookie","login_url":"/login"}'
@@ -20,7 +20,7 @@ const GATE_401 = '401: {"error":"unauthenticated","detail":"Unauthorized","reaso
 test('uses lightweight /api/health for current backends', async () => {
   const calls: string[][] = []
 
-  await waitForPulseReady('http://127.0.0.1:9000/', {
+  await waitForPULSEReady('http://127.0.0.1:9000/', {
     token: 'secret-token',
     fetchPublicJson: async url => {
       calls.push(['public', url])
@@ -42,7 +42,7 @@ test('uses lightweight /api/health for current backends', async () => {
 test('falls back to /api/status only for old backends without /api/health', async () => {
   const calls: string[][] = []
 
-  await waitForPulseReady('http://127.0.0.1:9000', {
+  await waitForPULSEReady('http://127.0.0.1:9000', {
     token: 'secret-token',
     fetchPublicJson: async url => {
       calls.push(['public', url])
@@ -70,10 +70,10 @@ test('does not fall back to heavyweight /api/status for transient health failure
   let currentTime = 0
 
   await assert.rejects(
-    waitForPulseReady('http://127.0.0.1:9000', {
+    waitForPULSEReady('http://127.0.0.1:9000', {
       fetchPublicJson: async url => {
         calls.push(['public', url])
-        throw new Error('Timed out connecting to Pulse backend after 15000ms')
+        throw new Error('Timed out connecting to PULSE backend after 15000ms')
       },
       fetchJson: async url => {
         calls.push(['token', url])
@@ -97,7 +97,7 @@ test('does not fall back to heavyweight /api/status for transient health failure
 test('probes health on a short timeout but leaves the legacy fallback its own', async () => {
   const timeouts: (number | undefined)[] = []
 
-  await waitForPulseReady('http://127.0.0.1:9000', {
+  await waitForPULSEReady('http://127.0.0.1:9000', {
     fetchPublicJson: async (_url, options) => {
       timeouts.push(options?.timeoutMs)
 
@@ -124,7 +124,7 @@ async function probesUntilSettled(alreadyBound: boolean): Promise<number> {
   let probes = 0
   let currentTime = 0
 
-  await waitForPulseReady('http://127.0.0.1:2802', {
+  await waitForPULSEReady('http://127.0.0.1:2802', {
     fetchPublicJson: async () => {
       probes += 1
       throw connectionRefused(2802)
@@ -153,7 +153,7 @@ test('aborts as superseded when the bootstrap signal fires', async () => {
   controller.abort()
 
   await assert.rejects(
-    waitForPulseReady('http://127.0.0.1:9000', {
+    waitForPULSEReady('http://127.0.0.1:9000', {
       signal: controller.signal,
       fetchPublicJson: async () => {
         throw new Error('should not probe after abort')
@@ -172,11 +172,11 @@ test('recognizes missing-route shapes only', () => {
   assert.equal(isMissingHealthEndpointError(new Error('404: {"detail":"Not Found"}')), true)
   assert.equal(
     isMissingHealthEndpointError(
-      new Error('Expected JSON from /api/health but got HTML. The endpoint is likely missing on the Pulse backend.')
+      new Error('Expected JSON from /api/health but got HTML. The endpoint is likely missing on the PULSE backend.')
     ),
     true
   )
-  assert.equal(isMissingHealthEndpointError(new Error('Timed out connecting to Pulse backend after 15000ms')), false)
+  assert.equal(isMissingHealthEndpointError(new Error('Timed out connecting to PULSE backend after 15000ms')), false)
   assert.equal(isMissingHealthEndpointError(new Error('500: boom')), false)
 })
 
@@ -191,7 +191,7 @@ test('recognizes missing-route shapes only', () => {
 test('anonymous gate-shaped 401 falls back to /api/status (backend predates /api/health)', async () => {
   const calls: string[][] = []
 
-  await waitForPulseReady('http://192.168.1.132:9119', {
+  await waitForPULSEReady('http://192.168.1.132:9119', {
     token: null,
     fetchPublicJson: async url => {
       calls.push(['public', url])
@@ -220,7 +220,7 @@ test('a credentialed 401 fails fast for reauth instead of reporting a dead sessi
   const calls: string[][] = []
 
   await assert.rejects(
-    waitForPulseReady('https://gateway.example', {
+    waitForPULSEReady('https://gateway.example', {
       token: 'session-token',
       fetchPublicJson: async () => {
         throw new Error('public probe must not be used when credentialed')
@@ -253,7 +253,7 @@ test('a credentialed 401 fails fast for reauth instead of reporting a dead sessi
 })
 
 test('unsigned OAuth is a terminal reauth failure; a bare needsOauthLogin hint is not', () => {
-  // The unsigned-in throw must set isReauthRequired so startPulse latches.
+  // The unsigned-in throw must set isReauthRequired so startPULSE latches.
   // A bare needsOauthLogin (the IPC-shaped hint) stays Sign-in copy, not a
   // latch. A CONFIRMED ticket 401/403 is different: the gateway has already
   // tried the AT/RT rotation (cookie) or the desktop has forced one (native)
@@ -266,12 +266,12 @@ test('unsigned OAuth is a terminal reauth failure; a bare needsOauthLogin hint i
   assert.equal(isReauthRequiredError(unsigned), true)
   assert.match(unsigned.message, /not signed in/i)
   assert.equal(isReauthRequiredError({ needsOauthLogin: true }), false)
-  assert.equal(isReauthRequiredError(new Error('Could not reach the remote Pulse gateway')), false)
+  assert.equal(isReauthRequiredError(new Error('Could not reach the remote PULSE gateway')), false)
 })
 
 test('a credentialed 403 is also a terminal reauth failure', async () => {
   await assert.rejects(
-    waitForPulseReady('https://gateway.example', {
+    waitForPULSEReady('https://gateway.example', {
       fetchPublicJson: async () => ({}),
       fetchJson: async () => ({}),
       probeHealth: async () => {
@@ -292,7 +292,7 @@ test('a credentialed probe still uses the 404 fallback for a genuinely missing r
   // mistaken for a rejected session.
   const calls: string[][] = []
 
-  await waitForPulseReady('https://gateway.example', {
+  await waitForPULSEReady('https://gateway.example', {
     token: 'session-token',
     fetchPublicJson: async () => {
       throw new Error('public probe must not be used when credentialed')
@@ -323,7 +323,7 @@ test('a non-gate 401 keeps polling rather than skipping a misconfigured health r
   let currentTime = 0
 
   await assert.rejects(
-    waitForPulseReady('http://127.0.0.1:9000', {
+    waitForPULSEReady('http://127.0.0.1:9000', {
       fetchPublicJson: async url => {
         calls.push(['public', url])
         throw new Error('401: {"detail":"Unauthorized"}')
@@ -353,7 +353,7 @@ test('credentialed 5xx and 429 keep polling — only 401/403 are terminal', asyn
     let currentTime = 0
 
     await assert.rejects(
-      waitForPulseReady('https://gateway.example', {
+      waitForPULSEReady('https://gateway.example', {
         fetchPublicJson: async () => ({}),
         fetchJson: async () => ({}),
         probeHealth: async () => {
@@ -425,25 +425,25 @@ test('isServerSideHttpError detects 502/503/504', () => {
   assert.equal(isServerSideHttpError('503: something'), null) // not an Error
 })
 
-test('isPulseCloudAgentUrl detects cloud agent hosts', () => {
+test('isNousCloudAgentUrl detects cloud agent hosts', () => {
   // Positive cases
-  assert.equal(isPulseCloudAgentUrl('https://example.agents.pulse.invalid'), true)
-  assert.equal(isPulseCloudAgentUrl('https://example.agents.pulse.invalid/api/health'), true)
-  assert.equal(isPulseCloudAgentUrl('http://example.agents.pulse.invalid'), true)
+  assert.equal(isNousCloudAgentUrl('https://ares-3009.agents.anxious-research.com'), true)
+  assert.equal(isNousCloudAgentUrl('https://ares-3009.agents.anxious-research.com/api/health'), true)
+  assert.equal(isNousCloudAgentUrl('http://test.agents.anxious-research.com'), true)
 
   // Negative cases
-  assert.equal(isPulseCloudAgentUrl('http://127.0.0.1:9000'), false)
-  assert.equal(isPulseCloudAgentUrl('https://gateway.example.com'), false)
-  assert.equal(isPulseCloudAgentUrl('https://anxious-research.com'), false)
-  assert.equal(isPulseCloudAgentUrl('not-a-url'), false)
+  assert.equal(isNousCloudAgentUrl('http://127.0.0.1:9000'), false)
+  assert.equal(isNousCloudAgentUrl('https://gateway.example.com'), false)
+  assert.equal(isNousCloudAgentUrl('https://anxious-research.com'), false)
+  assert.equal(isNousCloudAgentUrl('not-a-url'), false)
 })
 
-test('waitForPulseReady classifies a persistent cloud agent 503 as cloud-backend-down', async () => {
+test('waitForPULSEReady classifies a persistent cloud agent 503 as cloud-backend-down', async () => {
   let attempts = 0
   const currentTime = { value: 0 }
 
   try {
-    await waitForPulseReady('https://example.agents.pulse.invalid', {
+    await waitForPULSEReady('https://ares-3009.agents.anxious-research.com', {
       fetchPublicJson: async () => {
         attempts++
         // Always return 503
@@ -472,11 +472,11 @@ test('waitForPulseReady classifies a persistent cloud agent 503 as cloud-backend
   }
 })
 
-test('waitForPulseReady does not cloud-wrap non-cloud 503 errors', async () => {
+test('waitForPULSEReady does not cloud-wrap non-cloud 503 errors', async () => {
   const currentTime = { value: 0 }
 
   try {
-    await waitForPulseReady('http://127.0.0.1:9000', {
+    await waitForPULSEReady('http://127.0.0.1:9000', {
       fetchPublicJson: async () => {
         throw new Error('503: Service Unavailable')
       },
@@ -534,32 +534,32 @@ test('isServerSideHttpError structured path excludes 500/401/403/404/429 even wh
   }
 })
 
-test('makePulseCloudBackendDownError produces the Cloud shape and preserves cause', () => {
+test('makeNousCloudBackendDownError produces the Cloud shape and preserves cause', () => {
   const err = new Error('upstream unavailable') as any
   err.statusCode = 503
-  const result = makePulseCloudBackendDownError('https://example.agents.pulse.invalid', err)
+  const result = makeNousCloudBackendDownError('https://ares-3009.agents.anxious-research.com', err)
   assert.ok(result)
   assert.equal((result as any).isCloudBackendDown, true)
   assert.equal((result as any).statusCode, 503)
   assert.equal((result as any).cause, err)
 })
 
-test('makePulseCloudBackendDownError returns null for a Cloud 401 (routes to reauth)', () => {
+test('makeNousCloudBackendDownError returns null for a Cloud 401 (routes to reauth)', () => {
   const err = new Error('Unauthorized') as any
   err.statusCode = 401
-  assert.equal(makePulseCloudBackendDownError('https://example.agents.pulse.invalid', err), null)
+  assert.equal(makeNousCloudBackendDownError('https://ares-3009.agents.anxious-research.com', err), null)
 })
 
-test('makePulseCloudBackendDownError returns null for a non-Cloud 503 (generic remote failure)', () => {
+test('makeNousCloudBackendDownError returns null for a non-Cloud 503 (generic remote failure)', () => {
   const err = new Error('Service Unavailable') as any
   err.statusCode = 503
-  assert.equal(makePulseCloudBackendDownError('https://gateway.example.com', err), null)
-  assert.equal(makePulseCloudBackendDownError('http://127.0.0.1:9000', err), null)
+  assert.equal(makeNousCloudBackendDownError('https://gateway.example.com', err), null)
+  assert.equal(makeNousCloudBackendDownError('http://127.0.0.1:9000', err), null)
 })
 
-test('makePulseCloudBackendDownError preserves legacy string-prefix compatibility', () => {
-  const result = makePulseCloudBackendDownError(
-    'https://example.agents.pulse.invalid',
+test('makeNousCloudBackendDownError preserves legacy string-prefix compatibility', () => {
+  const result = makeNousCloudBackendDownError(
+    'https://ares-3009.agents.anxious-research.com',
     new Error('503: Service Unavailable')
   )
 

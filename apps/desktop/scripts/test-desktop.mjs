@@ -17,10 +17,10 @@ const PLATFORM = process.platform
 // shell and the PM payload under resources/agent-payload.
 const APP = (() => {
   if (PLATFORM === 'darwin') {
-    const appPath = path.join(RELEASE_ROOT, `mac-${ARCH}`, 'Pulse.app')
+    const appPath = path.join(RELEASE_ROOT, `mac-${ARCH}`, 'PULSE.app')
     return {
       appPath,
-      binary: path.join(appPath, 'Contents', 'MacOS', 'Pulse'),
+      binary: path.join(appPath, 'Contents', 'MacOS', 'PULSE'),
       resourcesPath: path.join(appPath, 'Contents', 'Resources'),
       asarPath: path.join(appPath, 'Contents', 'Resources', 'app.asar'),
       unpackedDistIndex: path.join(appPath, 'Contents', 'Resources', 'app.asar.unpacked', 'dist', 'index.html')
@@ -35,7 +35,7 @@ const APP = (() => {
       .find(exists)
     return {
       appPath: unpacked,
-      binary: unpacked ? path.join(unpacked, 'Pulse.exe') : path.join(RELEASE_ROOT, 'win-unpacked', 'Pulse.exe'),
+      binary: unpacked ? path.join(unpacked, 'PULSE.exe') : path.join(RELEASE_ROOT, 'win-unpacked', 'PULSE.exe'),
       resourcesPath: unpacked ? path.join(unpacked, 'resources') : path.join(RELEASE_ROOT, 'win-unpacked', 'resources'),
       asarPath: unpacked ? path.join(unpacked, 'resources', 'app.asar') : path.join(RELEASE_ROOT, 'win-unpacked', 'resources', 'app.asar'),
       unpackedDistIndex: unpacked
@@ -47,7 +47,7 @@ const APP = (() => {
   const unpacked = path.join(RELEASE_ROOT, 'linux-unpacked')
   return {
     appPath: unpacked,
-    binary: path.join(unpacked, 'Pulse'),
+    binary: path.join(unpacked, 'PULSE'),
     resourcesPath: path.join(unpacked, 'resources'),
     asarPath: path.join(unpacked, 'resources', 'app.asar'),
     unpackedDistIndex: path.join(unpacked, 'resources', 'app.asar.unpacked', 'dist', 'index.html')
@@ -118,10 +118,10 @@ function ensurePackagedApp() {
 
 function resolveDmgPath() {
   if (!exists(RELEASE_ROOT)) {
-    return path.join(RELEASE_ROOT, `Pulse-${PACKAGE_JSON.version}-${ARCH}.dmg`)
+    return path.join(RELEASE_ROOT, `PULSE-${PACKAGE_JSON.version}-${ARCH}.dmg`)
   }
 
-  const prefix = `Pulse-${PACKAGE_JSON.version}`
+  const prefix = `PULSE-${PACKAGE_JSON.version}`
   const candidates = fs
     .readdirSync(RELEASE_ROOT)
     .filter(name => name.endsWith('.dmg'))
@@ -135,7 +135,7 @@ function resolveDmgPath() {
 
   return candidates.length > 0
     ? path.join(RELEASE_ROOT, candidates[0])
-    : path.join(RELEASE_ROOT, `Pulse-${PACKAGE_JSON.version}-${ARCH}.dmg`)
+    : path.join(RELEASE_ROOT, `PULSE-${PACKAGE_JSON.version}-${ARCH}.dmg`)
 }
 
 function resolveMsixPath() {
@@ -303,8 +303,8 @@ function lifecycleEnv(sandbox) {
   env.PULSE_DESKTOP_SKIP_QUIT_CONFIRM = '1'
   // Window-title label only — NOT package identity; package identity is build-
   // time. Identity isolation here is the sandboxed userData (single-instance
-  // lock is scoped to it), so a live Pulse instance can never be contacted.
-  env.PULSE_DESKTOP_APP_NAME = 'PulseLifecycleProbe'
+  // lock is scoped to it), so a live PULSE instance can never be contacted.
+  env.PULSE_DESKTOP_APP_NAME = 'PULSELifecycleProbe'
   // REQUIRED: with a thin (external-payload) build there is no sealed runtime,
   // and an unresolved backend would fall through to first-run bootstrap —
   // install.ps1, which writes User PATH, Start-Menu shortcuts and ACLs on a
@@ -551,7 +551,7 @@ function printArtifacts(options = {}) {
 
 function help() {
   console.log(`Usage:
-  npm run test:desktop:existing  # build packaged app, launch with normal PATH/existing Pulse
+  npm run test:desktop:existing  # build packaged app, launch with normal PATH/existing PULSE
   npm run test:desktop:fresh     # build packaged app, launch with temp userData + PULSE_HOME
   npm run test:desktop:dmg       # (macOS only) build DMG and open it
   npm run test:desktop:msix      # (win32 only) build MSIX package

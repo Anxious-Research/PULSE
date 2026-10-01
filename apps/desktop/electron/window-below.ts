@@ -1,4 +1,4 @@
-// window-below.ts — which OS window sits directly underneath a Pulse window.
+// window-below.ts — which OS window sits directly underneath a PULSE window.
 //
 // Backs the desktop-gated `read_window_below` tool: the renderer receives
 // `window.read.request` from the gateway, asks main over IPC, and answers
@@ -77,7 +77,7 @@ export function enumerationFailureNote(platform: string, env: NodeJS.ProcessEnv,
   if (env.HYPRLAND_INSTANCE_SIGNATURE) {
     return (
       'Could not enumerate windows: Hyprland did not answer on its IPC socket. ' +
-      'Check that `hyprctl clients` works from the same session Pulse is ' +
+      'Check that `hyprctl clients` works from the same session PULSE is ' +
       'running in.'
     )
   }
@@ -88,7 +88,7 @@ export function enumerationFailureNote(platform: string, env: NodeJS.ProcessEnv,
     return (
       'Could not enumerate windows: this is a Wayland session, and Wayland does ' +
       'not let an application see other applications\u2019 windows. Log in to an ' +
-      'X11/Xorg session, or run Pulse under XWayland with DISPLAY set.'
+      'X11/Xorg session, or run PULSE under XWayland with DISPLAY set.'
     )
   }
 
@@ -104,7 +104,7 @@ const overlaps = (a: EnumeratedWindow['bounds'], b: EnumeratedWindow['bounds']):
 /**
  * Pick the window directly underneath ours from a front-to-back window list.
  *
- * Walks past every window owned by our own process (all Pulse windows share
+ * Walks past every window owned by our own process (all PULSE windows share
  * the main process pid), then takes the first other-process window whose
  * bounds overlap ours — "underneath" means visually behind, not merely next
  * in z-order on some other display. `frontmost` is the first other-process
@@ -144,6 +144,19 @@ export interface EnumerationFailure {
 
 export const enumerationFailed = <T>(result: EnumerationFailure | T): result is EnumerationFailure =>
   typeof result === 'object' && result !== null && 'reason' in result
+
+// Keep the native provider's failure detail shared by the tool and HUD log.
+export function getWindowsFailureReason(detail: string, platform: string, arch: string): string {
+  if (platform === 'win32' && arch === 'arm64') {
+    return (
+      `${detail}. On Windows ARM64, check that the installed get-windows package includes a working ` +
+      'win32-arm64 native binding. If that binding is unavailable, use the x64 desktop build under Windows emulation, ' +
+      'or a build with a matching native binding. This affects both read_window_below and HUD window context.'
+    )
+  }
+
+  return detail
+}
 
 const describeError = (error: unknown): string =>
   error instanceof Error ? error.message : String(error ?? 'unknown error')
@@ -284,7 +297,11 @@ export async function enumerateWindowsFrontToBack(
   selfPid: number,
   titlesAvailable: boolean
 ): Promise<EnumeratedWindow[] | EnumerationFailure> {
-  return (await readHyprlandWindows(selfPid)) ?? (await enumerateViaGetWindows(titlesAvailable))
+  const result = (await readHyprlandWindows(selfPid)) ?? (await enumerateViaGetWindows(titlesAvailable))
+
+  return enumerationFailed(result)
+    ? { reason: getWindowsFailureReason(result.reason, process.platform, process.arch) }
+    : result
 }
 
 export async function readWindowBelow(
@@ -312,7 +329,7 @@ export async function readWindowBelow(
   if (process.platform === 'darwin' && !titlesAvailable) {
     result.note =
       'Window titles are hidden: macOS reveals other apps\u2019 titles only with the ' +
-      'Screen Recording permission, which Pulse does not request for this.'
+      'Screen Recording permission, which PULSE does not request for this.'
   }
 
   return result

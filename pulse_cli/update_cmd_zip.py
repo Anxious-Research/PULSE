@@ -282,7 +282,7 @@ def _require_staging_space(extracted: str, entries: list[str], project_root: str
 
 def _link_or_copy_artifact(source: str, destination: str) -> None:
     """Hardlink where the filesystem allows (apps/desktop/node_modules is hundreds of MB, and a link stays
-    valid after the swap unlinks the old tree; on Windows a link also succeeds on a locked Pulse.exe
+    valid after the swap unlinks the old tree; on Windows a link also succeeds on a locked PULSE.exe
     where copy2 raises); byte copy otherwise."""
     try:
         os.link(source, destination)
@@ -365,7 +365,7 @@ def _download_and_swap_zip(branch: str, zip_url: str) -> None:
         print(f"✗ ZIP update failed: {e}")
         # Two-phase replace commits all or rolls all back, so no mixed tree here — don't push a needless reinstall.
         print("  Your existing install was left in place.")
-        print("  Re-run `pulse update` to retry; if the agent won't start, reinstall from https://pulse-agent.anxiousresearchlab.com")
+        print("  Re-run `pulse update` to retry; if the agent won't start, reinstall from https://pulse-agent.anxious-research.com")
         _m().sys.exit(1)
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
@@ -406,5 +406,6 @@ def _update_via_zip(args, *, had_desktop_app_before_update: bool = False,
         raise ValueError("ZIP update requires a GitHub owner/repository")
     _download_and_swap_zip(branch, f"https://github.com/{repository}/archive/{ref}.zip")
     completion_request["expected_sha"] = target_sha
+    completion_request["apply_mode"] = "zip"
     _complete_source_update(completion_request)
     return True

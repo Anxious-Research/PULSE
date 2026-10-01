@@ -361,7 +361,7 @@ export async function selectConnection(connectionId: string, options: SelectConn
 
   const targetKey = `${connectionId}::${targetProfile}`
 
-  // The primary local descriptor (startPulse) historically publishes without
+  // The primary local descriptor (startPULSE) historically publishes without
   // a profile of its own; a profile-less descriptor on the source we are
   // landing must not strand the switch — the activation already published the
   // route we asked for, so trust it for the same source instead of comparing

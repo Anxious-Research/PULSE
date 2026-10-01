@@ -1,4 +1,4 @@
-"""``pulse debug`` debug tools for Pulse Agent."""
+"""``pulse debug`` debug tools for PULSE Agent."""
 
 import contextlib
 import datetime
@@ -186,7 +186,7 @@ def _upload_paste_rs(content: str) -> str:
 
 
 def _upload_dpaste_com(content: str, expiry_days: int = 1) -> str:
-    boundary = "----PulseDebugBoundary9f3c"
+    boundary = "----PULSEDebugBoundary9f3c"
     fields = (("content", content), ("syntax", "text"), ("expiry_days", str(expiry_days)))
     body = ("".join(f'--{boundary}\r\nContent-Disposition: form-data; name="{n}"\r\n\r\n{v}\r\n'
                     for n, v in fields) + f"--{boundary}--\r\n").encode("utf-8")
@@ -231,7 +231,7 @@ def _primary_log_path(log_name: str) -> Optional[Path]:
 # share`; a bare "(file not found)" would read as "the app logged nothing" and misdirect triage.
 _CLIENT_SIDE_LOGS = {
     "desktop": (
-        "written by Pulse Desktop on the machine running the app, not by this "
+        "written by PULSE Desktop on the machine running the app, not by this "
         "backend. If the desktop connects to a remote/docker/SSH backend, collect "
         "it on that client machine")}
 
@@ -256,13 +256,18 @@ def _resolve_log_path(log_name: str) -> Optional[Path]:
     return None
 
 
-def _redact_log_text(text: str) -> str:
+def _redact_log_text(text: str, *, redact_url_credentials: bool = True) -> str:
     """``redact_sensitive_text(force=True)`` + email scrub — fires regardless of the operator's
-    ``security.redact_secrets`` setting; only the in-memory upload copy is sanitized."""
+    ``security.redact_secrets`` setting; only the in-memory upload copy is sanitized. URL
+    credentials (``?token=``, ``user:pass@``) are masked too by default: log lines keep them, since
+    default redaction spares OAuth/magic-link URLs, but nothing follows a link out of an uploaded
+    report."""
     if not text:
         return text
     from agent.redact import redact_sensitive_text
-    text = redact_sensitive_text(text, force=True)
+    text = redact_sensitive_text(
+        text, force=True, redact_url_credentials=redact_url_credentials
+    )
     return _EMAIL_ADDRESS_RE.sub("[REDACTED_EMAIL]", text)
 
 
@@ -330,8 +335,8 @@ def _capture_log_snapshot(
 
 # Logs the debug report tails, in output order. ``agent`` gets the full ``--lines`` budget;
 # the rest are capped at 100 lines. Every log but ``errors`` is also uploaded in full.
-_REPORT_LOGS = ("agent", "errors", "gateway", "gui", "desktop")
-_FULL_LOGS = ("agent", "gateway", "gui", "desktop")
+_REPORT_LOGS = ("agent", "errors", "gateway", "gui", "desktop", "update", "handoff")
+_FULL_LOGS = ("agent", "gateway", "gui", "desktop", "update", "handoff")
 
 
 def _tail_budget(name: str, log_lines: int) -> int:
@@ -346,13 +351,16 @@ def _capture_default_log_snapshots(
         for name in _REPORT_LOGS}
 
 
-def _capture_dump() -> str:
-    """Run ``pulse dump`` and return its stdout as a string."""
+def _capture_dump(redact: bool = True) -> str:
+    """Run ``pulse dump`` and return its stdout, force-redacted unless *redact* is False: the dump
+    is upload-bound and quotes config values (e.g. ``fallback_providers``), so URL credentials are
+    redacted too, as in the uploaded logs."""
     from pulse_cli.dump import run_dump
     capture = io.StringIO()
     with contextlib.redirect_stdout(capture), contextlib.suppress(SystemExit):
         run_dump(SimpleNamespace(show_keys=False))
-    return capture.getvalue()
+    text = capture.getvalue()
+    return _redact_log_text(text, redact_url_credentials=True) if redact else text
 
 
 def collect_debug_report(
@@ -378,14 +386,19 @@ def collect_debug_report(
                 buf.write(f"session {sess}: {st['heal_events']} heal events, "
                           f"{st['messages_healed']} messages healed, escalated={st['escalated']}\n")
     buf.write("\n")
+    from pulse_cli.logs import LOG_FILES
     for name in _REPORT_LOGS:
-        buf.write(f"\n--- {name}.log (last {_tail_budget(name, log_lines)} lines) ---\n"
-                  f"{log_snapshots[name].tail_text}\n")
+        snap = log_snapshots.get(name)
+        if snap is None:
+            continue
+        filename = LOG_FILES.get(name, f"{name}.log")
+        buf.write(f"\n--- {filename} (last {_tail_budget(name, log_lines)} lines) ---\n"
+                  f"{snap.tail_text}\n")
     return buf.getvalue()
 
 
-# Anxious-S3 envelope format id; the discord-support viewer keys off it.
-_ANXIOUS_BUNDLE_FORMAT = "pulse-debug-share/1"
+# Nous-S3 envelope format id; the discord-support viewer keys off it.
+_NOUS_BUNDLE_FORMAT = "pulse-debug-share/1"
 
 
 def collect_share_bundle(log_lines: int = 200, redact: bool = True) -> dict[str, str]:
@@ -394,22 +407,24 @@ def collect_share_bundle(log_lines: int = 200, redact: bool = True) -> dict[str,
     The dump header is prepended to each full log so every file is self-contained, and the
     redaction banner is prepended when ``redact`` is True.
     """
-    dump_text = _capture_dump()
+    dump_text = _capture_dump(redact=redact)
     log_snapshots = _capture_default_log_snapshots(log_lines, redact=redact)
     report = collect_debug_report(log_lines=log_lines, dump_text=dump_text,
                                   log_snapshots=log_snapshots)
     banner = _REDACTION_BANNER if redact else ""
     bundle: dict[str, str] = {"report": banner + report}
+    from pulse_cli.logs import LOG_FILES
     for name in _FULL_LOGS:
         if full := log_snapshots[name].full_text:
-            bundle[f"{name}.log"] = banner + dump_text + f"\n\n--- full {name}.log ---\n" + full
+            filename = LOG_FILES.get(name, f"{name}.log")
+            bundle[filename] = banner + dump_text + f"\n\n--- full {filename} ---\n" + full
     return bundle
 
 
-def build_anxious_bundle(bundle: dict[str, str], redact: bool = True) -> bytes:
-    """Gzip a :func:`collect_share_bundle` mapping into the Anxious envelope (shape parsed by the
+def build_nous_bundle(bundle: dict[str, str], redact: bool = True) -> bytes:
+    """Gzip a :func:`collect_share_bundle` mapping into the Nous envelope (shape parsed by the
     discord-support viewer — keep it stable)."""
-    envelope = {"format": _ANXIOUS_BUNDLE_FORMAT, "redacted": bool(redact),
+    envelope = {"format": _NOUS_BUNDLE_FORMAT, "redacted": bool(redact),
                 "created": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 "files": bundle}
     return gzip.compress(json.dumps(envelope).encode("utf-8"))
@@ -442,8 +457,20 @@ def build_debug_share(
     failures: list[str] = []
     # The summary report is required (raises so callers can fall back); full logs are optional.
     urls = {"Report": upload_to_pastebin(report, expiry_days=expiry)}
-    for label, content in bundle.items():
-        if label == "report":
+    # Full logs to upload (the source of this list is checked by tests to ensure
+    # new logs aren't silently skipped).
+    for label in (
+        "agent.log",
+        "gateway.log",
+        "gui.log",
+        "desktop.log",
+        # Update-failure diagnostics: the only files holding the root cause
+        # of a failed update/Desktop rebuild (#100874).
+        "update.log",
+        "desktop-update-handoff.log",
+    ):
+        content = bundle.get(label)
+        if not content:
             continue
         try:
             urls[label] = upload_to_pastebin(content, expiry_days=expiry)
@@ -485,13 +512,24 @@ def run_debug_share(args):
         print("Collecting debug report...")
         bundle = collect_share_bundle(log_lines=log_lines, redact=redact)
         print(bundle["report"])
-        for label, body in bundle.items():
-            if label != "report":
-                print(f"\n\n{'=' * 60}\nFULL {label}\n{'=' * 60}\n\n{body}")
+        for title, label in (
+            ("FULL agent.log", "agent.log"),
+            ("FULL gateway.log", "gateway.log"),
+            ("FULL gui.log", "gui.log"),
+            ("FULL desktop.log", "desktop.log"),
+            ("FULL update.log", "update.log"),
+            ("FULL desktop-update-handoff.log", "desktop-update-handoff.log"),
+        ):
+            body = bundle.get(label)
+            if body:
+                print(f"\n\n{'=' * 60}")
+                print(title)
+                print(f"{'=' * 60}\n")
+                print(body)
         return
 
-    if getattr(args, "anxious", False):
-        return _run_debug_share_anxious(args, log_lines=log_lines, redact=redact)
+    if getattr(args, "nous", False):
+        return _run_debug_share_nous(args, log_lines=log_lines, redact=redact)
     print(_PRIVACY_NOTICE)
     if not _confirm_upload(args):
         return
@@ -515,32 +553,34 @@ def run_debug_share(args):
         print(f"⚠️  {len(dpaste_urls)} of {len(result.urls)} upload(s) fell back to "
               f"dpaste.com: those pastes stay public for {expiry} day(s) and CANNOT be "
               "deleted with `pulse debug delete`.\n"
-              "\nShare these links with the Pulse team for support.")
+              "\nShare these links with the PULSE team for support.")
     else:
         print(f"\n⏱  Pastes will auto-delete in {result.auto_delete_seconds // 3600} hours.\n"
               "To delete now:  pulse debug delete <url>\n"
-              "\nShare these links with the Pulse team for support.")
+              "\nShare these links with the PULSE team for support.")
 
 
-_ANXIOUS_PRIVACY_NOTICE = """\
-⚠️  --anxious: This uploads your debug bundle to Anxious-INTERNAL storage (AWS S3),
+_NOUS_PRIVACY_NOTICE = """\
+⚠️  --nous: This uploads your debug bundle to Nous-INTERNAL storage (AWS S3),
     NOT a public paste service. The following is included:
-  • System info (OS, Python/Pulse version, provider, which API keys are
+  • System info (OS, Python/PULSE version, provider, which API keys are
     configured — NOT the actual keys)
   • Full agent.log, gateway.log, and desktop.log (up to 512 KB each — likely
-    contains conversation content, tool outputs, and file paths)
+    contains conversation content, tool outputs, and file paths), plus
+    update.log and desktop-update-handoff.log when present (update/hand-off
+    output — the root cause of update failures)
 
-  • The bundle is viewable only by Anxious staff (and allowlisted Discord mods)
+  • The bundle is viewable only by Nous staff (and allowlisted Discord mods)
     via a Google-login-gated viewer.
   • It is NOT a public paste — there is no public URL to the contents.
   • It auto-deletes after 14 days.
 """
 
 
-def _run_debug_share_anxious(args, *, log_lines: int, redact: bool) -> None:
-    """``pulse debug share --anxious``: gzip the same bundle into the Anxious envelope → Anxious-S3."""
-    from pulse_cli.diagnostics_upload import share_to_anxious
-    print(_ANXIOUS_PRIVACY_NOTICE)
+def _run_debug_share_nous(args, *, log_lines: int, redact: bool) -> None:
+    """``pulse debug share --nous``: gzip the same bundle into the Nous envelope → Nous-S3."""
+    from pulse_cli.diagnostics_upload import share_to_nous
+    print(_NOUS_PRIVACY_NOTICE)
     if not _confirm_upload(args):
         return
     if not redact:
@@ -549,29 +589,29 @@ def _run_debug_share_anxious(args, *, log_lines: int, redact: bool) -> None:
     _best_effort_sweep_expired_pastes()
     bundle = collect_share_bundle(log_lines=log_lines, redact=redact)
     if redact:
-        logger.info("pulse debug share --anxious: applied force-mode redaction before upload")
-    print("Uploading to Anxious diagnostics storage...")
+        logger.info("pulse debug share --nous: applied force-mode redaction before upload")
+    print("Uploading to Nous diagnostics storage...")
     try:
-        res = share_to_anxious(build_anxious_bundle(bundle, redact=redact))
+        res = share_to_nous(build_nous_bundle(bundle, redact=redact))
     except Exception as exc:
         print(f"\nNous upload failed: {exc}\n"
-              "\nThe Anxious diagnostics service may be unavailable or not yet provisioned.\n"
+              "\nThe Nous diagnostics service may be unavailable or not yet provisioned.\n"
               "Run `pulse debug share --local` to print the report instead, "
               "or `pulse debug share` to upload to a public paste service.\n", file=sys.stderr)
         sys.exit(1)
     view_url = res.get("viewUrl") or res.get("view_url")
     expires_at = res.get("expiresAt") or res.get("expires_at")
-    print("\nDebug bundle uploaded to Anxious (private):")
+    print("\nDebug bundle uploaded to Nous (private):")
     print(f"  View URL  {view_url}" if view_url
           else f"  (no view URL returned; upload id: {res.get('id', '?')})")
     print(f"\n⏱  Auto-deletes at {expires_at} (14-day retention)." if expires_at
           else "\n⏱  Auto-deletes after 14 days.")
-    print("\nShare this private link with the Anxious team — only Anxious staff "
+    print("\nShare this private link with the Nous team — only Nous staff "
           "(via Google login) can open it.\n"
           "\nPick up the discussion in:\n"
           "  GitHub Issues        https://github.com/Anxious-Research/PULSE/issues\n"
-          "  Anxious Portal Support  https://portal.anxiousresearchlab.com/help\n"
-          "  Discord              https://discord.gg/AnxiousResearchLab")
+          "  Nous Portal Support  https://portal.anxious-research.com/help\n"
+          "  Discord              https://discord.gg/NousResearch")
 
 
 def run_debug_delete(args):
@@ -615,7 +655,7 @@ Options (share):
   --lines N    Number of log lines to include (default: 200)
   --expire N   dpaste.com fallback retention in days (default: 1)
   --local      Print report locally instead of uploading
-  --anxious       Upload to Anxious-internal storage (private, staff-only,
+  --nous       Upload to Nous-internal storage (private, staff-only,
                auto-deletes in 14 days) instead of a public paste
   --no-redact  Disable upload-time secret redaction (default: redact)
 

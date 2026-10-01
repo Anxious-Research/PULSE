@@ -2,7 +2,7 @@ name: telegram-notify
 repo: https://github.com/madpower2000/pulse-telegram-notify
 sha: d7cab7dfb154425118129b0086032e873a832576
 description: >-
-  Remote Telegram lifecycle notifications for the main Pulse agent: turn
+  Remote Telegram lifecycle notifications for the main PULSE agent: turn
   start, completion with a bounded final answer, interruption/failure, and
   user-facing approval requests. Suppresses subagent, Telegram-origin lifecycle,
   and automatic/smart-approval noise. Outbound-only, no input channel. Disclosure — enabled by default once installed and

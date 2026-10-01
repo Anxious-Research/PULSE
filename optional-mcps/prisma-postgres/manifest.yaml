@@ -1,4 +1,4 @@
-# Anxious-approved MCP catalog entry.
+# Nous-approved MCP catalog entry.
 # Presence in this directory = approval. Merged via PR review.
 manifest_version: 1
 
@@ -7,10 +7,10 @@ connector_slug: prisma
 description: Create and manage Prisma Postgres databases.
 source: https://www.prisma.io/docs/postgres/integrations/mcp-server
 
-# Official vendor-hosted remote MCP (URL-only — Pulse never spawns a local
+# Official vendor-hosted remote MCP (URL-only — PULSE never spawns a local
 # process for this entry). Native OAuth 2.1 + Dynamic Client Registration
 # (verified live: RFC 9728 protected-resource metadata -> AS metadata with
-# registration_endpoint); Pulse's MCP client + mcp_oauth_manager handle
+# registration_endpoint); PULSE's MCP client + mcp_oauth_manager handle
 # discovery, PKCE, token exchange, and refresh.
 
 transport:
@@ -33,6 +33,6 @@ suggest:
     - prisma.io
 
 post_install: |
-  On first connection Pulse opens a browser to authorize with
+  On first connection PULSE opens a browser to authorize with
   Prisma Postgres (or run `pulse mcp login prisma-postgres`). Approve access,
   then restart the session so tools load.

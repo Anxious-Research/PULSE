@@ -1,5 +1,5 @@
 import {
-  buildPulseWebSocketUrl,
+  buildPULSEWebSocketUrl,
   type ModelOptionProvider,
   type ModelOptionsResult,
 } from "@pulse/shared";
@@ -45,7 +45,7 @@ declare global {
     __PULSE_AUTH_REQUIRED__?: boolean;
   }
 }
-const SESSION_HEADER = "X-Pulse-Session-Token";
+const SESSION_HEADER = "X-PULSE-Session-Token";
 
 function setSessionHeader(headers: Headers, token: string): void {
   if (!headers.has(SESSION_HEADER)) {
@@ -133,6 +133,8 @@ const PROFILE_SCOPED_PREFIXES = [
   "/api/dashboard/theme",
   "/api/dashboard/font",
   "/api/dashboard/plugins",
+  // The shared-metrics answer is one per profile (telemetry.shared_metrics in its config.yaml).
+  "/api/shared-metrics",
 ];
 
 // The dashboard's own profile when nothing else named one. The backend injects it only
@@ -294,7 +296,7 @@ export async function buildWsAuthParam(): Promise<[string, string]> {
  * the caller can read ``.blob()`` / ``.formData()`` / stream it.
  *
  * Auth, in both modes, exactly as ``fetchJSON`` does it:
- *  - loopback / ``--insecure``: attach the ``X-Pulse-Session-Token`` header.
+ *  - loopback / ``--insecure``: attach the ``X-PULSE-Session-Token`` header.
  *  - gated OAuth: no token header (it's absent by design); the
  *    ``pulse_session_at`` cookie rides along via ``credentials: 'include'``.
  *
@@ -342,7 +344,7 @@ export async function buildWsUrl(
   path: string,
   params?: Record<string, string>,
 ): Promise<string> {
-  return buildPulseWebSocketUrl({
+  return buildPULSEWebSocketUrl({
     authParam: await buildWsAuthParam(),
     basePath: BASE,
     params,
@@ -646,6 +648,17 @@ export const api = {
         body: JSON.stringify(body),
       },
     ),
+  getSharedMetricsConsent: (profile = getManagementProfile()) =>
+    fetchJSON<SharedMetricsConsent>(appendProfileParam("/api/shared-metrics/consent", profile)),
+  saveSharedMetricsConsent: (
+    answer: { enabled: boolean; send: boolean },
+    profile = getManagementProfile(),
+  ) =>
+    fetchJSON<SharedMetricsConsent>(appendProfileParam("/api/shared-metrics/consent", profile), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(answer),
+    }),
   saveConfig: (config: Record<string, unknown>, profile = getManagementProfile()) =>
     fetchJSON<{ ok: boolean }>(appendProfileParam("/api/config", profile), {
       method: "PUT",
@@ -1044,9 +1057,9 @@ export const api = {
     fetchJSON<GatewayMigratePlan>("/api/gateway/migrate/plan"),
   migrateGatewayToMultiplex: () =>
     fetchJSON<ActionResponse>("/api/gateway/migrate", { method: "POST" }),
-  updatePulse: () =>
+  updatePULSE: () =>
     fetchJSON<ActionResponse>("/api/pulse/update", { method: "POST" }),
-  checkPulseUpdate: (force = false) =>
+  checkPULSEUpdate: (force = false) =>
     fetchJSON<UpdateCheckResponse>(
       `/api/pulse/update/check${force ? "?force=true" : ""}`,
     ),
@@ -1442,7 +1455,7 @@ export const api = {
  *
  * Returned by the dashboard's gated middleware when a valid session cookie
  * is attached. ``email`` and ``display_name`` are empty strings under the
- * Anxious Portal contract V1 (the access token has no email/name claims —
+ * Nous Portal contract V1 (the access token has no email/name claims —
  * see Contract Anchor C4 in the plan). The AuthWidget surfaces a
  * truncated ``user_id`` instead.
  */
@@ -1977,13 +1990,21 @@ export interface PlatformStatus {
   updated_at: string;
 }
 
+/** One profile's shared-metrics answer; `decided` is false until either key is written. */
+export interface SharedMetricsConsent {
+  enabled: boolean;
+  send: boolean;
+  decided: boolean;
+  managed: boolean;
+}
+
 export interface StatusResponse {
   active_sessions: number;
   /** Phase 7: ``true`` when the dashboard's OAuth gate is engaged
    * (public bind, no ``--insecure``). Read alongside ``auth_providers``
    * to render a "gated / loopback" badge. */
   auth_required?: boolean;
-  /** Phase 7: registered ``DashboardAuthProvider`` names (e.g. ``["anxious"]``).
+  /** Phase 7: registered ``DashboardAuthProvider`` names (e.g. ``["nous"]``).
    * Empty in loopback mode; empty + ``auth_required=true`` is a
    * fail-closed state (the dashboard will refuse to bind). */
   auth_providers?: string[];
@@ -2519,7 +2540,7 @@ export interface ToolsetProvider {
   tag: string;
   env_vars: ToolsetProviderEnvVar[];
   post_setup: string | null;
-  requires_anxious_auth: boolean;
+  requires_nous_auth: boolean;
   is_active: boolean;
 }
 

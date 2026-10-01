@@ -1,6 +1,6 @@
-"""Why an auxiliary client could not be built — and the Anxious credential failure behind it.
+"""Why an auxiliary client could not be built — and the Nous credential failure behind it.
 
-``_resolve_anxious_runtime_api`` must swallow the resolver's ``AuthError`` and return None so the
+``_resolve_nous_runtime_api`` must swallow the resolver's ``AuthError`` and return None so the
 ladder can still fall back (stored token, fallback_chain). Swallowing it at DEBUG left the goal
 loop reporting ``judge error: RuntimeError`` while the real cause was an ``invalid_grant`` refresh
 (#42177). This module remembers the latest failure so the ladder's raise and the goal judge can
@@ -24,11 +24,11 @@ class AuxiliaryClientUnavailable(RuntimeError):
 
 
 _lock = threading.Lock()
-_last_anxious_detail: Optional[str] = None
-_warned_anxious_details: set[str] = set()
+_last_nous_detail: Optional[str] = None
+_warned_nous_details: set[str] = set()
 
 
-def _quarantined_anxious_error(exc: BaseException) -> BaseException:
+def _quarantined_nous_error(exc: BaseException) -> BaseException:
     """Prefer the persisted terminal quarantine marker over *exc*; sentence-terminate either message.
 
     The pool rung swallows the real ``invalid_grant`` and wipes the dead tokens, so by the time the
@@ -37,12 +37,12 @@ def _quarantined_anxious_error(exc: BaseException) -> BaseException:
     remediation sentence with a space, so an unterminated message reads "Invalid refresh token Run …".
     """
     from pulse_cli.auth import AuthError, get_provider_auth_state
-    from pulse_cli.auth_anxious import _terminal_quarantine_marker
+    from pulse_cli.auth_nous import _terminal_quarantine_marker
 
     with contextlib.suppress(Exception):
-        marker = _terminal_quarantine_marker(get_provider_auth_state("anxious") or {})
+        marker = _terminal_quarantine_marker(get_provider_auth_state("nous") or {})
         if marker and marker.get("message"):
-            return AuthError(_sentence(marker["message"]), provider="anxious", code=marker.get("code"),
+            return AuthError(_sentence(marker["message"]), provider="nous", code=marker.get("code"),
                              relogin_required=True)
     if isinstance(exc, AuthError):
         return AuthError(_sentence(exc), provider=exc.provider, code=exc.code,
@@ -177,6 +177,17 @@ def pool_billing_message(
     )
 
 
+class ProviderNotConfiguredError(RuntimeError):
+    """Agent init found no usable inference provider: nothing is configured, or the explicitly
+    configured one has no credentials.
+
+    A distinct type because the remedy is setup, not a retry: clients route it to their provider
+    setup / onboarding flow. The wording of the two messages has changed more than once, so a
+    client that recognises this failure by matching their text silently stops routing (#119232's
+    sibling); the type and the gateway's ``code`` survive rewording.
+    """
+
+
 def missing_provider_credentials_message(provider_id: str) -> str:
     """The "Provider 'X' is set in config.yaml but …" error for an explicit provider with no credentials.
 
@@ -208,10 +219,10 @@ def missing_provider_credentials_message(provider_id: str) -> str:
             + (f"{remedy}, or {switch}" if remedy else switch.capitalize()))
 
 
-def _anxious_credential_present(exc: BaseException) -> bool:
-    """True when a Anxious credential exists that failed — a coded error (``invalid_grant``, a quarantine
-    marker, ``refresh_failed``) or persisted Anxious auth state. The uncoded "not logged into Anxious Portal"
-    with no stored state is the normal condition for users who never chose Anxious; the auto-route walk
+def _nous_credential_present(exc: BaseException) -> bool:
+    """True when a Nous credential exists that failed — a coded error (``invalid_grant``, a quarantine
+    marker, ``refresh_failed``) or persisted Nous auth state. The uncoded "not logged into Nous Portal"
+    with no stored state is the normal condition for users who never chose Nous; the auto-route walk
     hits it on every discovery pass and must not warn (the ladder already logs its own summary).
     """
     if getattr(exc, "code", None):
@@ -219,43 +230,43 @@ def _anxious_credential_present(exc: BaseException) -> bool:
     from pulse_cli.auth import get_provider_auth_state
 
     with contextlib.suppress(Exception):
-        return bool(get_provider_auth_state("anxious"))
+        return bool(get_provider_auth_state("nous"))
     return False
 
 
-def record_anxious_credential_failure(exc: BaseException) -> str:
-    """Remember *exc* as the latest Anxious credential failure.
+def record_nous_credential_failure(exc: BaseException) -> str:
+    """Remember *exc* as the latest Nous credential failure.
 
-    Logged once per distinct message: WARNING when a real credential failed, DEBUG when Pulse was
-    simply never logged into Anxious.
+    Logged once per distinct message: WARNING when a real credential failed, DEBUG when PULSE was
+    simply never logged into Nous.
     """
     from pulse_cli.auth import format_auth_error
 
-    exc = _quarantined_anxious_error(exc)
+    exc = _quarantined_nous_error(exc)
     message = format_auth_error(exc) if isinstance(exc, Exception) else str(exc)
     message = message.strip() or type(exc).__name__
     code = getattr(exc, "code", None)
     if code and str(code) not in message:
         message = f"{message} (code: {code})"
-    detail = f"Anxious Portal runtime credentials unavailable: {message}"
-    global _last_anxious_detail
+    detail = f"Nous Portal runtime credentials unavailable: {message}"
+    global _last_nous_detail
     with _lock:
-        _last_anxious_detail = detail
-        first_time = detail not in _warned_anxious_details
-        _warned_anxious_details.add(detail)
+        _last_nous_detail = detail
+        first_time = detail not in _warned_nous_details
+        _warned_nous_details.add(detail)
     if first_time:
-        level = logging.WARNING if _anxious_credential_present(exc) else logging.DEBUG
-        logger.log(level, "Auxiliary Anxious client unavailable: %s", detail)
+        level = logging.WARNING if _nous_credential_present(exc) else logging.DEBUG
+        logger.log(level, "Auxiliary Nous client unavailable: %s", detail)
     return detail
 
 
-def clear_anxious_credential_failure() -> None:
-    global _last_anxious_detail
+def clear_nous_credential_failure() -> None:
+    global _last_nous_detail
     with _lock:
-        _last_anxious_detail = None
+        _last_nous_detail = None
 
 
-def anxious_credential_failure_detail() -> Optional[str]:
-    """The latest recorded Anxious credential failure, or None when the last resolution succeeded."""
+def nous_credential_failure_detail() -> Optional[str]:
+    """The latest recorded Nous credential failure, or None when the last resolution succeeded."""
     with _lock:
-        return _last_anxious_detail
+        return _last_nous_detail

@@ -186,7 +186,7 @@ async function startRemote(python: string, env: Record<string, string>, logPath:
           }
 
           return fetch(`${url}/api/status`, {
-            headers: { 'X-Pulse-Session-Token': REMOTE_TOKEN },
+            headers: { 'X-PULSE-Session-Token': REMOTE_TOKEN },
             signal: AbortSignal.timeout(2_000)
           })
             .then(response => response.status)
@@ -268,11 +268,11 @@ test('Settings provider setup stays on its gateway/profile across A → B → A'
   const localHome = path.join(original.root, 'local')
   const remoteHome = path.join(original.root, 'remote')
   const sandbox: Sandbox = { ...original, pulseHome: path.join(localHome, '.pulse') }
-  const remotePulseHome = path.join(remoteHome, '.pulse')
-  const remoteProfileHome = path.join(remotePulseHome, 'profiles', PROFILE)
+  const remotePULSEHome = path.join(remoteHome, '.pulse')
+  const remoteProfileHome = path.join(remotePULSEHome, 'profiles', PROFILE)
   const python = pythonBinary()
   const localEnv = isolatedEnv(localHome, sandbox.pulseHome)
-  const remoteEnv = isolatedEnv(remoteHome, remotePulseHome)
+  const remoteEnv = isolatedEnv(remoteHome, remotePULSEHome)
   const receipts: RpcReceipt[] = []
   const discoveryRequests: string[] = []
   let advertisedModel = 'remote-first'
@@ -297,7 +297,7 @@ test('Settings provider setup stays on its gateway/profile across A → B → A'
   try {
     const endpointUrl = `http://127.0.0.1:${await listen(endpoint)}`
     seedConfig(sandbox.pulseHome, endpointUrl, 'local-sentinel')
-    seedConfig(remotePulseHome, endpointUrl, 'remote-default-sentinel')
+    seedConfig(remotePULSEHome, endpointUrl, 'remote-default-sentinel')
     seedConfig(remoteProfileHome, endpointUrl, 'remote-before-setup')
     await test
       .info()
@@ -351,7 +351,7 @@ test('Settings provider setup stays on its gateway/profile across A → B → A'
       timeout: 60_000
     })
     const localConfig = fs.readFileSync(path.join(sandbox.pulseHome, 'config.yaml'), 'utf8')
-    const remoteDefault = fs.readFileSync(path.join(remotePulseHome, 'config.yaml'), 'utf8')
+    const remoteDefault = fs.readFileSync(path.join(remotePULSEHome, 'config.yaml'), 'utf8')
 
     const localProfiles = () =>
       fs.existsSync(path.join(sandbox.pulseHome, 'profiles'))
@@ -412,7 +412,7 @@ test('Settings provider setup stays on its gateway/profile across A → B → A'
         .toMatchObject({ ok: true, model, profile: PROFILE })
       expect(fs.readFileSync(path.join(sandbox.pulseHome, 'config.yaml'), 'utf8')).toBe(localConfig)
       expect(localProfiles()).toEqual([])
-      expect(fs.readFileSync(path.join(remotePulseHome, 'config.yaml'), 'utf8')).toBe(remoteDefault)
+      expect(fs.readFileSync(path.join(remotePULSEHome, 'config.yaml'), 'utf8')).toBe(remoteDefault)
       await page.screenshot({ path: test.info().outputPath(`${model}-saved.png`) })
       await page.getByRole('button', { name: 'Close settings', exact: true }).click()
       await selectGateway(page, 'local', 'This device', 'default')

@@ -172,7 +172,7 @@ def _resolve_toolset_model_plugin(ts_key: str, provider_row: dict) -> Optional[s
 
 def _toolset_model_catalog(ts_key: str, plugin_name: str, config: dict):
     """Return ``(catalog_dict, default_model)`` for a toolset's plugin backend or, for an image row's
-    ``imagegen_backend`` (``fal``, the managed ``anxious`` union), that backend's catalog."""
+    ``imagegen_backend`` (``fal``, the managed ``nous`` union), that backend's catalog."""
     from pulse_cli.tools_config import IMAGEGEN_BACKENDS, _plugin_image_gen_catalog, _plugin_video_gen_catalog
 
     if ts_key == "image_gen":
@@ -231,7 +231,7 @@ def _no_models(name: str) -> dict:
 async def get_toolsets(profile: Optional[str] = None):
     from pulse_cli.tools_config import (
         _CONFIG_ONLY_TOOLSETS, _get_effective_configurable_toolsets, _get_platform_tools,
-        _toolset_configuration_platform, _toolset_has_keys, get_anxious_subscription_features,
+        _toolset_configuration_platform, _toolset_has_keys, get_nous_subscription_features,
         gui_toolset_label)
     from pulse_cli.platforms import platform_label
     from toolsets import resolve_toolset
@@ -246,7 +246,7 @@ async def get_toolsets(profile: Optional[str] = None):
             enabled_by_platform = {
                 platform: _get_platform_tools(config, platform, include_default_mcp_servers=False)
                 for platform in target_platforms}
-            features = get_anxious_subscription_features(config)
+            features = get_nous_subscription_features(config)
             # Credential presence resolves through the profile's secret scope: outside this block
             # it read the dashboard process env (another profile's keys) or fails closed.
             configured = {name: _toolset_has_keys(name, config, features=features) for name, _, _ in toolset_rows}
@@ -350,7 +350,7 @@ async def get_toolset_config(name: str, profile: Optional[str] = None):
         TOOL_CATEGORIES, _is_provider_active, _visible_providers, provider_readiness_status,
         web_provider_capabilities)
     from pulse_cli.config import get_env_value
-    from pulse_cli.anxious_subscription import get_anxious_subscription_features
+    from pulse_cli.nous_subscription import get_nous_subscription_features
 
     _require_known_toolset(name)
 
@@ -362,7 +362,7 @@ async def get_toolset_config(name: str, profile: Optional[str] = None):
             active_provider = None
             if cat:
                 # Entitlement state fetched once for the whole matrix.
-                features = get_anxious_subscription_features(config, force_fresh=True)
+                features = get_nous_subscription_features(config, force_fresh=True)
                 for prov in _visible_providers(cat, config, force_fresh=True):
                     env_vars = [
                         {
@@ -381,10 +381,10 @@ async def get_toolset_config(name: str, profile: Optional[str] = None):
                         "tag": prov.get("tag", ""),
                         "env_vars": env_vars,
                         "post_setup": prov.get("post_setup"),
-                        "requires_anxious_auth": bool(prov.get("requires_anxious_auth")),
+                        "requires_nous_auth": bool(prov.get("requires_nous_auth")),
                         "is_active": is_active,
                         # Server-side readiness: zero-env-var rows are NOT
-                        # automatically ready (logged-out Anxious rows, never-run
+                        # automatically ready (logged-out Nous rows, never-run
                         # post_setup installs).
                         "status": provider_readiness_status(
                             prov, config, features=features, is_active=is_active)}
@@ -498,13 +498,13 @@ async def select_toolset_provider(
 
     ``web`` only: ``capability`` ('search' | 'extract') writes
     ``web.<capability>_backend`` (the override the dispatchers resolve first);
-    omitted -> legacy ``web.backend``.  Managed Anxious rows report Portal
-    entitlement (``needs_anxious_auth`` + ``feature``): the GUI has no inline
+    omitted -> legacy ``web.backend``.  Managed Nous rows report Portal
+    entitlement (``needs_nous_auth`` + ``feature``): the GUI has no inline
     login, so an unentitled selection would write config and never activate.
     """
     from pulse_cli.tools_config import apply_provider_selection, web_provider_capabilities
-    from pulse_cli.anxious_subscription import (
-        MANAGED_FEATURE_COVERAGE_CATEGORY, get_anxious_subscription_features)
+    from pulse_cli.nous_subscription import (
+        MANAGED_FEATURE_COVERAGE_CATEGORY, get_nous_subscription_features)
 
     _require_known_toolset(name)
 
@@ -547,13 +547,13 @@ async def select_toolset_provider(
                 if body.capability is not None:
                     response["capability"] = body.capability
 
-            # Entitlement check for managed Anxious rows (mirrors the CLI's
-            # ensure_anxious_portal_access gate).  Hits the Portal, so it runs AFTER
+            # Entitlement check for managed Nous rows (mirrors the CLI's
+            # ensure_nous_portal_access gate).  Hits the Portal, so it runs AFTER
             # releasing the mutation lock — still in the worker thread + scope.
             row = _provider_row(config)
-            managed_feature = (row or {}).get("managed_anxious_feature")
+            managed_feature = (row or {}).get("managed_nous_feature")
             if managed_feature:
-                features = get_anxious_subscription_features(config, force_fresh=True)
+                features = get_nous_subscription_features(config, force_fresh=True)
                 acct = features.account_info
                 category = MANAGED_FEATURE_COVERAGE_CATEGORY.get(managed_feature)
                 entitled = bool(
@@ -564,7 +564,7 @@ async def select_toolset_provider(
                         if category
                         else acct.tool_gateway_entitled))
                 if not entitled:
-                    response["needs_anxious_auth"] = True
+                    response["needs_nous_auth"] = True
                     response["feature"] = managed_feature
         return response
 
@@ -700,26 +700,3 @@ async def grant_computer_use_permissions(profile: Optional[str] = None):
         profile, ["computer-use", "permissions", "grant"], "computer-use-grant",
         log_msg="Failed to spawn computer-use permissions grant",
         prefix="Failed to request permissions")
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-import logging  # noqa: F401,E402
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'LateState': ('pulse_cli.web_deps', 'LateState'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

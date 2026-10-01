@@ -1,4 +1,4 @@
-// Session token published by a Pulse backend for same-user attach.
+// Session token published by a PULSE backend for same-user attach.
 //
 // `GET /` withholds `window.__PULSE_SESSION_TOKEN__` when the dashboard is
 // auth-gated. The backend still writes the live token next to its host

@@ -2,8 +2,8 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, expect, it, vi } from 'vitest'
 
 import { setApiRequestConnection } from '@/api/client'
-import type { PulseApiRequest } from '@/global'
-import type { PulseConfigRecord } from '@/pulse'
+import type { PULSEApiRequest } from '@/global'
+import type { PULSEConfigRecord } from '@/pulse'
 import { $activeGatewayProfile } from '@/store/profile'
 import { $connection } from '@/store/session'
 
@@ -39,16 +39,16 @@ afterEach(() => {
 // Regression for #113980: exercise the real provider, API origin binding and
 // profile routing, including an explicit pick before leaving and a fresh mount.
 it('reads and persists the owning profile through A → B → A and restart', async () => {
-  const configs: Record<string, PulseConfigRecord> = {
+  const configs: Record<string, PULSEConfigRecord> = {
     default: { display: { language: 'en' } },
     coder: { display: { language: 'zh', skin: 'mono' } }
   }
 
-  const api = vi.fn(async (request: PulseApiRequest) => {
+  const api = vi.fn(async (request: PULSEApiRequest) => {
     const key = request.profile || 'default'
 
     if (request.method === 'PUT') {
-      configs[key] = structuredClone((request.body as { config: PulseConfigRecord }).config)
+      configs[key] = structuredClone((request.body as { config: PULSEConfigRecord }).config)
 
       return { ok: true }
     }
@@ -84,12 +84,12 @@ it('reads and persists the owning profile through A → B → A and restart', as
 })
 
 it('isolates stale reads and failed saves when the same profile moves between connections', async () => {
-  let finishBoot!: (config: PulseConfigRecord) => void
-  let finishSaveRead!: (config: PulseConfigRecord) => void
+  let finishBoot!: (config: PULSEConfigRecord) => void
+  let finishSaveRead!: (config: PULSEConfigRecord) => void
   let rejectSave!: (reason: Error) => void
   let reads = 0
 
-  const api = vi.fn((request: PulseApiRequest) => {
+  const api = vi.fn((request: PULSEApiRequest) => {
     if (request.method === 'PUT') {
       return new Promise((_, reject) => {
         rejectSave = reject

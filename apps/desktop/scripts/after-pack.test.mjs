@@ -34,7 +34,7 @@ async function seedPackagedMain(context) {
   )
 }
 
-function context(appOutDir, productFilename = 'Pulse Preview') {
+function context(appOutDir, productFilename = 'PULSE Preview') {
   // Use electron-builder's real bundle path resolution, including branding.
   const packager = Object.assign(Object.create(PlatformPackager.prototype), {
     platform: Platform.MAC,
@@ -82,7 +82,7 @@ it('leaves Linux alone and reports a missing framework without failing packaging
     await seedPackagedMain(ctx)
     await configuredHook(ctx)
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('macOS locale markers were not restored'))
-    expect((await readdir(root)).sort()).toEqual(['Pulse Preview.app', 'resources'])
+    expect((await readdir(root)).sort()).toEqual(['PULSE Preview.app', 'resources'])
   } finally {
     warn.mockRestore()
     await rm(root, { recursive: true, force: true })

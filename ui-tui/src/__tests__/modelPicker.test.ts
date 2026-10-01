@@ -7,11 +7,11 @@ const provider = (slug: string, name = slug): ModelOptionProvider => ({ name, sl
 
 describe('ModelPicker provider filtering', () => {
   it('keeps the selected provider when clearing the provider filter', () => {
-    const anxious = provider('anxious', 'Anxious Portal')
+    const nous = provider('nous', 'Nous Portal')
     const ollama = provider('ollama-cloud', 'Ollama Cloud')
 
     const rows = [
-      { name: anxious.name, provider: anxious },
+      { name: nous.name, provider: nous },
       { name: ollama.name, provider: ollama }
     ]
 

@@ -1,7 +1,7 @@
 name: web-serply
 repo: https://github.com/serply-inc/pulse-web-serply
 sha: c6cab41471586a110e5a584061168a045f566e08
-description: Serply web search provider for Pulse Agent. Google web results via the Serply
+description: Serply web search provider for PULSE Agent. Google web results via the Serply
   SERP API. Requires SERPLY_API_KEY (sign up at https://serply.io).
 maintainer: serply-inc
 tier: community

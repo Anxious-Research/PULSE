@@ -13,12 +13,18 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
+from pulse_cli._subprocess_compat import windows_hide_flags
+
 logger = logging.getLogger("pulse_cli.update_cmd")  # log-record parity with the origin module
 
 _ORPHAN_RESCUE_REFS_TO_KEEP = 10
 _ORPHAN_RESCUE_REF_MAX_AGE_DAYS = 30
 
-_GIT_TEXT_KW = dict(capture_output=True, text=True, encoding="utf-8", errors="replace")
+# creationflags is folded in here so every ``**_GIT_TEXT_KW`` spawn (rev-parse label,
+# fork-bomb probe, EOL churn normalization) hides its console under the console-less
+# desktop backend (#117781).
+_GIT_TEXT_KW = dict(capture_output=True, text=True, encoding="utf-8", errors="replace",
+                   creationflags=windows_hide_flags())
 _BAR = "=" * 68
 _UPSTREAM_ADD_CMD = "git remote add upstream https://github.com/Anxious-Research/PULSE.git"
 
@@ -32,7 +38,8 @@ def _git_run(git_cmd, args, cwd=None, *, check=False):
     """Run ``git_cmd + args`` and return the CompletedProcess.
 
     The updater's git runner: capture all output and decode as UTF-8 regardless of the
-    Windows ANSI code page (#52649). ``check=True`` raises on non-zero exit.
+    Windows ANSI code page (#52649). ``check=True`` raises on non-zero exit. The spawn
+    always hides its console window (#117781).
     """
     return subprocess.run(
         git_cmd + list(args),
@@ -40,6 +47,7 @@ def _git_run(git_cmd, args, cwd=None, *, check=False):
         capture_output=True,
         text=True, encoding="utf-8", errors="replace",
         check=check,
+        creationflags=windows_hide_flags(),
     )
 
 
@@ -299,7 +307,7 @@ def _offer_upstream_remote(git_cmd: list[str], cwd: Path, *, assume_yes: bool, i
     ``--yes`` means "don't block", not "mutate my remotes", so a non-interactive skip is NOT persisted."""
     from pulse_cli.update_cmd import _add_upstream_remote, _mark_skip_upstream_prompt
     print(
-        "\nℹ Your fork is not tracking the official Pulse repository.\n"
+        "\nℹ Your fork is not tracking the official PULSE repository.\n"
         "  This means you may miss updates from Anxious-Research/PULSE.\n"
     )
     if assume_yes or (input_fn is None and not (sys.stdin.isatty() and sys.stdout.isatty())):
@@ -449,7 +457,7 @@ def _portable_git_candidates() -> list:
     """PortableGit candidates: shared root first (where the managed tree actually lives, not the
     profile-scoped PULSE_HOME), then profile home as a fallback for custom layouts.
 
-    The Pulse-managed PortableGit tree lives under the SHARED root (``<root>/git/...``), not the
+    The PULSE-managed PortableGit tree lives under the SHARED root (``<root>/git/...``), not the
     profile-scoped PULSE_HOME (``<root>/profiles/<name>``), so a profile-scoped ``pulse update`` must look
     there (monerostar review, #87876).
     """
@@ -596,4 +604,5 @@ def _normalize_managed_eol(git_cmd, repo_root):
             if _eol_only():  # still dirty: pinning would only surface churn we failed to clear
                 return
             print(f"→ Normalized line-ending churn ({len(eol_only)} file(s))")
-        subprocess.run(git_cmd + ["config", "core.autocrlf", "false"], cwd=repo_root, capture_output=True, check=False)
+        subprocess.run(git_cmd + ["config", "core.autocrlf", "false"], cwd=repo_root, capture_output=True, check=False,
+                       creationflags=windows_hide_flags())

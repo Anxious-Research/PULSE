@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import type { PulseReviewFile } from '@/global'
+import type { PULSEReviewFile } from '@/global'
 
 import { buildReviewTree, countAllNodes, flattenReviewRows } from './tree-data'
 
-const file = (path: string, added = 1, removed = 0): PulseReviewFile => ({
+const file = (path: string, added = 1, removed = 0): PULSEReviewFile => ({
   path,
   added,
   removed,

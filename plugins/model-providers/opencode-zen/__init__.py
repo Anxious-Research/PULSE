@@ -14,9 +14,9 @@ from providers.base import ProviderProfile
 # Attribution headers (same values as OpenRouter / Vercel / Fireworks); via
 # default_headers so they survive model switches and credential rotation.
 _ATTRIBUTION_HEADERS = {
-    "HTTP-Referer": "https://pulse-agent.anxiousresearchlab.com",
-    "X-Title": "Pulse Agent",
-    "User-Agent": f"PulseAgent/{get_version_info().base_version}",
+    "HTTP-Referer": "https://pulse-agent.anxious-research.com",
+    "X-Title": "PULSE Agent",
+    "User-Agent": f"PULSEAgent/{get_version_info().base_version}",
 }
 
 

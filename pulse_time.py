@@ -1,4 +1,4 @@
-"""Timezone-aware clock for Pulse.
+"""Timezone-aware clock for PULSE.
 
 ``now()`` returns a tz-aware datetime in the user's configured IANA timezone. Resolution order:
 ``PULSE_TIMEZONE`` env var, then ``timezone`` in ``~/.pulse/config.yaml``, else server-local

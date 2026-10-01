@@ -42,7 +42,7 @@ _PLATFORMS = [
              "password": False, "is_allowlist": True, "help": "Your Mattermost user ID from step 4 above."},
             {"name": "MATTERMOST_HOME_CHANNEL",
              "prompt": "Home channel ID (for cron/notification delivery, or empty to set later with /set-home)",
-             "password": False, "help": "Channel ID where Pulse delivers cron results and notifications."},
+             "password": False, "help": "Channel ID where PULSE delivers cron results and notifications."},
             {"name": "MATTERMOST_REPLY_MODE",
              "prompt": "Reply mode — 'off' for flat messages, 'thread' for threaded replies (default: off)",
              "password": False,
@@ -60,7 +60,7 @@ _PLATFORMS = [
             "2. Complete the BlueBubbles setup wizard — sign in with your Apple ID",
             "3. In BlueBubbles Settings → API, note the Server URL and password",
             "4. The server URL is typically http://<your-mac-ip>:1234",
-            "5. Pulse connects via the BlueBubbles REST API and receives",
+            "5. PULSE connects via the BlueBubbles REST API and receives",
             "   incoming messages via a local webhook",
             "6. To authorize users, use DM pairing: pulse pairing generate bluebubbles",
             "   Share the code — the user sends it via iMessage to get approved",
@@ -109,7 +109,7 @@ _PLATFORMS = [
             "1. Download the Yuanbao app from https://yuanbao.tencent.com/",
             "2. In the app, go to PAI → My Bot and create a new bot",
             "3. After the bot is created, copy the App ID and App Secret",
-            "4. Enter them below and Pulse will connect automatically over WebSocket",
+            "4. Enter them below and PULSE will connect automatically over WebSocket",
         ],
         "vars": [
             {"name": "YUANBAO_APP_ID", "prompt": "App ID", "password": False,
@@ -416,9 +416,9 @@ def _setup_weixin():
     _print_setup_header("💬 Weixin / WeChat")
     print()
     _gw()._print_info_lines(
-        "  1. Pulse will open Tencent iLink QR login in this terminal.",
+        "  1. PULSE will open Tencent iLink QR login in this terminal.",
         "  2. Use WeChat to scan and confirm the QR code.",
-        "  3. Pulse will store the returned account_id/token in ~/.pulse/.env.",
+        "  3. PULSE will store the returned account_id/token in ~/.pulse/.env.",
         "  4. This adapter supports native text, image, video, and document delivery.",
     )
 
@@ -625,7 +625,7 @@ def _setup_signal():
         print()
         _gw()._print_info_lines(
             "  After installing, link your account and start the daemon:",
-            '    signal-cli link -n "PulseAgent"',
+            '    signal-cli link -n "PULSEAgent"',
             "    signal-cli --account +YOURNUMBER daemon --http 127.0.0.1:8080",
         )
         print()

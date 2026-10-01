@@ -2,7 +2,7 @@
 name: github
 description: "GitHub via gh CLI: PRs, issues, reviews, repos, auth."
 version: 2.0.0
-author: Ben Barclay (benbarclay), Pulse Agent
+author: Ben Barclay (benbarclay), PULSE Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

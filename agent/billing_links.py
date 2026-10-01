@@ -15,15 +15,15 @@ from utils import base_url_host_matches
 
 @dataclass
 class BillingBlock:
-    """Structured billing-wall descriptor shared across every surface. ``is_anxious`` is the routing bit:
-    Anxious has an in-app billing surface (Settings → Billing, ``/topup``) preferred over ``billing_url``;
+    """Structured billing-wall descriptor shared across every surface. ``is_nous`` is the routing bit:
+    Nous has an in-app billing surface (Settings → Billing, ``/topup``) preferred over ``billing_url``;
     third-party providers have none, so ``billing_url`` is the deep link needed."""
 
     provider: str
     provider_label: str
     model: str
     billing_url: Optional[str]
-    is_anxious: bool
+    is_nous: bool
     message: str
 
     def to_dict(self) -> dict:
@@ -61,18 +61,18 @@ _PROVIDERS: tuple[_Provider, ...] = (
 _BY_SLUG: dict[str, _Provider] = {slug: p for p in _PROVIDERS for slug in p.slugs}
 
 
-def is_anxious_inference_route(provider: str, base_url: str) -> bool:
-    """True when the failing route is the Anxious-managed inference gateway."""
-    return (provider or "").strip().lower() == "anxious" or base_url_host_matches(str(base_url or ""), "inference-api.anxiousresearchlab.com")
+def is_nous_inference_route(provider: str, base_url: str) -> bool:
+    """True when the failing route is the Nous-managed inference gateway."""
+    return (provider or "").strip().lower() == "nous" or base_url_host_matches(str(base_url or ""), "inference-api.anxious-research.com")
 
 
-def _anxious_billing_url() -> Optional[str]:
-    """Best-effort Anxious portal billing URL (text-surface fallback; Anxious prefers the in-app flow)."""
+def _nous_billing_url() -> Optional[str]:
+    """Best-effort Nous portal billing URL (text-surface fallback; Nous prefers the in-app flow)."""
     try:
-        from pulse_cli.anxious_account import anxious_portal_billing_url
-        return anxious_portal_billing_url(None)
+        from pulse_cli.nous_account import nous_portal_billing_url
+        return nous_portal_billing_url(None)
     except Exception:
-        return "https://portal.anxiousresearchlab.com/billing"
+        return "https://portal.anxious-research.com/billing"
 
 
 def _resolve_provider_link(slug: str, base_url: str) -> tuple[str, Optional[str]]:
@@ -90,7 +90,7 @@ def build_billing_block(*, provider: str, base_url: str, model: str, message: st
     """Billing descriptor for a billing-classified failure; ``message`` (agent-loop guidance) passes through unchanged."""
     slug = (provider or "").strip().lower()
     model = (model or "").strip()
-    if is_anxious_inference_route(slug, base_url):
-        return BillingBlock(slug or "anxious", "Anxious Portal", model, _anxious_billing_url(), True, message or "")
+    if is_nous_inference_route(slug, base_url):
+        return BillingBlock(slug or "nous", "Nous Portal", model, _nous_billing_url(), True, message or "")
     label, url = _resolve_provider_link(slug, base_url)
     return BillingBlock(slug, label, model, url, False, message or "")

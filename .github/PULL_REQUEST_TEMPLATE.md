@@ -66,7 +66,7 @@ Fixes #
 
 - [ ] This skill is **broadly useful** to most users (if bundled) — see [Contributing Guide](https://github.com/Anxious-Research/PULSE/blob/main/CONTRIBUTING.md#should-the-skill-be-bundled)
 - [ ] SKILL.md follows the [standard format](https://github.com/Anxious-Research/PULSE/blob/main/CONTRIBUTING.md#skillmd-format) (frontmatter, trigger conditions, steps, pitfalls)
-- [ ] No external dependencies that aren't already available (prefer stdlib, curl, existing Pulse tools)
+- [ ] No external dependencies that aren't already available (prefer stdlib, curl, existing PULSE tools)
 - [ ] I've tested the skill end-to-end: `pulse --toolsets skills -q "Use the X skill to do Y"`
 
 ## Screenshots / Logs

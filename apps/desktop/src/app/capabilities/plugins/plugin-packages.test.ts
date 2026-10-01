@@ -60,8 +60,8 @@ describe('mergePluginPackages', () => {
       [
         desktop({
           id: 'pulse-talk',
-          name: 'Pulse Talk',
-          description: 'GPT-Live subscription or explicit API voice, with Pulse task delegation.',
+          name: 'PULSE Talk',
+          description: 'GPT-Live subscription or explicit API voice, with PULSE task delegation.',
           packageName: 'pulse-talk',
           file: '/Users/me/.pulse/desktop-plugins/pulse-talk/plugin.js'
         })
@@ -72,7 +72,7 @@ describe('mergePluginPackages', () => {
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({
       key: 'pulse-talk',
-      name: 'Pulse Talk',
+      name: 'PULSE Talk',
       kind: 'both',
       desktopMissing: false,
       agentMissingInProfile: false
@@ -86,7 +86,7 @@ describe('mergePluginPackages', () => {
       [
         desktop({
           id: 'pulse-talk',
-          name: 'Pulse Talk',
+          name: 'PULSE Talk',
           file: '/Users/me/.pulse/desktop-plugins/pulse-talk/plugin.js'
         })
       ],

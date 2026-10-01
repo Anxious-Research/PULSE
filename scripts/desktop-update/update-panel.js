@@ -164,11 +164,11 @@ function run (argv) {
     false
   )
 
-  // Don't allow closing while Pulse is updating.
+  // Don't allow closing while PULSE is updating.
   const closeButton = win.standardWindowButton($.NSWindowCloseButton)
   closeButton.enabled = false
 
-  win.title = 'Pulse'
+  win.title = 'PULSE'
   win.center
   win.releasedWhenClosed = false
   win.backgroundColor = bg
@@ -179,9 +179,9 @@ function run (argv) {
   loaderView.imageScaling = $.NSImageScaleProportionallyUpOrDown
   content.addSubview(loaderView)
 
-  const title = wrappedLabel('Updating Pulse', $.NSFont.systemFontOfSize(18), fg,
+  const title = wrappedLabel('Updating PULSE', $.NSFont.systemFontOfSize(18), fg,
     $.NSMakeRect(0, 178, 280, 26))
-  const line = wrappedLabel('Pulse will open once done.', $.NSFont.systemFontOfSize(12), null,
+  const line = wrappedLabel('PULSE will open once done.', $.NSFont.systemFontOfSize(12), null,
     $.NSMakeRect(24, 118, 232, 54))
   content.addSubview(title)
   content.addSubview(line)
@@ -238,9 +238,9 @@ function run (argv) {
   loaderView.hidden = true
   title.stringValue = settled === 'error' ? 'Failed to update' : 'Update complete'
   if (settled === 'done') {
-    line.stringValue = 'Opening Pulse…\nYou can close this window.'
+    line.stringValue = 'Opening PULSE…\nYou can close this window.'
   } else if (settled === 'manual') {
-    line.stringValue = message || 'Reopen Pulse to finish.'
+    line.stringValue = message || 'Reopen PULSE to finish.'
   } else {
     line.stringValue = 'Run pulse debug share in a terminal to send a report.'
   }

@@ -4,7 +4,7 @@ Server-side LLM fact extraction with semantic search and hybrid multi-signal ret
 
 ## Requirements
 
-- The `mem0ai` SDK, prepared through PM by `pulse memory setup` when you select Mem0. Restart Pulse after preparation; do not install into its selected environment with pip.
+- The `mem0ai` SDK, prepared through PM by `pulse memory setup` when you select Mem0. Restart PULSE after preparation; do not install into its selected environment with pip.
 - Mem0 API key from [app.mem0.ai](https://app.mem0.ai)
 
 ## Setup
@@ -61,7 +61,7 @@ Connect the plugin to a standalone Mem0 server you run yourself — the Docker-s
      "api_key": "your-admin-api-key"
    }
    ```
-3. Start a fresh Pulse session and call `mem0_search` — it connects to your server.
+3. Start a fresh PULSE session and call `mem0_search` — it connects to your server.
 
 The plugin authenticates with `X-API-Key` and uses the server's `/search` and `/memories` routes. `api_key` is optional — omit it only for servers running with `AUTH_DISABLED`.
 

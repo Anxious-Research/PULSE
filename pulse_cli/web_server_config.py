@@ -83,7 +83,13 @@ _SCHEMA_OVERRIDES: Dict[str, Dict[str, Any]] = {
         "local", "docker", "ssh", "modal", "daytona", "vercel_sandbox", "singularity",
     ),
     # sync with _SUPPORTED_VERCEL_RUNTIMES in terminal_tool.py
-    "terminal.vercel_runtime": _select("Vercel Sandbox runtime", "node24", "node22", "python3.13"),
+    "terminal.vercel_image": {
+        "type": "string",
+        "description": "Vercel Sandbox image: a Vercel managed image (vercel/sandbox/universal:latest) or a VCR repository[:tag]",
+    },
+    "terminal.vercel_runtime": _select(
+        "Legacy Vercel Sandbox runtime (deprecated by Vercel; a pinned runtime overrides the image; clear to use the image)",
+        "node24", "node22", "python3.13", clearable=True),
     "terminal.modal_mode": _select("Modal sandbox mode", "sandbox", "function"),
     "proxy.enabled": {
         "type": "boolean",
@@ -104,8 +110,8 @@ _SCHEMA_OVERRIDES: Dict[str, Dict[str, Any]] = {
     "auth.adopt_external_logins": {
         "type": "boolean",
         "description": (
-            "Borrow and refresh the Codex CLI / Claude Code logins when Pulse has no usable login of its own. "
-            "Off: Pulse uses only its own logins (`pulse auth add <provider>`)."
+            "Borrow and refresh the Codex CLI / Claude Code logins when PULSE has no usable login of its own. "
+            "Off: PULSE uses only its own logins (`pulse auth add <provider>`)."
         ),
         "category": "security",
     },
@@ -147,7 +153,7 @@ _SCHEMA_OVERRIDES: Dict[str, Dict[str, Any]] = {
         "", "minimal", "low", "medium", "high", "xhigh", "max", "ultra",
     ),
     "updates.non_interactive_local_changes": _select(
-        "When the chat app / gateway updates Pulse (no terminal prompt), "
+        "When the chat app / gateway updates PULSE (no terminal prompt), "
         "what to do with uncommitted local source edits. 'stash' keeps them "
         "and re-applies them after the update; 'discard' throws them away. "
         "Terminal updates always ask, regardless of this setting.",
@@ -187,7 +193,7 @@ _SCHEMA_OVERRIDES: Dict[str, Dict[str, Any]] = {
 
 # Small categories fold into a bigger tab to avoid one-field orphan tabs. Several sources
 # (models_dev, onboarding, mcp, computer_use, telemetry, plugins, doctor, runtime, session,
-# anxious, telegram) currently surface a single schema field each.
+# nous, telegram) currently surface a single schema field each.
 _CATEGORY_MERGE: Dict[str, str] = {
     "privacy": "security",
     "context": "agent",
@@ -215,7 +221,7 @@ _CATEGORY_MERGE: Dict[str, str] = {
     # agent tab rather than spawning a one-field orphan category.
     "runtime": "agent",
     "session": "general",
-    "anxious": "agent",
+    "nous": "agent",
     "connections": "agent",
     "auth": "security",
     # `fallback.min_switch_reset_seconds` is the only schema-surfaced fallback field.
@@ -406,7 +412,7 @@ def _normalize_main_model_assignment(provider: str, model: str) -> tuple[str, st
     ``provider: anthropic`` + ``default: anthropic/claude-opus-4.6`` — an aggregator slug on
     the native provider, which 400s. Two repairs at this single chokepoint:
 
-    1. Vendor-name → Pulse-provider: when the provider is not a known provider/alias but the
+    1. Vendor-name → PULSE-provider: when the provider is not a known provider/alias but the
        model is a vendor-prefixed slug, keep the user's CURRENT aggregator if on one, else
        openrouter. User-declared ``providers:``/``custom_providers:`` entries resolve first,
        and durable named-custom slugs (``custom`` / ``custom:<name>``) are excluded —
@@ -583,10 +589,10 @@ def _dashboard_skew_restart_hint() -> str:
     if os.environ.get("PULSE_SERVE_HEADLESS") == "1":
         return (
             "restart the Desktop-owned backend to load the new code "
-            "(use Restart backend in Pulse Desktop, or quit and reopen the app)"
+            "(use Restart backend in PULSE Desktop, or quit and reopen the app)"
         )
     return (
-        "restart this Pulse process to load the new code "
+        "restart this PULSE process to load the new code "
         "(pulse dashboard --port <port>, or the equivalent service restart for this install)"
     )
 
@@ -615,18 +621,18 @@ def _resolve_assignment_credentials(model_cfg: dict, provider: str, provider_ent
         model_cfg["api_key"] = raw_key if raw_key.startswith("${") and raw_key.endswith("}") else provider_entry["api_key"]
 
 
-def _apply_anxious_gateway_defaults(cfg: dict) -> list:
-    """Mirror the CLI's post-model-selection behaviour when switching main to Anxious: route
-    *unconfigured* tools through the Anxious Tool Gateway. Purely additive — tools with a direct
+def _apply_nous_gateway_defaults(cfg: dict) -> list:
+    """Mirror the CLI's post-model-selection behaviour when switching main to Nous: route
+    *unconfigured* tools through the Nous Tool Gateway. Purely additive — tools with a direct
     key or explicit backend are skipped. Failures never block saving the assignment."""
     try:
-        from pulse_cli.anxious_subscription import apply_anxious_managed_defaults
+        from pulse_cli.nous_subscription import apply_nous_managed_defaults
         from pulse_cli.tools_config import _get_platform_tools
 
         enabled = _get_platform_tools(cfg, "cli", include_default_mcp_servers=False)
-        return sorted(apply_anxious_managed_defaults(cfg, enabled_toolsets=enabled, force_fresh=True))
+        return sorted(apply_nous_managed_defaults(cfg, enabled_toolsets=enabled, force_fresh=True))
     except Exception:
-        _log.debug("apply_anxious_managed_defaults skipped", exc_info=True)
+        _log.debug("apply_nous_managed_defaults skipped", exc_info=True)
         return []
 
 
@@ -702,7 +708,7 @@ def _apply_main_assignment_sync(cfg: dict, provider: str, model: str, base_url: 
     cfg["model"] = model_cfg
 
     new_provider = provider.strip().lower()
-    gateway_tools = _apply_anxious_gateway_defaults(cfg) if new_provider == "anxious" else []
+    gateway_tools = _apply_nous_gateway_defaults(cfg) if new_provider == "nous" else []
     save_config(cfg)
     if new_provider in {"custom", "local"} and base_url:
         _register_custom_endpoint(base_url, api_key, model)

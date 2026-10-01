@@ -19,12 +19,12 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@/pulse', () => ({
-  savePulseConfigRecord: (config: Record<string, unknown>, profile?: unknown) => mocks.save(config, profile)
+  savePULSEConfigRecord: (config: Record<string, unknown>, profile?: unknown) => mocks.save(config, profile)
 }))
 
 const promptCopy = {
   title: 'Stay signed in to your sites',
-  body: 'Let Pulse browse with a snapshot of your default browser profile.',
+  body: 'Let PULSE browse with a snapshot of your default browser profile.',
   bulletSnapshot: 'Cookies and logins are copied into a managed snapshot.',
   bulletLiveProfile: 'Your live browser profile is never opened directly.',
   bulletLocal: 'Nothing leaves this computer.',
@@ -58,12 +58,12 @@ vi.mock('@/store/notifications', () => ({
 
 vi.mock('../../hooks/use-config-record', () => ({
   pulseConfigCacheWriter: () => (config: Record<string, unknown>) => mocks.cache(config),
-  usePulseConfigRecord: () => ({ data: mocks.loadedConfig })
+  usePULSEConfigRecord: () => ({ data: mocks.loadedConfig })
 }))
 
 describe('RealProfileConsentDialog', () => {
   beforeEach(() => {
-    mocks.loadedConfig = { browser: { allow_private_urls: false }, model: { provider: 'pulse' } }
+    mocks.loadedConfig = { browser: { allow_private_urls: false }, model: { provider: 'nous' } }
     mocks.save.mockResolvedValue({ ok: true })
     $realProfilePromptDismissed.set(false)
     $realProfilePromptMuted.set(false)
@@ -90,7 +90,7 @@ describe('RealProfileConsentDialog', () => {
     expect(mocks.save).toHaveBeenCalledWith({ browser: { use_real_profile: true } }, undefined)
     expect(mocks.cache).toHaveBeenCalledWith({
       browser: { allow_private_urls: false, use_real_profile: true },
-      model: { provider: 'pulse' }
+      model: { provider: 'nous' }
     })
     expect(mocks.notify).toHaveBeenCalled()
   })

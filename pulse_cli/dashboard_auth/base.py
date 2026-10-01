@@ -9,7 +9,7 @@ from typing import Optional
 @dataclass(frozen=True)
 class Session:
     """A verified interactive identity (from ``complete_login`` / ``verify_session``). All fields
-    mandatory; providers without orgs set ``org_id=""``. The tokens are opaque to Pulse."""
+    mandatory; providers without orgs set ``org_id=""``. The tokens are opaque to PULSE."""
     user_id: str
     email: str
     display_name: str
@@ -66,7 +66,7 @@ def classify_jwks_lookup_error(exc: BaseException) -> Exception:
     Folding "cannot parse" into "cannot reach" once made every opaque bearer a fast 503.
 
     * ``jwt.DecodeError`` — the bearer is not a JWT at all (an opaque peer key, a legacy session token,
-    garbage). #94558: hosted agents answered every non-JWT bearer with a fast 503 ``Auth provider 'anxious'
+    garbage). #94558: hosted agents answered every non-JWT bearer with a fast 503 ``Auth provider 'nous'
     unreachable`` even though Portal was healthy, because "cannot parse" and "cannot reach" were folded into
     one branch. * ``jwt.PyJWKSetError`` — the JWKS was fetched fine but holds no key for this token's
     ``kid`` (rotated/foreign key).

@@ -218,11 +218,11 @@ def _check_directory_structure(should_fix: bool, f: Finding) -> None:
         else:  # template comments only (no real content)
             check_info(f"{_DHH}/SOUL.md exists but is empty — edit it to customize personality")
     else:
-        check_warn(f"{_DHH}/SOUL.md not found", "(create it to give Pulse a custom personality)")
+        check_warn(f"{_DHH}/SOUL.md not found", "(create it to give PULSE a custom personality)")
         if should_fix:
             soul_path.parent.mkdir(parents=True, exist_ok=True)
-            soul_path.write_text("# Pulse Agent Persona\n\n<!-- Edit this file to customize how Pulse communicates. -->\n\n"
-                                 "You are Pulse, a helpful AI assistant.\n", encoding="utf-8")
+            soul_path.write_text("# PULSE Agent Persona\n\n<!-- Edit this file to customize how PULSE communicates. -->\n\n"
+                                 "You are PULSE, a helpful AI assistant.\n", encoding="utf-8")
             check_ok(f"Created {_DHH}/SOUL.md with basic template")
             f.fixed += 1
     # Only enabled built-in stores: users can disable either legacy file target, and stale migration files
@@ -280,7 +280,7 @@ def _check_scratch_dir(pulse_home: Path, _DHH: str) -> None:
         )
     tmpdir = os.environ.get("TMPDIR", "")
     if tmpdir and tmpdir != os.environ.get(SCRATCH_DIR_MARKER_ENV, ""):
-        check_info(f"TMPDIR={tmpdir} is set by you or the OS, so Pulse leaves it alone")
+        check_info(f"TMPDIR={tmpdir} is set by you or the OS, so PULSE leaves it alone")
 
 
 def _session_count(state_db_path: Path):
@@ -627,9 +627,9 @@ def _memory_provider_mem0(issues: list) -> None:
 # provider -> (checker, ImportError row, ImportError issue, label for "check failed")
 _MEMORY_PROVIDER_CHECKS = {
     "honcho": (_memory_provider_honcho, ("honcho-ai not installed", "run pulse memory setup"),
-               "Honcho dependencies missing — run pulse memory setup, then restart Pulse", "Honcho"),
+               "Honcho dependencies missing — run pulse memory setup, then restart PULSE", "Honcho"),
     "mem0": (_memory_provider_mem0, ("Mem0 plugin not loadable", "run pulse memory setup"),
-             "Mem0 dependencies missing — run pulse memory setup, then restart Pulse", "Mem0"),
+             "Mem0 dependencies missing — run pulse memory setup, then restart PULSE", "Mem0"),
 }
 
 

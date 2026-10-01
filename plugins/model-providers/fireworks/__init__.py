@@ -9,7 +9,7 @@ from providers.base import ProviderProfile
 
 
 class FireworksProfile(ProviderProfile):
-    """Map Pulse reasoning controls onto Fireworks' OpenAI-compatible wire."""
+    """Map PULSE reasoning controls onto Fireworks' OpenAI-compatible wire."""
 
     def build_api_kwargs_extras(
         self, *, reasoning_config: dict | None = None, **context: Any
@@ -31,12 +31,12 @@ fireworks = FireworksProfile(
     description="Fireworks AI — OpenAI-compatible direct model API",
     signup_url="https://app.fireworks.ai/settings/users/api-keys", env_vars=("FIREWORKS_API_KEY",),
     base_url="https://api.fireworks.ai/inference/v1", auth_type="api_key",
-    # Attribution headers (canonical Pulse set); via default_headers so they
+    # Attribution headers (canonical PULSE set); via default_headers so they
     # survive switch_model and credential rotation.
     default_headers={
-        "HTTP-Referer": "https://pulse-agent.anxiousresearchlab.com",
-        "X-Title": "Pulse Agent",
-        "User-Agent": f"PulseAgent/{get_version_info().base_version}",
+        "HTTP-Referer": "https://pulse-agent.anxious-research.com",
+        "X-Title": "PULSE Agent",
+        "User-Agent": f"PULSEAgent/{get_version_info().base_version}",
     },
     default_aux_model="accounts/fireworks/models/glm-5p2",
     # Picker safety net when the live catalog fetch fails.

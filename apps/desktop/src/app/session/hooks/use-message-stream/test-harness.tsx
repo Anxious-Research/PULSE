@@ -65,7 +65,7 @@ export function renderMessageStream(
       activeSessionIdRef,
       hydrateFromStoredSession: vi.fn(async () => undefined),
       queryClient: queryClientRef.current,
-      refreshPulseConfig: vi.fn(async () => undefined),
+      refreshPULSEConfig: vi.fn(async () => undefined),
       refreshSessions: vi.fn(async () => undefined),
       sessionStateByRuntimeIdRef,
       updateSessionState: (id, updater) => {

@@ -21,7 +21,7 @@ from pulse_cli.dashboard_auth import (
     DashboardAuthProvider, InvalidCodeError, LoginStart, ProviderError, RefreshExpiredError, Session,
     classify_jwks_lookup_error)
 
-# JWKS Cache-Control max-age (anxious contract C7); self-hosted mirrors it.
+# JWKS Cache-Control max-age (nous contract C7); self-hosted mirrors it.
 JWKS_CACHE_SECONDS = 300
 TOKEN_ENDPOINT_TIMEOUT_SEC = 10.0
 JSON_HEADERS = {"Accept": "application/json"}
@@ -186,7 +186,7 @@ def make_jwks_client(jwks_url: str) -> Any:
 
     return PyJWKClient(
         jwks_url, cache_keys=True, lifespan=JWKS_CACHE_SECONDS,
-        headers={"Accept": "application/json", "User-Agent": "PulseAgent/1.0"})
+        headers={"Accept": "application/json", "User-Agent": "PULSEAgent/1.0"})
 
 
 def verify_jwt(
@@ -248,7 +248,7 @@ class NonInteractiveMixin:
 
 class JwtOAuthProvider(DashboardAuthProvider):
     """Authorization-code + PKCE provider whose session token is a JWT we verify ourselves
-    (anxious: Portal access token; self-hosted: OIDC ID token). Subclasses set ``_client_id`` and
+    (nous: Portal access token; self-hosted: OIDC ID token). Subclasses set ``_client_id`` and
     implement: ``_jwks_uri() -> str``; ``_claims_for(token) -> claims`` (raises
     ``InvalidCodeError`` on expiry/foreign token, ``ProviderError`` otherwise);
     ``_grant(data, *, bad_request_exc, headers=None, previous_refresh_token="") -> Session``;

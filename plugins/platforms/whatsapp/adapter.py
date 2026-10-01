@@ -202,7 +202,7 @@ def _cache_dirs() -> tuple:
 
 
 def _is_allowed_bridge_path(url: str) -> bool:
-    """Absolute bridge path resolves (symlinks included) inside a Pulse cache dir — a rogue bridge could hand back /etc/passwd."""
+    """Absolute bridge path resolves (symlinks included) inside a PULSE cache dir — a rogue bridge could hand back /etc/passwd."""
     try:
         resolved = Path(url).resolve()
     except (OSError, ValueError):
@@ -565,7 +565,14 @@ class WhatsAppAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
         if returncode is None:
             return None
         # getattr-with-default: tests build the adapter via ``__new__`` without __init__.
-        if getattr(self, "_shutting_down", False) and returncode in {0, -2, -15}:
+        # A container stop (e.g. s6-overlay's stage-3 broadcast) reaches the bridge child (its own session) before the
+        # gateway's stop flow reaches this adapter's disconnect(), so ``_shutting_down`` alone
+        # misses that window and a normal -15/-2 exit reads as a fatal crash (#127047). The
+        # runner flips ``_stop_requested_by_signal`` in its signal handler — the first thing
+        # that runs on any signal-driven stop — so consult it too. Un-guarded it stays fatal:
+        # a bridge killed while the gateway keeps running still needs the reconnect watcher.
+        runner_stop = getattr(getattr(self, "gateway_runner", None), "_stop_requested_by_signal", False)
+        if (getattr(self, "_shutting_down", False) or runner_stop) and returncode in {0, -2, -15}:
             logger.info("[%s] Bridge exited during shutdown (code %d).", self.name, returncode)
             return None
         message = f"WhatsApp bridge process exited unexpectedly (code {returncode})."
@@ -964,7 +971,7 @@ async def _standalone_send(pconfig, chat_id, message, *, thread_id=None, media_f
                 if not (health.get("capabilities") or {}).get("outboundMentions"):
                     return {"error": (
                         "WhatsApp bridge does not support native mentions; "
-                        "restart it from the same Pulse version.")}
+                        "restart it from the same PULSE version.")}
 
             async def _post(path, payload, total, error_label=None):
                 """``(messageId, None)`` on 200, else ``(None, error_dict)`` (body read only when labelled)."""

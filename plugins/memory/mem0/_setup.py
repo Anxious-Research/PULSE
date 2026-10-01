@@ -187,7 +187,7 @@ def _setup_platform(pulse_home: str, config: dict, flags: dict[str, str]) -> Non
     provider_config.update(mode="platform", host="")
     # _load_config() also seeds ``host`` from MEM0_HOST (.env); the file clear can't help there, so warn.
     if os.environ.get("MEM0_HOST", "").strip():
-        print(f"\n  ⚠ MEM0_HOST is set in your environment ({os.environ['MEM0_HOST']}). It overrides platform mode — remove it from ~/.pulse/.env (or unset it) or Pulse will keep routing to the self-hosted server.")
+        print(f"\n  ⚠ MEM0_HOST is set in your environment ({os.environ['MEM0_HOST']}). It overrides platform mode — remove it from ~/.pulse/.env (or unset it) or PULSE will keep routing to the self-hosted server.")
     _persist_provider_config(pulse_home, config, provider_config, env_writes, "mem0", "API keys saved to .env")
 
 
@@ -449,7 +449,7 @@ def _install_provider_deps(llm_id: str, embedder_id: str, vector_id: str) -> Non
     if missing:
         print("\n  The selected backends need extra packages:")
         print(f"    Missing: {', '.join(missing)}")
-        print("  Declare these requirements in the plugin's pyproject.toml, then run `pulse pm install` and restart Pulse.")
+        print("  Declare these requirements in the plugin's pyproject.toml, then run `pulse pm install` and restart PULSE.")
 
 
 def _probe(fn, ok: str, fail: str, exc=Exception) -> tuple[bool, str]:
@@ -510,26 +510,10 @@ def post_setup(pulse_home: str, config: dict) -> None:
         import mem0
         installed_ver = getattr(mem0, "__version__", None)
         if installed_ver and tuple(int(x) for x in installed_ver.split(".")[:3]) < (2, 0, 7):
-            print(f"\n  ⚠ mem0ai {installed_ver} installed but >=2.0.7 required.\n  Run `pulse pm repair`, then restart Pulse.")
+            print(f"\n  ⚠ mem0ai {installed_ver} installed but >=2.0.7 required.\n  Run `pulse pm repair`, then restart PULSE.")
     flags = parse_flags(sys.argv[1:])
     handler = _MODE_HANDLERS.get(flags["mode"])
     flags["_mode_from_flag"] = handler is not None
     if handler is None:
         handler = _MODE_PICKER[_curses_select("  Select mode", _MODE_ITEMS, 0)]
     handler(pulse_home, config, flags)
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-def has_oss_flags() -> bool:
-    """Check if OSS-related flags are present in sys.argv."""
-    flags = parse_flags(sys.argv[1:])
-    if flags["mode"] == "oss":
-        return True
-    if any(flags.get(k) for k in ("oss_llm_key", "oss_vector_path", "oss_vector_url")):
-        return True
-    return False
-# ---- END PLUGIN-COMPAT ----

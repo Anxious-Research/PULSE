@@ -1,7 +1,7 @@
 name: done-bell
 repo: https://github.com/aydnOktay/pulse-done-bell-
 sha: 3fa519a291d91b0e6c44bd42762190363ce80c39
-description: Ring when a Pulse turn finishes so you can leave the window. OS
+description: Ring when a PULSE turn finishes so you can leave the window. OS
   notification, optional chime, and a busy/done chip. Optional "needs you"
   when approval is waiting. No API keys.
 maintainer: aydnOktay

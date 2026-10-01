@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-# venv-style activation for the Pulse dev environment (pm-managed tools).
+# venv-style activation for the PULSE dev environment (pm-managed tools).
 #
 #   source ./activate      (bash / zsh, repo root)
 #   .\activate.ps1         (PowerShell)

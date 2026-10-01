@@ -1,4 +1,4 @@
-"""A local-only script actually dispatched by Pulse' no-agent cron scheduler."""
+"""A local-only script actually dispatched by PULSE' no-agent cron scheduler."""
 
 import json
 import os

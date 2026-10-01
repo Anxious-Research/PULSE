@@ -39,6 +39,22 @@ describe('pulseDirectiveFormatter.parse', () => {
     ])
   })
 
+  it('preserves punctuation inside quoted values but trims bare sentence punctuation', () => {
+    const quoted = pulseDirectiveFormatter.parse('see @file:`report!` now')
+    const bare = pulseDirectiveFormatter.parse('see @file:report! now')
+
+    expect(quoted).toEqual([
+      { kind: 'text', text: 'see ' },
+      { kind: 'mention', type: 'file', label: 'report!', id: 'report!' },
+      { kind: 'text', text: ' now' }
+    ])
+    expect(bare).toEqual([
+      { kind: 'text', text: 'see ' },
+      { kind: 'mention', type: 'file', label: 'report', id: 'report' },
+      { kind: 'text', text: ' now' }
+    ])
+  })
+
   it('parses session links with profile/id values', () => {
     const segments = pulseDirectiveFormatter.parse('see @session:work/20260101_abc123 next')
 

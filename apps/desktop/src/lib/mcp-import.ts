@@ -280,7 +280,7 @@ function fromClaudeAdd(tokens: string[]): McpImportEntry | null {
   return { config, name }
 }
 
-interface PulseAddFlags {
+interface PULSEAddFlags {
   args: string[]
   auth: null | string
   command: null | string
@@ -291,7 +291,7 @@ interface PulseAddFlags {
 
 const ARGS_END = -1
 
-const emptyPulseFlags = (): PulseAddFlags => ({
+const emptyPULSEFlags = (): PULSEAddFlags => ({
   args: [],
   auth: null,
   command: null,
@@ -315,7 +315,7 @@ function readEnvPairs(env: Record<string, string>, tokens: string[], index: numb
   return i
 }
 
-function readPulseToken(flags: PulseAddFlags, tokens: string[], index: number): number {
+function readPULSEToken(flags: PULSEAddFlags, tokens: string[], index: number): number {
   const token = tokens[index]
 
   if (token === '--args') {
@@ -354,7 +354,7 @@ function readPulseToken(flags: PulseAddFlags, tokens: string[], index: number): 
   return index
 }
 
-function pulseEntry(flags: PulseAddFlags): McpImportEntry | null {
+function pulseEntry(flags: PULSEAddFlags): McpImportEntry | null {
   const { args, auth, command, env, name, url } = flags
 
   if (!name || (!url && !command)) {
@@ -378,11 +378,11 @@ function pulseEntry(flags: PulseAddFlags): McpImportEntry | null {
   return { config, name }
 }
 
-function fromPulseAdd(tokens: string[]): McpImportEntry | null {
-  const flags = emptyPulseFlags()
+function fromPULSEAdd(tokens: string[]): McpImportEntry | null {
+  const flags = emptyPULSEFlags()
 
   for (let i = 3; i < tokens.length; i++) {
-    i = readPulseToken(flags, tokens, i)
+    i = readPULSEToken(flags, tokens, i)
 
     if (i === ARGS_END) {
       break
@@ -494,7 +494,7 @@ function parseLine(line: string): McpImportEntry[] | null {
   }
 
   if (tokens[0] === 'pulse' && tokens[1] === 'mcp' && tokens[2] === 'add') {
-    const entry = fromPulseAdd(tokens)
+    const entry = fromPULSEAdd(tokens)
 
     return entry ? [entry] : null
   }

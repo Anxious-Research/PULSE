@@ -2,7 +2,7 @@ import { atom } from 'nanostores'
 import { afterEach, expect, it, vi } from 'vitest'
 
 import { setApiRequestConnection } from '@/api/client'
-import type { DesktopAgentRoster, PulseConnection } from '@/global'
+import type { DesktopAgentRoster, PULSEConnection } from '@/global'
 import { $fleetRoster, _resetFleetRosterForTests } from '@/store/fleet-roster'
 import type { ProfileInfo } from '@/types/pulse'
 
@@ -25,13 +25,13 @@ const profile = (name: string): ProfileInfo => ({
   skill_count: 0
 })
 
-const descriptor = (connectionId: string): PulseConnection =>
+const descriptor = (connectionId: string): PULSEConnection =>
   ({
     connectionId,
     baseUrl: `https://${connectionId}.example.com`,
     mode: 'remote',
     profile: 'default'
-  }) as PulseConnection
+  }) as PULSEConnection
 
 function activate(connectionId: string) {
   setApiRequestConnection(connectionId)

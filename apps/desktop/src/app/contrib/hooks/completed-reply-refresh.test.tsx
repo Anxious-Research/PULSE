@@ -136,7 +136,7 @@ function Harness({
     ...cache,
     queryClient,
     hydrateFromStoredSession: fallback ? hydrate : noop,
-    refreshPulseConfig: noop,
+    refreshPULSEConfig: noop,
     refreshSessions: noop
   })
   refresh = useCallback(
@@ -170,7 +170,7 @@ function Harness({
     refreshActiveTranscript: refresh,
     refreshCronJobs: noop,
     refreshCurrentModel: noop,
-    refreshPulseConfig: noop,
+    refreshPULSEConfig: noop,
     refreshMessagingSessions: noop,
     refreshSessions: noop,
     requestGateway: async () => ({ sessions: [] }) as never,

@@ -47,7 +47,7 @@ def _render_distribution_plan(plan) -> None:
     if mf.author:
         print(f"  Author:   {mf.author}")
     if mf.pulse_requires:
-        print(f"  Requires: Pulse {mf.pulse_requires}")
+        print(f"  Requires: PULSE {mf.pulse_requires}")
     print(f"  Source:   {plan.provenance}")
     print(f"  Target:   {plan.target_dir}")
     if plan.existing:
@@ -565,7 +565,7 @@ _INFO_FIELDS = (
     ("description", "Description:  "),
     ("author", "Author:       "),
     ("license", "License:      "),
-    ("pulse_requires", "Requires:     Pulse "),
+    ("pulse_requires", "Requires:     PULSE "),
     ("source", "Source:       "),
     ("installed_at", "Installed:    "),
 )

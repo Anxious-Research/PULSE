@@ -29,7 +29,7 @@ const TOKENS: NativeTokenSet = {
   accessToken: 'AT-live-abc123',
   refreshToken: 'RT-live-xyz789',
   expiresAt: 1_893_456_000,
-  provider: 'pulse',
+  provider: 'nous',
   userId: 'u-42'
 }
 
@@ -107,7 +107,7 @@ test('a fresh load restores both tokens and preserves expiry, provider and user'
   // Still a number after the JSON round trip, not "1893456000".
   assert.equal(loaded.expiresAt, 1_893_456_000)
   assert.equal(typeof loaded.expiresAt, 'number')
-  assert.equal(loaded.provider, 'pulse')
+  assert.equal(loaded.provider, 'nous')
   assert.equal(loaded.userId, 'u-42')
 })
 
@@ -130,7 +130,7 @@ test('the full login-to-restart sequence keeps the two parser boundaries apart',
     access_token: 'AT-fresh',
     refresh_token: 'RT-fresh',
     expires_at: 1_893_456_789,
-    provider: 'pulse',
+    provider: 'nous',
     user_id: 'u-77'
   })
 
@@ -246,7 +246,7 @@ test('a corrupt decrypted blob is reported and loads as signed out', () => {
 })
 
 test('a decrypted blob missing accessToken is rejected, not half-restored', () => {
-  const plaintext = JSON.stringify({ refreshToken: 'RT-only', provider: 'pulse' })
+  const plaintext = JSON.stringify({ refreshToken: 'RT-only', provider: 'nous' })
 
   const disk = createFakeDisk(
     JSON.stringify({ [GATEWAY]: { encoding: 'safeStorage', value: Buffer.from(plaintext).toString('base64') } })

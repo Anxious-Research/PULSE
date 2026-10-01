@@ -11,6 +11,8 @@ export interface CommandsCatalogSection {
 export interface CommandCatalogMeta {
   argument_mode?: 'mixed' | 'options' | 'text' | null
   desktop?: string | null
+  /** Subcommands the desktop surface may offer and forward; absent = all. */
+  desktop_subcommands?: readonly string[] | null
 }
 
 export interface CommandsCatalogLike {
@@ -78,7 +80,7 @@ export type DesktopActionId =
 /** A command fulfilled by opening a desktop overlay picker. */
 export type DesktopPickerId = 'model' | 'session'
 
-/** Why a known Pulse command has no desktop UI surface. */
+/** Why a known PULSE command has no desktop UI surface. */
 export type DesktopUnavailableReason = 'advanced' | 'composer-voice' | 'messaging' | 'settings' | 'terminal'
 
 /**
@@ -148,6 +150,14 @@ export interface DesktopCommandSpec {
   hidden?: boolean
   /** Composer behavior for text following the command token. */
   argumentMode?: DesktopSlashArgumentMode
+  /**
+   * Subcommands (first argument token) the desktop may forward when the
+   * command is exec-routed. Absent = the whole family is allowed. Registry
+   * commands declare this as `desktop_subcommands` so a desktop-relevant
+   * review slice can be exposed without widening CLI-hub mutations
+   * (e.g. `/skills install`).
+   */
+  desktopSubcommands?: readonly string[]
 }
 
 const exec = (): DesktopCommandSurface => ({ kind: 'exec' })
@@ -209,7 +219,7 @@ const DESKTOP_COMMAND_SPECS: readonly DesktopCommandSpec[] = [
     surface: action('handoff'),
     argumentMode: 'options'
   },
-  { name: '/profile', description: 'Switch the active Pulse profile', surface: action('profile') },
+  { name: '/profile', description: 'Switch the active PULSE profile', surface: action('profile') },
   {
     name: '/skin',
     description: 'Switch desktop theme or cycle to the next one',
@@ -268,7 +278,7 @@ const DESKTOP_COMMAND_SPECS: readonly DesktopCommandSpec[] = [
     argumentMode: 'text'
   },
   // /bg (alias /background) must be an action (prompt.background RPC — the
-  // TUI's path), not exec: the slash worker's PulseCLI prints the completion
+  // TUI's path), not exec: the slash worker's PULSECLI prints the completion
   // from a fire-and-forget thread after process_command already returned,
   // past the worker's stdout capture window, so the result never reached the
   // desktop conversation that started the task (#97635, #57444).
@@ -300,6 +310,17 @@ const DESKTOP_COMMAND_SPECS: readonly DesktopCommandSpec[] = [
     name: '/status',
     description: 'Show current session status',
     surface: rpc('session.status', ctx => ({ session_id: ctx.sessionId }))
+  },
+  {
+    // Keep this explicit so a current Desktop can review staged writes even
+    // when connected to an older backend whose catalog still says the Skills
+    // sidebar owns the command. The sidebar manages installed skills; it does
+    // not expose the write-approval queue (#98330).
+    name: '/skills',
+    description: 'Review staged skill writes and approval mode',
+    surface: exec(),
+    argumentMode: 'options',
+    desktopSubcommands: ['pending', 'approve', 'reject', 'diff', 'approval']
   }
 ]
 
@@ -456,8 +477,17 @@ function specFromCatalog(command: string): DesktopCommandSpec | null {
     name,
     surface: exec(),
     hidden: entry.desktop === 'hidden',
-    argumentMode: asArgumentMode(entry.argument_mode)
+    argumentMode: asArgumentMode(entry.argument_mode),
+    desktopSubcommands: asSubcommandList(entry.desktop_subcommands)
   }
+}
+
+function asSubcommandList(value: unknown): readonly string[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined
+  }
+
+  return value.filter((sub): sub is string => typeof sub === 'string' && sub.trim() !== '')
 }
 
 function isAliasCommand(command: string): boolean {
@@ -504,12 +534,105 @@ export function canonicalDesktopSlashCommand(command: string): string {
 export function resolveDesktopCommand(command: string): DesktopCommandSpec | null {
   const canonical = canonicalDesktopSlashCommand(command)
   const local = SPEC_BY_NAME.get(canonical)
+  const catalog = specFromCatalog(command)
 
-  if (local && REGISTRY_OFFERED_NAMES.has(canonical)) {
-    return specFromCatalog(command) ?? local
+  if (local && catalog?.desktopSubcommands !== undefined) {
+    return { ...local, desktopSubcommands: catalog.desktopSubcommands }
   }
 
-  return local ?? specFromCatalog(command)
+  if (local && REGISTRY_OFFERED_NAMES.has(canonical)) {
+    return catalog ?? local
+  }
+
+  return local ?? catalog
+}
+
+/** Subcommands the desktop may forward for *command*; null = unrestricted. */
+export function desktopSubcommandAllowlist(command: string): readonly string[] | null {
+  return resolveDesktopCommand(command)?.desktopSubcommands ?? null
+}
+
+/**
+ * Execution gate for exec-routed commands whose spec narrows the family to a
+ * subcommand allowlist (see `desktop_subcommands` on the Python registry).
+ * The first argument token must name an allowed subcommand — anything else
+ * (including a bare command, which the CLI would answer with its interactive
+ * hub) stays off the desktop exec path. Returns the message to render instead
+ * of forwarding, or null when the command may run.
+ */
+export function desktopSubcommandUnavailableMessage(command: string, arg: string): string | null {
+  const allowed = desktopSubcommandAllowlist(command)
+
+  if (!allowed) {
+    return null
+  }
+
+  const display = command.trim().startsWith('/') ? command.trim() : `/${command.trim()}`
+
+  if (allowed.length === 0) {
+    return `${display} is not available in the desktop app — use the terminal for it.`
+  }
+
+  const first = arg.trim().split(/\s+/)[0]?.toLowerCase() ?? ''
+
+  if (!first) {
+    return `${display} needs a subcommand here: ${allowed.join(', ')}.`
+  }
+
+  if (!allowed.some(sub => sub.toLowerCase() === first)) {
+    return `${display} ${first} is not available in the desktop app — use the terminal for it. Available here: ${allowed.join(', ')}.`
+  }
+
+  return null
+}
+
+/**
+ * Drop backend `complete.slash` items whose subcommand token the exec gate
+ * above would refuse, so the popover never suggests a dead end. Command-stage
+ * completions pass through. When `stage.isArgCompletion` is provided, that
+ * backend `replace_from` flag wins over re-parsing whitespace in `text`.
+ */
+export function filterDesktopSubcommandCompletions<T extends { text?: string }>(
+  text: string,
+  items: readonly T[],
+  stage?: { isArgCompletion: boolean }
+): T[] {
+  const command = normalizeCommand(text)
+  const allowed = desktopSubcommandAllowlist(command)
+  const trimmedText = text.trimStart()
+  const normalizedText = trimmedText.startsWith('/') ? trimmedText : `/${trimmedText}`
+  const rest = normalizedText.slice(command.length)
+  // Prefer the backend's replace_from stage when the caller has it. Re-parsing
+  // the query from whitespace disagrees with that flag in both directions.
+  const inArgStage = stage?.isArgCompletion ?? /^\s/.test(rest)
+
+  // Only the argument stage (`/skills …`, including a bare trailing space)
+  // carries subcommand items; command-token completions pass through.
+  if (!allowed || !inArgStage) {
+    return [...items]
+  }
+
+  const argumentText = rest.trimStart()
+  const secondTokenBoundary = argumentText.search(/\s/)
+
+  // Once an allowed first argument is complete, the backend owns completion
+  // of its value (for example `approval on` or `approve <id>`). Keep refusing
+  // value completions for a hub mutation that the execution gate would block.
+  if (secondTokenBoundary >= 0) {
+    const first = argumentText.slice(0, secondTokenBoundary).toLowerCase()
+
+    return allowed.some(entry => entry.toLowerCase() === first) ? [...items] : []
+  }
+
+  return items.filter(item => {
+    if (typeof item.text !== 'string') {
+      return false
+    }
+
+    const sub = item.text.trim().split(/\s+/)[0]?.toLowerCase() ?? ''
+
+    return sub !== '' && allowed.some(entry => entry.toLowerCase() === sub)
+  })
 }
 
 /** Actions that fork their own run instead of speaking into the current turn. */
@@ -530,7 +653,7 @@ export function isSideTaskSlashCommand(text: string): boolean {
   return surface?.kind === 'action' && SIDE_TASK_ACTIONS.has(surface.action)
 }
 
-function isKnownPulseSlashCommand(command: string): boolean {
+function isKnownPULSESlashCommand(command: string): boolean {
   const normalized = normalizeCommand(command)
 
   if (SPEC_BY_NAME.has(normalized) || ALIAS_TO_CANONICAL.has(normalized)) {
@@ -542,7 +665,7 @@ function isKnownPulseSlashCommand(command: string): boolean {
 
 /**
  * An "extension" command is anything the backend surfaces that is NOT one of
- * Pulse' built-in slash commands — i.e. skill commands (`/gif-search`,
+ * PULSE' built-in slash commands — i.e. skill commands (`/gif-search`,
  * `/codex`, …) and user-defined quick commands. These are user-activated, so
  * they appear in the desktop slash palette and execute when typed.
  */
@@ -553,7 +676,7 @@ export function isDesktopSlashExtensionCommand(command: string): boolean {
     return false
   }
 
-  return !isKnownPulseSlashCommand(normalized)
+  return !isKnownPULSESlashCommand(normalized)
 }
 
 /**
@@ -574,12 +697,23 @@ export function slashCompletionGroup(command: string, kind?: string | null): 'Co
   return isDesktopSlashExtensionCommand(command) ? 'Skills' : 'Commands'
 }
 
-/** Gates execution: true unless the command is a known no-desktop-surface command. */
-export function isDesktopSlashCommand(command: string): boolean {
+/** Gates execution: true unless the command is a known no-desktop-surface
+ *  command. Pass the typed `arg` for registry-narrowed commands
+ *  (`desktop_subcommands`): when the invocation's first token is an allowed
+ *  subcommand (`/skills pending`) it execs even though the bare command
+ *  resolves to `unavailable`. */
+export function isDesktopSlashCommand(command: string, arg = ''): boolean {
   const spec = resolveDesktopCommand(command)
 
   if (spec) {
-    return spec.surface.kind !== 'unavailable'
+    if (spec.surface.kind !== 'unavailable') {
+      return true
+    }
+
+    const allowed = spec.desktopSubcommands
+    const first = arg.trim().split(/\s+/)[0]?.toLowerCase() ?? ''
+
+    return Boolean(allowed?.some(sub => sub.toLowerCase() === first))
   }
 
   return isDesktopSlashExtensionCommand(command)
@@ -612,7 +746,7 @@ export function isDesktopSlashSuggestionWithOptions(command: string, options: { 
   const spec = resolveDesktopCommand(normalized)
 
   if (spec) {
-    return spec.surface.kind !== 'unavailable' && !spec.hidden
+    return spec.surface.kind !== 'unavailable' && !spec.hidden && spec.desktopSubcommands?.length !== 0
   }
 
   // Skill / quick commands the backend provides.
@@ -715,7 +849,7 @@ export function desktopSkinSlashCompletions(
  * skills someone reaches for daily under a hundred they have never opened.
  *
  * `pruneUnusedBuiltins` additionally drops bundled skills with no recorded
- * activity — the ones that ship with Pulse and were never asked for. It is
+ * activity — the ones that ship with PULSE and were never asked for. It is
  * for BROWSING (a bare `/`) only: typing a query is a search, and a search
  * must never hide a match.
  *

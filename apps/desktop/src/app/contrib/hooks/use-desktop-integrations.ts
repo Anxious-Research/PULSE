@@ -5,12 +5,12 @@ import { resumeAccountConnect } from '@/app/capabilities/connectors/data/deep-li
 import { closeActiveTab } from '@/app/chat/close-tab'
 import { commandFocusedPreview } from '@/app/chat/right-rail/preview-nav'
 import { openSession } from '@/app/open-session'
-import { commandFocusedTerminal } from '@/app/right-sidebar/terminal/terminal-context-menu'
+import { commandFocusedTerminal, wordEraseFocusedTerminal } from '@/app/right-sidebar/terminal/terminal-context-menu'
 import { openConnectionDoneLink } from '@/components/assistant-ui/connector-tool'
 import { $diskPluginsScanPending } from '@/contrib/runtime-loader'
 import { getSession } from '@/pulse'
 import { resolveDeepLinkAction } from '@/lib/deeplink-routes'
-import { pathFromPulseDeepLink, resolvePulseOpenPath } from '@/lib/pulse-open-target'
+import { pathFromPULSEDeepLink, resolvePULSEOpenPath } from '@/lib/pulse-open-target'
 import { storedSessionIdForNotification } from '@/lib/session-ids'
 import { announceNewSessionDraftKey } from '@/store/composer'
 import { recordAction } from '@/store/desktop-metrics'
@@ -93,7 +93,7 @@ export function useDesktopIntegrations({
     // notifies on transitions into needs-auth/error with a Sign in action.
     startMcpHealthChecker()
     // The native "Check for Updates…" menu item lives in the app menu next to
-    // "About Pulse" — it is the OS-standard affordance for updating THIS app,
+    // "About PULSE" — it is the OS-standard affordance for updating THIS app,
     // so it always opens the client overlay. Inheriting the connection-mode
     // default pointed a Mac at its remote Linux backend and left the app itself
     // silently stale (#70266).
@@ -359,7 +359,7 @@ export function useDesktopIntegrations({
         // Defense-in-depth: re-resolve at the IPC boundary rather than trusting
         // the pre-IPC validation — any future pulseDesktop.notify caller gets
         // funneled through the same resolver.
-        const path = resolvePulseOpenPath(payload.activate)
+        const path = resolvePULSEOpenPath(payload.activate)
 
         if (path) {
           navigate(path)
@@ -461,7 +461,7 @@ export function useDesktopIntegrations({
       // Not a core action — treat as a plugin-scoped or open/ navigation deep
       // link (pulse://index-network/intent/1, pulse://open/…). The resolver
       // rejects reserved kinds and unsafe paths.
-      const path = pathFromPulseDeepLink(payload.kind, payload.name || '', payload.params || {})
+      const path = pathFromPULSEDeepLink(payload.kind, payload.name || '', payload.params || {})
 
       if (path) {
         navigate(path)
@@ -478,9 +478,17 @@ export function useDesktopIntegrations({
   // OS-standard window close, esp. secondary windows). The Win/Linux keyboard
   // path is the `view.closeTab` keybind (use-keybinds), sharing closeActiveTab.
   useEffect(() => {
-    const unsubscribe = window.pulseDesktop?.onClosePreviewRequested?.(
-      () => void closeActiveTab(id => navigate(sessionRoute(id)))
-    )
+    const unsubscribe = window.pulseDesktop?.onClosePreviewRequested?.(() => {
+      // A focused user terminal owns the chord as the shell's word erase: main
+      // claimed the keystroke (before-input-event), so re-deliver the ^W byte
+      // to the PTY instead of closing the pane and killing the shell (#65457).
+      // Read-only agent mirrors and everything else keep the close meaning.
+      if (wordEraseFocusedTerminal()) {
+        return
+      }
+
+      void closeActiveTab(id => navigate(sessionRoute(id)))
+    })
 
     return () => unsubscribe?.()
   }, [navigate])

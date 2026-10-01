@@ -31,11 +31,11 @@ const REJECTION_BANNERS: Record<number, PtyBanner> = {
     action: null
   },
   4404: {
-    text: 'This Pulse server does not offer the terminal chat. Update Pulse (`pulse update`) and reload the page.',
+    text: 'This PULSE server does not offer the terminal chat. Update PULSE (`pulse update`) and reload the page.',
     action: 'reload'
   },
   4408: {
-    text: 'This Pulse server only accepts chat from the machine it runs on. Open the dashboard on that machine, or start it with a public bind.',
+    text: 'This PULSE server only accepts chat from the machine it runs on. Open the dashboard on that machine, or start it with a public bind.',
     action: null
   }
 }
@@ -49,7 +49,7 @@ export const PTY_RECONNECTING_BANNER = 'Chat connection interrupted. Reconnectin
 
 /** Shown after the last automatic attempt failed (overlay + banner). */
 export const PTY_GAVE_UP_BANNER: PtyBanner = {
-  text: 'Lost connection to the Pulse dashboard server. If you stopped `pulse dashboard`, start it again; otherwise click Reconnect now.',
+  text: 'Lost connection to the PULSE dashboard server. If you stopped `pulse dashboard`, start it again; otherwise click Reconnect now.',
   action: 'check-server'
 }
 

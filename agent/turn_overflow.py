@@ -41,7 +41,7 @@ _UNEXPLAINED_REJECTION_FRACTION = 0.5
 
 _GITHUB_MODELS_HINT = (
     "   💡 GitHub Models free tier (models.inference.ai.azure.com) caps every",
-    "      request at ~8K tokens. Pulse' system prompt + tool schemas baseline",
+    "      request at ~8K tokens. PULSE' system prompt + tool schemas baseline",
     "      exceeds that floor, so this endpoint cannot run an agentic loop.",
     "      Use the `copilot` provider with a Copilot subscription token (`pulse",
     "      setup` → GitHub Copilot), or pick any other provider.",
@@ -161,7 +161,7 @@ class _Recovery(OverflowVerdict):
         before = self.messages
         self.messages, self.active_system_prompt = agent._compress_context(
             before, self.system_message, approx_tokens=request_tokens,
-            task_id=self.effective_task_id, bypass_cooldown=True,
+            task_id=self.effective_task_id, bypass_cooldown=True, trigger="overflow",
         )
         if self.messages is before:
             deferred = None
@@ -383,7 +383,7 @@ def _recover_context_length(st: _Recovery, _retry: TurnRetryState, error_msg: st
             notices=(
                 "❌ The provider rejected the request because the requested output length exceeds its "
                 "output cap for this model, and the error did not state the allowed limit.",
-                "   💡 Pulse has no user setting for the output cap — check the endpoint's default max output "
+                "   💡 PULSE has no user setting for the output cap — check the endpoint's default max output "
                 "(completion) tokens for this model on the server or proxy. "
                 "(This is an output-cap error, not a context overflow — compression cannot fix it.)",
             ),
@@ -397,14 +397,14 @@ def _recover_context_length(st: _Recovery, _retry: TurnRetryState, error_msg: st
     new_ctx = _adopt_provider_context_limit(st, error_msg, old_ctx)
 
     # A rejection the transcript cannot explain (#114644): the request sits far below the window
-    # Pulse knows for this model (after adopting any limit the server reported), so compressing
+    # PULSE knows for this model (after adopting any limit the server reported), so compressing
     # would destroy history for nothing. Single-slot local servers reject like this while ANOTHER
     # request — a background review from an earlier session — holds their context. Name that,
     # keep the turn retryable and transient: no "conversation too long", no gateway auto-reset.
     # Only when the server quoted NO measurement of its own: "prompt is too long: 233153 tokens
     # > 200000" is the server's count and beats the local estimate. Local endpoints only: a hosted
     # route has no shared slot, so the same rejection means its real window is smaller than the one
-    # Pulse assumes, and "wait and /retry" would fail identically forever; compress instead.
+    # PULSE assumes, and "wait and /retry" would fail identically forever; compress instead.
     window = agent.context_compressor.context_length
     request_tokens = st.request_tokens() + max(0, int(getattr(agent, "max_tokens", 0) or 0))
     if (

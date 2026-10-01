@@ -13,7 +13,7 @@ class StuckSocket extends EventTarget {
   }
 }
 
-const connectErrorMessage = 'Could not connect to Pulse gateway'
+const connectErrorMessage = 'Could not connect to PULSE gateway'
 
 const rejection = (pending: Promise<void>): Promise<Error> =>
   pending.then(

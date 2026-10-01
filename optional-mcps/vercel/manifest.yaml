@@ -1,4 +1,4 @@
-# Anxious-approved MCP catalog entry.
+# Nous-approved MCP catalog entry.
 # Presence in this directory = approval. Merged via PR review.
 manifest_version: 1
 
@@ -8,9 +8,9 @@ description: >-
   Deployments, logs, and projects via Vercel's hosted MCP.
 source: https://vercel.com/docs/mcp
 
-# Official vendor-hosted remote MCP (URL-only — Pulse never spawns a local
+# Official vendor-hosted remote MCP (URL-only — PULSE never spawns a local
 # process for this entry). Native OAuth 2.1 + Dynamic Client Registration;
-# Pulse's MCP client + mcp_oauth_manager handle discovery, PKCE, token
+# PULSE's MCP client + mcp_oauth_manager handle discovery, PKCE, token
 # exchange, and refresh.
 # No `vercel.app` suggest host on purpose: pasted deploy-preview links are
 # about the site being previewed, not about managing Vercel.
@@ -29,6 +29,6 @@ suggest:
     - vercel.com
 
 post_install: |
-  On first connection Pulse opens a browser to authorize with
+  On first connection PULSE opens a browser to authorize with
   Vercel (or run `pulse mcp login vercel`). Approve access,
   then restart the session so tools load.

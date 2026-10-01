@@ -91,7 +91,7 @@ export function registerFsIpc({
   })
 
   // The LOCAL Desktop runtime-plugin root: `<PULSE_HOME>/desktop-plugins`,
-  // resolved from the main-process PULSE_HOME (see resolvePulseHome) — NOT from
+  // resolved from the main-process PULSE_HOME (see resolvePULSEHome) — NOT from
   // the connected backend. A remote backend reports its own `pulse_home` over
   // the gateway, which is a path on the REMOTE box; deriving the plugin dir from
   // it yields `undefined/desktop-plugins` (or a non-existent remote path) and the

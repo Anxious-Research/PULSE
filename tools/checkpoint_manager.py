@@ -55,8 +55,9 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 import time
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from pulse_constants import get_pulse_home
 from pulse_cli._subprocess_compat import selected_git_env, windows_hide_flags
 from pulse_cli.gitlock import clear_stale_tmp_packs
@@ -120,7 +121,7 @@ DEFAULT_EXCLUDES = [
     ".git/",
     ".hg/",
     ".svn/",
-    # Worktrees (Pulse convention — don't recursively snapshot siblings)
+    # Worktrees (PULSE convention — don't recursively snapshot siblings)
     ".worktrees/",
     # Native / compiled binaries
     "*.so",
@@ -252,7 +253,7 @@ def _load_ledger(store: Path, dir_hash: str) -> Dict[str, Dict]:
     """Load the agent-write ledger: {relpath: {"sha256": ..., "ts": ...}}.
 
     The ledger records the content hash of every file the last successful
-    ``write_file`` / ``patch`` produced, so restores can tell "Pulse wrote
+    ``write_file`` / ``patch`` produced, so restores can tell "PULSE wrote
     this" apart from "the user hand-edited this afterwards".
     """
     try:
@@ -286,6 +287,24 @@ def _ref_name(dir_hash: str) -> str:
     return f"{_REFS_PREFIX}/{dir_hash}"
 
 
+def _gitlink_paths(ls_tree_z: str) -> List[str]:
+    """Paths of gitlinks (nested repositories stored as a commit reference, not
+    their files) in ``git ls-tree -r -z`` output."""
+    return [
+        record.split("\t", 1)[1]
+        for record in ls_tree_z.split("\x00")
+        if record.startswith("160000 commit ") and "\t" in record
+    ]
+
+
+def _uncaptured_note(nested_repos: List[str]) -> str:
+    """Checkpoint-message suffix naming nested repositories whose files were
+    not captured, so every /rollback listing discloses it."""
+    shown = ", ".join(nested_repos[:3])
+    more = f" (+{len(nested_repos) - 3})" if len(nested_repos) > 3 else ""
+    return f" [nested git repos not captured: {shown}{more}]"
+
+
 def _project_meta_path(store: Path, dir_hash: str) -> Path:
     return store / _PROJECTS_DIRNAME / f"{dir_hash}.json"
 
@@ -301,7 +320,7 @@ def _git_env(
 ) -> dict:
     """Build env dict that redirects git to the shared store.
 
-    The shared store is internal Pulse infrastructure — it must NOT inherit
+    The shared store is internal PULSE infrastructure — it must NOT inherit
     the user's global or system git config.  User-level settings like
     ``commit.gpgsign = true``, signing hooks, or credential helpers would
     either break background snapshots or, worse, spawn interactive prompts
@@ -544,7 +563,7 @@ def _init_store(store: Path, working_dir: str) -> Optional[str]:
     # exists since we just created the store inside it.
     cfg_wd = str(base)
     _run_git(["config", "user.email", "pulse@local"], store, cfg_wd)
-    _run_git(["config", "user.name", "Pulse Checkpoint"], store, cfg_wd)
+    _run_git(["config", "user.name", "PULSE Checkpoint"], store, cfg_wd)
     _run_git(["config", "commit.gpgsign", "false"], store, cfg_wd)
     _run_git(["config", "tag.gpgSign", "false"], store, cfg_wd)
     _run_git(["config", "gc.auto", "0"], store, cfg_wd)
@@ -804,11 +823,11 @@ class CheckpointManager:
     # ------------------------------------------------------------------
 
     def record_agent_write(self, file_path: str) -> None:
-        """Record the content hash of a file Pulse just successfully wrote.
+        """Record the content hash of a file PULSE just successfully wrote.
 
         Feeds the agent-write ledger used by :meth:`restore` in safe mode:
         at restore time, a file whose current content no longer matches the
-        recorded hash was hand-edited by the user after Pulse last touched
+        recorded hash was hand-edited by the user after PULSE last touched
         it, and is skipped instead of clobbered.
 
         Never raises — the ledger is best-effort bookkeeping.
@@ -836,9 +855,9 @@ class CheckpointManager:
 
         Returns ``{"success", "restore": [rel...], "skipped": [rel...],
         "error"?}`` where ``restore`` lists files whose current content
-        still matches what Pulse last wrote (per the agent-write ledger)
-        and ``skipped`` lists files the user hand-edited after Pulse'
-        last write or that Pulse never wrote at all.
+        still matches what PULSE last wrote (per the agent-write ledger)
+        and ``skipped`` lists files the user hand-edited after PULSE'
+        last write or that PULSE never wrote at all.
         """
         hash_err = _validate_commit_hash(commit_hash)
         if hash_err:
@@ -868,7 +887,7 @@ class CheckpointManager:
         # Read the same marker-walked project key as record_agent_write.
         ledger = _load_ledger(store, self._ledger_key(abs_dir))
         if not ledger:
-            # No agent-write ledger yet (pre-existing store, or Pulse has
+            # No agent-write ledger yet (pre-existing store, or PULSE has
             # not written any files here since the ledger was introduced).
             # Signal callers to fall back to a full restore rather than
             # skipping every file.
@@ -881,14 +900,14 @@ class CheckpointManager:
             entry = ledger.get(str(abs_path))
             recorded = entry.get("sha256") if isinstance(entry, dict) else None
             if recorded is None:
-                # Pulse never wrote this file (or the ledger predates it) —
+                # PULSE never wrote this file (or the ledger predates it) —
                 # do not touch it in safe mode.
                 skipped.append(rel)
                 continue
             current = _hash_file(abs_path)
             if current is None:
-                # File deleted since Pulse wrote it: restoring it back is
-                # safe — its last content was Pulse-authored.
+                # File deleted since PULSE wrote it: restoring it back is
+                # safe — its last content was PULSE-authored.
                 restore.append(rel)
             elif current == recorded:
                 restore.append(rel)
@@ -1065,7 +1084,7 @@ class CheckpointManager:
     def session_diff(self, working_dir: str) -> Dict:
         """Show the cumulative diff of everything changed in this directory.
 
-        This powers ``/diff session``.  It answers "what has Pulse changed
+        This powers ``/diff session``.  It answers "what has PULSE changed
         here?" by diffing the *earliest retained checkpoint* — the snapshot
         taken before the first recorded edit — against the current working
         tree.  Because checkpoints are captured just before each file-mutating
@@ -1075,7 +1094,7 @@ class CheckpointManager:
         Note: checkpoints are a persistent per-project ref, so the earliest
         *retained* checkpoint may predate the current session (or, after
         pruning, postdate its true start).  It is an approximation of "what
-        Pulse changed", not an exact per-session ledger.
+        PULSE changed", not an exact per-session ledger.
 
         Returns the same shape as :meth:`diff` (``{"success", "stat",
         "diff"}``).  When no checkpoints exist yet — nothing has been edited —
@@ -1104,8 +1123,8 @@ class CheckpointManager:
         """Restore files to a checkpoint state.
 
         With ``safe=True`` (full-directory restores only), files the user
-        hand-edited after Pulse' last write — per the agent-write ledger —
-        are left untouched, and only Pulse-authored changes are reverted.
+        hand-edited after PULSE' last write — per the agent-write ledger —
+        are left untouched, and only PULSE-authored changes are reverted.
         The result gains ``skipped_user_edits`` listing the preserved paths,
         ``skipped_oversize`` listing paths kept because the size cap excluded
         them from every checkpoint, and — only when a delete failed —
@@ -1143,6 +1162,90 @@ class CheckpointManager:
             return {"success": False, "error": f"Checkpoint '{commit_hash}' not found",
                     "debug": err or None}
 
+        ok, tree_out, err = _run_git(
+            ["ls-tree", "-r", "-z", commit_hash], store, abs_dir,
+        )
+        if not ok:
+            return {"success": False, "error": f"Could not inspect checkpoint: {err}"}
+        nested_repos = _gitlink_paths(tree_out)
+        selected_paths: Optional[List[str]] = None
+        if nested_repos:
+            blocked_repos = nested_repos
+            if file_path:
+                # Select by the path as recorded in the checkpoint, not by
+                # where it points now: a captured file later replaced by a
+                # symlink into a nested repo is still recoverable. Resolved
+                # confinement is enforced separately by _validate_file_path.
+                root_path = Path(abs_dir)
+                requested_path = Path(os.path.normpath(root_path / file_path))
+                try:
+                    requested_rel = requested_path.relative_to(root_path)
+                except ValueError:
+                    requested_rel = Path(file_path)
+                requested_parts = tuple(requested_rel.parts)
+
+                def _scope_intersects_nested_repo(repo_path: str) -> bool:
+                    repo_parts = tuple(PurePosixPath(repo_path).parts)
+                    return (
+                        requested_parts[:len(repo_parts)] == repo_parts
+                        or repo_parts[:len(requested_parts)] == requested_parts
+                    )
+
+                blocked_repos = [
+                    repo for repo in nested_repos
+                    if _scope_intersects_nested_repo(repo)
+                ]
+
+                # Literal paths below a gitlink have no tree entry to match.
+                # Keep the explicit refusal above, but let Git resolve all
+                # other selections exactly as checkout does (glob, icase,
+                # top, exclude, literal, etc.). ls-tree lacks that pathspec
+                # support. A disposable index avoids touching the project's
+                # index, refs or files before we know rollback is possible.
+                if not blocked_repos:
+                    with tempfile.TemporaryDirectory(prefix="restore-inspect-", dir=store) as scratch:
+                        inspect_index = Path(scratch) / "index"
+                        ok, _, err = _run_git(
+                            ["read-tree", commit_hash], store, abs_dir,
+                            index_file=inspect_index,
+                        )
+                        if ok:
+                            ok, selected, err = _run_git(
+                                ["ls-files", "--stage", "--error-unmatch", "-z", "--", file_path],
+                                store, abs_dir, index_file=inspect_index,
+                            )
+                        if not ok:
+                            return {"success": False, "error": f"Could not inspect restore selection: {err}"}
+                    blocked_repos = [
+                        record.split("\t", 1)[1]
+                        for record in selected.split("\x00")
+                        if record.startswith("160000 ") and "\t" in record
+                    ]
+                    selected_paths = [
+                        record.split("\t", 1)[1]
+                        for record in selected.split("\x00")
+                        if "\t" in record
+                    ]
+                    if not selected_paths:
+                        # An exclusion-only spec can match nothing. Checkout
+                        # with no paths would switch the store's HEAD instead
+                        # of restoring files, so refuse before the snapshot.
+                        return {
+                            "success": False,
+                            "error": f"Restore selection matched no files in checkpoint: {file_path}",
+                        }
+
+            if blocked_repos:
+                paths = ", ".join(blocked_repos)
+                return {
+                    "success": False,
+                    "error": (
+                        "Checkpoint contains nested git repositories that were not captured "
+                        f"({paths}); rollback was not performed"
+                    ),
+                    "nested_repositories": blocked_repos,
+                }
+
         skipped_user_edits: List[str] = []
         kept_oversize: List[str] = []
         failed_deletes: List[str] = []
@@ -1177,7 +1280,7 @@ class CheckpointManager:
 
         if restore_paths is not None:
             # Split into files present in the checkpoint (checkout) and
-            # Pulse-created files absent from it (delete to restore state).
+            # PULSE-created files absent from it (delete to restore state).
             checkout_targets: List[str] = []
             delete_targets: List[str] = []
             for rel in restore_paths:
@@ -1190,7 +1293,7 @@ class CheckpointManager:
                 elif self._exceeds_size_cap(Path(abs_dir) / rel):
                     # Absent from the checkpoint because ``max_file_size_mb``
                     # kept it out (_drop_oversize_from_index), not because
-                    # Pulse created it. Deleting it would not restore a prior
+                    # PULSE created it. Deleting it would not restore a prior
                     # state — no checkpoint holds one — it would destroy the
                     # only copy. The ledger records a content hash, not whether
                     # a write created or modified the file, so an oversize path
@@ -1216,6 +1319,22 @@ class CheckpointManager:
                     ["checkout", commit_hash, "--", *checkout_targets],
                     store, abs_dir, timeout=_GIT_TIMEOUT * 2,
                     index_file=index_file,
+                )
+        elif selected_paths is not None:
+            # Check out exactly the entries inspected above. Re-evaluating
+            # file_path here could select something else: _take() has just
+            # restaged the project index, and attribute pathspecs read
+            # .gitattributes from it. A NUL-separated literal pathspec file
+            # keeps long selections off the command line.
+            with tempfile.TemporaryDirectory(prefix="restore-select-", dir=store) as scratch:
+                spec_file = Path(scratch) / "pathspec"
+                spec_file.write_bytes(b"".join(os.fsencode(p) + b"\0" for p in selected_paths))
+                ok, stdout, err = _run_git(
+                    ["checkout", commit_hash, f"--pathspec-from-file={spec_file}",
+                     "--pathspec-file-nul"],
+                    store, abs_dir, timeout=_GIT_TIMEOUT * 2,
+                    index_file=index_file,
+                    extra_env={"GIT_LITERAL_PATHSPECS": "1"},
                 )
         else:
             ok, stdout, err = _run_git(
@@ -1394,6 +1513,20 @@ class CheckpointManager:
         if not ok_tree or not tree_sha:
             logger.debug("Checkpoint write-tree failed: %s", err)
             return False
+
+        # A nested repository is stored as a gitlink, not its files: say so in
+        # the checkpoint itself rather than only when a rollback is refused.
+        ok_ls, tree_out, _ = _run_git(["ls-tree", "-r", "-z", tree_sha], store, working_dir)
+        nested_repos = _gitlink_paths(tree_out) if ok_ls else []
+        if nested_repos:
+            logger.info("Checkpoint of %s does not capture nested git repositories: %s",
+                        working_dir, ", ".join(nested_repos))
+            # Listings read the subject (%s), which ends at the first blank
+            # line, so keep a multiline reason (a terminal command) on one
+            # line or the note falls outside every listing.
+            reason = " ".join(
+                line.strip() for line in reason.splitlines() if line.strip()
+            ) + _uncaptured_note(nested_repos)
 
         # Build commit (parent = current ref tip, if any).
         commit_args = ["commit-tree", tree_sha, "-m", reason, "--no-gpg-sign"]

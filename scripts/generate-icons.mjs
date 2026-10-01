@@ -9,7 +9,7 @@
  *   - installer: apps/bootstrap-installer/package.json prebuild
  *   - web:       web/package.json prebuild
  *
- * The renderer runs on the Pulse runtime interpreter (PULSE_PYTHON, else
+ * The renderer runs on the PULSE runtime interpreter (PULSE_PYTHON, else
  * `python` on PATH): Pillow and resvg-py are core dependencies, so every
  * runtime environment can draw its own icons.
  */
@@ -36,7 +36,7 @@ export function generateIcons(args = [], { root = repoRoot, run = spawnSync, env
   ], { cwd: source, stdio: 'inherit', windowsHide: true, env: childEnv })
   if (result.error) {
     console.error('[generate-icons] failed to launch icon generator:', result.error.message)
-    console.error('[generate-icons] a Pulse runtime Python (PULSE_PYTHON or PATH) is required')
+    console.error('[generate-icons] a PULSE runtime Python (PULSE_PYTHON or PATH) is required')
     return 1
   }
   return result.status ?? 1

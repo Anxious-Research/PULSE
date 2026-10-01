@@ -2,7 +2,7 @@
 name: apple-reminders
 description: "Apple Reminders via remindctl: add, list, complete."
 version: 1.0.0
-author: Pulse Agent
+author: PULSE Agent
 license: MIT
 platforms: [macos]
 metadata:

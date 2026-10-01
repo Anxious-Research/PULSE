@@ -45,7 +45,7 @@ export interface CheckoutStrategyDeps {
 
   emitUpdateProgress: (payload: { stage: string; message: string; percent: number | null }) => void
   rememberLog: (chunk: unknown) => void
-  startPulse: () => Promise<unknown>
+  startPULSE: () => Promise<unknown>
   stopBackendsForUpdate: () => Promise<void>
   repairMacUpdaterHelper: (updater: string) => void | Promise<void>
   preflightStateDb: (pulseHome: string, rememberLog: (chunk: string) => void) => void | Promise<void>
@@ -217,7 +217,7 @@ export function createCheckoutStrategy(deps: CheckoutStrategyDeps): UpdaterStrat
     deps.emitUpdateProgress({
       stage: 'restart',
       message:
-        'Updating Pulse — this window will close and the updater will open. Don’t reopen Pulse yourself; it restarts automatically when the update finishes.',
+        'Updating PULSE — this window will close and the updater will open. Don’t reopen PULSE yourself; it restarts automatically when the update finishes.',
       percent: 100
     })
     deps.repairMacUpdaterHelper(updater)
@@ -339,7 +339,7 @@ export function createCheckoutStrategy(deps: CheckoutStrategyDeps): UpdaterStrat
       //
       // SKIPPED for pre-#74782 staged updaters: those have no self-PID
       // exclusion, so they read this very marker as a foreign live owner and
-      // abort with "Another Pulse update is already running (PID <itself>)" —
+      // abort with "Another PULSE update is already running (PID <itself>)" —
       // an unbreakable loop, because the update that would replace the stale
       // binary is the one being refused. Losing the anti-respawn hardening is
       // strictly better than never updating again, and the updater still writes
@@ -377,7 +377,7 @@ export function createCheckoutStrategy(deps: CheckoutStrategyDeps): UpdaterStrat
 
       deps.rememberLog(`[updates] hand-off not viable, aborting quit: ${handoffOutcome.message}`)
       deps.emitUpdateProgress({ stage: 'error', message, percent: null })
-      deps.startPulse().catch(() => {})
+      deps.startPULSE().catch(() => {})
 
       return { ok: false, error: 'updater-spawn-failed', message }
     }
@@ -487,7 +487,7 @@ export function createCheckoutStrategy(deps: CheckoutStrategyDeps): UpdaterStrat
     deps.emitUpdateProgress({
       stage: 'restart',
       message:
-        'Updating Pulse — this window will close. Don’t reopen Pulse yourself; it restarts automatically when the update finishes.',
+        'Updating PULSE — this window will close. Don’t reopen PULSE yourself; it restarts automatically when the update finishes.',
       percent: 100
     })
 

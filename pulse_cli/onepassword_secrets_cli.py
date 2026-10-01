@@ -1,7 +1,7 @@
 """CLI handlers for ``pulse secrets onepassword ...``.
 
 Unlike Bitwarden, the ``op`` binary is NOT auto-installed: 1Password publishes the CLI through OS
-package managers and signed installers, so Pulse expects an already-installed, already-
+package managers and signed installers, so PULSE expects an already-installed, already-
 authenticated ``op`` and never downloads one.
 """
 
@@ -88,7 +88,7 @@ def cmd_setup(args: argparse.Namespace) -> int:
     console.print(
         Panel.fit(
             "[bold]1Password secret source setup[/bold]\n\n"
-            "Pulse resolves [cyan]op://vault/item/field[/cyan] references through your\n"
+            "PULSE resolves [cyan]op://vault/item/field[/cyan] references through your\n"
             "already-installed, already-authenticated 1Password CLI (`op`).\n\n"
             f"Don't have it yet? Install + sign in: [cyan]{_DOCS_URL}[/cyan]",
             border_style="cyan",
@@ -197,7 +197,7 @@ def cmd_status(args: argparse.Namespace) -> int:
         else:
             console.print(
                 f"\n  [yellow]No active op session and {token_env} is unset — "
-                "Pulse will warn and skip 1Password on next startup.[/yellow]"
+                "PULSE will warn and skip 1Password on next startup.[/yellow]"
             )
     if not references:
         console.print(
@@ -367,7 +367,7 @@ def cmd_disable(args: argparse.Namespace) -> int:
     return disable_secret_source(
         "onepassword",
         "[green]Disabled.[/green]  1Password references will NOT be resolved on the "
-        "next Pulse invocation.\n"
+        "next PULSE invocation.\n"
         "  Your reference mappings are left in config.yaml — remove them with "
         "[cyan]pulse secrets onepassword remove ENV_VAR[/cyan] if you no longer "
         "need them.",
@@ -393,27 +393,3 @@ def _op_whoami(binary: Path, account: str, *, token_value: str = "") -> Optional
     if res.returncode != 0:
         return None
     return (res.stdout or "").strip().replace("\n", " ")[:120] or "authenticated"
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from rich.table import Table  # noqa: F401,E402
-import sys  # noqa: F401,E402
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'masked_secret_prompt': ('pulse_cli.secret_prompt', 'masked_secret_prompt'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

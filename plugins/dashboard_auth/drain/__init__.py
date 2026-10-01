@@ -1,7 +1,7 @@
 """DrainSecretProvider — shared-bearer-secret auth for the drain-control endpoint.
 
 Non-interactive token capability of the ``DashboardAuthProvider`` ABC (``verify_token`` +
-the ``token_auth`` middleware seam): ``anxious-account-service`` provisions a per-agent unique
+the ``token_auth`` middleware seam): ``nous-account-service`` provisions a per-agent unique
 secret (``PULSE_DASHBOARD_DRAIN_SECRET``, env-only — it is a credential); an inbound bearer
 is compared constant-time and vouched for as the ``drain-control`` principal. Fail-CLOSED
 entropy gate at registration (length, distinct chars, Shannon bits); interactive ABC methods
@@ -155,25 +155,3 @@ def register(ctx) -> None:
     logger.info(
         "dashboard-auth-drain: registered drain service-credential provider (scope=%s, route=%s)",
         kwargs["scope"], DRAIN_ROUTE_PATH)
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'LoginStart': ('pulse_cli.dashboard_auth', 'LoginStart'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

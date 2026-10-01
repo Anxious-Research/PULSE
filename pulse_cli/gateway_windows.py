@@ -52,8 +52,8 @@ _ACCESS_DENIED_PATTERN = re.compile(rf"({_ACCESS_DENIED_WORDS})", re.IGNORECASE)
 # shell exits. Dict (not bare bool) so the flag is mutable without ``global``.
 _LAST_SPAWN_BREAKAWAY_FALLBACK: dict = {"fallback": False}
 
-_TASK_NAME_DEFAULT = "Pulse_Gateway"
-_TASK_DESCRIPTION = "Pulse Agent Gateway - Messaging Platform Integration"
+_TASK_NAME_DEFAULT = "PULSE_Gateway"
+_TASK_DESCRIPTION = "PULSE Agent Gateway - Messaging Platform Integration"
 _TASK_LOGON_DELAY = "PT30S"
 _TASK_RESTART_INTERVAL = "PT1M"
 _TASK_RESTART_COUNT = 999
@@ -116,7 +116,7 @@ def _pulse_home() -> Path:
 
 
 def pulse_service_roots() -> tuple[str, ...]:
-    """Directories a Pulse-owned SCM service binary lives under: the checkout (its ``venv`` included),
+    """Directories a PULSE-owned SCM service binary lives under: the checkout (its ``venv`` included),
     the running interpreter's ``Scripts`` dir (``pulse.exe`` shim) and the ``gateway-service`` launcher dir."""
     project_root = Path(__file__).resolve().parent.parent
     return (str(project_root), str(Path(sys.executable).parent), str(_pulse_home() / "gateway-service"))
@@ -127,8 +127,8 @@ def _normalize_windows_path(value: str) -> str:
 
 
 def pulse_owns_windows_service(name: str, binpath: str, pulse_roots: tuple[str, ...]) -> bool:
-    """Positive ownership of an SCM service: Pulse-named (``pulse*``) or its binary path starts under a
-    Pulse root. Pure so it is testable off-Windows. A Scheduled-Task-launched gateway descends from
+    """Positive ownership of an SCM service: PULSE-named (``pulse*``) or its binary path starts under a
+    PULSE root. Pure so it is testable off-Windows. A Scheduled-Task-launched gateway descends from
     ``svchost.exe`` hosting ``Schedule``; without this gate the updater took Task Scheduler for the
     gateway's supervisor and ``sc.exe stop Schedule`` aborted every update (#97208)."""
     normalized_name = "".join(char for char in name.casefold() if char.isalnum())
@@ -139,7 +139,7 @@ def pulse_owns_windows_service(name: str, binpath: str, pulse_roots: tuple[str, 
 
 
 def _preserve_pulse_home_path(path: str | Path) -> str:
-    r"""Render Pulse-owned paths under the configured PULSE_HOME spelling.
+    r"""Render PULSE-owned paths under the configured PULSE_HOME spelling.
 
     ``%LOCALAPPDATA%\pulse`` may be a symlink/junction to another drive; launcher files must not
     bake in the resolved target for paths under PULSE_HOME.
@@ -225,7 +225,7 @@ def _is_running_as_admin() -> bool:
 
 
 def _current_profile_cli_args() -> list[str]:
-    """Return CLI args that preserve the current Pulse profile."""
+    """Return CLI args that preserve the current PULSE profile."""
     from pulse_cli.gateway import _profile_arg
 
     profile_arg = _profile_arg()
@@ -479,7 +479,7 @@ def _atomic_write(path: Path, content: str, tmp: Path) -> None:
 
     The staging file is removed even when the rename fails: the Startup-folder caller stages
     inside the Startup folder itself, and Windows opens every file there at login — a leftover
-    ``Pulse_Gateway.tmp`` pops up in Notepad after every sign-in (#114093).
+    ``PULSE_Gateway.tmp`` pops up in Notepad after every sign-in (#114093).
     """
     try:
         tmp.write_text(content, encoding="utf-8", newline="")
@@ -904,7 +904,7 @@ def _offer_elevated_install(headline: str, force: bool, start_now: bool, start_o
     print("  UAC is Windows' admin approval prompt; it is needed to create/update the Scheduled Task.")
     if prompt_yes_no("  Open the UAC prompt now?", False):
         if _launch_elevated_install(force=force, start_now=start_now, start_on_login=start_on_login):
-            print("✓ Launched elevated Pulse gateway install prompt.")
+            print("✓ Launched elevated PULSE gateway install prompt.")
             if start_now:
                 print("  Approve the Windows UAC prompt; the elevated install will start the gateway afterwards.")
             else:
@@ -936,14 +936,14 @@ def install(
 
     task_name = get_task_name()
     script_path = _write_task_script()
-    # A pre-fix install that failed its Startup-folder swap left `Pulse_Gateway.tmp` there, and the
+    # A pre-fix install that failed its Startup-folder swap left `PULSE_Gateway.tmp` there, and the
     # Scheduled Task path below never touches that folder — sweep it so a re-run clears the debris.
     try:
         _startup_staging_path().unlink(missing_ok=True)
     except OSError:
         pass
     if force:
-        # Pre-suffix strays (task ``Pulse_Gateway``, Startup ``Pulse_Gateway.vbs``) are unreachable by
+        # Pre-suffix strays (task ``PULSE_Gateway``, Startup ``PULSE_Gateway.vbs``) are unreachable by
         # the current names, so a plain reconcile never heals them (#116157).
         from pulse_cli.gateway_windows_legacy import remove_legacy_launchers
         remove_legacy_launchers()
@@ -1332,7 +1332,7 @@ def uninstall() -> None:
             print("  UAC is Windows' admin approval prompt; it is needed to remove the Scheduled Task.")
             if prompt_yes_no("  Open the UAC prompt now?", False):
                 if _launch_elevated_gateway_command("uninstall"):
-                    print("✓ Launched elevated Pulse gateway uninstall prompt.")
+                    print("✓ Launched elevated PULSE gateway uninstall prompt.")
                     print("  Approve the Windows UAC prompt, then run: pulse gateway status")
                     return
                 print("⚠ Elevated uninstall prompt was unavailable or cancelled.")

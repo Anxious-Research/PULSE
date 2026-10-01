@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Native fixture proof, not signed Pulse artifact E2E.
+// Native fixture proof, not signed PULSE artifact E2E.
 // Run: node apps/desktop/scripts/verify-side-by-side-macos.mjs <icon-input-root>
 // Inputs: cases.json [{label, env}], plus <label>/icon{,-dark}.icns from
 // scripts/generate_icons.py. Use stable, canary, commit-a, commit-b, in order.
@@ -285,7 +285,7 @@ try {
     JSON.stringify(
       {
         scope:
-          'Native builder transformation and Electron fixture only; no release build, signing, registration, update or Pulse backend E2E.',
+          'Native builder transformation and Electron fixture only; no release build, signing, registration, update or PULSE backend E2E.',
         platform: os.release(),
         arch: process.arch,
         node: process.version,

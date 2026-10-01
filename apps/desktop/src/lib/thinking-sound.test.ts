@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/store/haptics', () => ({ $hapticsMuted: { get: vi.fn(() => false) } }))
 vi.mock('@/pulse', () => ({
-  getPulseConfigRecord: vi.fn(async () => ({})),
-  savePulseConfig: vi.fn(async () => undefined)
+  getPULSEConfigRecord: vi.fn(async () => ({})),
+  savePULSEConfig: vi.fn(async () => undefined)
 }))
 
 import { $hapticsMuted } from '@/store/haptics'

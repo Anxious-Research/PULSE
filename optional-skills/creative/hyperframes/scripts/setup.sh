@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# HyperFrames setup for Pulse.
+# HyperFrames setup for PULSE.
 #
 # Verifies Node >= 22 and FFmpeg, installs the `hyperframes` CLI globally,
 # pre-caches `chrome-headless-shell`, and runs `hyperframes doctor`.

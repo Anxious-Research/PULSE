@@ -56,7 +56,7 @@ def _sanitize_url(url: str | None) -> str | None:
 
 
 def profile_host_key(profile: str | None) -> str:
-    """Return the safe Honcho host key for a Pulse profile."""
+    """Return the safe Honcho host key for a PULSE profile."""
     if not profile or profile in {"default", "custom"}:
         return HOST
     sanitized = "".join(c if c.isalnum() or c in "_-" else "_" for c in profile).strip("_")
@@ -274,7 +274,7 @@ def _connection_fields(look: _HostLookup, host: str, path: Path) -> dict[str, An
                        "is NOT inherited (profiles are credential-isolated). Set apiKey on "
                        "hosts.%s in %s or this profile runs unauthenticated.", host, HOST, host, path)
     # The SDK's native format (and Claude Desktop) nests the URL at endpoint.baseUrl;
-    # read it before the flat Pulse spellings.
+    # read it before the flat PULSE spellings.
     endpoint_block = raw.get("endpoint")
     native_base_url = endpoint_block.get("baseUrl") if isinstance(endpoint_block, dict) else None
     base_url = _sanitize_url(host_block.get("baseUrl") or host_block.get("base_url") or native_base_url
@@ -435,7 +435,7 @@ class HonchoClientConfig:
     @classmethod
     def from_global_config(cls, host: str | None = None, config_path: Path | None = None) -> HonchoClientConfig:
         """Config from the resolved Honcho config path, falling back to env. ``host=None``
-        derives it from the active Pulse profile."""
+        derives it from the active PULSE profile."""
         resolved_host = host or resolve_active_host()
         path = config_path or resolve_config_path()
         if not path.exists():
@@ -680,25 +680,3 @@ def reset_honcho_client() -> None:
     with _client_slots_lock:
         _client_slots.clear()
     _honcho_json_timeout_memo.clear()
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'SingletonSlot': ('plugins.plugin_utils', 'SingletonSlot'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

@@ -7,6 +7,8 @@ import {
   __resetBackendSkinSync,
   ingestBackendSkin
 } from './backend-sync'
+import * as contextModule from './context'
+import * as userThemesModule from './user-themes'
 
 const skin = (name: string) => ({
   name,
@@ -41,7 +43,7 @@ describe('ingestBackendSkin', () => {
     expect($pendingSkinApply.get()).toBeNull()
 
     // The activation event was missed (skin set while disconnected / backend
-    // restarted). Pulse re-affirms it — `pulse config set display.skin neon`
+    // restarted). PULSE re-affirms it — `pulse config set display.skin neon`
     // or a `pulse skin set` recolor. That explicit event must repaint even
     // though the name matches the seed.
     ingestBackendSkin(skin('neon'), { apply: true })
@@ -53,7 +55,7 @@ describe('ingestBackendSkin', () => {
     expect($pendingSkinApply.get()).toBeNull()
 
     // ...and a genuine switch still applies.
-    ingestBackendSkin(skin('forest'), { apply: true }) // Pulse authored a new skin
+    ingestBackendSkin(skin('forest'), { apply: true }) // PULSE authored a new skin
     expect($pendingSkinApply.get()).toBe('forest')
   })
 
@@ -69,21 +71,55 @@ describe('ingestBackendSkin', () => {
     expect($pendingSkinApply.get()).toBeNull()
   })
 
-  it('never registers default in the backend store (desktop keeps its own palette)', () => {
-    ingestBackendSkin(skin('default'), { apply: true })
+  it('registers the classic default skin so Appearance can select gold/navy (#76579)', () => {
+    ingestBackendSkin(
+      {
+        name: 'default',
+        description: 'Classic PULSE — gold and kawaii',
+        colors: { background: '#1a1a2e', ui_accent: '#FFBF00', banner_text: '#FFF8DC' }
+      },
+      { apply: true }
+    )
 
-    expect($backendThemes.get().default).toBeUndefined()
+    const registered = $backendThemes.get().default
+    expect(registered?.name).toBe('default')
+    expect(registered?.label).toBe('Classic PULSE')
+    expect(registered?.description).toContain('gold')
+    expect($pendingSkinApply.get()).toBe('default')
+  })
+
+  it('lets the provider resolve and keep default (not retired → nous)', () => {
+    // skinPref / normalizeSkin must accept `default` once the backend registers
+    // it; RETIRED_SKINS no longer includes default (#76743 review). Static
+    // imports — the dynamic ones deadlocked under vitest's module runner.
+    const { skinPref } = contextModule
+    const { resolveTheme } = userThemesModule
+
+    ingestBackendSkin(
+      {
+        name: 'default',
+        description: 'Classic PULSE — gold and kawaii',
+        colors: { background: '#1a1a2e', ui_accent: '#FFBF00', banner_text: '#FFF8DC' }
+      },
+      { apply: false }
+    )
+
+    expect(resolveTheme('default')?.name).toBe('default')
+    skinPref.assign('work', 'default')
+    expect(skinPref.resolve('work')).toBe('default')
   })
 
   it('does not apply default on the connect-time seed', () => {
     ingestBackendSkin(skin('default'), { apply: false })
 
     expect($pendingSkinApply.get()).toBeNull()
+    // Seed still registers the palette so the theme grid can show it.
+    expect($backendThemes.get().default?.name).toBe('default')
   })
 
-  it('applies a runtime switch back to default (repaints the desktop to its own default)', () => {
+  it('applies a runtime switch back to default (classic gold palette)', () => {
     ingestBackendSkin(skin('neon'), { apply: false }) // gateway.ready seed on some skin
-    ingestBackendSkin(skin('default'), { apply: true }) // Pulse switched back to default
+    ingestBackendSkin(skin('default'), { apply: true }) // PULSE switched back to default
 
     expect($pendingSkinApply.get()).toBe('default')
   })
@@ -106,10 +142,12 @@ describe('ingestBackendSkin', () => {
   it('keys default-named skin CSS under the resolved desktop default', () => {
     ingestBackendSkin(skinWithCSS('default', 'body { background: red; }'), { apply: true })
 
-    expect($backendThemes.get().default).toBeUndefined()
-    // setTheme normalizes `default` → DEFAULT_SKIN_NAME ('pulse'), so the CSS
-    // must be findable under that name when the theme is derived.
-    expect($backendCustomCSS.get().pulse).toBe('body { background: red; }')
+    // Since #76579 the classic `default` skin registers as its own palette
+    // (label "Classic PULSE"), and the converted theme carries the customCSS
+    // itself — the separate CSS store stays for built-in-named skins only.
+    expect($backendThemes.get().default?.label).toBe('Classic PULSE')
+    expect($backendThemes.get().default?.customCSS).toBe('body { background: red; }')
+    expect($backendCustomCSS.get().nous).toBeUndefined()
   })
 
   it('clears customCSS when a built-in-named skin drops the field', () => {

@@ -7,18 +7,18 @@ import {
   Terminal,
 } from "lucide-react";
 import { api, type OAuthProvider } from "@/lib/api";
-import { Button } from "@anxious-research/ui/ui/components/button";
-import { CopyButton } from "@anxious-research/ui/ui/components/command-block";
-import { Spinner } from "@anxious-research/ui/ui/components/spinner";
+import { Button } from "@nous-research/ui/ui/components/button";
+import { CopyButton } from "@nous-research/ui/ui/components/command-block";
+import { Spinner } from "@nous-research/ui/ui/components/spinner";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@anxious-research/ui/ui/components/card";
-import { Badge } from "@anxious-research/ui/ui/components/badge";
-import { ConfirmDialog } from "@anxious-research/ui/ui/components/confirm-dialog";
+} from "@nous-research/ui/ui/components/card";
+import { Badge } from "@nous-research/ui/ui/components/badge";
+import { ConfirmDialog } from "@nous-research/ui/ui/components/confirm-dialog";
 import { OAuthLoginModal } from "@/components/OAuthLoginModal";
 import { useI18n } from "@/i18n";
 import { errorMessage } from "@/lib/api-error";

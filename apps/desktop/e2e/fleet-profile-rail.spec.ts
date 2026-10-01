@@ -43,7 +43,7 @@ interface RemoteGateway {
   close: () => Promise<void>
 }
 
-function findPulseBinary(): string {
+function findPULSEBinary(): string {
   const venv = path.join(REPO_ROOT, '.venv', 'bin', 'pulse')
 
   if (fs.existsSync(venv)) {
@@ -96,7 +96,7 @@ async function startRemoteGateway(root: string, mockUrl: string, profiles: strin
   const url = `http://127.0.0.1:${port}`
 
   const child: ChildProcess = spawn(
-    findPulseBinary(),
+    findPULSEBinary(),
     ['serve', '--host', '127.0.0.1', '--port', String(port), '--skip-build'],
     {
       cwd: REPO_ROOT,
@@ -127,7 +127,7 @@ async function startRemoteGateway(root: string, mockUrl: string, profiles: strin
 
     try {
       const response = await fetch(`${url}/api/status`, {
-        headers: { 'X-Pulse-Session-Token': REMOTE_TOKEN },
+        headers: { 'X-PULSE-Session-Token': REMOTE_TOKEN },
       })
 
       if (response.ok) {

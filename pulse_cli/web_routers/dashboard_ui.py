@@ -159,6 +159,8 @@ async def get_plugins_hub(request: Request, profile: Optional[str] = None):
     _require_token(request)
     try:
         return await config_scoped_to_thread(profile, _merged_plugins_hub)
+    except HTTPException:
+        raise  # an unknown ?profile= is the scope's 404, not a hub failure
     except Exception as exc:
         _log.warning("plugins/hub failed: %s", exc)
         raise HTTPException(status_code=500, detail="Failed to build plugins hub.") from exc
@@ -302,7 +304,7 @@ async def post_agent_plugin_activate(request: Request):
     home = Path(str((body or {}).get("home") or "")).expanduser()
     profile = profile_name_for_home(home) if str(home) not in ("", ".") else None
     if profile is None:
-        raise HTTPException(status_code=400, detail="Not a Pulse profile home.")
+        raise HTTPException(status_code=400, detail="Not a PULSE profile home.")
     from pulse_cli.plugins_activation import load_and_go_live
 
     def _run():

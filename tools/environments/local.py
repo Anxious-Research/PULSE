@@ -21,9 +21,11 @@ from tools.environments.base import BaseEnvironment
 from tools.environments.base_output import _pipe_stdin
 from pulse_cli._subprocess_compat import windows_hide_flags
 from tools.environments.local_env_policy import (  # noqa: F401 — _PULSE_PROVIDER_ENV_BLOCKLIST stays importable from here
-    _ALWAYS_STRIP_KEYS, _PULSE_PROVIDER_ENV_BLOCKLIST, _PULSE_PROVIDER_ENV_FORCE_PREFIX,
+    _ALWAYS_STRIP_FOLDED, _ALWAYS_STRIP_KEYS, _PULSE_PROVIDER_ENV_BLOCKLIST, _PULSE_PROVIDER_ENV_FORCE_PREFIX,
     _is_pulse_internal_secret, _is_provider_env_blocklisted, _is_terminal_first_party_env,
-    _matches_terminal_first_party_prefix, _plugin_terminal_env_strip_keys, strip_profile_gate_env)
+    _home_adapter_secret_env, _matches_terminal_first_party_prefix, _plugin_terminal_env_strip_keys,
+    _registered_adapter_secret_env, _registry_adapter_secret_env,
+    strip_profile_gate_env)
 from tools.environments.local_pythonpath import (
     _build_pulse_repo_root_aliases, _strip_pulse_owned_pythonpath_and_runtime_markers)
 
@@ -240,7 +242,7 @@ def _inject_session_context_env(env: dict) -> None:
 def _filter_secret_env(
     items: Mapping[str, str], out: dict, *, unwrap_force: bool,
     plugin_strip: frozenset = frozenset()) -> None:
-    """Copy *items* into *out*, dropping Pulse-managed secrets. ``_PULSE_FORCE_<NAME>``
+    """Copy *items* into *out*, dropping PULSE-managed secrets. ``_PULSE_FORCE_<NAME>``
     unwraps to ``NAME`` when ``unwrap_force`` (caller extras / terminal env), else is
     dropped. Blocklisted names survive only via env_passthrough registration or as
     context-entitled first-party ``BUZZ_*`` vars; the latter are used directly, never
@@ -250,6 +252,7 @@ def _filter_secret_env(
     except Exception:
         is_env_passthrough, resolve_passthrough_value = (lambda _: False), (lambda _n, fb: fb)
     plugin_strip_folded = frozenset(k.upper() for k in plugin_strip)
+    registered = _registered_adapter_secret_env()
     for key, value in items.items():
         if key.startswith(_PULSE_PROVIDER_ENV_FORCE_PREFIX):
             if not unwrap_force:
@@ -262,7 +265,7 @@ def _filter_secret_env(
             continue
         first_party = _is_terminal_first_party_env(key)
         passthrough = is_env_passthrough(key)
-        if _is_provider_env_blocklisted(key) and not (passthrough or first_party):
+        if _is_provider_env_blocklisted(key, registered) and not (passthrough or first_party):
             continue
         if passthrough and not first_party:
             value = resolve_passthrough_value(key, value)
@@ -272,7 +275,7 @@ def _filter_secret_env(
 
 def _finalize_child_env(env: dict) -> dict:
     """Guards shared by every spawn surface: profile-home propagation, session-context
-    bridging, Pulse-owned PYTHONPATH + venv-marker strip, MSYS defaults, delegate_task
+    bridging, PULSE-owned PYTHONPATH + venv-marker strip, MSYS defaults, delegate_task
     Kanban scrub. Returns the (possibly new) dict."""
     _apply_profile_home(env)
     _inject_session_context_env(env)
@@ -305,7 +308,7 @@ def _scrubbed_env(parts, plugin_strip: frozenset, fix_path) -> dict:
 
 
 def _sanitize_subprocess_env(base_env: dict | None, extra_env: dict | None = None) -> dict:
-    """Filter Pulse-managed secrets from a subprocess environment (background/PTY
+    """Filter PULSE-managed secrets from a subprocess environment (background/PTY
     spawn path, search workers, computer-use driver, user-script runners)."""
     return _scrubbed_env([(base_env or {}, False), (extra_env or {}, True)],
                          _plugin_terminal_env_strip_keys(), lambda p: p)
@@ -332,10 +335,12 @@ def _scrub_credentials(env: dict, *, inherit_credentials: bool) -> dict:
     """Tier 1 (always) and, unless ``inherit_credentials``, Tier 2 provider/tool credentials, in place."""
     # Credential names fold to uppercase for membership: on Windows the env block
     # itself is case-insensitive, so a lowercase-stored ``gh_token`` IS GH_TOKEN.
-    strip_folded = frozenset(k.upper() for k in (_ALWAYS_STRIP_KEYS | _plugin_terminal_env_strip_keys()))
+    home_secrets = _home_adapter_secret_env()  # one manifest stamp per scrub
+    strip_folded = _ALWAYS_STRIP_FOLDED | {k.upper() for k in _plugin_terminal_env_strip_keys()} | home_secrets
+    registered = _registry_adapter_secret_env()  # home_secrets already strip above
     for key in list(env):
         if (key.upper() in strip_folded
-                or (not inherit_credentials and _is_provider_env_blocklisted(key))
+                or (not inherit_credentials and _is_provider_env_blocklisted(key, registered))
                 or key.startswith(_PULSE_PROVIDER_ENV_FORCE_PREFIX)
                 or _is_pulse_internal_secret(key)):
             del env[key]
@@ -353,10 +358,21 @@ def build_subprocess_env(
     bridges PULSE_HOME + HOME and ``extra`` is applied last so caller overrides win.
     ``strip_launch_profile`` drops the LAUNCH profile's ``.env`` residue from the base first
     (:func:`strip_launch_profile_env`; a no-op unless a routed home is active) so a child that
-    acts for a routed profile sees only that profile's declared names, never the launch profile's."""
+    acts for a routed profile sees only that profile's declared names, never the launch profile's.
+    Under multiplex semantics it then overlays the bound secret scope (the routed profile's own
+    ``.env`` + source values, which never enter ``os.environ``) and re-applies the managed keys,
+    all BEFORE the scrub, so those values pass the same scrub / passthrough rules as any other."""
     env: dict[str, str] = dict(base) if base is not None else os.environ.copy()
     if strip_launch_profile:
         strip_launch_profile_env(env)
+        from agent.secret_scope import current_secret_scope, is_multiplex_active
+        if is_multiplex_active():
+            # Single-profile: the scope IS os.environ, so overlaying it would only re-sanitize
+            # values the child already inherits byte-identical.
+            env.update(current_secret_scope() or {})
+            # Administrator-managed values keep their precedence over the routed profile's own .env,
+            # exactly as they do in the launch process (``_apply_managed_env`` applies them last).
+            restore_managed_env(env)
     if scrub_secrets:
         return _sanitize_subprocess_env(env, dict(extra) if extra else None)
     if inherit_profile_home:
@@ -460,10 +476,21 @@ def strip_launch_profile_env(env: dict, target_home: "str | Path | None" = None)
     # stored under a variant casing is the same variable and must go too. The
     # selection folds the same way so a lowercase ``path`` in .env is still
     # recognized as a global name and left alone.
+    # Current file AND every key any dotenv load put into os.environ this process lifetime: a key
+    # removed or renamed in the launch .env after boot is still in os.environ with the old value, and
+    # a re-parse of the file alone no longer names it (#107695 review). External secret sources
+    # (vault, 1Password, ...) write their names into the same shared os.environ, and a name the
+    # LAUNCH profile's source supplied is not the target profile's to see; the caller's scope
+    # overlay puts back exactly the ones the target's own sources supply. The administrator-managed
+    # .env is NOT residue: its values are policy for every profile (``_apply_managed_env`` applies
+    # it last, with override, so it beats the user's own .env) — leave them in place.
+    from pulse_cli.env_loader import launch_dotenv_keys, managed_dotenv_keys, source_supplied_names
+    managed_names = {key.upper() for key in managed_dotenv_keys()}
     residue_names = {
         key.upper() for key in
-        set(load_env_file(launch_home / ".env")) | set(TERMINAL_CONFIG_ENV_MAP.values())
-        if not _is_global_env(key.upper()) or key.upper().startswith("TERMINAL_")}
+        set(load_env_file(launch_home / ".env")) | set(launch_dotenv_keys())
+        | set(TERMINAL_CONFIG_ENV_MAP.values()) | set(source_supplied_names())
+        if not _is_global_env(key.upper()) or key.upper().startswith("TERMINAL_")} - managed_names
     for key in [k for k in env if k.upper() in residue_names]:
         del env[key]
     # Authorization gates are the one residue a name list cannot see: a unit-file ``Environment=``
@@ -472,9 +499,21 @@ def strip_launch_profile_env(env: dict, target_home: "str | Path | None" = None)
     return strip_profile_gate_env(env)
 
 
+def restore_managed_env(env: dict) -> dict:
+    """Re-apply the administrator-managed ``.env`` values over *env* — call AFTER a routed profile's scope
+    has been overlaid. ``_apply_managed_env`` gives those keys precedence over the user's own ``.env`` in
+    the launch process; a routed child must see the same precedence, or the routed user's value for a
+    managed key (``ORG_POLICY_FLAG=user-value``) silently wins over policy."""
+    from pulse_cli.env_loader import managed_dotenv_keys
+    for key in managed_dotenv_keys():
+        if key in os.environ:
+            env[key] = os.environ[key]
+    return env
+
+
 # --- Shell discovery ---
 def _find_bash() -> str:
-    """Resolve the shell Pulse runs commands with. Owned by pm (the store
+    """Resolve the shell PULSE runs commands with. Owned by pm (the store
     is the authority on bundled bash); this is a thin wrapper over
     pm.shell() for callers that need a bash binary."""
     import pm.shell
@@ -483,7 +522,7 @@ def _find_bash() -> str:
     if bash:
         return bash
     raise RuntimeError(
-        "No shell found. Pulse needs bash (Git for Windows on Windows). "
+        "No shell found. PULSE needs bash (Git for Windows on Windows). "
         "Run `pulse pm install` or reinstall the bundle."
     )
 
@@ -590,11 +629,11 @@ def _prepend_pulse_bin_dir(existing_path: str) -> str:
 
 
 def _managed_runtime_path_entries() -> list[str]:
-    """Return existing Pulse-managed runtime dirs for the terminal subshell PATH.
+    """Return existing PULSE-managed runtime dirs for the terminal subshell PATH.
 
     The terminal tool spawns a subshell whose PATH is the agent process's PATH
-    plus ``_SANE_PATH``. Neither carries the runtimes Pulse installs for
-    itself, so on a machine where Pulse provisioned its own toolchain a
+    plus ``_SANE_PATH``. Neither carries the runtimes PULSE installs for
+    itself, so on a machine where PULSE provisioned its own toolchain a
     command the agent runs resolves a system copy instead — or nothing at all:
 
     - the pm store's node/npm entries — installed to satisfy the desktop and
@@ -657,7 +696,7 @@ def _apply_windows_msys_bash_env_defaults(env: dict) -> None:
 
     Git Bash rewrites arguments that look like Unix paths (``/FO``, ``/TN``, ``/Create``) into
     ``C:/.../git/FO``-style paths, which breaks native Windows commands such as ``tasklist``, ``schtasks``,
-    and ``wmic``. Pulse runs terminal commands through bash on Windows, so set the standard MSYS opt-out by
+    and ``wmic``. PULSE runs terminal commands through bash on Windows, so set the standard MSYS opt-out by
     default. Refs #56700.
     MSYS2-proper and Cygwin bash (which ``_find_bash`` can still return via the final ``shutil.which``
     fallback) ignore it and honor ``MSYS2_ARG_CONV_EXCL`` instead, so set both. ``*`` disables all argv
@@ -679,15 +718,34 @@ def _make_run_env(env: dict) -> dict:
     the LAUNCH profile's; under a routed home override its ``.env`` residue is dropped first
     (``strip_launch_profile_env``, a no-op for the launch profile) so the backend's own ``env``
     and the served profile's declared passthrough names are what the child sees."""
-    return _scrubbed_env([(dict(strip_launch_profile_env(os.environ.copy()) | env), True)], frozenset(),
-                         lambda p: _prepend_git_bash_dirs(_append_missing_sane_path_entries(p)))
+    run_env = _scrubbed_env(
+        [(dict(strip_launch_profile_env(os.environ.copy()) | env), True)],
+        frozenset(),
+        lambda p: _prepend_git_bash_dirs(_append_missing_sane_path_entries(p)),
+    )
+    # While this profile's Bot Desktop is running, its DISPLAY/XAUTHORITY/DBUS ride along so GUI
+    # apps the agent launches from the terminal open on the Bot Screen the user is watching, not
+    # on the user's own seat (#125830). published_env() is the pure read (no activity stamp — a
+    # plain ``ls`` must not keep the screen alive past idle_stop_minutes), and it wins over the
+    # login snapshot's seat DISPLAY; a user who wants their own seat uses an inline
+    # ``DISPLAY=:0 cmd`` prefix, which bash applies after this env. Empty (or module missing) →
+    # the seat env passes through untouched.
+    try:
+        from tools.bot_desktop.runtime import published_env
+        published = published_env()
+    except Exception:
+        published = {}
+    if published:
+        run_env.update(published)
+        run_env.pop("WAYLAND_DISPLAY", None)  # X11 desktop; a leaked Wayland socket flips GTK/Chromium backends
+    return run_env
 
 
-# --- Pulse venv / repo-root detection (module-level, computed once) ---
+# --- PULSE venv / repo-root detection (module-level, computed once) ---
 # Owned here; read lazily by tools.environments.local_pythonpath (tests patch here).
 # The Electron app prepends the repo root to PYTHONPATH so the backend can ``import
 # tools``; other subprocesses must not inherit it. Aliases: launchers may emit other
-# spellings — the Windows gateway launcher renders Pulse-owned paths under the
+# spellings — the Windows gateway launcher renders PULSE-owned paths under the
 # configured PULSE_HOME spelling (possibly a junction to another drive).
 _pulse_repo_root: Path = Path(__file__).resolve().parents[2]
 _pulse_repo_root_aliases: tuple[Path, ...] = _build_pulse_repo_root_aliases(
@@ -846,7 +904,7 @@ class LocalEnvironment(BaseEnvironment):
 
     _sudo_nopasswd_probe_supported = True
     _profile_scoped_passthrough = True
-    # Commands run on the Pulse host itself — controller-side platform behavior
+    # Commands run on the PULSE host itself — controller-side platform behavior
     # (macOS TCC pruning, etc.) legitimately applies here.
     is_local = True
 
@@ -868,7 +926,7 @@ class LocalEnvironment(BaseEnvironment):
     def get_temp_dir(self) -> str:
         """Shell-safe writable temp dir. Precedence: ``TERMINAL_TEMP_DIR``, TMPDIR/TMP/TEMP
         (Termux has no system temp dir), ``PULSE_HOME/cache/terminal`` (real storage: a
-        tmpfs system temp dir fills under Pulse load; pruned by ``cleanup_terminal_temp_cache``),
+        tmpfs system temp dir fills under PULSE load; pruned by ``cleanup_terminal_temp_cache``),
         ``tempfile.gettempdir()``; backend env before process env so terminal.env
         overrides work. Windows: ``%TEMP%`` often has spaces that break unquoted bash,
         so always the PULSE_HOME cache dir with forward slashes (bash- and Python-valid)."""

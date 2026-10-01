@@ -54,7 +54,7 @@ export function ugitGitBinaries(localAppData: string, fs: GitCandidateFs): strin
 
 /**
  * resolveGitBinary's fixed Windows candidate list, in preference order:
- * the Pulse-bundled PortableGit first, then UGit's bundled copies, then the
+ * the PULSE-bundled PortableGit first, then UGit's bundled copies, then the
  * standard Git-for-Windows locations.
  */
 export function windowsGitCandidates(env: WindowsGitEnv, fs: GitCandidateFs): string[] {

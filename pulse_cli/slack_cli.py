@@ -15,7 +15,7 @@ def _build_full_manifest(
     messaging_experience: str | None = None, long_description: str | None = None) -> dict:
     """Build a full Slack manifest: display info + slash list from ``COMMAND_REGISTRY``.
 
-    Other sections (OAuth scopes, socket mode) are sensible Pulse defaults, tweakable in the Slack
+    Other sections (OAuth scopes, socket mode) are sensible PULSE defaults, tweakable in the Slack
     UI after pasting.
     """
     from pulse_cli.commands_platforms import slack_app_manifest
@@ -43,11 +43,11 @@ def _build_full_manifest(
 
     if messaging_experience == "assistant":
         features["assistant_view"] = {
-            "assistant_description": "Chat with Pulse in threads and DMs."}
+            "assistant_description": "Chat with PULSE in threads and DMs."}
         bot_scopes.append("assistant:write")
         bot_events.extend(["assistant_thread_context_changed", "assistant_thread_started"])
     elif messaging_experience == "agent":
-        features["agent_view"] = {"agent_description": "Chat with Pulse in Slack Messages."}
+        features["agent_view"] = {"agent_description": "Chat with PULSE in Slack Messages."}
         bot_scopes.append("assistant:write")
         # Slack includes current viewing context in Agent DM events only after this subscription
         # is enabled; the adapter uses it to preserve the referred channel across the agent turn.
@@ -58,7 +58,7 @@ def _build_full_manifest(
 
     display_information = {
         "name": bot_name[:35],
-        "description": (bot_description or "Your Pulse agent on Slack")[:140],
+        "description": (bot_description or "Your PULSE agent on Slack")[:140],
         "background_color": "#1a1a2e"}
     if long_description is not None:
         display_information["long_description"] = long_description
@@ -78,8 +78,8 @@ def _build_full_manifest(
 
 def slack_manifest_command(args) -> int:
     """Print or write a Slack app manifest JSON (flags documented in ``pulse_cli/main.py``)."""
-    name = getattr(args, "name", None) or "Pulse"
-    description = getattr(args, "description", None) or "Your Pulse agent on Slack"
+    name = getattr(args, "name", None) or "PULSE"
+    description = getattr(args, "description", None) or "Your PULSE agent on Slack"
     long_description = getattr(args, "long_description", None)
     long_description_file = getattr(args, "long_description_file", None)
     slashes_only = getattr(args, "slashes_only", False)
@@ -136,7 +136,7 @@ def slack_manifest_command(args) -> int:
     print(f"Slack manifest written to: {target}", file=sys.stderr)
     print(
         "\nNext steps:\n"
-        "  1. Open https://api.slack.com/apps and pick your Pulse app\n"
+        "  1. Open https://api.slack.com/apps and pick your PULSE app\n"
         "     (or create a new one: Create New App → From an app manifest).\n"
         f"  2. Features → App Manifest → paste the contents of\n"
         f"     {target}\n"
@@ -146,11 +146,3 @@ def slack_manifest_command(args) -> int:
         "     (xoxb-...) and app token (xapp-...) configured via\n"
         "     `pulse setup`.\n", file=sys.stderr)
     return 0
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-import os  # noqa: F401,E402
-# ---- END PLUGIN-COMPAT ----

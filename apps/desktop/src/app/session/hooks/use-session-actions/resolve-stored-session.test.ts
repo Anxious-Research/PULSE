@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as PulseModule from '@/pulse'
+import type * as PULSEModule from '@/pulse'
 import { getSession } from '@/pulse'
 import { $activeGatewayProfile, $profiles } from '@/store/profile'
 import { $projectTree } from '@/store/projects'
@@ -11,7 +11,7 @@ import type { SessionInfo } from '@/types/pulse'
 import { cachedSessionRow, resolveStoredSession } from './utils'
 
 vi.mock('@/pulse', async importActual => ({
-  ...(await importActual<typeof PulseModule>()),
+  ...(await importActual<typeof PULSEModule>()),
   getSession: vi.fn()
 }))
 
@@ -145,6 +145,15 @@ describe('resolveStoredSession profile ownership', () => {
     expect($sessions.get()).toEqual([])
     // owner resolution still finds the row on the off-list stub atom
     expect($unlistedSessionOwnerRows.get().find(s => s.id === 's1')?.hidden).toBe(true)
+  })
+
+  it('returns an internal delegate child without promoting it into regular sessions', async () => {
+    mockGetSession.mockResolvedValueOnce(session({ id: 'child', is_internal_child: true }))
+
+    const resolved = await resolveStoredSession('child')
+
+    expect(resolved).toMatchObject({ id: 'child', is_internal_child: true, profile: 'meta' })
+    expect($sessions.get()).toEqual([])
   })
 
   it('probed desktop profile overrides a remote backend answering as its own "default"', async () => {

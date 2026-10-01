@@ -2,7 +2,7 @@
 name: property-listings
 description: Present property and rental listings as desktop cards.
 version: 0.1.0
-author: Teknium (teknium1), Pulse Agent
+author: Teknium (teknium1), PULSE Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
@@ -14,7 +14,7 @@ metadata:
 
 # Property Listings Skill
 
-Present researched properties as browsable cards in the Pulse desktop transcript.
+Present researched properties as browsable cards in the PULSE desktop transcript.
 This is a presentation recipe, not a listing search service or an investment valuation.
 
 ## When to Use
@@ -25,7 +25,7 @@ This is a presentation recipe, not a listing search service or an investment val
 
 ## Prerequisites
 
-- A Pulse desktop conversation for native cards; the backend may be local or remote.
+- A PULSE desktop conversation for native cards; the backend may be local or remote.
 - Property details supplied by the user or verified through `web_search`, `web_extract`, or the browser tools available in this session.
 - No additional API keys or dependencies are required for card formatting.
 

@@ -7,11 +7,14 @@ import {
   isHostKeyChangedBootFailure,
   isRetryableRemoteBootFailure,
   isSshAuthFailedBootFailure,
+  isSshClientFailedBootFailure,
   shouldHoldBootProgressForReauth,
   shouldLatchBackendStartFailure,
   shouldLatchHostKeyChangedFailure,
   shouldLatchRemoteReauthFailure,
-  shouldLatchSshAuthFailure
+  shouldLatchSshAuthFailure,
+  shouldLatchSshClientFailure,
+  sshClientFailedError
 } from './backend-start-failure'
 import { SshConnection } from './ssh-connection'
 
@@ -34,7 +37,7 @@ test('never latches a supervisor-owned respawn failure (it has its own bounded c
 })
 
 test('latches a CONFIRMED remote reauth failure so the overlay stays clickable', () => {
-  // Without this the non-latching remote path re-runs startPulse on every
+  // Without this the non-latching remote path re-runs startPULSE on every
   // getConnection/api call, re-emits running:true, and the overlay hides
   // itself — the "Sign in" button flickers away before it can be clicked.
   assert.equal(shouldLatchRemoteReauthFailure({ attemptedRemote: true, isReauth: true }), true)
@@ -75,7 +78,7 @@ test('a CONFIRMED reauth rejection is never auto-retried (missing capability, no
 })
 
 test('unsigned OAuth latches and is never auto-retried; a bare needsOauthLogin hint still retries', () => {
-  // Production composition in startPulse: isReauth = isReauthRequiredError(error).
+  // Production composition in startPULSE: isReauth = isReauthRequiredError(error).
   // A bare `{ needsOauthLogin: true }` is the IPC-shaped hint, not a confirmed
   // rejection; gatewayTicketFailure tags a confirmed 401/403 with
   // isReauthRequired itself (#95701, see remote-reauth-latch.test.ts).
@@ -201,7 +204,7 @@ test('FIX #95701: while a reauth rejection is latched, only re-emits of that fai
   // sibling failure that would flip retryable back on.
   assert.equal(shouldHoldBootProgressForReauth(latched, { error: null }), true)
   assert.equal(shouldHoldBootProgressForReauth(latched, {}), true)
-  assert.equal(shouldHoldBootProgressForReauth(latched, { error: 'Could not reach the remote Pulse gateway' }), true)
+  assert.equal(shouldHoldBootProgressForReauth(latched, { error: 'Could not reach the remote PULSE gateway' }), true)
 })
 
 test('FIX #95701: with no reauth latch every boot-progress update flows as before', () => {
@@ -210,4 +213,43 @@ test('FIX #95701: with no reauth latch every boot-progress update flows as befor
     assert.equal(shouldHoldBootProgressForReauth(latch, {}), false)
     assert.equal(shouldHoldBootProgressForReauth(latch, { error: 'Desktop boot failed: spawn ENOENT' }), false)
   }
+})
+
+test('FIX #103288: a failed local `ssh -G` probe latches and is never auto-retried', () => {
+  const error = sshClientFailedError(
+    'C:\\Windows\\System32\\OpenSSH\\ssh.exe',
+    new Error('Command failed: ssh.exe -G -- box'),
+    'win32'
+  )
+
+  assert.equal(isSshClientFailedBootFailure(error), true)
+  assert.match(error.message, /System32\\OpenSSH\\ssh\.exe/)
+  assert.match(error.message, /Command failed/)
+  assert.match(error.message, /desktop\.ssh_path/)
+
+  const context = { attemptedRemote: true, isReauth: false, isSshClientFailed: true }
+
+  assert.equal(shouldLatchSshClientFailure(context), true)
+  assert.equal(isRetryableRemoteBootFailure(context), false)
+
+  // Ordinary remote faults keep retrying; local boots never take this latch.
+  const unreachable = new Error('ssh: connect to host box port 22: Connection timed out')
+
+  assert.equal(isSshClientFailedBootFailure(unreachable), false)
+  assert.equal(
+    isRetryableRemoteBootFailure({
+      attemptedRemote: true,
+      isReauth: false,
+      isSshClientFailed: isSshClientFailedBootFailure(unreachable)
+    }),
+    true
+  )
+  assert.equal(shouldLatchSshClientFailure({ attemptedRemote: false, isReauth: false, isSshClientFailed: true }), false)
+})
+
+test('FIX #103288: the desktop.ssh_path hint is Windows-only', () => {
+  const error = sshClientFailedError('ssh', new Error('boom'), 'darwin')
+
+  assert.equal(isSshClientFailedBootFailure(error), true)
+  assert.doesNotMatch(error.message, /ssh_path/)
 })

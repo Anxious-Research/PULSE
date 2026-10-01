@@ -1,6 +1,6 @@
 // Spoken stop-word detection for the voice conversation loop.
 //
-// When someone is in a hands-free "Hey Pulse" voice chat, the natural way to
+// When someone is in a hands-free "Hey PULSE" voice chat, the natural way to
 // end it is to SAY "stop" — not reach for the mouse. Without this, a spoken
 // "stop" is just transcribed and sent to the agent as a normal turn, so the
 // conversation never ends (the reported bug). This matcher recognises a short
@@ -8,7 +8,7 @@
 // instead of submitting it.
 //
 // Deliberately conservative: it only fires when the WHOLE utterance is a stop
-// phrase (optionally addressed to Pulse), so a real turn that merely contains
+// phrase (optionally addressed to PULSE), so a real turn that merely contains
 // the word "stop" — e.g. "stop the docker container" or "how do I stop a
 // running process" — is never swallowed.
 //
@@ -89,7 +89,7 @@ function phrasesForConfig(config: VoiceStopPhraseConfig): readonly string[] | nu
 
 /**
  * True when the entire spoken utterance is a stop command (optionally addressed
- * to Pulse). Returns false for anything that merely contains "stop" as part of
+ * to PULSE). Returns false for anything that merely contains "stop" as part of
  * a longer, substantive request.
  *
  * Pass `config` in tests; production reads `$voiceStopPhraseConfig`.

@@ -2,7 +2,7 @@
 
 Complete reference for the autoreason iterative refinement method, derived from experimental results across subjective writing tasks, competitive programming, and four model tiers. Use this when any output (paper draft, experiment script, analysis, task definition) needs iterative improvement.
 
-**Source**: [AnxiousResearchLab/autoreason](https://github.com/AnxiousResearchLab/autoreason) — "Autoreason: When Iterative LLM Refinement Works and Why It Fails"
+**Source**: [NousResearch/autoreason](https://github.com/NousResearch/autoreason) — "Autoreason: When Iterative LLM Refinement Works and Why It Fails"
 
 ---
 

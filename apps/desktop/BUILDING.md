@@ -9,7 +9,7 @@ commands package the current desktop build; they do not stage a fresh runtime.
 |---|---|---|
 | Windows x64 / ARM64, sideload | Signed per-architecture MSIX packages, combined into a universal `.msixbundle`; `.appinstaller` descriptor | Windows App Installer |
 | Windows x64 / ARM64, Store | Store-identity MSIX packages and a separate Store bundle | Microsoft Store |
-| macOS ARM64 / x64 | Signed, notarized `Pulse.app` in DMG and ZIP artifacts | `electron-updater` with Squirrel.Mac |
+| macOS ARM64 / x64 | Signed, notarized `PULSE.app` in DMG and ZIP artifacts | `electron-updater` with Squirrel.Mac |
 | Linux x64 / ARM64 | Local builder can produce AppImage | External replacement; Linux desktop release legs are disabled |
 
 The current MSIX manifest requires Windows 11 22H2 (`10.0.22621.0`).
@@ -144,7 +144,7 @@ on each target, then verify signed installers and launchers on their native host
 macOS packaging retains the caller's login `HOME` for keychain import and signing.
 An explicit keychain path does not make Security.framework work under a scratch
 home. Dependency preparation and product compilation still use the isolated home.
-Pulse state and explicit dependency-cache paths remain build-owned during packaging.
+PULSE state and explicit dependency-cache paths remain build-owned during packaging.
 
 ## Commit-only builds
 
@@ -274,7 +274,7 @@ bundled Python checker. Its OS-registered App Installer source still owns
 automatic updates.
 
 Store builds use `Windows.Services.Store.StoreContext` to check, download,
-and request installation inside Pulse. The native consent UI attaches to the
+and request installation inside PULSE. The native consent UI attaches to the
 current desktop window. Download finishes before backend shutdown; the existing
 relaunch waiter is registered before the install request. Unknown checks,
 cancellation and request failures do not count as successful updates. Native
@@ -342,8 +342,8 @@ For an ordinary package of that desktop build, use the workspace's
 `dist:win`, `dist:mac`, `dist:linux`, or `pack` command. Those commands do not
 replace the complete tagged build described above.
 
-Icons are generated from `assets/pulse-orb-*.svg` and `assets/backgrounds/`.
-`node scripts/generate-icons.mjs` renders them with the Pulse runtime Python
+Icons are generated from `assets/nous-girl-*.svg` and `assets/backgrounds/`.
+`node scripts/generate-icons.mjs` renders them with the PULSE runtime Python
 (`PULSE_PYTHON`, else `python` on PATH); Pillow and resvg-py are core
 dependencies. Generated PNG/ICO/ICNS files are not source assets.
 

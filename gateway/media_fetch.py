@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 _FETCH_MAX_BYTES = 50 * 1024 * 1024
 
 _DENIED_PREFIXES = tuple(PurePosixPath(p) for p in _MEDIA_DELIVERY_DENIED_PREFIXES)
-# Credential dirs under the sandbox home plus the Pulse stores, which live at ``~/.pulse`` there.
+# Credential dirs under the sandbox home plus the PULSE stores, which live at ``~/.pulse`` there.
 _DENIED_HOME_RELATIVE = tuple(PurePosixPath(s) for s in _MEDIA_DELIVERY_DENIED_HOME_SUBPATHS) + tuple(
     PurePosixPath(".pulse", *PurePosixPath(rel.replace(os.sep, "/")).parts) for rel in _ROOT_CREDENTIAL_PATHS)
 

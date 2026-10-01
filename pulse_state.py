@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SQLite state store for Pulse Agent: session metadata, message history, model
+"""SQLite state store for PULSE Agent: session metadata, message history, model
 config, FTS5 search. WAL mode (concurrent readers + one writer); compression
 splits sessions via parent_session_id chains; sessions are source-tagged
 ('cli', 'telegram', ...). Batch-runner / RL trajectories live elsewhere.
@@ -221,7 +221,7 @@ def _ensure_test_isolation(db_path: Path) -> None:
         if _is_production_state_db(resolved, root):
             raise RuntimeError(
                 "live-system guard: test attempted to open production "
-                f"state.db at {resolved} (under real Pulse root {root}). "
+                f"state.db at {resolved} (under real PULSE root {root}). "
                 "Tests must run against a temporary PULSE_HOME — pass an "
                 "explicit tmp db_path or let the hermetic conftest redirect "
                 "PULSE_HOME. If this test genuinely needs the live database, mark it with "
@@ -361,12 +361,12 @@ _SESSION_DB_CONSEQUENCE = "Sessions will not be saved until this is fixed."
 _NETWORK_DRIVE_HINT = " If the database lives on a network drive, move it to a local disk."
 _NETWORK_DRIVE_GLOSS = "the session database could not be opened; it may be on a network or unsupported drive"
 _NETWORK_DRIVE_ACTION = (
-    "Move it to a local disk (`pulse {profile_arg}doctor` shows where it is), then start Pulse again."
+    "Move it to a local disk (`pulse {profile_arg}doctor` shows where it is), then start PULSE again."
 )
 
 
 def format_session_db_unavailable(
-    prefix: str = "Pulse can't open its session history right now",
+    prefix: str = "PULSE can't open its session history right now",
     *,
     details: bool = False,
 ) -> str:
@@ -765,7 +765,7 @@ class SessionDB(
         qpath = quarantine_invalid_state_db(self.db_path, already_locked=already_locked)
         where = f"moved aside to {qpath}" if qpath else "left in place (it could not be moved aside)"
         msg = (
-            f"state.db was empty or damaged ({zsize} bytes) and has been {where}; Pulse started with a "
+            f"state.db was empty or damaged ({zsize} bytes) and has been {where}; PULSE started with a "
             "fresh, empty session database. To bring old sessions back, run "
             f"`pulse sessions recover --source {qpath or self.db_path} --inspect-only`, or restore a "
             "snapshot with `/snapshot list` then `/snapshot restore <id>` (terminal `pulse` chat only)."
@@ -1068,7 +1068,7 @@ class SessionDB(
                         # a holder's argv (a worktree named fix-corrupt-db) would flip the bucket.
                         log_write_lock_holders(self.db_path, patience_s)
                         raise sqlite3.OperationalError(
-                            f"database is locked (another Pulse process held the "
+                            f"database is locked (another PULSE process held the "
                             f"state.db write lock for over {patience_s:.0f}s — "
                             "likely a long maintenance operation such as VACUUM, "
                             "a large WAL checkpoint, or an older pre-update "
@@ -1610,7 +1610,8 @@ class SessionDB(
         "id, role, content, tool_call_id, tool_calls, tool_name, effect_disposition, "
         "finish_reason, reasoning, reasoning_content, reasoning_details, "
         "codex_reasoning_items, codex_message_items, platform_message_id, observed, "
-        "_compressed_summary, timestamp, active, api_content, display_kind, display_metadata"
+        "_compressed_summary, timestamp, active, api_content, display_kind, display_metadata, message_uid, "
+        "absorbed_message_uids, tool_call_uids, tool_call_uid"
     )
 
     # ── Meta key/value (scheduler bookkeeping) ──
@@ -1682,79 +1683,3 @@ class AsyncSessionDB:
         async def _offloaded(*args, **kwargs):
             return await asyncio.to_thread(attr, *args, **kwargs)
         return _offloaded
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from typing import Set  # noqa: F401,E402
-import contextlib  # noqa: F401,E402
-import errno  # noqa: F401,E402
-import struct  # noqa: F401,E402
-import weakref  # noqa: F401,E402
-
-MAX_SAFE_EXPORT_MESSAGES = 20_000
-
-MAX_SAFE_RESUME_MESSAGES = 20_000
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'AUTO_VACUUM_MIN_FREELIST_RATIO': ('pulse_state_common', 'AUTO_VACUUM_MIN_FREELIST_RATIO'),
-    'ActivityProvenance': ('agent.session_activity', 'ActivityProvenance'),
-    'CompressionSessionBusyError': ('pulse_state_errors', 'CompressionSessionBusyError'),
-    'CompressionSessionClosedError': ('pulse_state_errors', 'CompressionSessionClosedError'),
-    'DEFERRED_INDEX_SQL': ('pulse_state_common', 'DEFERRED_INDEX_SQL'),
-    'FTS_CJK_STALE_KEY': ('pulse_state_common', 'FTS_CJK_STALE_KEY'),
-    'FTS_CJK_TABLE_SQL': ('pulse_state_fts', 'FTS_CJK_TABLE_SQL'),
-    'FTS_CJK_TRIGGER_SQL': ('pulse_state_fts', 'FTS_CJK_TRIGGER_SQL'),
-    'FTS_REBUILD_DEFERRAL_KEY': ('pulse_state_common', 'FTS_REBUILD_DEFERRAL_KEY'),
-    'FTS_SQL': ('pulse_state_common', 'FTS_SQL'),
-    'FTS_STALE_KEY': ('pulse_state_common', 'FTS_STALE_KEY'),
-    'FTS_STORAGE_VERSION': ('pulse_state_common', 'FTS_STORAGE_VERSION'),
-    'FTS_TRIGRAM_SQL': ('pulse_state_common', 'FTS_TRIGRAM_SQL'),
-    'LEGACY_FTS_SQL': ('pulse_state_common', 'LEGACY_FTS_SQL'),
-    'LEGACY_FTS_TRIGRAM_SQL': ('pulse_state_common', 'LEGACY_FTS_TRIGRAM_SQL'),
-    'MAX_FTS5_QUERY_CHARS': ('pulse_state_common', 'MAX_FTS5_QUERY_CHARS'),
-    'PERSISTENCE_ERROR_CAUSES': ('pulse_state_errors', 'PERSISTENCE_ERROR_CAUSES'),
-    'SCHEMA_SQL': ('pulse_state_common', 'SCHEMA_SQL'),
-    'SCHEMA_VERSION': ('pulse_state_common', 'SCHEMA_VERSION'),
-    'SESSION_STATUS_COMPLETE': ('pulse_state_sessions', 'SESSION_STATUS_COMPLETE'),
-    'SESSION_STATUS_EMPTY': ('pulse_state_sessions', 'SESSION_STATUS_EMPTY'),
-    'SESSION_STATUS_ERROR': ('pulse_state_sessions', 'SESSION_STATUS_ERROR'),
-    'SESSION_STATUS_INTERRUPTED': ('pulse_state_sessions', 'SESSION_STATUS_INTERRUPTED'),
-    'SKILL_EXCERPT_JOINT': ('agent.skill_commands', 'SKILL_EXCERPT_JOINT'),
-    'SKILL_SCAFFOLD_SQL_LIKE': ('agent.skill_commands', 'SKILL_SCAFFOLD_SQL_LIKE'),
-    'SessionTurnLeaseLostError': ('pulse_state_errors', 'SessionTurnLeaseLostError'),
-    'WalUnsupportedError': ('pulse_state_wal', 'WalUnsupportedError'),
-    'apply_durability_barriers': ('pulse_state_repair', 'apply_durability_barriers'),
-    'classify_session_status': ('pulse_state_sessions', 'classify_session_status'),
-    'collect_state_db_stats': ('pulse_state_dbfile', 'collect_state_db_stats'),
-    'count_db_holders': ('pulse_state_dbfile', 'count_db_holders'),
-    'describe_skill_invocation': ('agent.skill_commands', 'describe_skill_invocation'),
-    'fts5_cjk_so_path': ('pulse_state_fts', 'fts5_cjk_so_path'),
-    'is_advisory_lock_contention': ('pulse_state_common', 'is_advisory_lock_contention'),
-    'is_automatic_end_reason': ('pulse_state_common', 'is_automatic_end_reason'),
-    'is_disk_full_error': ('pulse_state_errors', 'is_disk_full_error'),
-    'is_sqlite_wal_reset_vulnerable': ('pulse_state_wal', 'is_sqlite_wal_reset_vulnerable'),
-    'is_transient_sqlite_error': ('pulse_state_errors', 'is_transient_sqlite_error'),
-    'iter_deleted_sqlite_sidecar_holders': ('pulse_state_dbfile', 'iter_deleted_sqlite_sidecar_holders'),
-    'release_or_close': ('pulse_state_registry', 'release_or_close'),
-    'report_startup_progress': ('pulse_startup_watchdog', 'report_startup_progress'),
-    'resolve_journal_mode': ('pulse_state_wal', 'resolve_journal_mode'),
-    'resolve_synchronous_level': ('pulse_state_wal', 'resolve_synchronous_level'),
-    'sanitize_context': ('agent.memory_manager', 'sanitize_context'),
-    'sqlite_source_id': ('pulse_state_wal', 'sqlite_source_id'),
-    'workspace_key': ('pulse_state_sessions', 'workspace_key'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

@@ -109,6 +109,7 @@ async def list_mcp_servers(profile: Optional[str] = None):
 
 @router.post("/api/mcp/servers")
 async def add_mcp_server(body: MCPServerCreate, profile: Optional[str] = None):
+    from pulse_cli.mcp_catalog import record_mcp_install
     from pulse_cli.mcp_config import _get_mcp_servers, _save_bearer_auth_token, _save_mcp_server
 
     try:
@@ -116,7 +117,7 @@ async def add_mcp_server(body: MCPServerCreate, profile: Optional[str] = None):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    def _run():
+    def _save() -> bool:
         # _save_mcp_server does its own load→mutate→save; the duplicate-name
         # check sits under the same lock span so a concurrent add can't slip
         # between check and save.
@@ -133,10 +134,18 @@ async def add_mcp_server(body: MCPServerCreate, profile: Optional[str] = None):
                 raise HTTPException(status_code=409, detail=f"Server '{name}' already exists")
             if bearer_token is not None:
                 server_config["headers"] = _save_bearer_auth_token(name, bearer_token)
-            if not _save_mcp_server(name, server_config):
-                raise HTTPException(
-                    status_code=400, detail=f"Server '{name}' rejected: suspicious command/args configuration",
-                )
+            return _save_mcp_server(name, server_config)
+
+    def _run():
+        saved = _save()
+        # Outside the config mutation lock: a cold first metric call costs imports + catalog loads.
+        with _profile_scope(body.profile or profile):
+            record_mcp_install("url" if server_config.get("url") else "local", None,
+                               "success" if saved else "failed")
+        if not saved:
+            raise HTTPException(
+                status_code=400, detail=f"Server '{name}' rejected: suspicious command/args configuration",
+            )
 
     try:
         await asyncio.to_thread(_run)
@@ -347,7 +356,7 @@ async def mcp_oauth_callback(
         None,
     )
     if flow is None:
-        return HTMLResponse("<h1>OAuth flow expired</h1><p>Return to Pulse and try again.</p>", status_code=404)
+        return HTMLResponse("<h1>OAuth flow expired</h1><p>Return to PULSE and try again.</p>", status_code=404)
     try:
         flow.deliver_callback(code=code, state=state, error=error, iss=iss)
     except ValueError as exc:
@@ -356,8 +365,8 @@ async def mcp_oauth_callback(
             status_code=409 if "already received" in str(exc) else 400,
         )
     if error:
-        return HTMLResponse("<h1>Authorization failed</h1><p>Return to Pulse for details.</p>", status_code=400)
-    return HTMLResponse("<h1>Authorization received</h1><p>You can close this tab and return to Pulse.</p>")
+        return HTMLResponse("<h1>Authorization failed</h1><p>Return to PULSE for details.</p>", status_code=400)
+    return HTMLResponse("<h1>Authorization received</h1><p>You can close this tab and return to PULSE.</p>")
 
 
 @router.put("/api/mcp/servers/{name}/enabled")
@@ -429,7 +438,7 @@ def _catalog_entry_json(entry: Any, installed: bool, enabled: bool) -> Dict[str,
 
 @router.get("/api/mcp/catalog")
 async def list_mcp_catalog(profile: Optional[str] = None, detect_apps: bool = False):
-    """Browse the Anxious-approved MCP catalog (optional-mcps/ manifests), each
+    """Browse the Nous-approved MCP catalog (optional-mcps/ manifests), each
     entry annotated with installed/enabled state for ``profile``. Opt-in app
     signals describe this backend machine, never the client or terminal sandbox."""
     with http_failure("mcp_catalog import failed", 500, "Catalog unavailable"):
@@ -557,11 +566,3 @@ async def install_mcp_catalog_entry(body: MCPCatalogInstall, profile: Optional[s
         _log.exception("install_mcp_catalog_entry failed")
         raise HTTPException(status_code=400, detail=str(exc))
     return {"ok": True, "name": name, "background": False}
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-import logging  # noqa: F401,E402
-# ---- END PLUGIN-COMPAT ----

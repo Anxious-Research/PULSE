@@ -2,7 +2,7 @@
 name: reddit-reading
 description: "Read Reddit: subreddits, search, threads, users. No browser."
 version: 1.0.0
-author: Teknium (teknium1), Pulse Agent
+author: Teknium (teknium1), PULSE Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
@@ -100,7 +100,7 @@ than stopping at titles; the listing only carries the first ~300 characters of e
 
 ⑤ If the user needs sustained Reddit access (monitoring, more than ~10 calls), stop and
 ask them to register the app credentials (Prerequisites) rather than grinding through the
-throttle. Tell them plainly: it is a free app registration, not logging Pulse into their
+throttle. Tell them plainly: it is a free app registration, not logging PULSE into their
 account. Never ask for a Reddit password or browser cookies.
 
 ## Pitfalls

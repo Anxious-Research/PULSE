@@ -1,7 +1,7 @@
 import { GatewayReauthRequiredError, isGatewayReauthRequired, resolveGatewayWsUrl } from '@pulse/shared'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { PulseConnection } from '@/global'
+import type { PULSEConnection } from '@/global'
 
 import { resolveDesktopGatewayWsUrl } from './gateway-ws-url'
 
@@ -17,11 +17,11 @@ describe('desktop connection scope', () => {
       connectionId: 'remote-device',
       profile: 'client-alias',
       wsUrl: 'wss://remote.invalid/api/ws?token=cached'
-    } as PulseConnection
+    } as PULSEConnection
   }
 
   function registeredConnection(authMode: (typeof authModes)[number]) {
-    return { ...aliasConnection(authMode), profile: 'remote-profile', registryScoped: true } as PulseConnection
+    return { ...aliasConnection(authMode), profile: 'remote-profile', registryScoped: true } as PULSEConnection
   }
 
   function fakeDesktop(withScopedMint = true) {
@@ -54,7 +54,7 @@ describe('desktop connection scope', () => {
 
   it('a registry-scoped flag without a connectionId still takes the legacy mint', async () => {
     const desktop = fakeDesktop()
-    const scopedWithoutId = { ...registeredConnection('token'), connectionId: undefined } as PulseConnection
+    const scopedWithoutId = { ...registeredConnection('token'), connectionId: undefined } as PULSEConnection
 
     await expect(resolveDesktopGatewayWsUrl(desktop, scopedWithoutId)).resolves.toContain('legacy.invalid')
     expect(desktop.getGatewayWsUrl).toHaveBeenCalledWith('remote-profile')

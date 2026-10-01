@@ -1,4 +1,4 @@
-export function platformDefaultPulseHome(
+export function platformDefaultPULSEHome(
   home: string,
   env?: NodeJS.ProcessEnv,
   platform?: NodeJS.Platform,
@@ -6,7 +6,7 @@ export function platformDefaultPulseHome(
 
 export function resolveDesktopUserData(defaultPath: string, env?: NodeJS.ProcessEnv): string
 
-export interface PulseHomeOptions {
+export interface PULSEHomeOptions {
   home: string
   env?: NodeJS.ProcessEnv
   platform?: NodeJS.Platform
@@ -14,4 +14,4 @@ export interface PulseHomeOptions {
   readWindowsHome?: () => string | null
 }
 
-export function resolveDesktopPulseHome(options: PulseHomeOptions): string
+export function resolveDesktopPULSEHome(options: PULSEHomeOptions): string

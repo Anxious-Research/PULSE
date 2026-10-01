@@ -14,6 +14,7 @@ import { resolveTerminalConnectionForSender } from './connection-apply'
 import { ensureSpawnHelperExecutable } from './spawn-helper-perms'
 import { buildInteractiveSshArgs } from './ssh-connection'
 import { createTerminalOutputGate } from './terminal-output-gate'
+import { applyWindowsMsysBashEnvDefaults } from './windows-msys-bash-env'
 import { buildWindowsInteractiveCommand } from './windows-remote-lifecycle'
 
 export interface TerminalIpcDeps {
@@ -21,6 +22,8 @@ export interface TerminalIpcDeps {
   findOnPath: (command: string) => null | string
   rememberLog: (line: string) => void
   activeSshTerminalTarget: (webContentsId: number) => unknown
+  /** The ssh client to spawn for remote terminals (resolveSshBinary). */
+  sshBinary: () => string
   ensureBackend: (webContentsId: number) => Promise<unknown>
   getSshConnectionState: (scope: string) => undefined | { remotePlatform?: string }
 }
@@ -51,6 +54,7 @@ export function registerTerminalIpc({
   findOnPath,
   rememberLog,
   activeSshTerminalTarget,
+  sshBinary,
   ensureBackend,
   getSshConnectionState
 }: TerminalIpcDeps): TerminalIpcApi {
@@ -164,7 +168,7 @@ export function registerTerminalIpc({
 
     // Strip color/theme-detection vars that ride along when Electron is launched
     // from a non-tty agent shell (Cursor's runner sets NO_COLOR/FORCE_COLOR=0
-    // /TERM=dumb; some terminals set COLORFGBG which would flip Pulse' TUI into
+    // /TERM=dumb; some terminals set COLORFGBG which would flip PULSE' TUI into
     // light-mode). Our PTY is a real xterm-compat terminal — force truecolor.
     delete env.NO_COLOR
     delete env.FORCE_COLOR
@@ -173,7 +177,7 @@ export function registerTerminalIpc({
     env.COLORTERM = 'truecolor'
     env.LC_CTYPE = terminalLcCtype(env)
     env.TERM = 'xterm-256color'
-    env.TERM_PROGRAM = 'Pulse'
+    env.TERM_PROGRAM = 'PULSE'
     env.TERM_PROGRAM_VERSION = app.getVersion()
 
     // Let a pulse/--tui launched in this pane know it's embedded in the desktop
@@ -181,7 +185,7 @@ export function registerTerminalIpc({
     // which marks the agent *backend* and gates cron/gateway behavior.
     env.PULSE_DESKTOP_TERMINAL = '1'
 
-    return env
+    return applyWindowsMsysBashEnvDefaults(env, isWindows)
   }
 
   function terminalChannel(id, suffix) {
@@ -320,9 +324,7 @@ export function registerTerminalIpc({
 
     const ptyProcess = remote
       ? nodePty.spawn(
-          process.platform === 'win32'
-            ? path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'OpenSSH', 'ssh.exe')
-            : 'ssh',
+          sshBinary(),
           buildInteractiveSshArgs(sshTarget.ssh, String(payload?.cwd || '').trim(), undefined, remoteCommand),
           { cols, cwd: app.getPath('home'), env: terminalShellEnv(), name: 'xterm-256color', rows }
         )

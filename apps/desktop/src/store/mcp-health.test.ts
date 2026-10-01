@@ -31,7 +31,7 @@ const mocks = vi.hoisted(() => {
   return {
     activeProfile: makeAtom('default'),
     gatewayState: makeAtom<'closed' | 'open'>('closed'),
-    getPulseConfigRecord: vi.fn(),
+    getPULSEConfigRecord: vi.fn(),
     notify: vi.fn(),
     setMcpServerEnabled: vi.fn().mockResolvedValue({ ok: true }),
     testMcpServer: vi.fn()
@@ -39,7 +39,7 @@ const mocks = vi.hoisted(() => {
 })
 
 vi.mock('@/pulse', () => ({
-  getPulseConfigRecord: mocks.getPulseConfigRecord,
+  getPULSEConfigRecord: mocks.getPULSEConfigRecord,
   setMcpServerEnabled: mocks.setMcpServerEnabled,
   testMcpServer: mocks.testMcpServer
 }))
@@ -72,7 +72,7 @@ afterEach(() => {
   stopMcpHealthChecker()
   mocks.gatewayState.set('closed')
   mocks.activeProfile.set('default')
-  mocks.getPulseConfigRecord.mockReset()
+  mocks.getPULSEConfigRecord.mockReset()
   mocks.notify.mockReset()
   mocks.testMcpServer.mockReset()
   mocks.setMcpServerEnabled.mockClear()
@@ -119,7 +119,7 @@ describe('shouldNotify', () => {
 
 it('shows the toast with Sign in + Disable, then stays quiet for a day and re-nudges after it', async () => {
   const servers = { mcp_servers: { linear: { url: 'https://mcp.linear.app/mcp', auth: 'oauth' } } }
-  mocks.getPulseConfigRecord.mockResolvedValue(servers)
+  mocks.getPULSEConfigRecord.mockResolvedValue(servers)
   mocks.testMcpServer.mockResolvedValue({ ok: false, error: 'OAuth: authorization required', tools: [] })
   window.localStorage.clear()
 
@@ -169,7 +169,7 @@ it('honors a persisted snooze in a fresh module session, then re-notifies after 
 
   try {
     window.localStorage.setItem(key, String(until))
-    mocks.getPulseConfigRecord.mockResolvedValue(servers)
+    mocks.getPULSEConfigRecord.mockResolvedValue(servers)
     mocks.testMcpServer.mockResolvedValue({ ok: false, error: 'OAuth: authorization required', tools: [] })
 
     // A fresh import drops in-memory transition state, as a renderer restart does.
@@ -200,12 +200,12 @@ it('coalesces reconnects during a sweep into one fresh follow-up sweep', async (
     releaseFirst = resolve
   })
 
-  mocks.getPulseConfigRecord.mockReturnValueOnce(first).mockResolvedValue({ mcp_servers: {} })
+  mocks.getPULSEConfigRecord.mockReturnValueOnce(first).mockResolvedValue({ mcp_servers: {} })
 
   startMcpHealthChecker()
   mocks.gatewayState.set('open')
   await flush()
-  expect(mocks.getPulseConfigRecord).toHaveBeenCalledTimes(1)
+  expect(mocks.getPULSEConfigRecord).toHaveBeenCalledTimes(1)
 
   for (let index = 0; index < 12; index += 1) {
     mocks.gatewayState.set('closed')
@@ -213,12 +213,12 @@ it('coalesces reconnects during a sweep into one fresh follow-up sweep', async (
   }
 
   await flush()
-  expect(mocks.getPulseConfigRecord).toHaveBeenCalledTimes(1)
+  expect(mocks.getPULSEConfigRecord).toHaveBeenCalledTimes(1)
 
   releaseFirst({ mcp_servers: {} })
   await flush()
   await flush()
-  expect(mocks.getPulseConfigRecord).toHaveBeenCalledTimes(2)
+  expect(mocks.getPULSEConfigRecord).toHaveBeenCalledTimes(2)
 })
 
 it('runs one follow-up when the active sweep fails through the handled config-error path', async () => {
@@ -228,7 +228,7 @@ it('runs one follow-up when the active sweep fails through the handled config-er
     rejectFirst = reject
   })
 
-  mocks.getPulseConfigRecord.mockReturnValueOnce(first).mockResolvedValue({ mcp_servers: {} })
+  mocks.getPULSEConfigRecord.mockReturnValueOnce(first).mockResolvedValue({ mcp_servers: {} })
 
   startMcpHealthChecker()
   mocks.gatewayState.set('open')
@@ -239,10 +239,10 @@ it('runs one follow-up when the active sweep fails through the handled config-er
   }
 
   await flush()
-  expect(mocks.getPulseConfigRecord).toHaveBeenCalledTimes(1)
+  expect(mocks.getPULSEConfigRecord).toHaveBeenCalledTimes(1)
 
   rejectFirst(new Error('backend restarting'))
   await flush()
   await flush()
-  expect(mocks.getPulseConfigRecord).toHaveBeenCalledTimes(2)
+  expect(mocks.getPULSEConfigRecord).toHaveBeenCalledTimes(2)
 })

@@ -27,22 +27,22 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { Badge } from "@anxious-research/ui/ui/components/badge";
-import { Button } from "@anxious-research/ui/ui/components/button";
-import { Spinner } from "@anxious-research/ui/ui/components/spinner";
-import { H2 } from "@anxious-research/ui/ui/components/typography/h2";
-import { Card, CardContent } from "@anxious-research/ui/ui/components/card";
-import { Checkbox } from "@anxious-research/ui/ui/components/checkbox";
-import { Input } from "@anxious-research/ui/ui/components/input";
-import { Label } from "@anxious-research/ui/ui/components/label";
-import { Select, SelectOption } from "@anxious-research/ui/ui/components/select";
-import { Toast } from "@anxious-research/ui/ui/components/toast";
-import { useToast } from "@anxious-research/ui/hooks/use-toast";
-import { useConfirmDelete } from "@anxious-research/ui/hooks/use-confirm-delete";
-import { ConfirmDialog } from "@anxious-research/ui/ui/components/confirm-dialog";
+import { Badge } from "@nous-research/ui/ui/components/badge";
+import { Button } from "@nous-research/ui/ui/components/button";
+import { Spinner } from "@nous-research/ui/ui/components/spinner";
+import { H2 } from "@nous-research/ui/ui/components/typography/h2";
+import { Card, CardContent } from "@nous-research/ui/ui/components/card";
+import { Checkbox } from "@nous-research/ui/ui/components/checkbox";
+import { Input } from "@nous-research/ui/ui/components/input";
+import { Label } from "@nous-research/ui/ui/components/label";
+import { Select, SelectOption } from "@nous-research/ui/ui/components/select";
+import { Toast } from "@nous-research/ui/ui/components/toast";
+import { useToast } from "@nous-research/ui/hooks/use-toast";
+import { useConfirmDelete } from "@nous-research/ui/hooks/use-confirm-delete";
+import { ConfirmDialog } from "@nous-research/ui/ui/components/confirm-dialog";
 import { useModalBehavior } from "@/hooks/useModalBehavior";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
-import { PulseConsoleModal } from "@/components/PulseConsoleModal";
+import { PULSEConsoleModal } from "@/components/PULSEConsoleModal";
 import { cn, themedBody } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { copyTextToClipboard } from "@/lib/clipboard";
@@ -277,7 +277,7 @@ export default function SystemPage() {
       api.getPortal(),
       // Cached (non-forced) check so the version row shows update status on
       // load without a separate effect / a forced network round-trip.
-      api.checkPulseUpdate(false),
+      api.checkPULSEUpdate(false),
       api.getGatewayMigratePlan(),
     ])
       .then(([s, st, m, p, c, h, cur, prt, upd, mig]) => {
@@ -580,7 +580,7 @@ export default function SystemPage() {
       if (status?.can_update_pulse === false) return;
       setCheckingUpdate(true);
       try {
-        const info = await api.checkPulseUpdate(force);
+        const info = await api.checkPULSEUpdate(force);
         setUpdateInfo(info);
         if (force) {
           if (info.update_available) {
@@ -611,13 +611,13 @@ export default function SystemPage() {
     setUpdateConfirmOpen(false);
     if (status?.can_update_pulse === false) {
       showToast(
-        "Pulse updates are managed outside this dashboard.",
+        "PULSE updates are managed outside this dashboard.",
         "success",
       );
       return;
     }
     try {
-      const resp = await api.updatePulse();
+      const resp = await api.updatePULSE();
       if (!resp.ok) {
         showToast(
           resp.message ??
@@ -702,7 +702,7 @@ export default function SystemPage() {
   }
 
   const gatewayRunning = status?.gateway_running;
-  const canUpdatePulse = status?.can_update_pulse !== false;
+  const canUpdatePULSE = status?.can_update_pulse !== false;
   const activeMemoryProvider = memory?.active
     ? memory.providers.find((provider) => provider.name === memory.active)
     : null;
@@ -736,10 +736,10 @@ export default function SystemPage() {
       />
 
       <ConfirmDialog
-        open={canUpdatePulse && updateConfirmOpen}
+        open={canUpdatePULSE && updateConfirmOpen}
         onCancel={() => setUpdateConfirmOpen(false)}
         onConfirm={() => void applyUpdate()}
-        title="Update Pulse?"
+        title="Update PULSE?"
         description={
           updateInfo && updateInfo.behind && updateInfo.behind > 0
             ? `This will run 'pulse update' (${updateInfo.update_command}) and pull ${updateInfo.behind} new commit${updateInfo.behind === 1 ? "" : "s"}. The gateway restarts when the update finishes; the current session keeps its prompt cache until then.`
@@ -780,7 +780,7 @@ export default function SystemPage() {
         description="Remove this hook from config and revoke its consent? It stops firing on the next restart."
         loading={hookDelete.isDeleting}
       />
-      <PulseConsoleModal
+      <PULSEConsoleModal
         open={consoleOpen}
         onClose={() => setConsoleOpen(false)}
       />
@@ -923,10 +923,10 @@ export default function SystemPage() {
                 <div>{stats?.python_impl} {stats?.python_version}</div>
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wider text-muted-foreground">Pulse</div>
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">PULSE</div>
                 <div className="flex items-center gap-2">
                   <span>v{stats?.pulse_version}</span>
-                  {canUpdatePulse &&
+                  {canUpdatePULSE &&
                     updateInfo &&
                     (updateInfo.update_available ? (
                       <Badge tone="warning">
@@ -987,7 +987,7 @@ export default function SystemPage() {
                 CPU / memory / disk metrics.
               </p>
             )}
-            {canUpdatePulse && (
+            {canUpdatePULSE && (
               <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
                 <Button
                   size="sm"
@@ -1035,7 +1035,7 @@ export default function SystemPage() {
       {/* ── Portal ────────────────────────────────────────────────── */}
       <section className="flex flex-col gap-3">
         <H2 variant="sm" className="flex items-center gap-2 text-muted-foreground">
-          <Globe className="h-4 w-4" /> Anxious Portal
+          <Globe className="h-4 w-4" /> Nous Portal
         </H2>
         <Card>
           <CardContent className="flex flex-col gap-3 py-4">
@@ -1049,7 +1049,7 @@ export default function SystemPage() {
                 </span>
               )}
               <a
-                href={portal?.subscription_url || "https://portal.anxiousresearchlab.com/manage-subscription"}
+                href={portal?.subscription_url || "https://portal.anxious-research.com/manage-subscription"}
                 target="_blank"
                 rel="noreferrer"
                 className="ml-auto text-xs text-primary underline"
@@ -1436,8 +1436,8 @@ export default function SystemPage() {
             </div>
             <ConfirmDialog
               open={!!importConfirmTarget}
-              title="Restore full Pulse backup?"
-              description={`This will overwrite your current Pulse configuration, skills, sessions, and data with the contents of ${backupImportLabel(importConfirmTarget)}. This cannot be undone.`}
+              title="Restore full PULSE backup?"
+              description={`This will overwrite your current PULSE configuration, skills, sessions, and data with the contents of ${backupImportLabel(importConfirmTarget)}. This cannot be undone.`}
               destructive
               confirmLabel="Restore"
               cancelLabel="Cancel"
@@ -1463,7 +1463,7 @@ export default function SystemPage() {
                   <span className="text-sm font-medium">Share debug report</span>
                   <span className="text-xs text-muted-foreground max-w-prose">
                     Uploads system info + logs to a public paste service and
-                    returns links to send the Pulse team. Pastes auto-delete
+                    returns links to send the PULSE team. Pastes auto-delete
                     after 6 hours.
                   </span>
                 </div>

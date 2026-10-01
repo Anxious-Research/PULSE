@@ -61,7 +61,7 @@ root="$(cd "$(dirname "$self")/.." && pwd)"
 PYTHON={shell_path(python)}
 REPO={shell_path(repo)}
 SITE={shell_path(site)}
-[ -x "$PYTHON" ] || {{ printf '%s\\n' 'Bundled interpreter missing; reinstall Pulse.' >&2; exit 2; }}
+[ -x "$PYTHON" ] || {{ printf '%s\\n' 'Bundled interpreter missing; reinstall PULSE.' >&2; exit 2; }}
 unset PYTHONPATH PYTHONHOME
 export PYTHONPATH="$REPO:$SITE"
 # PYTHONPATH cannot process .pth files (only site.addsitedir() can), and

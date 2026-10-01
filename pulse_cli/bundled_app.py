@@ -68,7 +68,7 @@ def resolve_bundle_layout(
     *project_root* is the payload's ``repo/`` tree — the install root a
     bundled backend runs from. The app sits two directories above the
     payload on Windows and Linux, and four above it on macOS, where the
-    payload lands in ``Pulse.app/Contents/Resources``.
+    payload lands in ``PULSE.app/Contents/Resources``.
 
     The macOS offset is detected from the directory names themselves
     rather than from *platform*, so a layout can be resolved for any host
@@ -87,7 +87,7 @@ def resolve_bundle_layout(
 
     resources = payload.parent
     app_root = resources.parent
-    # macOS: .../Pulse.app/Contents/Resources/agent-payload/repo
+    # macOS: .../PULSE.app/Contents/Resources/agent-payload/repo
     if (
         resources.name == "Resources"
         and app_root.name == "Contents"

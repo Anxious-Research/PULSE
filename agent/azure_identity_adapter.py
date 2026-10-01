@@ -75,7 +75,7 @@ def reset_credential_cache() -> None:
 
 @dataclass(frozen=True)
 class EntraIdentityConfig:
-    """Pulse-managed Entra knobs; everything else (tenant, SP secret, federated token file, authority...) flows
+    """PULSE-managed Entra knobs; everything else (tenant, SP secret, federated token file, authority...) flows
     through azure-identity's standard ``AZURE_*`` env vars. ``exclude_interactive_browser`` keeps probes
     non-interactive (the setup wizard never writes it). Frozen: hashable for ``lru_cache``, picklable for workers."""
 
@@ -100,7 +100,7 @@ class EntraIdentityConfig:
 @functools.lru_cache(maxsize=1)
 def _default_chain_credential(config: EntraIdentityConfig) -> Any:
     """Cached ``DefaultAzureCredential`` for the unscoped process. ``maxsize=1`` is intentional: a process uses
-    one ``model.entra.*`` block at a time. Only Pulse knobs are passed as kwargs; the rest comes from ``AZURE_*``
+    one ``model.entra.*`` block at a time. Only PULSE knobs are passed as kwargs; the rest comes from ``AZURE_*``
     env vars."""
     ai = _require_azure_identity()
     # SDK default already excludes the browser; only pass the kwarg when opting in.

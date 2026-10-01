@@ -66,7 +66,7 @@ const GROUP_ICON: Record<StatusGroup['type'], string> = {
 }
 
 // Goals and todos are the plan the user is following; subagents and background
-// processes are how Pulse is executing it. Simple mode shows the plan only.
+// processes are how PULSE is executing it. Simple mode shows the plan only.
 const GROUP_TIER: Record<StatusGroup['type'], Tiered> = {
   goal: {},
   todo: {},

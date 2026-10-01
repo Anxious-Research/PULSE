@@ -10,6 +10,7 @@
 
 import * as sdk from '@pulse/plugin-sdk'
 import { host } from '@pulse/plugin-sdk'
+import type { SessionListRow } from '@pulse/plugin-sdk'
 
 import { $botMeta, botMetaKey, botOwner, persistBotMetaSnapshot } from './data'
 import { botsText } from './i18n'
@@ -44,8 +45,8 @@ export const PROFILE_SESSION_LIST_LIMIT = 200
 
 /** The one canonical title. (profile, CANONICAL_CHAT_TITLE) IS the bot's
  *  forever-chat identity — see the header above. Exported for the roster
- *  click path's tile-staleness probe, which must recognize canonical-titled
- *  tabs without restating the literal. */
+ *  click path's tile-staleness probe (pulse-agent#90102), which must
+ *  recognize canonical-titled tabs without restating the literal. */
 export const CANONICAL_CHAT_TITLE = 'Bot Chat'
 
 /** A `session.list` row as the registry lookup reads it. CanonicalSession
@@ -54,7 +55,34 @@ export const CANONICAL_CHAT_TITLE = 'Bot Chat'
  *  read through an aliased guard, which TS only narrows for immutable
  *  properties. */
 interface CanonicalChatRow extends CanonicalSession {
-  readonly message_count?: number
+  readonly message_count?: SessionListRow['message_count']
+  /** Absent on older gateways, which only report the denormalized total. */
+  readonly live_message_count?: SessionListRow['live_message_count']
+}
+
+/** A Bot Chat tile left on an old compression segment: titled as the canonical
+ *  chat but keyed to none of the lineage ids the owner currently resolves to. */
+export const isStaleBotChatTile =
+  (canonicalIds: readonly string[]) => (tile: { storedSessionId: string; workspaceTabTitle?: string }) =>
+    tile.workspaceTabTitle === CANONICAL_CHAT_TITLE && !canonicalIds.includes(String(tile.storedSessionId))
+
+/** Should the open wait for a painted transcript? The paintable row count
+ *  decides when the gateway reports it; the denormalized total is the only
+ *  fallback older gateways offer, and no count at all means the row is
+ *  guesswork anyway — wait, so an empty paint still surfaces as an error
+ *  instead of a silent blank chat. */
+export function resolveExpectHistory(
+  summary: null | undefined | Pick<SessionListRow, 'live_message_count' | 'message_count'>
+): boolean {
+  if (typeof summary?.live_message_count === 'number' && Number.isFinite(summary.live_message_count)) {
+    return summary.live_message_count > 0
+  }
+
+  if (typeof summary?.message_count === 'number' && Number.isFinite(summary.message_count)) {
+    return summary.message_count > 0
+  }
+
+  return true
 }
 
 /** Is the chat on screen the given bot's forever-chat?
@@ -94,13 +122,16 @@ async function openStoredBotChat(
   { background = false }: OpenStoredBotChatOptions = {}
 ): Promise<string> {
   if (!storedId || typeof host.openSession !== 'function') {
-    throw new Error('This Pulse Desktop version cannot open stored sessions')
+    throw new Error('This PULSE Desktop version cannot open stored sessions')
   }
 
   const { bot, name, route } = botOwner(owner)
   const ownerKey = botWorkspaceOwnerKey(bot)
-  const hasAuthoritativeCount = typeof summary?.message_count === 'number' && Number.isFinite(summary.message_count)
-  const expectHistory = hasAuthoritativeCount ? summary.message_count > 0 : true
+  // Paintable rows decide the wait, not the denormalized total: a chat whose rows
+  // are all folded (orphaned compaction marks, a full rewind) paints nothing, and
+  // demanding its history wedges the open for the whole hydration budget before
+  // failing closed. Older gateways report only the total — keep trusting it there.
+  const expectHistory = resolveExpectHistory(summary)
 
   // Current SDKs export the Bot-specific budget. The fallback preserves
   // compatibility with older hosts and isolated plugin test harnesses.
@@ -110,18 +141,28 @@ async function openStoredBotChat(
       : 60_000
 
   // A profile backend that just woke up can lose the hydration-timeout race
-  // even though the session is fine — clicking Retry succeeds because the
-  // backend is warm by then. retryHydrationTimeoutOnce asks the SDK layer to
-  // retry that same wait internally, BEFORE it arms the core stranded-session
-  // overlay: a plugin-side retry can't do this because only host.openSession
-  // sees the resume-exhausted latch that overlay reads.
+  // even though the session is fine (pulse-agent#89617) — clicking Retry
+  // succeeds because the backend is warm by then. retryHydrationTimeoutOnce
+  // asks the SDK layer to retry that same wait internally, BEFORE it arms the
+  // core stranded-session overlay: a plugin-side retry can't do this because
+  // only host.openSession sees the resume-exhausted latch that overlay reads.
   //
   // forceResume: an explicit bot switch must never trust a cached transcript.
   // The SDK's surface-health check passes whenever ANY non-empty transcript is
   // painted, including a stale snapshot the session-states cache kept from the
   // previous time this bot was open — which left the pane showing old messages
-  // until an app restart. A resume is cheap and idempotent, so on this
-  // explicit user navigation we always request one.
+  // until an app restart (pulse-agent#93604). A resume is cheap and
+  // idempotent, so on this explicit user navigation we always request one.
+  //
+  // Compression rotates the tip while tiles stay keyed by segment, and hidden
+  // Bot Chats never reach the sidebar listing the lineage guard reads, so the
+  // old-segment tile is discarded here or it survives beside the tip
+  // (pulse-agent#120810). Same owner-scoped probe the roster click runs, but
+  // discard-only (`[]` fronts nothing): a background refresh must never take
+  // the tab strip (#121874), and the openSession below fronts explicit opens.
+  const canonicalIds = [...new Set([summary?.id, storedId].filter(Boolean).map(String))]
+  host.focusOpenWorkspaceSession?.(ownerKey, isStaleBotChatTile(canonicalIds), [])
+
   await host.openSession(storedId, {
     ...(route
       ? {
@@ -194,7 +235,7 @@ export function notifyBotOpenFailure(error: unknown, bot: RosterRow, step: BotOp
   const detail = errorDetail(error)
 
   if (botModeGatewayNeedsUpdate(error)) {
-    const connectionLabel = bot.connectionLabel || bot.connectionId || 'Pulse'
+    const connectionLabel = bot.connectionLabel || bot.connectionId || 'PULSE'
     host.notify?.({
       kind: 'error',
       title: b.openNeedsUpdateTitle,
@@ -623,7 +664,7 @@ export async function prepareBotSource(bot: RosterRow) {
   if (route && typeof host.requestProfile !== 'function') {
     throw new Error(
       getPluginCtx()?.i18n?.t('bot.remoteConnectionsUnsupported') ??
-        'Update Pulse Desktop to chat with bots on other connections.'
+        'Update PULSE Desktop to chat with bots on other connections.'
     )
   }
 

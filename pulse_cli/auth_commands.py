@@ -27,11 +27,11 @@ from pulse_cli.secret_prompt import masked_secret_prompt
 
 
 # Providers that support OAuth login in addition to API keys.
-_OAUTH_CAPABLE_PROVIDERS = {"anthropic", "anxious", "openai-codex", "xai-oauth", "qwen-oauth", "minimax-oauth", "openrouter"}
+_OAUTH_CAPABLE_PROVIDERS = {"anthropic", "nous", "openai-codex", "xai-oauth", "qwen-oauth", "minimax-oauth", "openrouter"}
 # ...and default to it when ``--type`` is omitted. OpenRouter stays API-key-first: the documented
 # ``pulse auth add openrouter --api-key sk-or-...`` must keep working with no ``--type``.
 _OAUTH_DEFAULT_PROVIDERS = _OAUTH_CAPABLE_PROVIDERS - {"openrouter"}
-# Providers whose sibling CLI login Pulse may borrow (``auth.adopt_external_logins``).
+# Providers whose sibling CLI login PULSE may borrow (``auth.adopt_external_logins``).
 EXTERNAL_LOGIN_PROVIDERS = {"anthropic", "openai-codex"}
 
 
@@ -303,40 +303,40 @@ def _ask(prompt: str, reader: Callable[[str], str] | None = None) -> str | None:
         return None
 
 
-def _add_anxious_oauth_credential(args, provider: str) -> PooledCredential:
-    """``pulse auth add anxious --type oauth``: shared-credential import, else device-code login."""
+def _add_nous_oauth_credential(args, provider: str) -> PooledCredential:
+    """``pulse auth add nous --type oauth``: shared-credential import, else device-code login."""
     custom_label = (getattr(args, "label", None) or "").strip() or None
     timeout = getattr(args, "timeout", None) or 15.0
 
     def _persist(creds: dict, what: str) -> PooledCredential:
-        # `--label` is embedded into providers.anxious so label_from_token doesn't overwrite it on every
-        # subsequent load_pool("anxious").
-        entry = auth_mod.persist_anxious_credentials(creds, label=custom_label)
+        # `--label` is embedded into providers.nous so label_from_token doesn't overwrite it on every
+        # subsequent load_pool("nous").
+        entry = auth_mod.persist_nous_credentials(creds, label=custom_label)
         shown_label = entry.label if entry is not None else label_from_token(
             creds.get("access_token", ""), f"{provider}-oauth-1")
         print(f'{what} {provider} OAuth {"device-code " if what == "Saved" else ""}credentials: "{shown_label}"')
         return entry
 
-    # Codex-style auto-import: a shared Anxious credential at <pulse-root>/shared/anxious_auth.json
-    # (written by any previous login) makes `pulse --profile <name> auth add anxious --type oauth`
+    # Codex-style auto-import: a shared Nous credential at <pulse-root>/shared/nous_auth.json
+    # (written by any previous login) makes `pulse --profile <name> auth add nous --type oauth`
     # a one-tap operation for multi-profile users.
-    if auth_mod._read_shared_anxious_state():
+    if auth_mod._read_shared_nous_state():
         try:
-            found = f"Found existing Anxious OAuth credentials at {auth_mod._anxious_shared_store_path()}"
+            found = f"Found existing Nous OAuth credentials at {auth_mod._nous_shared_store_path()}"
         except RuntimeError:
-            found = "Found existing shared Anxious OAuth credentials"
+            found = "Found existing shared Nous OAuth credentials"
         print()
         print(found)
         do_import = _ask("Import these credentials? [Y/n]: ")
         if do_import is None or do_import.lower() in {"", "y", "yes"}:
-            print("Rehydrating Anxious session from shared credentials...")
-            rehydrated = auth_mod._try_import_shared_anxious_state(timeout_seconds=timeout)
+            print("Rehydrating Nous session from shared credentials...")
+            rehydrated = auth_mod._try_import_shared_nous_state(timeout_seconds=timeout)
             if rehydrated is not None:
                 return _persist(rehydrated, "Imported")
             # Expired refresh_token, portal down, etc. — fall through to device-code.
             print("Could not refresh shared credentials — falling back to device-code login.")
 
-    creds = auth_mod._anxious_device_code_login(
+    creds = auth_mod._nous_device_code_login(
         portal_base_url=getattr(args, "portal_url", None),
         inference_base_url=getattr(args, "inference_url", None),
         client_id=getattr(args, "client_id", None), scope=getattr(args, "scope", None),
@@ -414,8 +414,8 @@ def auth_add_command(args) -> None:
 def _add_credential(args, provider: str, pool, requested_type: str) -> PooledCredential:
     if requested_type == AUTH_TYPE_API_KEY:
         return _add_api_key_credential(args, provider, pool)
-    if provider == "anxious":
-        return _add_anxious_oauth_credential(args, provider)
+    if provider == "nous":
+        return _add_nous_oauth_credential(args, provider)
 
     spec = _OAUTH_ADD_SPECS.get(provider)
     if spec is None:
@@ -522,7 +522,7 @@ def auth_list_command(args) -> None:
         if not entries:
             continue
         current = pool.peek()
-        if provider == "anxious" and all(_is_free_tier_entry(e) for e in entries):
+        if provider == "nous" and all(_is_free_tier_entry(e) for e in entries):
             # The free tier is not a credential the user added; never list it as one.
             label, hint = _free_tier_lines()
             print(f"{provider}: {label}")
@@ -573,7 +573,7 @@ def auth_remove_command(args) -> None:
         raise SystemExit(f'No credential matching "{target}" for provider {provider}.')
     print(f"Removed {provider} credential #{index} ({removed.label})")
 
-    # Every credential source Pulse reads from (env vars, external OAuth files, auth.json blocks,
+    # Every credential source PULSE reads from (env vars, external OAuth files, auth.json blocks,
     # custom config) has a RemovalStep in agent.credential_sources; it does the source-specific
     # cleanup while suppression + user-facing output are centralised here.
     from agent.credential_sources import find_removal_step
@@ -638,12 +638,12 @@ def auth_refresh_command(args) -> None:
         raise SystemExit(
             f"{provider} credential #{index} ({matched.label}) is not a refreshable OAuth "
             f"credential.")
-    # Anxious's resolver is singleton-bound, not an independent-account refresher.
-    if provider == "anxious" and matched.source != "device_code":
+    # Nous's resolver is singleton-bound, not an independent-account refresher.
+    if provider == "nous" and matched.source != "device_code":
         raise SystemExit(
-            f"anxious credential #{index} ({matched.label}) is not a refreshable OAuth "
+            f"nous credential #{index} ({matched.label}) is not a refreshable OAuth "
             "credential: only the device_code singleton supports refresh. "
-            "Reauthenticate with `pulse auth add anxious --type oauth`.")
+            "Reauthenticate with `pulse auth add nous --type oauth`.")
     refreshed = pool.try_refresh_matching(credential_id=matched.id)
     if refreshed is None:
         after = next((e for e in pool.entries() if e.id == matched.id), None)
@@ -753,9 +753,9 @@ def _print_azure_entra_status() -> None:
         print(f"  Scope: {scope}")
         if not has_azure_identity_installed():
             print("  Status: ⚠ azure-identity not installed")
-            print("  From the Pulse environment, run: "
+            print("  From the PULSE environment, run: "
                   f"{install_hint('azure-identity')}")
-            print("  Then restart Pulse.")
+            print("  Then restart PULSE.")
         else:
             info = describe_active_credential(config=EntraIdentityConfig(scope=scope), timeout_seconds=10.0)
             env_sources = info.get("env_sources") or []
@@ -887,7 +887,7 @@ def _interactive_strategy() -> None:
 
 
 def auth_upgrade_command(args) -> None:
-    """``pulse auth upgrade``: sign the free tier into a Anxious account, keeping its connectors."""
+    """``pulse auth upgrade``: sign the free tier into a Nous account, keeping its connectors."""
     from pulse_cli.anon_auth import upgrade_guest
     code = upgrade_guest(args)
     if code:

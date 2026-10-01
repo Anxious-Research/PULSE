@@ -1,7 +1,7 @@
 import { QueryObserver } from '@tanstack/react-query'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { PulseConnection } from '@/global'
+import type { PULSEConnection } from '@/global'
 
 // A connection switch must leave every profile-scoped query refetched against
 // the NEW gateway — see the $activeConnectionId.listen comment in
@@ -39,7 +39,7 @@ const { $activeGatewayProfile } = await import('@/store/profile')
 const { selectConnection, setConnectionsRegistry, _resetConnectionsForTests } = await import('@/store/connections')
 const { setConnection } = await import('@/store/session')
 
-const conn = (over: Partial<PulseConnection> = {}): PulseConnection =>
+const conn = (over: Partial<PULSEConnection> = {}): PULSEConnection =>
   ({
     authMode: 'oauth',
     baseUrl: 'https://pool.invalid',
@@ -47,7 +47,7 @@ const conn = (over: Partial<PulseConnection> = {}): PulseConnection =>
     token: 'fake-test-token',
     wsUrl: 'wss://pool.invalid/api/ws?token=fake-test-token',
     ...over
-  }) as PulseConnection
+  }) as PULSEConnection
 
 const registry = {
   connections: [

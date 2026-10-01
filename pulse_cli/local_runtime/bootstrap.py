@@ -11,7 +11,6 @@ from contextlib import contextmanager, suppress
 import logging
 import os
 import signal
-import subprocess
 import time
 from pathlib import Path
 
@@ -20,24 +19,18 @@ from pulse_cli.local_runtime.gguf import SPLIT_PART_RE, model_id_from_stem
 
 logger = logging.getLogger(__name__)
 
-_SUPERVISOR = None  # process-wide singleton; one router per Pulse process
+_SUPERVISOR = None  # process-wide singleton; one router per PULSE process
 
 
 def _detect_gpu_vendor() -> str | None:
     """Best-effort GPU vendor for backend selection. NVIDIA via nvidia-smi resolved by the hardware
     probe's PATH-independent ladder (a stripped service PATH must not demote an NVIDIA box to
     vulkan/cpu); anything else defers to select_backend's fallback ladder."""
-    from pulse_cli.local_runtime.hardware import _nvidia_smi_path
+    from pulse_cli.local_runtime.hardware import _cached_nvidia_gpu_query
 
-    smi = _nvidia_smi_path()
-    if smi is None:
-        return None
-    with suppress(OSError, subprocess.TimeoutExpired):
-        out = subprocess.run(
-            [smi, "--query-gpu=name", "--format=csv,noheader"],
-            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10)
-        if out.returncode == 0 and out.stdout.strip():
-            return "nvidia " + out.stdout.strip().splitlines()[0]
+    query = _cached_nvidia_gpu_query()
+    if query is not None and query.get("gpu_name"):
+        return "nvidia " + query["gpu_name"]
     return None
 
 
@@ -345,7 +338,7 @@ def _unlock_boot_fd(fd: int) -> None:
 
 @contextmanager
 def _cross_process_boot_lock(timeout_s: float = 130.0):
-    """Serialize the state-check-then-spawn sequence across every Pulse process on this
+    """Serialize the state-check-then-spawn sequence across every PULSE process on this
     machine — the ``_SUPERVISOR`` singleton above only rules out a race within ONE process.
     Two profiles booting in the same second each see no ``server.json`` yet and each spawn a
     router on the stable port (#116682); an OS-held lock makes the second caller wait for the
@@ -398,7 +391,7 @@ def ensure_local_runtime(config: dict, force: bool = False) -> "object | None":
         logger.info("local runtime enabled but no models staged; not booting")
         return None
 
-    # Another Pulse process may already be supervising — reuse via state, but ONLY while its
+    # Another PULSE process may already be supervising — reuse via state, but ONLY while its
     # launch policy still covers every staged model. A server whose preset file predates a
     # download serves the new model with no policy at all (--models-autoload + stock fit). A stale
     # incumbent gets stopped and replaced by a fresh boot with regenerated presets; sessions ride
@@ -492,25 +485,3 @@ def _start_idle_sweeper(sup) -> None:
                 logger.debug("launch window re-plan skipped: %s", exc)
 
     threading.Thread(target=_loop, daemon=True, name="local-runtime-idle-sweep").start()
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'get_pulse_home': ('pulse_constants', 'get_pulse_home'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

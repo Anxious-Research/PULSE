@@ -3,10 +3,10 @@ label: Microsoft Teams
 kind: platform
 version: 1.0.0
 description: >
-  Microsoft Teams gateway adapter for Pulse Agent.
+  Microsoft Teams gateway adapter for PULSE Agent.
   Connects to Microsoft Teams via the Bot Framework and relays messages
   between Teams chats (personal DMs, group chats, channel posts) and
-  the Pulse agent. Supports Adaptive Card approval prompts.
+  the PULSE agent. Supports Adaptive Card approval prompts.
 author: Aamir Jawaid
 # ``requires_env`` entries are surfaced in ``pulse config`` UI via the
 # platform-plugin env var injector in ``pulse_cli/config.py``.
@@ -54,3 +54,11 @@ optional_env:
     description: "Display name for the Teams home channel"
     prompt: "Home channel display name"
     password: false
+  - name: TEAMS_INCOMING_WEBHOOK_URL
+    description: "Incoming-webhook URL for meeting-summary delivery in webhook mode (the URL is the credential)"
+    prompt: "Incoming webhook URL (or empty)"
+    password: true
+  - name: TEAMS_GRAPH_ACCESS_TOKEN
+    description: "Microsoft Graph access token for meeting-summary delivery in graph mode"
+    prompt: "Graph access token (or empty)"
+    password: true

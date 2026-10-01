@@ -27,13 +27,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Anxious-Research/PULSE.git"
+    "url": "git+https://github.com/NousResearch/PULSE-Agent.git"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Anxious-Research/PULSE/issues"
+    "url": "https://github.com/NousResearch/PULSE-Agent/issues"
   },
-  "homepage": "https://github.com/Anxious-Research/PULSE#readme",
+  "homepage": "https://github.com/NousResearch/PULSE-Agent#readme",
   "devDependencies": {
     "@eslint/js": "9.39.5",
     "eslint-plugin-perfectionist": "5.10.0",

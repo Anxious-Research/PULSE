@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// set-exe-identity.mjs — stamp the Pulse icon + version metadata onto the
-// built Pulse.exe using rcedit, completely decoupled from electron-builder's
+// set-exe-identity.mjs — stamp the PULSE icon + version metadata onto the
+// built PULSE.exe using rcedit, completely decoupled from electron-builder's
 // signing path.
 //
 // WHY THIS EXISTS
@@ -13,7 +13,7 @@
 // try to extract winCodeSign.
 //
 // The cost of disabling signAndEditExecutable is that electron-builder also
-// skips rcedit, so the unpacked Pulse.exe keeps the stock Electron icon and
+// skips rcedit, so the unpacked PULSE.exe keeps the stock Electron icon and
 // "Electron" taskbar name. This script restores the icon + identity by calling
 // rcedit DIRECTLY. rcedit is a pure PE resource editor: no signing, no certs,
 // no winCodeSign, no symlinks.
@@ -28,7 +28,7 @@
 // shipped a stock "Electron" exe. Keeping it in afterExtract closes that gap.
 //
 // Also runnable standalone for ad-hoc re-stamping:
-//   node scripts/set-exe-identity.mjs <path-to-Pulse.exe>
+//   node scripts/set-exe-identity.mjs <path-to-PULSE.exe>
 //
 // Exits 0 on success, non-zero on failure when run as a CLI. As a hook,
 // stampExeIdentity() resolves on success and rejects on failure; the caller
@@ -62,7 +62,7 @@ function wait(delay) {
   return new Promise(resolve => setTimeout(resolve, delay))
 }
 
-// Stamp the Pulse icon + identity onto `exe`. Resolves on success, throws on
+// Stamp the PULSE icon + identity onto `exe`. Resolves on success, throws on
 // failure. `desktopRoot` defaults to this script's package root so the icon and
 // the rcedit dependency resolve regardless of cwd.
 async function stampExeIdentity(
@@ -86,9 +86,9 @@ async function stampExeIdentity(
   const options = {
     icon,
     'version-string': {
-      ProductName: 'Pulse',
-      FileDescription: 'Pulse',
-      CompanyName: 'Anxious Research',
+      ProductName: 'PULSE',
+      FileDescription: 'PULSE',
+      CompanyName: 'Nous Research',
       LegalCopyright: 'Copyright (c) 2026 Nous Research'
     }
   }
@@ -107,7 +107,7 @@ async function stampExeIdentity(
     }
   }
 
-  console.log('[set-exe-identity] done — Pulse icon + identity stamped')
+  console.log('[set-exe-identity] done — PULSE icon + identity stamped')
 }
 
 export { RCEDIT_COMMIT_RETRY_DELAYS_MS, stampExeIdentity }

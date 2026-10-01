@@ -31,7 +31,7 @@ import {
 } from './backend-sync'
 import { $chatFontFamily, resolveChatFontFamily } from './chat-font'
 import { harmonize, readableInk } from './color'
-import { BUILTIN_THEME_LIST, DEFAULT_SKIN_NAME, DEFAULT_TYPOGRAPHY, pulseTheme } from './presets'
+import { BUILTIN_THEME_LIST, DEFAULT_SKIN_NAME, DEFAULT_TYPOGRAPHY, nousTheme } from './presets'
 import { retintTheme } from './retint'
 import type { DesktopTheme, DesktopThemeColors } from './types'
 import { $userThemes, listAllThemes, resolveTheme } from './user-themes'
@@ -50,7 +50,9 @@ const PROFILE_MODES_KEY = 'pulse-desktop-profile-modes-v1'
 const LAST_PROFILE_KEY = 'pulse-desktop-active-profile-v1'
 // Skins that no longer exist. A profile still pointing at one falls back to
 // DEFAULT_SKIN_NAME rather than painting a name nothing resolves.
-const RETIRED_SKINS = new Set(['pulse-light', 'default', 'gold'])
+// `default` is the live CLI classic skin (Classic PULSE gold) once registered
+// by backend-sync — not retired. `gold` remains a legacy alias (see use-skin-command).
+const RETIRED_SKINS = new Set(['nous-light', 'gold'])
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 
@@ -158,7 +160,7 @@ function synthLightColors(seed: DesktopTheme): DesktopThemeColors {
 
 /** Returns the seed palette for a given skin + mode (no overrides applied). */
 export function getBaseColors(skinName: string, mode: 'light' | 'dark'): DesktopThemeColors {
-  const seed = resolveTheme(skinName) ?? pulseTheme
+  const seed = resolveTheme(skinName) ?? nousTheme
 
   if (mode === 'dark') {
     return seed.darkColors ?? seed.colors
@@ -168,7 +170,7 @@ export function getBaseColors(skinName: string, mode: 'light' | 'dark'): Desktop
 }
 
 function deriveTheme(skinName: string, mode: 'light' | 'dark'): DesktopTheme {
-  const seed = resolveTheme(skinName) ?? pulseTheme
+  const seed = resolveTheme(skinName) ?? nousTheme
 
   return {
     ...seed,
@@ -232,7 +234,7 @@ function applyTheme(theme: DesktopTheme, mode: 'light' | 'dark', chatFontFamily 
 
   const root = document.documentElement
   const c = theme.colors
-  const typo = { ...DEFAULT_TYPOGRAPHY, ...pulseTheme.typography, ...theme.typography }
+  const typo = { ...DEFAULT_TYPOGRAPHY, ...nousTheme.typography, ...theme.typography }
   const rendered = renderedModeFor(c, mode)
   const isDark = rendered === 'dark'
   const midground = c.midground ?? c.ring
@@ -402,7 +404,7 @@ interface ThemeContextValue {
 const SKIN_LIST = BUILTIN_THEME_LIST.map(({ name, label, description }) => ({ name, label, description }))
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: pulseTheme,
+  theme: nousTheme,
   themeName: DEFAULT_SKIN_NAME,
   mode: 'light',
   resolvedMode: 'light',
@@ -559,7 +561,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const clearThemePreview = useCallback(() => setPreview(null), [])
 
-  // Drain a backend-driven skin switch (Pulse authoring/activating a skin from a
+  // Drain a backend-driven skin switch (PULSE authoring/activating a skin from a
   // prompt, or `/skin` on another surface). setTheme persists it per profile, so
   // the choice sticks like any manual pick.
   const pendingSkin = useStore($pendingSkinApply)

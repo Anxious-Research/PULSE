@@ -218,8 +218,8 @@ def _aux_config_menu() -> None:
         _say("", "  Auxiliary models — side-task routing", "",
              "  Side tasks (vision, compression, web extraction, etc.) default",
              '  to your main chat model.  "auto" means "use my main model" —',
-             "  Pulse only falls back to a lightweight backend (OpenRouter,",
-             "  Anxious Portal) if the main model is unavailable.  Override a",
+             "  PULSE only falls back to a lightweight backend (OpenRouter,",
+             "  Nous Portal) if the main model is unavailable.  Override a",
              "  task below if you want it pinned to a specific provider/model.", "")
 
         menu_tasks = _all_aux_tasks() + [(_DELEGATION_TASK_KEY, _DELEGATION_TASK_NAME, _DELEGATION_TASK_DESC)]
@@ -404,7 +404,7 @@ _DEFAULT_QWEN_PORTAL_MODELS = [
 
 # (mode value, label, description, accepted answers); "" = auto-detect
 _CUSTOM_API_MODES = (
-    ("", "Auto-detect", "Use Pulse URL heuristics; best for standard OpenAI-compatible endpoints.",
+    ("", "Auto-detect", "Use PULSE URL heuristics; best for standard OpenAI-compatible endpoints.",
      ("1", "auto", "detect", "auto-detect")),
     ("chat_completions", "Chat Completions", "Use /chat/completions for standard OpenAI-compatible servers.",
      ("2", "chat", "chat_completions", "completions")),
@@ -756,7 +756,7 @@ def _run_anthropic_oauth_flow(save_env_value):
             use_anthropic_claude_code_credentials(save_fn=save_env_value)
             print("  ✓ Claude Code credentials linked.")
             from pulse_constants import display_pulse_home as _dhh_fn
-            print(f"    Pulse will use Claude's credential store directly instead of copying a setup-token into {_dhh_fn()}/.env.")
+            print(f"    PULSE will use Claude's credential store directly instead of copying a setup-token into {_dhh_fn()}/.env.")
             return True
         return False
 
@@ -921,11 +921,11 @@ def _build_provider_picker_rows(config: dict, active: str, provider_labels: dict
         else:
             slug = row["slug"]
             label = canonical_descs.get(slug, provider_labels.get(slug, slug))
-            if slug == "anxious":
+            if slug == "nous":
                 # Same free-tier rule as the gateway/TUI pickers: relabel for a guest, hide
-                # when anxious.guest is off, untouched for a real account.
-                from pulse_cli.model_switch_providers import _free_tier_anxious_row
-                tier_row = _free_tier_anxious_row({"name": label, "models": []})
+                # when nous.guest is off, untouched for a real account.
+                from pulse_cli.model_switch_providers import _free_tier_nous_row
+                tier_row = _free_tier_nous_row({"name": label, "models": []})
                 if tier_row is None:
                     continue
                 label = tier_row["name"]

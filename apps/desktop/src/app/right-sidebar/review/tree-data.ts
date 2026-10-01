@@ -1,4 +1,4 @@
-import type { PulseReviewFile } from '@/global'
+import type { PULSEReviewFile } from '@/global'
 
 // A node in the review changed-files tree. Directories aggregate their
 // descendants' +/- so a collapsed folder still shows its total churn (Codex's
@@ -11,13 +11,13 @@ export interface ReviewTreeNode {
   removed: number
   /** For a flat-list file row: the parent dir (relative), shown dimmed. */
   dir?: string
-  file?: PulseReviewFile
+  file?: PULSEReviewFile
   children?: ReviewTreeNode[]
 }
 
 // Flat changed-file list (VS Code's default SCM "List" view): one row per file,
 // filename + a dimmed parent-dir path, sorted by path. No folder nodes.
-export function buildReviewFlatList(files: PulseReviewFile[]): ReviewTreeNode[] {
+export function buildReviewFlatList(files: PULSEReviewFile[]): ReviewTreeNode[] {
   return [...files]
     .sort((a, b) => a.path.localeCompare(b.path))
     .map(file => {
@@ -57,7 +57,7 @@ const makeDir = (id: string, name: string): MutableDir => ({
 // Build a folder hierarchy from the flat changed-file list. With `compact`,
 // single-child directory chains collapse into one row (`a/b/c`), the way VS Code
 // and Codex render sparse trees.
-export function buildReviewTree(files: PulseReviewFile[], compact = true): ReviewTreeNode[] {
+export function buildReviewTree(files: PULSEReviewFile[], compact = true): ReviewTreeNode[] {
   const root = makeDir('', '')
 
   for (const file of files) {

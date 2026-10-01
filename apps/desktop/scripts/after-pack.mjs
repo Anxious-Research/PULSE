@@ -8,7 +8,7 @@
  * electron-builder passes a context with:
  *   - electronPlatformName: 'win32' | 'darwin' | 'linux'
  *   - appOutDir:            the unpacked app directory for this target
- *   - packager.appInfo.productFilename: the exe basename (e.g. 'Pulse')
+ *   - packager.appInfo.productFilename: the exe basename (e.g. 'PULSE')
  */
 
 import path from 'node:path'
@@ -96,7 +96,7 @@ export default async function afterPack(context) {
     return
   }
 
-  const productName = context.packager?.appInfo?.productFilename || 'Pulse'
+  const productName = context.packager?.appInfo?.productFilename || 'PULSE'
   const exe = path.join(context.appOutDir, `${productName}.exe`)
 
   // Repair dangling PE certificate tables BEFORE electron-builder signs the

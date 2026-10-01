@@ -10,10 +10,10 @@ from pulse_cli.subcommands._shared import add_yes_flag
 def build_import_agent_parser(subparsers, *, cmd_import_agent: Callable) -> None:
     """Attach the ``import-agent`` subcommand to ``subparsers``."""
     parser = subparsers.add_parser(
-        "import-agent", help="Import a Claude Code or Codex CLI setup into Pulse",
-        description="One-command import of another coding agent's setup into Pulse. "
+        "import-agent", help="Import a Claude Code or Codex CLI setup into PULSE",
+        description="One-command import of another coding agent's setup into PULSE. "
             "Maps CLAUDE.md/AGENTS.md instructions, permission allowlists, MCP "
-            "servers, skills, and memories into their Pulse equivalents. "
+            "servers, skills, and memories into their PULSE equivalents. "
             "Always shows a preview before making changes. API keys and "
             "credentials are never imported — run 'pulse setup' for those.")
     parser.add_argument(
@@ -26,7 +26,7 @@ def build_import_agent_parser(subparsers, *, cmd_import_agent: Callable) -> None
         help="Preview only — stop after showing what would be imported")
     parser.add_argument(
         "--overwrite", action="store_true",
-        help="Overwrite existing Pulse items on name conflicts (default: skip)")
+        help="Overwrite existing PULSE items on name conflicts (default: skip)")
     add_yes_flag(parser, "Skip confirmation prompts")
     parser.add_argument(
         "--sync", action="store_true",

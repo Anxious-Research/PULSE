@@ -61,7 +61,7 @@ export class MacStrategy implements UpdaterStrategy {
     this.applying = true
 
     const progress = ({ percent }: { percent: number }): void => {
-      this.deps.emitProgress({ stage: 'fetch', message: 'Downloading the Pulse update.', percent })
+      this.deps.emitProgress({ stage: 'fetch', message: 'Downloading the PULSE update.', percent })
     }
 
     this.deps.updater.on('download-progress', progress)
@@ -87,7 +87,7 @@ export class MacStrategy implements UpdaterStrategy {
           await stop()
           this.deps.emitProgress({
             stage: 'restart',
-            message: 'Restarting Pulse to install the update.',
+            message: 'Restarting PULSE to install the update.',
             percent: 100
           })
           this.deps.updater.quitAndInstall()

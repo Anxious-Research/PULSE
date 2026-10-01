@@ -103,7 +103,7 @@ import { CommandPalette } from '../command-palette'
 import { triggerAndRefreshCronJobs } from '../cron/cron-actions'
 import { useGatewayBoot } from '../gateway/hooks/use-gateway-boot'
 import { useGatewayRequest } from '../gateway/hooks/use-gateway-request'
-import { usePulseConfigRecord } from '../hooks/use-config-record'
+import { usePULSEConfigRecord } from '../hooks/use-config-record'
 import { useKeybinds } from '../hooks/use-keybinds'
 import { useHudHandoff } from '../hud/handoff'
 import { ModelPickerOverlay } from '../model-picker-overlay'
@@ -129,7 +129,7 @@ import { SessionSwitcher } from '../session-switcher'
 import { useBackgroundQueueDrain } from '../session/hooks/use-background-queue-drain'
 import { useContextSuggestions } from '../session/hooks/use-context-suggestions'
 import { useCwdActions } from '../session/hooks/use-cwd-actions'
-import { usePulseConfig } from '../session/hooks/use-pulse-config'
+import { usePULSEConfig } from '../session/hooks/use-pulse-config'
 import { useMessageStream } from '../session/hooks/use-message-stream'
 import { useModelControls } from '../session/hooks/use-model-controls'
 import { usePreviewRouting } from '../session/hooks/use-preview-routing'
@@ -237,7 +237,7 @@ export function ContribWiring({ children }: { children: ReactNode }) {
     navigate(routeRequest.path)
   }, [navigate, routeRequest])
 
-  // "Restart Pulse" from a toast: recycle the local backend the user is
+  // "Restart PULSE" from a toast: recycle the local backend the user is
   // looking at (same IPC the Models page uses), then let the boot hook re-dial.
   // A remote/cloud connection has no local process to recycle — there the
   // only meaningful "restart" is re-dialing the connection.
@@ -251,14 +251,14 @@ export function ContribWiring({ children }: { children: ReactNode }) {
 
     if (backendRestartRequest > 0) {
       if ($connection.get()?.mode === 'remote') {
-        void reconnectGateway().catch(err => notifyError(err, translateNow('notifications.errors.restartPulseFailed')))
+        void reconnectGateway().catch(err => notifyError(err, translateNow('notifications.errors.restartPULSEFailed')))
 
         return
       }
 
       void window.pulseDesktop
         ?.recycleBackend?.(normalizeProfileKey($activeGatewayProfile.get()))
-        .catch(err => notifyError(err, translateNow('notifications.errors.restartPulseFailed')))
+        .catch(err => notifyError(err, translateNow('notifications.errors.restartPULSEFailed')))
     }
   }, [backendRestartRequest])
 
@@ -442,7 +442,7 @@ export function ContribWiring({ children }: { children: ReactNode }) {
     requestGateway
   })
 
-  const { refreshPulseConfig, sttEnabled, voiceMaxRecordingSeconds } = usePulseConfig({ activeSessionIdRef })
+  const { refreshPULSEConfig, sttEnabled, voiceMaxRecordingSeconds } = usePULSEConfig({ activeSessionIdRef })
 
   const { applySavedMainModel, followDefaultModel, refreshCurrentModel, selectModel } = useModelControls({
     cacheOwnerConnectionId: activeConnectionId || undefined,
@@ -527,7 +527,7 @@ export function ContribWiring({ children }: { children: ReactNode }) {
     activeSessionIdRef,
     hydrateFromStoredSession,
     queryClient,
-    refreshPulseConfig,
+    refreshPULSEConfig,
     refreshSessions,
     sessionStateByRuntimeIdRef,
     updateSessionState
@@ -562,6 +562,7 @@ export function ContribWiring({ children }: { children: ReactNode }) {
   const {
     archiveSession,
     branchCurrentSession,
+    branchLoadedSession,
     branchStoredSession,
     createBackendSessionForSend,
     openNewSessionTile,
@@ -569,6 +570,7 @@ export function ContribWiring({ children }: { children: ReactNode }) {
     resumeSession,
     selectSidebarItem,
     startFreshSessionDraft,
+    submitTextToNewSession,
     unarchiveSession
   } = useSessionActions({
     activeSessionId,
@@ -583,6 +585,7 @@ export function ContribWiring({ children }: { children: ReactNode }) {
     onFreshDraftRouteIntent: clearRoutedSessionIntent,
     requestGateway,
     resetViewSync,
+    routedSessionId,
     runtimeIdByStoredSessionIdRef,
     selectedStoredSessionId,
     selectedStoredSessionIdRef,
@@ -624,10 +627,10 @@ export function ContribWiring({ children }: { children: ReactNode }) {
     // backend. These refreshes carry intent tokens so an in-flight picker
     // click still wins.
     void refreshCurrentModel(true)
-    void refreshPulseConfig(true)
+    void refreshPULSEConfig(true)
     void refreshActiveProfile()
     resetProjectTreeState()
-  }, [gatewayScope, refreshCurrentModel, refreshPulseConfig])
+  }, [gatewayScope, refreshCurrentModel, refreshPULSEConfig])
 
   // New session anchored to a workspace. Seeds cwd + branch from the clicked
   // workspace; an explicit worktree path also drills the sidebar into that
@@ -791,6 +794,7 @@ export function ContribWiring({ children }: { children: ReactNode }) {
   // the tile TAB menu needs, without touching the primary view).
   useSessionTileDelegate({
     archiveSession,
+    branchLoadedSession,
     branchStoredSession,
     executeSlashCommand,
     removeSession,
@@ -806,7 +810,7 @@ export function ContribWiring({ children }: { children: ReactNode }) {
   // The global-hotkey Quick Entry window's bridge: its captured text rides the
   // SAME submit machinery the normal composer uses (current chat / picked
   // session / new session), and it hears gateway truth from this window.
-  useQuickEntryBridge({ startFreshSessionDraft, submitText })
+  useQuickEntryBridge({ submitText, submitTextToNewSession })
 
   // Leaving HUD mode hands this window the session back (see hud/handoff).
   useHudHandoff({ navigate, resumeSession })
@@ -931,7 +935,7 @@ export function ContribWiring({ children }: { children: ReactNode }) {
     onGatewayReady: g => {
       gatewayRef.current = g
     },
-    refreshPulseConfig,
+    refreshPULSEConfig,
     refreshSessions
   })
 
@@ -987,7 +991,7 @@ export function ContribWiring({ children }: { children: ReactNode }) {
     refreshActiveTranscript,
     refreshCronJobs,
     refreshCurrentModel,
-    refreshPulseConfig,
+    refreshPULSEConfig,
     refreshMessagingSessions,
     refreshSessions,
     requestGateway,
@@ -1002,7 +1006,7 @@ export function ContribWiring({ children }: { children: ReactNode }) {
   // display.resume_last_session gates the cold-start restore. `undefined` while
   // the record is still loading holds the restore latch open; a failed fetch
   // falls back to the historical behavior (resume).
-  const configRecord = usePulseConfigRecord()
+  const configRecord = usePULSEConfigRecord()
 
   const resumeLastSession = configRecord.isPending
     ? undefined
@@ -1365,7 +1369,7 @@ export function ContribWiring({ children }: { children: ReactNode }) {
         <DesktopOnboardingOverlay
           enabled={gatewayState === 'open'}
           onCompleted={() => {
-            void refreshPulseConfig()
+            void refreshPULSEConfig()
             void refreshCurrentModel()
             void queryClient.invalidateQueries({ queryKey: ['model-options'] })
           }}
@@ -1416,7 +1420,7 @@ export function ContribWiring({ children }: { children: ReactNode }) {
             gateway={gateway}
             onClose={closeOverlayToPreviousRoute}
             onConfigSaved={() => {
-              void refreshPulseConfig()
+              void refreshPULSEConfig()
               void refreshCurrentModel()
               void queryClient.invalidateQueries({ queryKey: ['model-options'] })
             }}

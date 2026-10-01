@@ -46,7 +46,7 @@ def discover_attach_url(session_id: str, *, registry_home: str | Path | None = N
     owner = owners[0]
     endpoint = (owner.get("metadata") or {}).get("shared_runtime_url")
     if not isinstance(endpoint, str) or not endpoint:
-        raise ValueError("This chat is open in another Pulse window/terminal, and attaching "
+        raise ValueError("This chat is open in another PULSE window/terminal, and attaching "
                          "this terminal to it is not available in this build. Close the chat "
                          "there and run pulse --resume " + session_id + " here to take it over.\n"
                          + session_owner_details(session_id, owner))
@@ -70,7 +70,7 @@ def discover_attach_url(session_id: str, *, registry_home: str | Path | None = N
                 reply = json.loads(body)
     except (httpx.HTTPError, json.JSONDecodeError) as exc:
         # Never include a remote body or authenticated URL in diagnostics.
-        raise ValueError("This chat is open in another Pulse window/terminal, and attaching "
+        raise ValueError("This chat is open in another PULSE window/terminal, and attaching "
                          "this terminal to it just failed. Use the chat where it is open, or "
                          "close it there and run pulse --resume " + session_id + " here.\n"
                          + session_owner_details(session_id, owner)) from exc

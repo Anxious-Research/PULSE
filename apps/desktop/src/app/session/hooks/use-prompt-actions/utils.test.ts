@@ -457,7 +457,7 @@ describe('renderRpcResult', () => {
 
   describe('session.status', () => {
     it('passes through the multi-line plain-text output verbatim', () => {
-      const output = 'Pulse TUI Status\n\nSession ID: s-1\nModel: pulse-pulse-3 (unknown)'
+      const output = 'PULSE TUI Status\n\nSession ID: s-1\nModel: nous-pulse-3 (unknown)'
       expect(renderRpcResult({ output }, 'status')).toBe(output)
     })
   })
@@ -479,7 +479,7 @@ describe('renderRpcResult', () => {
           output: 20,
           total: 30,
           account_lines: ['📈 Account limits', 'Provider: openai-codex (Plus)', 'Weekly: 12% used'],
-          credits_lines: ['Pulse credits: 8,420 remaining', 'Resets: 2026-08-01']
+          credits_lines: ['Nous credits: 8,420 remaining', 'Resets: 2026-08-01']
         },
         'usage'
       )
@@ -488,7 +488,7 @@ describe('renderRpcResult', () => {
         '📈 Account limits',
         'Provider: openai-codex (Plus)',
         'Weekly: 12% used',
-        'Pulse credits: 8,420 remaining',
+        'Nous credits: 8,420 remaining',
         'Resets: 2026-08-01'
       ])
     })

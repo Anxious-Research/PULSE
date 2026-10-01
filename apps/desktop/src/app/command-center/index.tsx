@@ -10,7 +10,7 @@ import { SearchField } from '@/components/ui/search-field'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { ResponsiveTabs } from '@/components/ui/tab-dropdown'
 import { Tip } from '@/components/ui/tooltip'
-import { getActionStatus, getLogs, getStatus, getUsageAnalytics, restartGateway, updatePulse } from '@/pulse'
+import { getActionStatus, getLogs, getStatus, getUsageAnalytics, restartGateway, updatePULSE } from '@/pulse'
 import type { ActionStatusResponse, AnalyticsResponse, SessionInfo, StatusResponse } from '@/pulse'
 import { useI18n } from '@/i18n'
 import { sessionTitle } from '@/lib/chat-runtime'
@@ -311,7 +311,7 @@ export function CommandCenterView({
       }
 
       try {
-        const started = kind === 'restart' ? await restartGateway() : await updatePulse()
+        const started = kind === 'restart' ? await restartGateway() : await updatePULSE()
         let nextStatus: ActionStatusResponse | null = null
 
         for (let attempt = 0; attempt < 18; attempt += 1) {
@@ -505,7 +505,7 @@ export function CommandCenterView({
                             {cc.restartGateway}
                           </Button>
                           <Button onClick={() => void runSystemAction('update')} size="xs" variant="textStrong">
-                            {cc.updatePulse}
+                            {cc.updatePULSE}
                           </Button>
                         </div>
                       </div>

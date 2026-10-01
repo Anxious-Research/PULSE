@@ -19,6 +19,8 @@ from pulse_cli.timeouts import get_provider_request_timeout
 from agent.message_sanitization import (
     _FULL_ARGS_LOG_BOUND, coalesce_tool_call_id, coerce_tool_name, tool_call_id_variants, tool_result_id_variants
 )
+from agent.message_metadata import (
+    TOOL_CALL_UIDS, merge_tool_call_uids, per_occurrence_tool_call_uids, record_absorbed_message)
 from agent.prompt_builder import STEER_DISPLAY_KIND, steer_user_row
 from agent.tool_dispatch_helpers import _trajectory_normalize_msg, make_tool_result_message
 from agent.think_scrubber import THINK_TAG_NAMES
@@ -29,6 +31,7 @@ from agent.credential_pool import (
 )
 from agent.error_classifier import FailoverReason
 from agent.retry_utils import parse_retry_after_seconds, reset_delay_from_message
+from agent.message_metadata import MERGED_TURN_PREFIX
 from agent.turn_context import drop_stale_api_content
 from utils import base_url_host_matches, base_url_hostname, env_var_enabled, atomic_json_write
 logger = logging.getLogger(__name__)
@@ -379,8 +382,9 @@ def _is_codex_interim(m: Dict) -> bool:
     )
 
 
-def _merge_assistant_into(prev: Dict, msg: Dict) -> None:
-    """Fold a consecutive assistant ``msg`` into ``prev`` (union tool_calls, concat text)."""
+def _merge_assistant_into(prev: Dict, msg: Dict) -> bool:
+    """Fold consecutive assistant *msg* into *prev* (union tool_calls, concat text). Returns whether *msg*'s
+    text survives: multimodal (list) content is never joined."""
     from agent.context_compressor import _DB_PERSISTED_MARKER
 
     prev_calls = list(prev.get("tool_calls") or [])
@@ -388,6 +392,12 @@ def _merge_assistant_into(prev: Dict, msg: Dict) -> None:
     calls_changed = False
     if new_calls:
         prev["tool_calls"] = prev_calls + new_calls
+        # The absorbed turn's calls keep the per-occurrence ids they were persisted with.
+        if isinstance(extra := msg.get(TOOL_CALL_UIDS), dict) and extra:
+            prev[TOOL_CALL_UIDS] = merge_tool_call_uids(
+                per_occurrence_tool_call_uids(
+                    own if isinstance(own := prev.get(TOOL_CALL_UIDS), dict) else {}, prev_calls),
+                per_occurrence_tool_call_uids(extra, new_calls))
         calls_changed = True
     elif prev_calls:
         prev["tool_calls"] = prev_calls
@@ -409,7 +419,9 @@ def _merge_assistant_into(prev: Dict, msg: Dict) -> None:
     prev_content = prev.get("content")
     new_content = msg.get("content")
     content_rewritten = False
+    text_kept = not new_content  # nothing to lose
     if isinstance(prev_content, str) and isinstance(new_content, str):
+        text_kept = True
         joined = "\n".join(p for p in (prev_content.strip(), new_content.strip()) if p)
         prev["content"] = joined
         # A falsy new_content leaves ``joined`` == prev_content; that is not a rewrite.
@@ -419,6 +431,7 @@ def _merge_assistant_into(prev: Dict, msg: Dict) -> None:
     elif not prev_content and new_content is not None:
         prev["content"] = new_content
         content_rewritten = new_content != prev_content
+        text_kept = True
     # Carry reasoning_content from the later turn only if the earlier lacks it (strict thinking
     # providers need one on the merged tool-call turn).
     reasoning_carried = False
@@ -446,27 +459,31 @@ def _merge_assistant_into(prev: Dict, msg: Dict) -> None:
     # keeps the pre-merge row. The caller recomputes the flush cursor for the surviving sequence.
     if content_rewritten or calls_changed or reasoning_carried:
         prev.pop(_DB_PERSISTED_MARKER, None)
+    return text_kept
 
 
-def _remember_absorbed_row(survivor: Dict[str, Any], dropped: Dict[str, Any]) -> None:
-    """Record durable ids a merge folded into *survivor* and then dropped from the list.
-
-    No-op when the dropped dict names no row. An empty incoming turn still merges,
-    and stamping an empty list would change a message that absorbed nothing.
-    """
+def _remember_absorbed_row(survivor: Dict[str, Any], dropped: Dict[str, Any], *, folded: bool) -> None:
+    """Retire *dropped*'s row ids onto *survivor*; record its uid as a merge witness only when *folded* (its
+    text survives). An empty incoming turn still merges; stamping an empty list would change a message that
+    absorbed nothing. A dropped id that equals the survivor's own live id (the display-marker merge adopts
+    the plain row's id, #94486) is not an absorbed row: the survivor IS that row."""
+    own_id = survivor.get("_row_id")
     ids = []
     row_id = dropped.get("_row_id")
-    if isinstance(row_id, int) and not isinstance(row_id, bool) and row_id > 0:
+    if isinstance(row_id, int) and not isinstance(row_id, bool) and row_id > 0 and row_id != own_id:
         ids.append(row_id)
     for older in dropped.get("_absorbed_row_ids") or ():
         if isinstance(older, int) and not isinstance(older, bool) and older > 0 and older not in ids:
             ids.append(older)
-    if not ids:
-        return
-    absorbed = survivor.setdefault("_absorbed_row_ids", [])
-    for row_id in ids:
-        if row_id not in absorbed:
-            absorbed.append(row_id)
+    if ids:
+        absorbed = survivor.setdefault("_absorbed_row_ids", [])
+        for row_id in ids:
+            if row_id not in absorbed:
+                absorbed.append(row_id)
+    # The uid witness claims the dropped dict's TEXT lives on in the survivor: only a fold earns it. A
+    # superseded row (``folded=False``) is retired like any absorbed row but its content is discarded.
+    if folded:
+        record_absorbed_message(survivor, dropped)
 
 
 def _merge_consecutive_assistants(messages: List[Dict]) -> Tuple[List[Dict], int]:
@@ -482,11 +499,10 @@ def _merge_consecutive_assistants(messages: List[Dict]) -> Tuple[List[Dict], int
         ):
             # A provisional verification candidate is superseded, not unioned.
             if prev.get("finish_reason") in {"verification_required", "verify_hook_continue"}:
-                _remember_absorbed_row(msg, prev)
+                _remember_absorbed_row(msg, prev, folded=False)
                 collapsed[-1] = msg
             else:
-                _merge_assistant_into(prev, msg)
-                _remember_absorbed_row(prev, msg)
+                _remember_absorbed_row(prev, msg, folded=_merge_assistant_into(prev, msg))
             repairs += 1
             continue
         collapsed.append(msg)
@@ -600,13 +616,42 @@ def _merge_consecutive_users(messages: List[Dict]) -> Tuple[List[Dict], int]:
             )
             had_api_sidecar = "api_content" in prev
             prev["content"] = merged_content
+            # The clean-text persist override must replace only the absorbed turn, never the
+            # unanswered text before it; kept across replay passes (an empty turn absorbs too).
+            if prev_content:
+                prev[MERGED_TURN_PREFIX] = prev_content
             # Merged content invalidates the api_content sidecar; drop it so replay cannot use stale bytes.
             drop_stale_api_content(prev)
+            # A display-marker row (e.g. a model-switch marker persisted as role=user on
+            # purpose, #48338) merging with a plain user row must not bury the plain row's
+            # addressable identity: keeping the marker's display_kind hides the merged pair
+            # from every user-turn index used for rewind/submit addressing (display rows are
+            # excluded), so the plain row's durable id becomes unresolvable and the client's
+            # next prompt.submit fails closed with the input silently dropped (#94486). Keep
+            # the pair addressable instead: drop the display classification and carry the
+            # plain row's id, retiring the marker's own id onto the absorbed list. display_kind
+            # never reaches providers (stripped from every outgoing copy), so the merged
+            # turn's wire payload is unchanged. Deliberate scope: when BOTH rows carry
+            # display_kind (two consecutive model-switch markers) the pair keeps the first
+            # marker's classification and id — no plain row is swallowed there, so no
+            # addressable turn is lost.
+            if prev.get("display_kind") and not msg.get("display_kind"):
+                marker_row_id = prev.get("_row_id")
+                prev.pop("display_kind", None)
+                if msg.get("_row_id") is not None:
+                    if isinstance(marker_row_id, int) and not isinstance(marker_row_id, bool):
+                        absorbed_ids = prev.setdefault("_absorbed_row_ids", [])
+                        if marker_row_id not in absorbed_ids:
+                            absorbed_ids.append(marker_row_id)
+                    prev["_row_id"] = msg["_row_id"]
+                # display_kind is part of the persisted row; reclassifying stales it even
+                # when the merged bytes reproduce the persisted content (empty absorb).
+                prev.pop(_DB_PERSISTED_MARKER, None)
             # Pop the persist marker only when the durable row actually changed: a merge that
             # reproduces the persisted bytes (e.g. an empty incoming turn) keeps its stamp.
             if merged_content != prev_content or had_api_sidecar:
                 prev.pop(_DB_PERSISTED_MARKER, None)
-            _remember_absorbed_row(prev, msg)
+            _remember_absorbed_row(prev, msg, folded=True)
             repairs += 1
             continue
         merged.append(msg)
@@ -1043,14 +1088,14 @@ def try_recover_primary_transport(
     agent, api_error: Exception, *, retry_count: int, max_retries: int,
 ) -> bool:
     """Rebuild the primary client once and retry after ``max_retries`` exhaust on a transient
-    transport error. Skipped for aggregators (OpenRouter, Anxious) that manage retries server-side."""
+    transport error. Skipped for aggregators (OpenRouter, Nous) that manage retries server-side."""
     error_type = type(api_error).__name__
     if agent._fallback_activated or error_type not in _TRANSIENT_TRANSPORT_ERRORS or agent._is_openrouter_url():
         return False
     # Portal OpenAI-wire traffic rides aggregator retry infra (skip), but Portal Claude on native
     # Messages holds a local Anthropic client that needs the rebuild.
     if (
-        (agent.provider or "").strip().lower() in {"anxious", "anxious-portal", "anxiousresearchlab"}
+        (agent.provider or "").strip().lower() in {"nous", "nous-portal", "nousresearch"}
         and getattr(agent, "api_mode", None) != "anthropic_messages"
     ):
         return False
@@ -1442,7 +1487,7 @@ def dump_api_request_debug(
         }
         if error is not None:
             dump_payload["error"] = _api_error_debug_info(error)
-        # Sanitize the session ID (may come from an untrusted X-Pulse-Session-Id header) so a
+        # Sanitize the session ID (may come from an untrusted X-PULSE-Session-Id header) so a
         # "../"-shaped ID cannot write outside logs_dir.
         from agent.session_persistence import _safe_session_filename_component
         safe_sid = _safe_session_filename_component(agent.session_id)
@@ -1670,8 +1715,8 @@ def anthropic_prompt_cache_policy(
     from agent.anthropic_endpoints import _model_name_is_kimi_family
     is_kimi = _model_name_is_kimi_family(eff_model) or "moonshot" in model_lower
     is_openrouter = base_url_host_matches(eff_base_url, "openrouter.ai")
-    # Anxious Portal proxies to OpenRouter; treat as OpenRouter-equivalent for cache layout.
-    is_anxious_portal = base_url_host_matches(eff_base_url, "anxiousresearchlab.com")
+    # Nous Portal proxies to OpenRouter; treat as OpenRouter-equivalent for cache layout.
+    is_nous_portal = base_url_host_matches(eff_base_url, "anxious-research.com")
     is_anthropic_wire = eff_api_mode == "anthropic_messages"
     is_native_anthropic = is_anthropic_wire and (
         eff_provider == "anthropic" or base_url_hostname(eff_base_url) == "api.anthropic.com"
@@ -1714,11 +1759,11 @@ def anthropic_prompt_cache_policy(
         return True, True
     # Envelope layout is OpenAI-wire only; Portal Claude on native Messages must fall through to the
     # anthropic_messages branch (inner-block markers) or it serves 0% cache hits.
-    if (is_openrouter or is_anxious_portal) and (is_claude or is_kimi) and not is_anthropic_wire:
+    if (is_openrouter or is_nous_portal) and (is_claude or is_kimi) and not is_anthropic_wire:
         return True, False
-    # Anxious Portal Qwen takes the envelope path too; the alibaba-family check below only matches
+    # Nous Portal Qwen takes the envelope path too; the alibaba-family check below only matches
     # provider=opencode/alibaba and would leave Portal traffic uncached.
-    if is_anxious_portal and "qwen" in model_lower:
+    if is_nous_portal and "qwen" in model_lower:
         return True, False
     if is_anthropic_wire and is_claude:
         return True, True  # third-party Anthropic-compatible gateway
@@ -1929,7 +1974,7 @@ def create_openai_client(agent, client_kwargs: dict, *, reason: str, shared: boo
     # keeps SDK retries because it is NOT wrapped by the conversation loop.
     client_kwargs.setdefault("max_retries", 0)
     _ensure_copilot_headers(client_kwargs)
-    # All primary construction and recovery paths must identify Pulse to the official Codex
+    # All primary construction and recovery paths must identify PULSE to the official Codex
     # endpoint, including snapshots with custom header overrides.
     from agent.codex_headers import apply_required_codex_headers
     apply_required_codex_headers(
@@ -2004,7 +2049,7 @@ def _resolve_switch_destination(agent, new_model, new_provider, base_url, api_mo
     from pulse_cli.providers import determine_api_mode, is_actual_route
     from agent.native_compaction import resolve_native_compaction_capabilities
     from pulse_cli.models import opencode_provider_family
-    # Pass model so dual-wire providers (Anxious Portal anthropic/* -> Messages) resolve correctly.
+    # Pass model so dual-wire providers (Nous Portal anthropic/* -> Messages) resolve correctly.
     if not api_mode:
         api_mode = determine_api_mode(new_provider, base_url, model=new_model)
     if not base_url and new_norm == "openai":
@@ -2995,7 +3040,7 @@ def _realign_tool_result_names(messages: List[Dict[str, Any]]) -> List[Dict[str,
     #   ``tool_name_by_call_id`` over the result name; requests that reach Gemini through the
     #   OpenAI-compatible path (OpenRouter, Vertex/LiteLLM proxies, any OpenAI-shaped gateway) skip that
     #   translation entirely and still send the internal name on the wire. Normalizing here rather than in
-    #   the OpenAI-compat serializer keeps it provider-agnostic: Gemini reaches Pulse under many model
+    #   the OpenAI-compat serializer keeps it provider-agnostic: Gemini reaches PULSE under many model
     #   strings and base URLs, so sniffing for "is this really Google?" is unreliable, and every other
     #   provider either ignores the field or agrees with the call name. Runs on the per-call copy, so the
     #   stored trajectory keeps the real tool name for the session DB and the UI — only the wire payload
@@ -3577,30 +3622,3 @@ __all__ = [
     "extract_api_error_context", "apply_pending_steer_to_tool_results", "_iter_pool_sockets",
     "force_close_tcp_sockets",
 ]
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-def agent_runtime_owns_post_tool_hook(agent: Any, function_name: str) -> bool:
-    """Return True when an agent-level tool path emits its own post hook."""
-    if function_name in AGENT_RUNTIME_POST_HOOK_TOOL_NAMES:
-        return True
-    if getattr(agent, "_context_engine_tool_names", None) and function_name in agent._context_engine_tool_names:
-        return True
-    memory_manager = getattr(agent, "_memory_manager", None)
-    return bool(memory_manager and memory_manager.has_tool(function_name))
-
-def intent_ack_continuation_enabled(agent) -> bool:
-    """Whether intent-ack continuation should fire at all for this turn.
-
-    The ``codex_ack_continuations < 2`` per-turn cap and the
-    ``looks_like_codex_intermediate_ack`` detector are applied by the caller;
-    this only decides the on/off gate. Callers that also need to know whether
-    the workspace requirement applies should use ``intent_ack_continuation_mode``
-    directly (``"codex_only"`` ⇒ require_workspace=True, ``"all"`` ⇒ False).
-    """
-    return intent_ack_continuation_mode(agent) != "off"
-# ---- END PLUGIN-COMPAT ----

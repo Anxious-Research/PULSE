@@ -14,7 +14,7 @@ from fastapi import HTTPException
 from pulse_cli.pty_session import RegistryFull
 
 CHAT_NEEDS_NODE = (
-    "Chat could not start: Pulse needs Node.js to run the terminal chat. "
+    "Chat could not start: PULSE needs Node.js to run the terminal chat. "
     "Install Node 18+ (for example from nodejs.org) and reopen this tab."
 )
 CHAT_TOO_MANY_TERMINALS = (

@@ -116,7 +116,7 @@ def paused_reply() -> Optional[str]:
     if state is None:
         return None
     tag = f" ({state['reason']})" if state.get("reason") else ""
-    return f"⏸️ Pulse is paused{tag}. New work is on hold; run `pulse resume` to pick things back up."
+    return f"⏸️ PULSE is paused{tag}. New work is on hold; run `pulse resume` to pick things back up."
 
 
 def check_paused(component: str, logger: logging.Logger) -> bool:
@@ -136,11 +136,3 @@ def check_paused(component: str, logger: logging.Logger) -> bool:
             component, suffix, sentinel_path(),
         )
     return True
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-import os  # noqa: F401,E402
-# ---- END PLUGIN-COMPAT ----

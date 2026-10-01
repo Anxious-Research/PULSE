@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { PulseConnection } from '@/global'
+import type { PULSEConnection } from '@/global'
 import { connectionScopeSuffix } from '@/lib/connection-scoped'
 import { readKey, storedStringArray, writeKey } from '@/lib/storage'
 import type { SessionInfo } from '@/types/pulse'
@@ -21,14 +21,14 @@ import { resetSessionPinMirror, watchSessionPins } from './session-pin-sync'
 
 const PIN_KEY = 'pulse.desktop.pinnedSessions'
 
-const remote = (profile: string, baseUrl = 'https://gw.example:8443'): PulseConnection =>
+const remote = (profile: string, baseUrl = 'https://gw.example:8443'): PULSEConnection =>
   ({
     baseUrl,
     mode: 'remote',
     profile,
     token: 't',
     wsUrl: 'ws://x'
-  }) as unknown as PulseConnection
+  }) as unknown as PULSEConnection
 
 const row = (id: string, extra: Partial<SessionInfo> = {}): SessionInfo =>
   ({ id, message_count: 1, source: 'cli', started_at: 0, title: id, ...extra }) as SessionInfo

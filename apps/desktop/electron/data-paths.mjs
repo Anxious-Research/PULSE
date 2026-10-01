@@ -4,14 +4,14 @@
 // extensionless TypeScript directly). No Electron imports here; only node:path.
 //
 // data-paths.ts re-exports these names and adds the TypeScript-facing
-// `PulseHomeOptions` interface. Keep the two in lockstep: every behavior in
+// `PULSEHomeOptions` interface. Keep the two in lockstep: every behavior in
 // this file is exercised by data-paths.test.ts through the re-export.
 
 import path from 'node:path'
 
 /** A PULSE_HOME rooted inside a `profiles/` directory names the profile's
  * parent (the home), not the profile directory itself. */
-function normalizePulseHomeRoot(pulseHome, pathModule) {
+function normalizePULSEHomeRoot(pulseHome, pathModule) {
   if (!pulseHome) {
     return pulseHome
   }
@@ -23,7 +23,7 @@ function normalizePulseHomeRoot(pulseHome, pathModule) {
   return resolved
 }
 
-export function platformDefaultPulseHome(home, env = process.env, platform = process.platform) {
+export function platformDefaultPULSEHome(home, env = process.env, platform = process.platform) {
   const suffix = env.PULSE_DATA_DIR_SUFFIX || ''
   if (platform === 'win32') {
     const base = (env.LOCALAPPDATA || '').trim() || path.win32.join(home, 'AppData', 'Local')
@@ -38,12 +38,12 @@ export function resolveDesktopUserData(defaultPath, env = process.env) {
     : defaultPath + (env.PULSE_DATA_DIR_SUFFIX || '')
 }
 
-export function resolveDesktopPulseHome({ home, env = process.env, platform = process.platform, directoryExists = () => false, readWindowsHome = () => null }) {
+export function resolveDesktopPULSEHome({ home, env = process.env, platform = process.platform, directoryExists = () => false, readWindowsHome = () => null }) {
   const paths = platform === 'win32' ? path.win32 : path.posix
   if (env.PULSE_HOME) {
-    return normalizePulseHomeRoot(env.PULSE_HOME, paths)
+    return normalizePULSEHomeRoot(env.PULSE_HOME, paths)
   }
-  // Fresh-install rehearsals must not touch the real Pulse home.
+  // Fresh-install rehearsals must not touch the real PULSE home.
   if (env.PULSE_DESKTOP_USER_DATA_DIR) {
     return paths.join(paths.resolve(env.PULSE_DESKTOP_USER_DATA_DIR), 'pulse-home')
   }
@@ -51,10 +51,10 @@ export function resolveDesktopPulseHome({ home, env = process.env, platform = pr
     // Explorer can miss setx changes. An explicit empty value opts out of that fallback.
     const registryHome = readWindowsHome()
     if (registryHome) {
-      return normalizePulseHomeRoot(registryHome, paths)
+      return normalizePULSEHomeRoot(registryHome, paths)
     }
   }
-  const defaultHome = platformDefaultPulseHome(home, env, platform)
+  const defaultHome = platformDefaultPULSEHome(home, env, platform)
   // Keep the legacy migration for ordinary installs, not isolated suffix runs.
   if (platform === 'win32' && !env.PULSE_DATA_DIR_SUFFIX) {
     const legacy = paths.join(home, '.pulse')

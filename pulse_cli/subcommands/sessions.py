@@ -42,7 +42,7 @@ def build_sessions_parser(subparsers, *, cmd_sessions: Callable) -> None:
         ("--model", dict(help="Only match sessions whose model name contains this substring "
             "(e.g. 'sonnet', 'gpt-5', 'pulse')")),
         ("--provider", dict(help="Only match sessions billed through this provider "
-            "(e.g. openrouter, anthropic, anxious)")),
+            "(e.g. openrouter, anthropic, nous)")),
         ("--user", dict(help="Only match sessions from this user ID")),
         ("--chat-id", dict(help="Only match sessions from this chat/channel ID")),
         ("--chat-type", dict(help="Only match sessions with this chat type (e.g. dm, group)")),
@@ -118,7 +118,7 @@ def build_sessions_parser(subparsers, *, cmd_sessions: Callable) -> None:
             "and are older than AGE (default 30 days). Ordinary prune can "
             "never reach these — it only ever selects ended sessions")
     _flag(sessions_prune, "--force",
-        help="Run even while another Pulse process (gateway, Desktop, dashboard, cron) holds state.db — rewriting the store under a live writer can leave every agent refusing turns until all writers are stopped")
+        help="Run even while another PULSE process (gateway, Desktop, dashboard, cron) holds state.db — rewriting the store under a live writer can leave every agent refusing turns until all writers are stopped")
 
     sessions_archive = sessions_subparsers.add_parser(
         "archive", help="Bulk-archive (soft-hide) sessions matching filters — no deletion")
@@ -129,7 +129,7 @@ def build_sessions_parser(subparsers, *, cmd_sessions: Callable) -> None:
     sessions_optimize = sessions_subparsers.add_parser(
         "optimize", help="Reclaim disk space: merge FTS5 segments + VACUUM (no data change)")
     _flag(sessions_optimize, "--force",
-        help="Run even while another Pulse process (gateway, Desktop, dashboard, cron) holds state.db — rewriting the store under a live writer can leave every agent refusing turns until all writers are stopped")
+        help="Run even while another PULSE process (gateway, Desktop, dashboard, cron) holds state.db — rewriting the store under a live writer can leave every agent refusing turns until all writers are stopped")
 
     sessions_clean_markers = sessions_subparsers.add_parser("clean-markers",
         help="Permanently clear stale tool-call marker content left by sessions from before #78148",
@@ -161,7 +161,7 @@ def build_sessions_parser(subparsers, *, cmd_sessions: Callable) -> None:
     _flag(sessions_optimize_storage, "--yes", "-y", default=False,
         help="Skip the disk-space confirmation prompt")
     _flag(sessions_optimize_storage, "--force",
-        help="Run even while another Pulse process (gateway, Desktop, dashboard, cron) holds state.db — rewriting the store under a live writer can leave every agent refusing turns until all writers are stopped")
+        help="Run even while another PULSE process (gateway, Desktop, dashboard, cron) holds state.db — rewriting the store under a live writer can leave every agent refusing turns until all writers are stopped")
 
     sessions_repair = sessions_subparsers.add_parser(
         "repair", help="Repair a malformed state.db schema so hidden sessions reappear",
@@ -175,7 +175,7 @@ def build_sessions_parser(subparsers, *, cmd_sessions: Callable) -> None:
 
     sessions_set_journal_mode = sessions_subparsers.add_parser(
         "set-journal-mode", help="Convert state.db between journal_mode=WAL and DELETE offline (every holder stopped)",
-        description="Switch the on-disk journal mode of the session store. Pulse never "
+        description="Switch the on-disk journal mode of the session store. PULSE never "
             "live-downgrades a WAL database at startup (other processes may hold "
             "uncheckpointed commits), so `database.journal_mode: delete` cannot "
             "self-apply to an existing WAL store. Run this with the gateway, "
@@ -183,10 +183,10 @@ def build_sessions_parser(subparsers, *, cmd_sessions: Callable) -> None:
             "the file, switches the mode, and verifies the file header.")
     sessions_set_journal_mode.add_argument("mode", choices=("delete", "wal"), help="Target journal mode")
     sessions_set_journal_mode.add_argument("--db", default=None, metavar="PATH",
-        help="Convert another Pulse SQLite store (e.g. kanban.db) instead of the profile's state.db")
+        help="Convert another PULSE SQLite store (e.g. kanban.db) instead of the profile's state.db")
     _flag(sessions_set_journal_mode, "--force",
         help="Proceed when the holder scan itself fails (cannot prove the store is quiet) after stopping every "
-            "Pulse process yourself; a process the scan does find is still refused")
+            "PULSE process yourself; a process the scan does find is still refused")
 
     sessions_repair_routing = sessions_subparsers.add_parser(
         "repair-routing", help="Re-stamp gateway sessions that lost their routing identity",
@@ -303,9 +303,9 @@ def build_sessions_parser(subparsers, *, cmd_sessions: Callable) -> None:
         "--limit", type=int, default=500, help="Max sessions to load (default: 500)")
 
     sessions_import = sessions_subparsers.add_parser(
-        "import", help="Import a Claude Code or Codex CLI session into Pulse",
+        "import", help="Import a Claude Code or Codex CLI session into PULSE",
         description="Pull a conversation started in Claude Code (~/.claude/projects) "
-            "or Codex CLI (~/.codex/sessions) into the Pulse session store "
+            "or Codex CLI (~/.codex/sessions) into the PULSE session store "
             "so it can be resumed with 'pulse --resume <id>'. The foreign "
             "files are only read, never modified.")
     sessions_import.add_argument("--from", dest="from_source", choices=["claude", "codex"],

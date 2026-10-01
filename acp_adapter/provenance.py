@@ -1,12 +1,12 @@
 """Derive ACP session-provenance metadata from the existing compression chain.
 
-Additive Pulse extension under ACP ``_meta.pulse`` (unknown to other clients,
+Additive PULSE extension under ACP ``_meta.pulse`` (unknown to other clients,
 so ignored). No new persisted state: everything is derived from the ``sessions``
 table (``parent_session_id`` / ``end_reason``), which already models
 compression-continuation chains.
 
 The ACP/editor ``session_id`` stays the stable public handle; when compression
-rotates the internal Pulse head, ``build_session_provenance`` exposes the
+rotates the internal PULSE head, ``build_session_provenance`` exposes the
 previous/current internal ids and lineage root without parsing status text.
 """
 
@@ -63,12 +63,12 @@ def build_session_provenance(
     is_continuation = bool(parent_id) and _is_compression_end(_get_row(db, parent_id))
 
     provenance: Dict[str, Any] = {
-        "acpSessionId": acp_session_id, "currentPulseSessionId": current_pulse_session_id,
-        "rootPulseSessionId": root_id, "parentPulseSessionId": parent_id,
+        "acpSessionId": acp_session_id, "currentPULSESessionId": current_pulse_session_id,
+        "rootPULSESessionId": root_id, "parentPULSESessionId": parent_id,
         "sessionKind": "continuation" if is_continuation else "root", "compressionDepth": compression_depth,
     }
     if previous_pulse_session_id:
-        provenance["previousPulseSessionId"] = previous_pulse_session_id
+        provenance["previousPULSESessionId"] = previous_pulse_session_id
         if previous_pulse_session_id != current_pulse_session_id:
             # The only mechanism that rotates the internal id mid-turn is
             # compression-driven session splitting.

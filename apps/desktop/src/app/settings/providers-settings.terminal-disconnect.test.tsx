@@ -54,7 +54,7 @@ function connectedExternal(patch: Partial<OAuthProvider> = {}): OAuthProvider {
 
 beforeEach(() => {
   listOAuthProviders.mockResolvedValue({ providers: [connectedExternal()] })
-  disconnectOAuthProvider.mockResolvedValue({ ok: false, provider: 'pulse' })
+  disconnectOAuthProvider.mockResolvedValue({ ok: false, provider: 'nous' })
   Object.defineProperty(window, 'pulseDesktop', {
     configurable: true,
     value: { terminal: {} }
@@ -97,19 +97,19 @@ describe('connected external provider row', () => {
     listOAuthProviders.mockResolvedValue({
       providers: [
         {
-          cli_command: 'pulse auth add pulse',
+          cli_command: 'pulse auth add nous',
           disconnectable: true,
           docs_url: '',
           flow: 'device_code',
-          id: 'pulse',
-          name: 'Pulse Portal',
+          id: 'nous',
+          name: 'Nous Portal',
           status: { logged_in: true }
         }
       ]
     })
 
     await renderAccounts()
-    fireEvent.click(await screen.findByRole('button', { name: 'Remove Pulse Portal' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove Nous Portal' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Disconnect' }))
 
     await waitFor(() => expect(disconnectOAuthProvider).toHaveBeenCalled())

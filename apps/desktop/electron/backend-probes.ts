@@ -3,6 +3,7 @@
 import { spawn } from 'node:child_process'
 
 import { buildDesktopBackendEnv } from './backend-env'
+import { windowsShellCommand } from './windows-child-options'
 
 /** Default probe budget. 5s false-negativeed healthy Windows cold starts (#61764). */
 const DEFAULT_PROBE_TIMEOUT_MS = 15_000
@@ -102,7 +103,7 @@ async function execProbe(
 }
 
 /** Probe the checkout at cwd with the same dependency activation as launch. */
-async function canImportPulseCli(
+async function canImportPULSECli(
   pythonPath: string,
   opts: { env?: NodeJS.ProcessEnv; cwd?: string } = {}
 ): Promise<boolean> {
@@ -149,26 +150,26 @@ async function canImportPulseCli(
  * @param {boolean} [opts.shell] - Whether to run through a shell. For
  *   .cmd/.bat shims on Windows spawn needs shell:true to find
  *   the cmd interpreter; mirrors the same flag isCommandScript() drives
- *   in resolvePulseBackend.
+ *   in resolvePULSEBackend.
  * @returns {boolean}
  */
 /**
  * An explicit desktop backend command is a deployment contract, not a PATH
  * discovery candidate. In particular, the Nix desktop wrapper points this at
- * its immutable, matching Pulse package; it must never fall through to the
+ * its immutable, matching PULSE package; it must never fall through to the
  * mutable install-script bootstrap path if a best-effort probe is slow.
  */
-function shouldTrustPulseOverride(pulseOverride?: string) {
+function shouldTrustPULSEOverride(pulseOverride?: string) {
   return typeof pulseOverride === 'string' && pulseOverride.trim().length > 0
 }
 
-async function verifyPulseCli(pulseCommand: string, opts?: { shell?: boolean }) {
+async function verifyPULSECli(pulseCommand: string, opts?: { shell?: boolean }) {
   if (!pulseCommand) {
     return false
   }
 
   try {
-    await execProbe(pulseCommand, ['--version'], {
+    await execProbe(windowsShellCommand(pulseCommand, Boolean(opts?.shell)), ['--version'], {
       stdio: 'ignore',
       timeout: PROBE_TIMEOUT_MS,
       shell: Boolean(opts?.shell),
@@ -182,12 +183,12 @@ async function verifyPulseCli(pulseCommand: string, opts?: { shell?: boolean }) 
 }
 
 export {
-  canImportPulseCli,
+  canImportPULSECli,
   DEFAULT_PROBE_TIMEOUT_MS,
   execProbe,
   isTimeoutError,
   PROBE_TIMEOUT_MS,
   resolveProbeTimeoutMs,
-  shouldTrustPulseOverride,
-  verifyPulseCli
+  shouldTrustPULSEOverride,
+  verifyPULSECli
 }

@@ -375,9 +375,12 @@ class RaftAdapter(BasePlatformAdapter):
         endpoint = f"http://{self._host}:{port}{self._path}"
         cmd: List[str] = [raft_bin, "--profile", profile, "agent", "bridge", "--wake-adapter", "wake-channel",
                           "--wake-channel-endpoint", endpoint]
+        from tools.environments.local import pulse_subprocess_env
+        # The raft CLI needs its own profile and channel token, never PULSE' credentials.
+        env = {**pulse_subprocess_env(), "RAFT_PROFILE": profile, "RAFT_CHANNEL_TOKEN": self._bridge_token}
+        env["HOME"] = env["PULSE_REAL_HOME"]  # the raft CLI's own login lives under the user's HOME
         try:
-            self._bridge_process = subprocess.Popen(
-                cmd, env={**os.environ, "RAFT_CHANNEL_TOKEN": self._bridge_token}, stdin=subprocess.DEVNULL)
+            self._bridge_process = subprocess.Popen(cmd, env=env, stdin=subprocess.DEVNULL)
             logger.info("[raft] Spawned bridge pid=%d profile=%s endpoint=%s", self._bridge_process.pid, profile, endpoint)
         except Exception:
             logger.exception("[raft] Failed to spawn bridge")
@@ -443,7 +446,7 @@ class RaftAdapter(BasePlatformAdapter):
             return _error_response("invalid_json", 400)
         if not isinstance(payload, dict):
             return _error_response("invalid_payload", 400)
-        # No payload["schema"] gate: the bridge owns schema evolution; Pulse only checks content-free.
+        # No payload["schema"] gate: the bridge owns schema evolution; PULSE only checks content-free.
         if _has_content_field(payload):
             return _error_response("content_not_allowed", 400)
         not_ready = {"ok": False, "error": "not_ready", "runtimeSession": self._runtime_session}
@@ -483,7 +486,7 @@ class RaftAdapter(BasePlatformAdapter):
         return web.json_response(self._activity_queue.drain(max_events))
 
     async def handle_message(self, event: MessageEvent) -> None:
-        """Accept Raft wake hints without interrupting an active Pulse turn."""
+        """Accept Raft wake hints without interrupting an active PULSE turn."""
         if event.internal:
             # Durable gateway wakes need the base session fence and admission receipt.
             await super().handle_message(event)
@@ -521,7 +524,7 @@ def _env_enablement() -> Optional[dict]:
 
 
 def interactive_setup() -> None:
-    """``pulse gateway setup`` flow: persists ``RAFT_PROFILE`` to the Pulse env file.
+    """``pulse gateway setup`` flow: persists ``RAFT_PROFILE`` to the PULSE env file.
     CLI helpers are lazy-imported so the plugin stays importable in gateway runtime and tests."""
     from pulse_cli.cli_output import print_header, print_info, print_success, print_warning, prompt
     from pulse_cli.config import get_env_value, save_env_value
@@ -531,7 +534,7 @@ def interactive_setup() -> None:
     if declines_reconfigure("Raft", "Reconfigure Raft?", "RAFT_PROFILE"):
         print_info(f"Keeping RAFT_PROFILE={existing_profile}.")
         return
-    for line in ("Connect Pulse to Raft as an external agent.", "Create the External Agent in Raft first, then run:",
+    for line in ("Connect PULSE to Raft as an external agent.", "Create the External Agent in Raft first, then run:",
                  "  raft agent login --server <server-url> --agent <agent-id> --profile-slug <slug>"):
         print_info(line)
     print()
@@ -546,7 +549,7 @@ def interactive_setup() -> None:
 
 
 def register(ctx) -> None:
-    """Plugin entry point — called by the Pulse plugin system."""
+    """Plugin entry point — called by the PULSE plugin system."""
     ctx.register_platform(
         name="raft",
         label="Raft",
@@ -571,11 +574,3 @@ def register(ctx) -> None:
                                 ("post_llm_call", _on_post_llm_call), ("on_session_end", _on_session_end),
                                 ("on_session_finalize", _on_session_finalize)):
         ctx.register_hook(hook_name, callback)
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-import asyncio  # noqa: F401,E402
-# ---- END PLUGIN-COMPAT ----

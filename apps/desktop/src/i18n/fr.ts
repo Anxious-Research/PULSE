@@ -5,9 +5,9 @@ import { introFr } from './intro-fr'
 
 export const frOverrides = {
   sharedMetrics: {
-    consentTitle: 'Aider à améliorer Pulse ?',
+    consentTitle: 'Aider à améliorer PULSE ?',
     consentBody:
-      'Les métriques partagées ne contiennent que des compteurs bornés. Jamais de prompts, fichiers, chemins ni textes d’erreur. La collecte reste locale. Les envoyer à Pulse est un consentement distinct.',
+      'Les métriques partagées ne contiennent que des compteurs bornés. Jamais de prompts, fichiers, chemins ni textes d’erreur. La collecte reste locale. Les envoyer à Nous est un consentement distinct.',
     whatIsCollected: 'Ce qui est collecté',
     collectedIntro: 'Uniquement des compteurs bornés :',
     collectedActivity: 'Activité, durée des sessions, résultats et classes d’erreur',
@@ -17,15 +17,15 @@ export const frOverrides = {
     collectedReliability:
       'Résultats et durée des mises à jour, plantages, vitesse de démarrage et de réponse, état des plateformes de messagerie',
     collectedUsage:
-      "Comment Pulse est utilisé : précision et efficacité de l'agent (modifications réussies, boucles, reprises après erreur, jetons et appels d'outils par tâche, ruptures de cache), temps actif par interface et mode Desktop, zones, actions et réglages de l'app utilisés, vite fermés ou désactivés, et résultats de la configuration des fournisseurs",
+      "Comment PULSE est utilisé : précision et efficacité de l'agent (modifications réussies, boucles, reprises après erreur, jetons et appels d'outils par tâche, ruptures de cache), temps actif par interface et mode Desktop, zones, actions et réglages de l'app utilisés, vite fermés ou désactivés, et résultats de la configuration des fournisseurs",
     collectedMachine:
-      "Données générales de la machine : plage de RAM, type de GPU, âge et canal de la version de Pulse, mises à jour en retard, utilisation d'un serveur de modèles local",
+      "Données générales de la machine : plage de RAM, type de GPU, âge et canal de la version de PULSE, mises à jour en retard, utilisation d'un serveur de modèles local",
     installId:
-      'L’envoi transmet chaque paquet quotidien au service de télémétrie de Pulse. Les paquets portent l’identifiant d’installation de ce profil : un UUID aléatoire stable sans information personnelle, réinitialisé en supprimant le dossier des métriques partagées.',
+      'L’envoi transmet chaque paquet quotidien au service de télémétrie de Nous. Les paquets portent l’identifiant d’installation de ce profil : un UUID aléatoire stable sans information personnelle, réinitialisé en supprimant le dossier des métriques partagées.',
     consentWindow:
       'Seuls les paquets dont toute la période de collecte tombe dans une fenêtre de consentement enregistrée sont envoyés — les données d’avant votre accord, ou de toute période où l’envoi était désactivé, restent sur cette machine. L’envoi peut être désactivé à tout moment.',
     readDocs: 'Lire tous les détails',
-    share: 'Collecter et envoyer à Pulse',
+    share: 'Collecter et envoyer à Nous',
     local: 'Collecter en local uniquement',
     off: 'Non merci',
     changeLater: 'Vous pouvez changer cela à tout moment dans Réglages → Sécurité.',
@@ -33,12 +33,12 @@ export const frOverrides = {
     collectLabel: 'Collecter les statistiques d’utilisation',
     collectDesc:
       'Compteurs bornés conservés sur cet appareil. Jamais de prompts, fichiers, chemins ni textes d’erreur.',
-    sendLabel: 'Envoyer les statistiques d’utilisation à Pulse',
+    sendLabel: 'Envoyer les statistiques d’utilisation à Nous',
     sendDesc:
-      'Envoyer chaque paquet quotidien au service de télémétrie de Pulse. Seules les données d’une fenêtre de consentement sont envoyées. Nécessite la collecte activée.',
-    unavailable: 'Mettez à jour le backend Pulse pour modifier ce réglage.',
+      'Envoyer chaque paquet quotidien au service de télémétrie de Nous. Seules les données d’une fenêtre de consentement sont envoyées. Nécessite la collecte activée.',
+    unavailable: 'Mettez à jour le backend PULSE pour modifier ce réglage.',
     stripBody: 'Uniquement des compteurs bornés, jamais de prompts ni de fichiers.',
-    stripChoices: { share: 'Envoyer à Pulse', local: 'Local uniquement', off: 'Non merci' },
+    stripChoices: { share: 'Envoyer à Nous', local: 'Local uniquement', off: 'Non merci' },
     stripDetails: 'Détails'
   },
   intro: introFr,
@@ -66,7 +66,7 @@ export const frOverrides = {
     ownerMissing: 'Rouvrez cette conversation pour gérer ses connexions.',
     search: 'Rechercher une application',
     empty: 'Aucune application correspondante',
-    disclaimer: "La connexion est facultative. N'autorisez que les applications que vous voulez confier à Pulse.",
+    disclaimer: "La connexion est facultative. N'autorisez que les applications que vous voulez confier à PULSE.",
     execution: 'Outils des connecteurs',
     setup: server => `Configurer ${server}`,
     openInBrowser: 'Ouvrir dans le navigateur',
@@ -99,7 +99,7 @@ export const frOverrides = {
       kindCatalog: 'MCP · Catalogue',
       kindCustom: 'MCP · Personnalisé',
       kindPlugin: (plugin: string) => `MCP · Plugin ${plugin}`,
-      inCatalog: 'Dans le catalogue Pulse',
+      inCatalog: 'Dans le catalogue PULSE',
       hostedTwin: 'Version gérée disponible',
       alsoLocal: 'Fonctionne aussi sur cet appareil',
       open: (name: string) => `Ouvrir ${name}`,
@@ -148,7 +148,7 @@ export const frOverrides = {
       loading: 'Lecture du catalogue et des serveurs de cet ordinateur',
       emptyTitle: 'Aucune application pour le moment. Ajoutez un serveur sur cet ordinateur pour commencer.',
       noMatchTitle: 'Aucune application correspondante',
-      noMatchBody: 'Aucun résultat. Indiquez à Pulse votre propre serveur MCP pour l’ajouter.',
+      noMatchBody: 'Aucun résultat. Indiquez à PULSE votre propre serveur MCP pour l’ajouter.',
       clearSearch: 'Effacer la recherche',
       hostedFailedTitle: 'Impossible de joindre les applications hébergées.',
       hostedFailedBody:
@@ -159,14 +159,14 @@ export const frOverrides = {
       showAllMatches: 'Afficher tous les résultats',
       segmentNoMatch: (segment: string) => `Aucun résultat dans ${segment} : tous les résultats sont affichés.`,
       freeTierNote: 'Les connexions restent sur cet ordinateur jusqu’à ce que vous vous connectiez.',
-      signInLine: 'Connectez-vous à Pulse pour utiliser les applications gérées.',
+      signInLine: 'Connectez-vous à Nous pour utiliser les applications gérées.',
       signIn: 'Se connecter',
       managedUnavailable: 'Les applications gérées ne sont pas encore disponibles pour ce compte.',
       writeFailed: 'Cette modification n’a pas été enregistrée.',
       refreshFailed: 'La liste des outils n’a pas été actualisée.',
-      disconnectNoAccount: 'Pulse n’a aucun compte à déconnecter ici. Actualisez la page et réessayez.',
+      disconnectNoAccount: 'PULSE n’a aucun compte à déconnecter ici. Actualisez la page et réessayez.',
       disconnectRefused:
-        'Pulse ne peut pas supprimer cette connexion pour le moment. Désactivez plutôt l’application avec l’interrupteur, ou réessayez plus tard.'
+        'Nous ne peut pas supprimer cette connexion pour le moment. Désactivez plutôt l’application avec l’interrupteur, ou réessayez plus tard.'
     },
     add: {
       action: 'Ajouter le vôtre',
@@ -204,23 +204,23 @@ export const frOverrides = {
     dialog: {
       disconnect: 'Déconnecter',
       disconnectTitle: (name: string) => `Déconnecter ${name} ?`,
-      disconnectBody: "Pulse cesse d'agir avec ce compte. Vous pouvez vous reconnecter à tout moment.",
+      disconnectBody: "PULSE cesse d'agir avec ce compte. Vous pouvez vous reconnecter à tout moment.",
       menuRefreshTools: 'Actualiser les outils',
       moreActions: "Plus d'actions",
       removeServerTitle: (name: string) => `Supprimer ${name} ?`,
       removeServerBody: "L'entrée est retirée de mcp.json sur cet ordinateur. Rien d'autre n'est supprimé.",
-      appSwitch: (name: string) => `Pulse peut utiliser ${name}`,
+      appSwitch: (name: string) => `PULSE peut utiliser ${name}`,
       waysTitle: (name: string) => `Où ${name} s'exécute`,
       wayNotConnected: (name: string) => `Pas encore connecté. Connectez-vous à ${name} dans votre navigateur.`,
       wayHosted: 'Géré',
-      bothOn: (name: string) => `Les deux sont activés : Pulse voit donc chaque outil ${name} en double.`,
+      bothOn: (name: string) => `Les deux sont activés : PULSE voit donc chaque outil ${name} en double.`,
       turnOffLocal: 'Désactiver le serveur local',
       providedByPlugin: (plugin: string) => `Fourni par le plugin ${plugin}`,
       openPlugins: "Ouvrir l'onglet Plugins",
-      pulseLine: 'Les applications Pulse suivent votre compte, pas le profil.',
+      nousLine: 'Les applications Nous suivent votre compte, pas le profil.',
       rulesReadOnly: 'Les règles ne peuvent pas être modifiées pour le moment.',
       rulesAppOff: (name: string) => `Activez ${name} pour modifier ses outils.`,
-      rulesSignIn: 'Connectez-vous pour modifier ce que Pulse peut faire ici.',
+      rulesSignIn: 'Connectez-vous pour modifier ce que PULSE peut faire ici.',
       orgNote: (count: number) => `Votre organisation a désactivé ${count} outil${count > 1 ? 's' : ''}.`,
       orgLink: "Ouvrir l'administration des connecteurs",
       connectEnded: "La connexion n'a pas abouti.",
@@ -233,8 +233,8 @@ export const frOverrides = {
     tools: {
       title: 'Outils',
       notInstalledBody: "Installez-le sur cet appareil pour voir les outils qu'il apporte.",
-      summaryTitle: (name: string) => `Ce que Pulse peut faire avec ${name}`,
-      summaryPreviewTitle: (name: string) => `Ce que Pulse pourra faire avec ${name} une fois connecté`,
+      summaryTitle: (name: string) => `Ce que PULSE peut faire avec ${name}`,
+      summaryPreviewTitle: (name: string) => `Ce que PULSE pourra faire avec ${name} une fois connecté`,
       summaryCount: (count: number) => `${count} outil${count > 1 ? 's' : ''}`,
       summaryAllTools: 'Tous les outils',
       summaryOther: 'Autres',
@@ -267,11 +267,11 @@ export const frOverrides = {
       needsAuthBody: 'La connexion reste sur cet ordinateur. Rien ne le quitte.',
       retry: 'Réessayer',
       goneTitle: (name: string) => `${name} a quitté le catalogue.`,
-      goneBody: "Pulse ne peut plus l'appeler. La ligne reste jusqu'à ce que vous la supprimiez : rien ne disparaît.",
+      goneBody: "PULSE ne peut plus l'appeler. La ligne reste jusqu'à ce que vous la supprimiez : rien ne disparaît.",
       remove: 'Supprimer',
       offTitle: (name: string) => `${name} est désactivé.`,
       offBody: "Activez-le avec l'interrupteur ci-dessus pour lire les outils qu'il apporte.",
-      signedOutTitle: 'Connectez-vous à Pulse pour lire la liste des outils.',
+      signedOutTitle: 'Connectez-vous à Nous pour lire la liste des outils.',
       signedOutBody: 'Vos serveurs sur cet ordinateur ne sont pas affectés.',
       conflictTitle: "Quelqu'un a modifié cette règle pendant que vous l'éditiez.",
       conflictBody: (theyOff: number, theyOn: number) => {
@@ -344,7 +344,7 @@ export const frOverrides = {
   },
   sessionImport: {
     title: 'Reprendre depuis une autre application',
-    subtitle: 'Importez une conversation dans Pulse et reprenez là où vous en étiez.',
+    subtitle: 'Importez une conversation dans PULSE et reprenez là où vous en étiez.',
     action: 'Importer une session',
     readingFrom: 'Lecture depuis',
     connectedComputer: "l'ordinateur connecté",
@@ -362,18 +362,18 @@ export const frOverrides = {
     more: 'Charger davantage de sessions',
     messages: 'messages',
     choose: 'Une conversation à poursuivre',
-    chooseHelp: "Choisissez une session pour lire son historique avant de l'importer dans Pulse.",
+    chooseHelp: "Choisissez une session pour lire son historique avant de l'importer dans PULSE.",
     previewLoading: "Ouverture de l'aperçu",
     previewError: 'Aperçu indisponible',
     previewHelp: 'La source a peut-être été déplacée ou modifiée. Actualisez la liste et réessayez.',
     previewLimit: 'Aperçu abrégé pour faciliter la lecture. La conversation est importée dans son intégralité.',
     you: 'Vous',
-    snapshot: 'Cette conversation est déjà dans Pulse. Ouvrez votre copie existante pour continuer.',
+    snapshot: 'Cette conversation est déjà dans PULSE. Ouvrez votre copie existante pour continuer.',
     copyNotice:
       'Copie le texte de la conversation sans modifier les fichiers sources. Les résultats des outils et le raisonnement ne sont pas transférés.',
     importing: 'Importation…',
-    open: 'Ouvrir dans Pulse',
-    continue: 'Continuer dans Pulse',
+    open: 'Ouvrir dans PULSE',
+    continue: 'Continuer dans PULSE',
     importError: "Impossible d'importer cette conversation."
   },
   common: {
@@ -440,21 +440,21 @@ export const frOverrides = {
       "Ce chemin n'est pas sur cet ordinateur : il se trouve sur la machine du backend. Utilisez « Afficher dans l'arborescence »."
   },
   boot: {
-    ready: 'Pulse Desktop est prêt',
+    ready: 'PULSE Desktop est prêt',
     desktopBootFailedWithMessage: message => `Échec du démarrage : ${message}`,
     steps: {
       connectingGateway: 'Connexion au gateway desktop',
-      loadingSettings: 'Chargement des paramètres Pulse',
+      loadingSettings: 'Chargement des paramètres PULSE',
       loadingSessions: 'Chargement des sessions récentes',
-      retryingRemoteBackend: 'Reconnexion au backend Pulse distant…',
+      retryingRemoteBackend: 'Reconnexion au backend PULSE distant…',
       startingDesktopConnection: 'Démarrage de la connexion desktop',
-      startingPulseDesktop: 'Démarrage de Pulse Desktop…'
+      startingPULSEDesktop: 'Démarrage de PULSE Desktop…'
     },
     errors: {
-      backgroundExited: "Le processus en arrière-plan de Pulse s'est arrêté.",
-      backgroundExitedDuringStartup: "Le processus en arrière-plan de Pulse s'est arrêté pendant le démarrage.",
+      backgroundExited: "Le processus en arrière-plan de PULSE s'est arrêté.",
+      backgroundExitedDuringStartup: "Le processus en arrière-plan de PULSE s'est arrêté pendant le démarrage.",
       backendStopped: 'Backend arrêté',
-      restartPulse: 'Redémarrer Pulse',
+      restartPULSE: 'Redémarrer PULSE',
       openLogs: 'Ouvrir les journaux',
       desktopBootFailed: 'Échec du démarrage',
       gatewayConnectionLost: 'Connexion au gateway perdue',
@@ -469,16 +469,16 @@ export const frOverrides = {
       ipcBridgeUnavailable: 'Le pont IPC du desktop est indisponible.'
     },
     causes: {
-      exitedEarly: "Le service en arrière-plan de Pulse s'est arrêté juste après son démarrage.",
-      timedOut: "Le service en arrière-plan de Pulse n'a pas répondu à temps.",
-      permission: "Pulse n'a pas pu écrire dans son dossier de données (problème d'autorisation).",
-      diskFull: "Le disque est plein ; Pulse n'a donc pas pu démarrer.",
-      portInUse: 'Un autre programme utilise le port réseau nécessaire à Pulse.',
+      exitedEarly: "Le service en arrière-plan de PULSE s'est arrêté juste après son démarrage.",
+      timedOut: "Le service en arrière-plan de PULSE n'a pas répondu à temps.",
+      permission: "PULSE n'a pas pu écrire dans son dossier de données (problème d'autorisation).",
+      diskFull: "Le disque est plein ; PULSE n'a donc pas pu démarrer.",
+      portInUse: 'Un autre programme utilise le port réseau nécessaire à PULSE.',
       installMissing:
-        "Une partie de l'installation de Pulse est manquante. Choisissez Réparer l'installation pour la restaurer."
+        "Une partie de l'installation de PULSE est manquante. Choisissez Réparer l'installation pour la restaurer."
     },
     failure: {
-      title: "Pulse n'a pas pu démarrer",
+      title: "PULSE n'a pas pu démarrer",
       description:
         "Le gateway en arrière-plan n'a pas pu se lancer. Essayez l'une des étapes de récupération ci-dessous. Rien ici ne supprime vos conversations ou paramètres.",
       details: 'Détails',
@@ -497,11 +497,11 @@ export const frOverrides = {
       signOutAndSignIn: 'Se déconnecter et se reconnecter',
       remoteFailureHint:
         "Vérifiez l'URL du gateway et la connexion dans les paramètres du gateway, ou passez au gateway local.",
-      cloudDownTitle: "L'agent Pulse Cloud est indisponible",
+      cloudDownTitle: "L'agent Nous Cloud est indisponible",
       cloudDownDescription:
-        "L'agent cloud géré par Pulse auquel ce gateway se connecte renvoie une erreur serveur. Il ne peut pas être redémarré depuis ici — vérifiez son état, passez au gateway local ou contactez l'assistance.",
+        "L'agent cloud géré par Nous auquel ce gateway se connecte renvoie une erreur serveur. Il ne peut pas être redémarré depuis ici — vérifiez son état, passez au gateway local ou contactez l'assistance.",
       cloudDownHint:
-        "Les boutons ci-dessous ouvrent le portail Pulse, pour consulter et contrôler l'instance, ainsi que notre Discord pour obtenir de l'aide.",
+        "Les boutons ci-dessous ouvrent le portail Nous, pour consulter et contrôler l'instance, ainsi que notre Discord pour obtenir de l'aide.",
       cloudDownCheckPortal: "Vérifier l'état sur le portail",
       cloudDownDiscord: "Obtenir de l'aide sur Discord",
       hideRecentLogs: 'Masquer les journaux récents',
@@ -528,13 +528,13 @@ export const frOverrides = {
     copyDetailFailed: 'Impossible de copier le détail de la notification',
     backendOutOfDateTitle: 'Backend obsolète',
     backendOutOfDateMessage:
-      'Votre backend Pulse est plus ancien que cette version du desktop et peut ne pas fonctionner correctement. Mettez-le à jour pour les aligner.',
-    desktopOutOfDateTitle: 'Application Pulse obsolète',
+      'Votre backend PULSE est plus ancien que cette version du desktop et peut ne pas fonctionner correctement. Mettez-le à jour pour les aligner.',
+    desktopOutOfDateTitle: 'Application PULSE obsolète',
     desktopOutOfDateMessage:
-      "Cette application Pulse est plus ancienne que le backend auquel elle est connectée et peut ne pas fonctionner correctement. Effectuez la mise à jour de l'application pour les aligner.",
+      "Cette application PULSE est plus ancienne que le backend auquel elle est connectée et peut ne pas fonctionner correctement. Effectuez la mise à jour de l'application pour les aligner.",
     updateDesktopApp: "Mettre à jour l'application",
     installMethodUnsupportedTitle: "Méthode d'installation non prise en charge",
-    updatePulse: 'Mettre à jour Pulse',
+    updatePULSE: 'Mettre à jour PULSE',
     updateReadyTitle: 'Mise à jour prête',
     updateReadyMessage: count =>
       `${count} ${count === 1 ? 'nouvelle modification disponible' : 'nouvelles modifications disponibles'}.`,
@@ -556,20 +556,20 @@ export const frOverrides = {
       elevenLabsRejectedKey: 'ElevenLabs a rejeté la clé API (401).',
       diskFull: "Le disque est plein. Libérez de l'espace disque, puis réessayez.",
       storageFailure:
-        "Pulse n'a pas pu enregistrer dans son dossier de données. Ouvrez Maintenance pour le vérifier et le réparer.",
+        "PULSE n'a pas pu enregistrer dans son dossier de données. Ouvrez Maintenance pour le vérifier et le réparer.",
       gatewayAuthFailed: "Échec de l'authentification du gateway — vérifiez API_SERVER_KEY.",
       methodNotAllowed:
-        'Le backend du desktop a rejeté cette requête (405 Method Not Allowed). Essayez de redémarrer Pulse Desktop.',
+        'Le backend du desktop a rejeté cette requête (405 Method Not Allowed). Essayez de redémarrer PULSE Desktop.',
       microphonePermission: "L'autorisation du microphone a été refusée.",
       openaiRejectedApiKey: 'OpenAI a rejeté la clé API.',
       openaiTtsNeedsKey: 'TTS OpenAI nécessite VOICE_TOOLS_OPENAI_KEY ou OPENAI_API_KEY.',
       codeSkewRestartRequired:
         "Ce backend exécute encore l'ancien code après une mise à jour. Redémarrez-le pour charger le nouveau code.",
       rpcOutOfSync: "L'application et le backend ne sont pas sur la même version. Mettez-les tous les deux à jour.",
-      restartPulseFailed: 'Impossible de redémarrer Pulse'
+      restartPULSEFailed: 'Impossible de redémarrer PULSE'
     },
     actions: {
-      restartPulse: 'Redémarrer Pulse',
+      restartPULSE: 'Redémarrer PULSE',
       openKeys: 'Ouvrir les clés',
       openGateways: 'Ouvrir les gateways',
       openMaintenance: 'Ouvrir Maintenance'
@@ -597,7 +597,7 @@ export const frOverrides = {
       liveEndedConnectionLost: 'La session vocale en direct a perdu sa connexion.',
       liveEndedClosed: 'La session vocale en direct a été fermée par le service.',
       liveError: 'Voix en direct',
-      liveDelegationFailed: 'Impossible de transmettre la demande à Pulse',
+      liveDelegationFailed: 'Impossible de transmettre la demande à PULSE',
       liveUnavailable: reason =>
         `Le chat vocal GPT-Live n'est pas disponible : ${reason}. Utilisation de la reconnaissance vocale à la place.`
     },
@@ -608,8 +608,8 @@ export const frOverrides = {
       rejectAction: 'Rejeter',
       inputTitle: 'Saisie requise',
       inputTitleNamed: session => `Saisie requise — ${session}`,
-      inputBody: 'Pulse attend votre réponse.',
-      turnDoneTitle: 'Pulse a terminé',
+      inputBody: 'PULSE attend votre réponse.',
+      turnDoneTitle: 'PULSE a terminé',
       turnDoneBody: '',
       turnErrorTitle: 'Échec du tour',
       backgroundDoneTitle: 'Tâche en arrière-plan terminée',
@@ -622,7 +622,7 @@ export const frOverrides = {
       `Rendu logiciel actif — affichage distant détecté (${reason}). L'accélération GPU est désactivée pour éviter les scintillements.`
   },
   billingBlock: {
-    titlePulse: 'Plus de crédits Pulse',
+    titleNous: 'Plus de crédits Nous',
     titleProvider: provider => `Plus de crédits — ${provider}`,
     fallbackMessage: 'Votre compte est à court de crédits. Ajoutez-en pour continuer.',
     openBilling: 'Ouvrir la facturation',
@@ -630,9 +630,9 @@ export const frOverrides = {
     dismiss: 'Fermer'
   },
   sendDiagnostics: {
-    title: 'Envoyer les diagnostics à Pulse',
+    title: 'Envoyer les diagnostics à Nous',
     privacyNotice:
-      "Cela téléverse un paquet de débogage vers un stockage interne de Pulse, et non vers un service de partage public. Il contient des informations système (système d'exploitation, versions, fournisseur et clés API configurées — jamais les clés elles-mêmes) ainsi que les journaux complets de l'agent, du gateway et du Desktop (jusqu'à 512 Ko chacun), susceptibles de contenir des conversations, des résultats d'outils et des chemins de fichiers. Les secrets sont expurgés avant l'envoi. Seuls le personnel de Pulse et les modérateurs Discord autorisés peuvent consulter le paquet, qui est automatiquement supprimé après 14 jours.",
+      "Cela téléverse un paquet de débogage vers un stockage interne de Nous, et non vers un service de partage public. Il contient des informations système (système d'exploitation, versions, fournisseur et clés API configurées — jamais les clés elles-mêmes) ainsi que les journaux complets de l'agent, du gateway et du Desktop (jusqu'à 512 Ko chacun), susceptibles de contenir des conversations, des résultats d'outils et des chemins de fichiers. Les secrets sont expurgés avant l'envoi. Seuls le personnel de Nous et les modérateurs Discord autorisés peuvent consulter le paquet, qui est automatiquement supprimé après 14 jours.",
     upload: 'Envoyer',
     uploading: 'Envoi en cours…',
     cancel: 'Annuler',
@@ -644,11 +644,11 @@ export const frOverrides = {
       "Votre paquet a été téléversé de manière privée. Partagez le lien ci-dessous dans votre fil d'assistance afin que l'équipe puisse consulter vos journaux.",
     failedTitle: "Échec de l'envoi",
     failedHint:
-      'Vous pouvez également exécuter `pulse debug share --pulse` dans un terminal, ou `pulse debug share --local` pour afficher le rapport sans le téléverser.',
+      'Vous pouvez également exécuter `pulse debug share --nous` dans un terminal, ou `pulse debug share --local` pour afficher le rapport sans le téléverser.',
     handoffLead: 'Poursuivez la discussion sur :',
     links: {
       github: 'Issues GitHub',
-      portal: 'Assistance du portail Pulse',
+      portal: 'Assistance du portail Nous',
       discord: 'Discord'
     }
   },
@@ -865,7 +865,7 @@ export const frOverrides = {
     exportConfig: 'Exporter la configuration',
     importConfig: 'Importer la configuration',
     resetToDefaults: 'Réinitialiser aux valeurs par défaut',
-    resetConfirm: 'Réinitialiser tous les paramètres aux valeurs par défaut de Pulse ?',
+    resetConfirm: 'Réinitialiser tous les paramètres aux valeurs par défaut de PULSE ?',
     exportFailed: "Échec de l'export",
     resetFailed: 'Échec de la réinitialisation',
     nav: {
@@ -921,7 +921,7 @@ export const frOverrides = {
         agentTargetLocal: (profile, dir) => `Installe dans le backend ${profile} (${dir})`,
         agentTargetRemote: profile => `S'installe dans le backend ${profile} connecté`,
         catalogPinned: (name, sha) =>
-          `Entrée « ${name} » du catalogue Pulse — le composant agent sera installé depuis le commit vérifié${sha ? ` ${sha}` : ''}, et non depuis la tête de branche.`,
+          `Entrée « ${name} » du catalogue PULSE — le composant agent sera installé depuis le commit vérifié${sha ? ` ${sha}` : ''}, et non depuis la tête de branche.`,
         reviewedHeading: 'Entrée du catalogue vérifiée',
         reviewedIntro:
           'Cette entrée a été vérifiée manuellement à son commit épinglé. Vous pouvez encore examiner le code exact ci-dessous.',
@@ -963,7 +963,7 @@ export const frOverrides = {
         desktopSuccess: name => `Plugin Desktop ${name} installé`,
         agentFailed: "Échec de l'installation du plugin de l'agent",
         installUncertain:
-          "Pulse n'attend plus le résultat de l'installation, mais le plugin est peut-être encore en cours d'installation. Fermez cette fenêtre et actualisez la liste des plugins avant de relancer l'installation.",
+          "PULSE n'attend plus le résultat de l'installation, mais le plugin est peut-être encore en cours d'installation. Fermez cette fenêtre et actualisez la liste des plugins avant de relancer l'installation.",
         desktopFailed: "Échec de l'installation du plugin Desktop",
         missingEnv: (name, vars) =>
           `${name} est installé, mais a besoin d'une clé pour fonctionner : ${vars}. Ajoutez-la maintenant, sinon les outils du plugin échoueront.`
@@ -1024,7 +1024,7 @@ export const frOverrides = {
       otpField: "Clé d'authentificateur",
       otpPlaceholder: 'Secret Base32 ou lien otpauth://',
       otpHint:
-        "La « clé d'installation » que le site affiche lorsque vous activez 2FA. Avec elle enregistrée, Pulse génère lui-même les codes.",
+        "La « clé d'installation » que le site affiche lorsque vous activez 2FA. Avec elle enregistrée, PULSE génère lui-même les codes.",
       twoFactorBadge: '2FA auto',
       deleteTitle: 'Supprimer cet élément ?',
       deleteDescription: label => `« ${label} » sera supprimé définitivement.`,
@@ -1035,12 +1035,12 @@ export const frOverrides = {
           "Les gestionnaires de mots de passe installés sont repérés automatiquement. L'agent vous demande de déverrouiller l'un la première fois qu'il en a besoin (une fois par session) ; seul un jeton de session reste en mémoire, et l'agent ne voit jamais votre mot de passe principal ou aucun identifiant.",
         toggleFailed: 'Impossible de mettre à jour le gestionnaire de mots de passe',
         notInstalled: name =>
-          `Non détecté. Installez l’outil en ligne de commande ${name} et connectez-vous ; Pulse le repère automatiquement.`,
-        disabledDesc: 'Détecté mais désactivé pour Pulse.',
+          `Non détecté. Installez l’outil en ligne de commande ${name} et connectez-vous ; PULSE le repère automatiquement.`,
+        disabledDesc: 'Détecté mais désactivé pour PULSE.',
         lockedDesc:
           "Détecté. L'agent vous demandera de le déverrouiller lorsqu'il en a besoin, ou déverrouillez maintenant.",
         unlockedDesc:
-          "Déverrouillé pour cette session. Se verrouille automatiquement après 30 minutes d'inactivité ou lorsque Pulse se ferme.",
+          "Déverrouillé pour cette session. Se verrouille automatiquement après 30 minutes d'inactivité ou lorsque PULSE se ferme.",
         statusLocked: 'Verrouillé',
         statusNotDetected: 'Non détecté',
         statusOff: 'Désactivé',
@@ -1060,7 +1060,7 @@ export const frOverrides = {
       intro: "Notifications système (pas les toasts de l'application). Par appareil.",
       enableAll: 'Activer les notifications',
       enableAllDesc: 'Désactivé coupe toutes les notifications ci-dessous.',
-      focusedHint: 'Les alertes de fin ne se déclenchent que quand Pulse est en arrière-plan.',
+      focusedHint: 'Les alertes de fin ne se déclenchent que quand PULSE est en arrière-plan.',
       kinds: {
         approval: {
           label: 'Approbation requise',
@@ -1068,11 +1068,11 @@ export const frOverrides = {
         },
         input: {
           label: 'Saisie requise',
-          description: "Pulse a posé une question ou a besoin d'un mot de passe ou d'un secret."
+          description: "PULSE a posé une question ou a besoin d'un mot de passe ou d'un secret."
         },
         turnDone: {
           label: 'Réponse prête',
-          description: "Un tour s'est terminé pendant que Pulse était en arrière-plan."
+          description: "Un tour s'est terminé pendant que PULSE était en arrière-plan."
         },
         turnError: {
           label: 'Échec du tour',
@@ -1088,11 +1088,11 @@ export const frOverrides = {
         },
         plugin: {
           label: 'Notifications des plugins',
-          description: 'Un plugin desktop a envoyé une notification pendant que Pulse était en arrière-plan.'
+          description: 'Un plugin desktop a envoyé une notification pendant que PULSE était en arrière-plan.'
         }
       },
       test: 'Envoyer une notification de test',
-      testTitle: 'Pulse',
+      testTitle: 'PULSE',
       testBody: 'Les notifications fonctionnent.',
       testSent:
         "Test envoyé. Si rien n'apparaît, vérifiez les autorisations de notification de votre système et le mode Ne pas déranger.",
@@ -1112,7 +1112,7 @@ export const frOverrides = {
       advanced: 'Avancé'
     },
     searchPlaceholder: {
-      about: 'À propos de Pulse Desktop',
+      about: 'À propos de PULSE Desktop',
       config: 'Rechercher dans les paramètres...',
       gateway: 'Connexion au gateway...',
       keys: 'Rechercher des clés API...',
@@ -1134,11 +1134,14 @@ export const frOverrides = {
       }
     },
     appearance: {
+      chatTextScaleTitle: 'Taille du texte du chat',
+      chatTextScaleDesc:
+        'Ajuste le texte des conversations et de la saisie par rapport à l’échelle de l’interface. Les barres latérales et les contrôles gardent leur taille.',
       title: 'Apparence',
       intro:
         'Exclusif au desktop. Le mode contrôle la luminosité ; le thème contrôle la palette et le chrome de la conversation.',
       colorMode: 'Mode couleur',
-      colorModeDesc: 'Choisissez un mode fixe ou laissez Pulse suivre le paramètre système.',
+      colorModeDesc: 'Choisissez un mode fixe ou laissez PULSE suivre le paramètre système.',
       toolViewTitle: "Affichage des appels d'outil",
       toolViewDesc:
         'Le mode Produit masque les charges utiles brutes ; le mode Technique affiche les entrées/sorties complètes.',
@@ -1217,15 +1220,15 @@ export const frOverrides = {
       modelPricingDesc:
         "Affiche les prix d'entrée, de sortie et de lecture du cache par million de jetons dans le sélecteur de modèle.",
       reactionsTitle: 'Réactions aux messages',
-      reactionsDesc: 'Réactions emoji façon iMessage — réagissez aux messages, et Pulse peut réagir aux vôtres.',
+      reactionsDesc: 'Réactions emoji façon iMessage — réagissez aux messages, et PULSE peut réagir aux vôtres.',
       tipsTitle: "Astuces dans l'application",
       tipsDesc:
-        "Une petite bulle désigne occasionnellement une partie de l'application lorsque vous êtes inactif ou lorsque Pulse peut vous aider. Fermer une astuce la masque définitivement.",
+        "Une petite bulle désigne occasionnellement une partie de l'application lorsque vous êtes inactif ou lorsque PULSE peut vous aider. Fermer une astuce la masque définitivement.",
       tipsReset: (count: number) =>
         `Réafficher ${count} astuce${count === 1 ? '' : 's'} fermée${count === 1 ? '' : 's'}`,
       toursTitle: 'Visites guidées',
       toursDesc:
-        "Laissez Pulse vous guider dans l'application en assombrissant l'écran et en mettant chaque étape en évidence.",
+        "Laissez PULSE vous guider dans l'application en assombrissant l'écran et en mettant chaque étape en évidence.",
       composerPopoutTitle: 'Détacher la zone de saisie',
       composerPopoutDesc:
         'Permet de faire glisser la zone de saisie hors de son emplacement. Désactivé, elle reste ancrée en bas.',
@@ -1267,9 +1270,9 @@ export const frOverrides = {
       pet: {
         title: 'Animal de compagnie',
         intro:
-          "Adoptez une mascotte petdex animée qui flotte au-dessus de l'application et réagit aux actions de Pulse — court pendant l'exécution des outils, fête les réussites, boude les erreurs.",
+          "Adoptez une mascotte petdex animée qui flotte au-dessus de l'application et réagit aux actions de PULSE — court pendant l'exécution des outils, fête les réussites, boude les erreurs.",
         restartHint:
-          "Les animaux de compagnie nécessitent un redémarrage rapide — l'application en cours a démarré avant l'ajout de cette fonctionnalité. Fermez et rouvrez Pulse, puis revenez ici.",
+          "Les animaux de compagnie nécessitent un redémarrage rapide — l'application en cours a démarré avant l'ajout de cette fonctionnalité. Fermez et rouvrez PULSE, puis revenez ici.",
         scaleTitle: 'Taille',
         scaleDesc: "Redimensionnez la mascotte flottante. S'applique partout instantanément.",
         roamTitle: 'Errer',
@@ -1497,11 +1500,11 @@ export const frOverrides = {
       timezone: 'Identifiant de fuseau horaire IANA. Si vide, utilise le fuseau horaire du système.',
       browser: {
         useRealProfile:
-          'La navigation locale utilise vos vraies connexions. Pulse copie le profil de votre navigateur par défaut (cookies, connexions, préférences) dans un instantané géré et le pilote avec son Chromium intégré — votre profil actif n’est jamais ouvert directement, et la copie est actualisée à chaque exécution. Permet aussi à l’agent d’ouvrir sur demande une session locale avec votre vrai profil, même si un backend de navigateur cloud est configuré. Seuls les navigateurs Chromium (Chrome, Edge, Brave, Brave Origin, Chromium) sont pris en charge ; un navigateur par défaut non Chromium échoue avec un message clair. Désactivé par défaut.'
+          'La navigation locale utilise vos vraies connexions. PULSE copie le profil de votre navigateur par défaut (cookies, connexions, préférences) dans un instantané géré et le pilote avec son Chromium intégré — votre profil actif n’est jamais ouvert directement, et la copie est actualisée à chaque exécution. Permet aussi à l’agent d’ouvrir sur demande une session locale avec votre vrai profil, même si un backend de navigateur cloud est configuré. Seuls les navigateurs Chromium (Chrome, Edge, Brave, Brave Origin, Chromium) sont pris en charge ; un navigateur par défaut non Chromium échoue avec un message clair. Désactivé par défaut.'
       },
       agent: {
         imageInputMode: 'Contrôle la façon dont les pièces jointes image sont envoyées au modèle.',
-        maxTurns: "Limite supérieure de tours d'appel d'outils avant que Pulse n'arrête une exécution."
+        maxTurns: "Limite supérieure de tours d'appel d'outils avant que PULSE n'arrête une exécution."
       },
       terminal: {
         cwd: 'Dossier de projet par défaut pour les outils et le terminal.',
@@ -1515,10 +1518,11 @@ export const frOverrides = {
       codeExecution: {
         mode: "Degré de restriction de l'exécution du code au projet actuel."
       },
-      fileReadMaxChars: 'Nombre maximal de caractères que Pulse peut lire dans une demande de fichier.',
+      fileReadMaxChars: 'Nombre maximal de caractères que PULSE peut lire dans une demande de fichier.',
       approvals: {
-        mode: 'Comment Pulse gère les commandes nécessitant une approbation explicite.',
-        timeout: "Durée d'attente des invites d'approbation avant expiration."
+        mode: 'Comment PULSE gère les commandes nécessitant une approbation explicite.',
+        timeout:
+          "Durée d'attente des invites d'approbation sur les plateformes de messagerie avant expiration. L'app et le terminal attendent votre réponse."
       },
       security: {
         redactSecrets: "Masque les secrets détectés du contenu visible par le modèle lorsque c'est possible."
@@ -1546,11 +1550,11 @@ export const frOverrides = {
       voice: {
         autoTts: "Lit automatiquement les réponses de l'assistant à voix haute.",
         voiceChatMode:
-          'chained : reconnaissance vocale → Pulse → synthèse vocale avec les fournisseurs ci-dessous. gpt-live : un modèle vocal OpenAI full-duplex (gpt-live-1) écoute et parle, et confie chaque vraie demande à Pulse — le modèle que vous avez sélectionné répond avec l’ensemble des outils. Nécessite une clé API OpenAI ; la couche vocale est facturée 0,05 $ par minute.',
+          'chained : reconnaissance vocale → PULSE → synthèse vocale avec les fournisseurs ci-dessous. gpt-live : un modèle vocal OpenAI full-duplex (gpt-live-1) écoute et parle, et confie chaque vraie demande à PULSE — le modèle que vous avez sélectionné répond avec l’ensemble des outils. Nécessite une clé API OpenAI ; la couche vocale est facturée 0,05 $ par minute.',
         gptLive: {
           voice: 'Voix du mode GPT-Live. Les identifiants de voix personnalisés sont acceptés.',
           instructions:
-            'Phrases supplémentaires pour la personnalité vocale en direct (ton, rythme, langue). Pulse conserve son propre prompt système.'
+            'Phrases supplémentaires pour la personnalité vocale en direct (ton, rythme, langue). PULSE conserve son propre prompt système.'
         }
       },
       tts: {
@@ -1578,13 +1582,13 @@ export const frOverrides = {
       },
       updates: {
         nonInteractiveLocalChanges:
-          "Quand Pulse se met à jour depuis l'application (sans invite de terminal), conserve les modifications locales (stash) ou les abandonne (discard). Les mises à jour via le terminal demandent toujours confirmation."
+          "Quand PULSE se met à jour depuis l'application (sans invite de terminal), conserve les modifications locales (stash) ou les abandonne (discard). Les mises à jour via le terminal demandent toujours confirmation."
       }
     }),
     uninstallSection: {
       dangerZone: 'Zone dangereuse',
       checkingInstalled: 'Vérification des éléments installés…',
-      uninstallPulse: 'Désinstaller Pulse',
+      uninstallPULSE: 'Désinstaller PULSE',
       chooseHowMuch:
         'Choisissez ce que vous souhaitez supprimer. L’application se ferme pour terminer ; rouvrez le programme d’installation à tout moment pour revenir.',
       confirmUninstall: 'Confirmer la désinstallation',
@@ -1597,22 +1601,22 @@ export const frOverrides = {
         gui: {
           title: 'Désinstaller uniquement l’interface de chat',
           description:
-            'Supprime cette application de bureau. L’agent Pulse, votre configuration et vos conversations sont conservés.',
+            'Supprime cette application de bureau. L’agent PULSE, votre configuration et vos conversations sont conservés.',
           consequence: 'l’interface de chat de bureau (cette application et ses données)'
         },
         lite: {
           title: 'Désinstaller l’interface et l’agent, conserver mes données',
           description:
-            'Supprime l’application et l’agent Pulse, mais conserve la configuration, les conversations et les secrets pour une future réinstallation.',
+            'Supprime l’application et l’agent PULSE, mais conserve la configuration, les conversations et les secrets pour une future réinstallation.',
           consequence:
-            'l’interface de chat et l’agent Pulse (la configuration, les conversations et les secrets sont conservés)'
+            'l’interface de chat et l’agent PULSE (la configuration, les conversations et les secrets sont conservés)'
         },
         full: {
           title: 'Tout désinstaller',
           description:
             'Supprime l’application, l’agent et toutes les données utilisateur : configuration, conversations, tâches planifiées, secrets, journaux.',
           consequence:
-            'TOUT — l’interface de chat, l’agent Pulse et l’ensemble de votre configuration, de vos conversations, secrets et journaux'
+            'TOUT — l’interface de chat, l’agent PULSE et l’ensemble de votre configuration, de vos conversations, secrets et journaux'
         }
       }
     },
@@ -1675,7 +1679,7 @@ export const frOverrides = {
     config: {
       minimizeToTrayTitle: 'Réduire dans la barre d’état',
       minimizeToTrayDesc:
-        'Réduire les fenêtres ou fermer la fenêtre principale les masque dans la zone de notification (barre des menus sur macOS) et Pulse continue de s’exécuter. Utilisez Quitter Pulse dans le menu de la zone de notification ou Cmd+Q pour quitter. Désactivé par défaut ; s’applique uniquement à cet appareil.',
+        'Réduire les fenêtres ou fermer la fenêtre principale les masque dans la zone de notification (barre des menus sur macOS) et PULSE continue de s’exécuter. Utilisez Quitter PULSE dans le menu de la zone de notification ou Cmd+Q pour quitter. Désactivé par défaut ; s’applique uniquement à cet appareil.',
       minimizeToTrayUnavailable:
         'La zone de notification est indisponible. Les fenêtres seront réduites et fermées normalement. Désactivez puis réactivez cette option pour réessayer.',
       none: 'Aucun',
@@ -1686,7 +1690,7 @@ export const frOverrides = {
       searchPlaceholder: 'Rechercher…',
       noResults: 'Aucun résultat trouvé',
       systemDefault: 'Par défaut du système',
-      loading: 'Chargement de la configuration Pulse...',
+      loading: 'Chargement de la configuration PULSE...',
       emptyTitle: 'Rien à configurer',
       emptyDesc: 'Cette section ne contient aucun paramètre ajustable.',
       failedLoad: 'Échec du chargement des paramètres',
@@ -1713,27 +1717,27 @@ export const frOverrides = {
       description:
         'Appuyez puis relâchez ⌘ + Option sur Mac, ou Ctrl + Alt sous Windows/Linux, pour afficher le HUD depuis n’importe quelle application. Désactivé par défaut ; s’applique uniquement à cet appareil.',
       permission:
-        'Autorisez Pulse dans Réglages Système → Confidentialité et sécurité → Surveillance de l’entrée, puis réessayez. Ce geste n’enregistre pas les frappes et ne capture pas votre écran.',
+        'Autorisez PULSE dans Réglages Système → Confidentialité et sécurité → Surveillance de l’entrée, puis réessayez. Ce geste n’enregistre pas les frappes et ne capture pas votre écran.',
       unavailable:
-        'L’assistant du geste HUD n’a pas pu démarrer ou s’est arrêté de manière inattendue. Réessayez ou redémarrez Pulse. Le raccourci HUD existant fonctionne toujours dans Pulse.',
+        'L’assistant du geste HUD n’a pas pu démarrer ou s’est arrêté de manière inattendue. Réessayez ou redémarrez PULSE. Le raccourci HUD existant fonctionne toujours dans PULSE.',
       missingHelper:
-        'Il manque l’assistant du geste HUD dans cette installation de Pulse. Mettez à jour ou réinstallez Pulse, puis réessayez.',
+        'Il manque l’assistant du geste HUD dans cette installation de PULSE. Mettez à jour ou réinstallez PULSE, puis réessayez.',
       unsupportedSession:
         'Cette session de bureau ne prend pas en charge les appuis globaux sur les touches de modification. Linux nécessite X11 ; Wayland n’est pas pris en charge.'
     },
     screenshot: {
       enabledTitle: "Raccourci de capture d'écran",
       enabledDesc:
-        "Appuyez simultanément sur les deux touches Commande depuis n'importe quelle application pour capturer sa fenêtre au premier plan et la joindre au brouillon Pulse actuel. Rien n'est envoyé automatiquement. Désactivé par défaut et limité à ce Mac. Le contenu peut être sensible : vérifiez la pièce jointe avant l'envoi.",
+        "Appuyez simultanément sur les deux touches Commande depuis n'importe quelle application pour capturer sa fenêtre au premier plan et la joindre au brouillon PULSE actuel. Rien n'est envoyé automatiquement. Désactivé par défaut et limité à ce Mac. Le contenu peut être sensible : vérifiez la pièce jointe avant l'envoi.",
       statusTitle: "État du raccourci de capture d'écran",
       checking: "Vérification du raccourci de capture d'écran…",
       disabled: "Le raccourci de capture d'écran est désactivé.",
       starting: "Démarrage de l'écouteur du raccourci ; il n'est pas encore prêt.",
       ready: "Le raccourci est prêt. Les captures d'écran sont jointes au brouillon actuel sans être envoyées.",
       inputPermission:
-        "L'autorisation Surveillance de l'entrée permet à Pulse de détecter les deux touches Commande lorsqu'une autre application est active. Autorisez Pulse dans Réglages Système → Confidentialité et sécurité → Surveillance de l'entrée, puis réessayez.",
+        "L'autorisation Surveillance de l'entrée permet à PULSE de détecter les deux touches Commande lorsqu'une autre application est active. Autorisez PULSE dans Réglages Système → Confidentialité et sécurité → Surveillance de l'entrée, puis réessayez.",
       screenPermission:
-        "L'autorisation Enregistrement de l'écran permet à Pulse de capturer la fenêtre au premier plan. Autorisez Pulse dans Réglages Système → Confidentialité et sécurité → Enregistrement de l'écran, puis réessayez. Redémarrez Pulse si macOS le demande.",
+        "L'autorisation Enregistrement de l'écran permet à PULSE de capturer la fenêtre au premier plan. Autorisez PULSE dans Réglages Système → Confidentialité et sécurité → Enregistrement de l'écran, puis réessayez. Redémarrez PULSE si macOS le demande.",
       openSettings: 'Ouvrir les Réglages Système',
       retry: 'Réessayer',
       unavailable: "Le raccourci de capture d'écran est indisponible. Réessayez ou désactivez-le.",
@@ -1748,7 +1752,7 @@ export const frOverrides = {
     quickEntry: {
       enabledTitle: 'Saisie rapide',
       enabledDesc:
-        "Faites apparaître un petit compositeur depuis n'importe où avec un raccourci global et envoyez une invite sans ouvrir Pulse.",
+        "Faites apparaître un petit compositeur depuis n'importe où avec un raccourci global et envoyez une invite sans ouvrir PULSE.",
       shortcutTitle: 'Raccourci de saisie rapide',
       shortcutDesc: 'Nécessite au moins un modificateur, par ex. CommandOrControl+Shift+Espace.',
       active: 'Le raccourci est actif.',
@@ -1778,7 +1782,7 @@ export const frOverrides = {
     connections: {
       title: 'Connexions',
       intro:
-        'Enregistrez tous les emplacements où vivent vos agents : cet appareil, les gateways distantes de votre réseau et les instances Pulse Cloud. Ils sont tous conservés ici.',
+        'Enregistrez tous les emplacements où vivent vos agents : cet appareil, les gateways distantes de votre réseau et les instances PULSE Cloud. Ils sont tous conservés ici.',
       stagedNote:
         "Les conversations et la liste des agents suivent la source choisie ; le backend de fenêtre géré par l'application reste sélectionné dans Paramètres → Gateway.",
       launchModeTitle: 'Au démarrage, revenir aux sessions de la dernière gateway utilisée',
@@ -1805,15 +1809,15 @@ export const frOverrides = {
       updateAllRunning: 'Mise à jour de toutes les instances…',
       updateAllDone: 'Mises à jour envoyées',
       updateAllFailed: "L'envoi groupé des mises à jour a échoué",
-      updateSkippedCloud: 'Gérée par Pulse Cloud',
+      updateSkippedCloud: 'Gérée par PULSE Cloud',
       kindLocal: 'Locale',
       kindRemote: 'Gateway distante',
-      kindCloud: 'Pulse Cloud',
+      kindCloud: 'PULSE Cloud',
       kindSsh: 'SSH',
-      kindLocalDesc: "L'environnement Pulse géré par cette application.",
-      kindRemoteDesc: 'Une gateway Pulse accessible en HTTP(S), par le LAN, Tailscale ou Internet.',
-      kindCloudDesc: 'Une instance hébergée découverte via votre compte Pulse Cloud.',
-      kindSshDesc: 'Une installation Pulse accessible en SSH.',
+      kindLocalDesc: "L'environnement PULSE géré par cette application.",
+      kindRemoteDesc: 'Une gateway PULSE accessible en HTTP(S), par le LAN, Tailscale ou Internet.',
+      kindCloudDesc: 'Une instance hébergée découverte via votre compte PULSE Cloud.',
+      kindSshDesc: 'Une installation PULSE accessible en SSH.',
       labelTitle: 'Nom',
       labelDesc:
         'Obligatoire. Affiché partout où cette instance apparaît et nécessairement unique (par exemple « Homelab » ou « PC professionnel »).',
@@ -1822,7 +1826,7 @@ export const frOverrides = {
       sshHostTitle: 'Hôte SSH',
       headersTitle: 'En-têtes supplémentaires du gateway',
       headersDesc:
-        "Envoyés avec chaque requête HTTP et WebSocket vers ce gateway, notamment pour les proxys d'accès comme Cloudflare Access (CF-Access-Client-Id / CF-Access-Client-Secret). Les valeurs sont stockées chiffrées. Les en-têtes gérés par Pulse (Authorization, Cookie, Host…) sont ignorés.",
+        "Envoyés avec chaque requête HTTP et WebSocket vers ce gateway, notamment pour les proxys d'accès comme Cloudflare Access (CF-Access-Client-Id / CF-Access-Client-Secret). Les valeurs sont stockées chiffrées. Les en-têtes gérés par PULSE (Authorization, Cookie, Host…) sont ignorés.",
       headerValuePlaceholder: 'Valeur',
       headerValueSaved: 'Enregistrée — laissez vide pour la conserver',
       headerAdd: 'Ajouter un en-tête',
@@ -1834,7 +1838,7 @@ export const frOverrides = {
       localAddHint:
         "La connexion locale est indisponible : la connexion gérée existe déjà (il ne peut y en avoir qu'une).",
       cloudAddHint:
-        "Astuce : connectez-vous à Pulse Cloud ci-dessus pour découvrir automatiquement vos agents — utilisez ce formulaire uniquement pour enregistrer manuellement l'URL d'une instance connue.",
+        "Astuce : connectez-vous à PULSE Cloud ci-dessus pour découvrir automatiquement vos agents — utilisez ce formulaire uniquement pour enregistrer manuellement l'URL d'une instance connue.",
       save: 'Enregistrer la connexion',
       saving: 'Enregistrement…',
       cancel: 'Annuler',
@@ -1865,25 +1869,25 @@ export const frOverrides = {
       title: 'Connexion au gateway',
       envOverride: "remplacement par variable d'environnement",
       intro:
-        'Local par défaut. Utilisez distant quand cette application doit piloter un backend Pulse ailleurs. Remplacements par profil ci-dessous.',
+        'Local par défaut. Utilisez distant quand cette application doit piloter un backend PULSE ailleurs. Remplacements par profil ci-dessous.',
       envOverrideTitle: "Des variables d'environnement contrôlent cette session desktop.",
       envOverrideDesc:
         'Supprimez les variables PULSE_DESKTOP_REMOTE_URL et PULSE_DESKTOP_REMOTE_TOKEN pour utiliser le paramètre enregistré ci-dessous.',
       modeTitle: 'Mode de connexion',
       localTitle: 'Gateway local',
       localDesc:
-        "Démarrer un backend Pulse privé sur localhost. C'est la valeur par défaut et cela fonctionne hors ligne.",
+        "Démarrer un backend PULSE privé sur localhost. C'est la valeur par défaut et cela fonctionne hors ligne.",
       remoteTitle: 'Gateway distant',
-      remoteDesc: 'Connecter ce shell desktop à un backend Pulse distant.',
+      remoteDesc: 'Connecter ce shell desktop à un backend PULSE distant.',
       remoteAuthHint:
         "Les gateways hébergés utilisent OAuth ou un nom d'utilisateur et un mot de passe ; les auto-hébergés peuvent utiliser un jeton de session.",
-      cloudTitle: 'Pulse Cloud',
+      cloudTitle: 'PULSE Cloud',
       cloudDesc:
-        "Connectez-vous une fois à Pulse Cloud et choisissez parmi les agents de votre compte — pas d'URL à coller.",
-      cloudSignInTitle: 'Pulse Cloud',
-      cloudSignIn: 'Se connecter à Pulse Cloud',
-      cloudSignedIn: 'Connecté à Pulse Cloud',
-      cloudNeedsSignIn: 'Connectez-vous à Pulse Cloud pour découvrir les agents de votre compte.',
+        "Connectez-vous une fois à PULSE Cloud et choisissez parmi les agents de votre compte — pas d'URL à coller.",
+      cloudSignInTitle: 'PULSE Cloud',
+      cloudSignIn: 'Se connecter à PULSE Cloud',
+      cloudSignedIn: 'Connecté à PULSE Cloud',
+      cloudNeedsSignIn: 'Connectez-vous à PULSE Cloud pour découvrir les agents de votre compte.',
       cloudSignedInDesc:
         'Vous êtes connecté. Choisissez un agent ci-dessous ; la session se rafraîchit automatiquement.',
       cloudAgentsTitle: 'Vos agents',
@@ -1894,7 +1898,7 @@ export const frOverrides = {
       cloudLoadingAgents: 'Chargement de vos agents…',
       cloudNoAgents: {
         before: 'Aucun agent trouvé sur ce compte… Créez-en un dans le ',
-        linkText: 'portail Pulse',
+        linkText: 'portail Nous',
         after: ', puis actualisez.'
       },
       cloudRefresh: 'Actualiser',
@@ -1905,11 +1909,11 @@ export const frOverrides = {
       cloudUseSaved: 'Utiliser le gateway',
       cloudActive: 'Actif dans cette fenêtre',
       cloudConnecting: 'Connexion…',
-      cloudDiscoverFailed: 'Impossible de charger vos agents Pulse Cloud',
+      cloudDiscoverFailed: 'Impossible de charger vos agents PULSE Cloud',
       cloudConnectFailed: 'Impossible de se connecter à cet agent',
-      cloudSignInFailed: 'Échec de la connexion à Pulse Cloud',
-      cloudSignedOutTitle: 'Déconnecté de Pulse Cloud',
-      cloudSignedOutMessage: 'Session Pulse Cloud effacée.',
+      cloudSignInFailed: 'Échec de la connexion à PULSE Cloud',
+      cloudSignedOutTitle: 'Déconnecté de PULSE Cloud',
+      cloudSignedOutMessage: 'Session PULSE Cloud effacée.',
       cloudConnectedTitle: 'Connecté',
       cloudConnectedPill: 'Connecté',
       cloudConnectedTo: name => `Connecté à ${name}.`,
@@ -1965,9 +1969,9 @@ export const frOverrides = {
       enterUrlFirst: "Saisissez d'abord une URL distante.",
       restartingTitle: 'Reconnexion du gateway',
       savedTitle: 'Paramètres du gateway enregistrés',
-      restartingMessage: 'Pulse Desktop va se reconnecter avec les paramètres enregistrés — le shell reste ouvert.',
+      restartingMessage: 'PULSE Desktop va se reconnecter avec les paramètres enregistrés — le shell reste ouvert.',
       savedMessage: 'Enregistré pour le prochain redémarrage.',
-      connectedTo: (baseUrl, version) => `Connecté à ${baseUrl}${version ? ` · Pulse ${version}` : ''}`,
+      connectedTo: (baseUrl, version) => `Connecté à ${baseUrl}${version ? ` · PULSE ${version}` : ''}`,
       reachableTitle: 'Gateway distant accessible',
       signedOutTitle: 'Déconnecté',
       signedOutMessage: 'Session du gateway distant effacée.',
@@ -1979,7 +1983,7 @@ export const frOverrides = {
       saveFailed: "Impossible d'enregistrer les paramètres du gateway",
       sshTitle: 'Se connecter via SSH',
       sshDesc:
-        "Pulse est lancé sur la machine distante via SSH et acheminé vers cette application — rien à démarrer ou exposer soi-même. Nécessite un accès SSH par clé fonctionnel vers l'hôte.",
+        "PULSE est lancé sur la machine distante via SSH et acheminé vers cette application — rien à démarrer ou exposer soi-même. Nécessite un accès SSH par clé fonctionnel vers l'hôte.",
       sshTrustHint:
         "La première clé d'hôte présentée est approuvée et fixée ; les changements ultérieurs échouent en mode fermé.",
       sshHostTitle: 'Hôte',
@@ -1995,25 +1999,25 @@ export const frOverrides = {
       sshPortDesc: 'Vide = 22 ou le port de ~/.ssh/config.',
       sshKeyTitle: "Fichier d'identité",
       sshKeyDesc: 'Chemin de la clé privée. Vide = ssh-agent ou ~/.ssh/config.',
-      sshPulsePathTitle: 'Chemin Pulse (facultatif)',
-      sshPulsePathDesc: 'Chemin complet vers le binaire pulse distant. Vide = détection automatique.',
-      sshPulsePathPlaceholder: 'détection automatique',
+      sshPULSEPathTitle: 'Chemin PULSE (facultatif)',
+      sshPULSEPathDesc: 'Chemin complet vers le binaire pulse distant. Vide = détection automatique.',
+      sshPULSEPathPlaceholder: 'détection automatique',
       sshTestConnection: 'Tester SSH',
       sshConnect: 'Se connecter',
       sshButtonsHint: "Enregistrer s'applique au prochain lancement. Connecter se reconnecte immédiatement.",
-      sshReachable: (host, platform) => `Accessible : ${host} (${platform}) — Pulse trouvé`,
+      sshReachable: (host, platform) => `Accessible : ${host} (${platform}) — PULSE trouvé`,
       sshIncompleteHost: 'Saisissez un hôte SSH avant de vous connecter.',
       sshErrUnreachable: "Impossible d'atteindre cet hôte via SSH. Vérifiez l'hôte, le port et votre réseau.",
       sshErrAuth:
-        "Échec de l'authentification SSH. Chargez votre clé dans ssh-agent (ssh-add) ou définissez un IdentityFile dans ~/.ssh/config — Pulse exécute ssh de manière non interactive.",
+        "Échec de l'authentification SSH. Chargez votre clé dans ssh-agent (ssh-add) ou définissez un IdentityFile dans ~/.ssh/config — PULSE exécute ssh de manière non interactive.",
       sshErrHostKey:
         "La clé de l'hôte a changé depuis votre dernière connexion. Vérifiez que ce changement est attendu, puis exécutez ssh-keygen -R <host> et reconnectez-vous.",
       sshErrNotInstalled:
-        "Pulse n'est pas installé sur l'hôte distant. Installez-le là-bas (curl -fsSL https://pulse-agent.anxious-research.com/install.sh | sh) ou définissez le chemin Pulse.",
+        "PULSE n'est pas installé sur l'hôte distant. Installez-le là-bas (curl -fsSL https://pulse-agent.anxious-research.com/install.sh | sh) ou définissez le chemin PULSE.",
       sshErrPlatform:
-        'Plateforme distante non prise en charge. Le mode SSH de Pulse Desktop supporte les hôtes distants Linux, macOS et Windows.',
+        'Plateforme distante non prise en charge. Le mode SSH de PULSE Desktop supporte les hôtes distants Linux, macOS et Windows.',
       sshErrTimeout: "Expiration de la connexion SSH. L'hôte peut être inaccessible ou en veille.",
-      sshErrUpdateRequired: "Mettez à jour Pulse sur l'hôte distant avant de vous connecter avec Desktop SSH.",
+      sshErrUpdateRequired: "Mettez à jour PULSE sur l'hôte distant avant de vous connecter avec Desktop SSH.",
       sshErrUnknown: 'Échec de la connexion SSH.'
     },
     keys: {
@@ -2060,7 +2064,7 @@ export const frOverrides = {
       noOutput: 'Aucune sortie pour le moment.',
       deepLinkTitle: 'Ajouter un serveur MCP ?',
       deepLinkDescription:
-        "Un lien demande d'ajouter ce serveur MCP à Pulse. Vérifiez attentivement la configuration ci-dessous : elle provient du lien, pas de Pulse.",
+        "Un lien demande d'ajouter ce serveur MCP à PULSE. Vérifiez attentivement la configuration ci-dessous : elle provient du lien, pas de PULSE.",
       deepLinkStdioWarning:
         'Ce serveur exécute sur votre machine un processus local avec la commande affichée ci-dessous. Continuez uniquement si vous faites confiance à sa source.',
       deepLinkConfirm: 'Ajouter le serveur',
@@ -2187,7 +2191,7 @@ export const frOverrides = {
       serverRunning: 'En cours',
       runtimeInstalled: 'Moteur llama.cpp installé',
       runtimeInstalledDetail: (tag, backend) =>
-        `Build ${tag}, backend ${backend}. Pulse démarre et gère le serveur pour vous.`,
+        `Build ${tag}, backend ${backend}. PULSE démarre et gère le serveur pour vous.`,
       installTitle: 'Installer le moteur local',
       installDetail:
         "Télécharge le moteur d'inférence llama.cpp (quelques centaines de Mo). Les modèles téléchargés s'exécutent entièrement sur cette machine : aucun compte requis et aucune donnée ne quitte votre ordinateur.",
@@ -2240,7 +2244,7 @@ export const frOverrides = {
       updating: 'Mise à jour du moteur…',
       upToDateTitle: 'Moteur à jour',
       upToDateDetail: (tag, backend) =>
-        `llama.cpp ${tag} (${backend}) est en cours d'exécution : il s'agit de la dernière build fournie par Pulse.`,
+        `llama.cpp ${tag} (${backend}) est en cours d'exécution : il s'agit de la dernière build fournie par PULSE.`,
       activeDetail:
         "Les nouvelles conversations utilisent ce modèle. Il se charge lors de l'envoi de votre premier message.",
       activeNotLoaded: 'Se charge avec votre premier message',
@@ -2307,13 +2311,13 @@ export const frOverrides = {
       usageLabel: (label: string) => `Utilisation ${label}`,
       freeTier: {
         signIn: 'Se connecter',
-        title: 'Vous utilisez l’offre gratuite Pulse',
-        message: 'Connectez-vous avec un compte Pulse pour débloquer davantage de modèles et d’outils.',
+        title: 'Vous utilisez l’offre gratuite Nous',
+        message: 'Connectez-vous avec un compte Nous pour débloquer davantage de modèles et d’outils.',
         caption:
-          'Fonctionne avec pulse/welcome, connecteurs inclus. La connexion conserve vos connecteurs et ajoute les outils qui nécessitent un compte ainsi que tous les autres modèles.',
-        name: 'Pulse · offre gratuite',
+          'Fonctionne avec nous/welcome, connecteurs inclus. La connexion conserve vos connecteurs et ajoute les outils qui nécessitent un compte ainsi que tous les autres modèles.',
+        name: 'Nous · offre gratuite',
         footnote:
-          'L’offre gratuite n’a ni solde ni rien à payer. Le paiement et l’utilisation apparaissent une fois connecté avec un compte Pulse.',
+          'L’offre gratuite n’a ni solde ni rien à payer. Le paiement et l’utilisation apparaissent une fois connecté avec un compte Nous.',
         plan: 'Offre gratuite',
         model: 'Modèle',
         connectors: 'Connecteurs',
@@ -2420,9 +2424,9 @@ export const frOverrides = {
       state: {
         notice: {
           loggedOut: {
-            title: 'Connectez votre compte Pulse',
+            title: 'Connectez votre compte Nous',
             message:
-              'Connectez-vous avec votre compte Pulse pour voir ici votre solde, votre offre et votre utilisation.',
+              'Connectez-vous avec votre compte Nous pour voir ici votre solde, votre offre et votre utilisation.',
             action: 'Se connecter'
           },
           openPortal: 'Ouvrir le portail ↗',
@@ -2520,7 +2524,7 @@ export const frOverrides = {
         cliBillingDisabled: {
           title: 'Les dépenses à distance sont désactivées',
           message:
-            'Les dépenses à distance sont désactivées pour ce compte — un administrateur de facturation peut les activer depuis la page Pulse Agent du portail.'
+            'Les dépenses à distance sont désactivées pour ce compte — un administrateur de facturation peut les activer depuis la page PULSE Agent du portail.'
         },
         roleRequired: {
           title: 'Rôle administrateur requis',
@@ -2588,7 +2592,7 @@ export const frOverrides = {
       connectAccount: 'Connecter un compte',
       haveApiKey: 'Vous avez une clé API ?',
       intro:
-        "Connectez-vous avec un abonnement — pas de clé API à copier. Pulse lance la connexion navigateur pour vous, directement dans l'application.",
+        "Connectez-vous avec un abonnement — pas de clé API à copier. PULSE lance la connexion navigateur pour vous, directement dans l'application.",
       connected: 'Connecté',
       collapse: 'Réduire',
       connectAnother: 'Connecter un autre fournisseur',
@@ -2610,7 +2614,7 @@ export const frOverrides = {
       localEndpoint: {
         title: 'Point de terminaison local / personnalisé',
         description:
-          "Pointez Pulse vers n'importe quel point de terminaison compatible OpenAI (Zyphra, vLLM, llama.cpp, Ollama, etc)."
+          "Pointez PULSE vers n'importe quel point de terminaison compatible OpenAI (Zyphra, vLLM, llama.cpp, Ollama, etc)."
       },
       loading: 'Chargement des fournisseurs...'
     },
@@ -2673,16 +2677,16 @@ export const frOverrides = {
       activeBackend: 'Actif',
       activeBackendHint: "Il s'agit de votre backend actif",
       useBackend: 'Utiliser ce backend',
-      pulseIncluded: 'Inclus avec un abonnement Pulse — connectez-vous au portail Pulse pour activer.',
-      pulseAuthNeededTitle: 'Se connecter au portail Pulse',
-      pulseAuthNeededMessage: provider =>
-        `${provider} est enregistré mais ne s'activera pas tant que vous ne vous serez pas connecté au portail Pulse.`,
-      pulseAuthSignIn: 'Se connecter',
-      pulseAuthDoneTitle: 'Portail Pulse connecté',
-      pulseAuthDoneMessage: "Vos backends d'abonnement sont maintenant actifs.",
-      pulseAuthFailed: "La connexion au portail Pulse n'a pas été terminée",
-      pulseAuthFailedMessage: 'Réessayez.',
-      pulseAuthTryAgain: 'Réessayer',
+      nousIncluded: 'Inclus avec un abonnement Nous — connectez-vous au portail Nous pour activer.',
+      nousAuthNeededTitle: 'Se connecter au portail Nous',
+      nousAuthNeededMessage: provider =>
+        `${provider} est enregistré mais ne s'activera pas tant que vous ne vous serez pas connecté au portail Nous.`,
+      nousAuthSignIn: 'Se connecter',
+      nousAuthDoneTitle: 'Portail Nous connecté',
+      nousAuthDoneMessage: "Vos backends d'abonnement sont maintenant actifs.",
+      nousAuthFailed: "La connexion au portail Nous n'a pas été terminée",
+      nousAuthFailedMessage: 'Réessayez.',
+      nousAuthTryAgain: 'Réessayer',
       noApiKeyRequired: 'Aucune clé API requise.',
       postSetupHint: step =>
         `Ce backend nécessite une installation unique (${step}). S'exécute sur cette machine — peut prendre quelques minutes.`,
@@ -2740,7 +2744,7 @@ export const frOverrides = {
         needsSetupConfirmAction: 'Sélectionner quand même',
         unavailableTitle: 'Commandes de terminal indisponibles',
         unavailableMessage: backend =>
-          `Pulse ne peut pas exécuter de commandes shell pour le moment : ${backend} n'est pas prêt. Passez en Local ou terminez la configuration de ${backend}, puis réessayez.`,
+          `PULSE ne peut pas exécuter de commandes shell pour le moment : ${backend} n'est pas prêt. Passez en Local ou terminez la configuration de ${backend}, puis réessayez.`,
         openBackendSettings: 'Ouvrir les paramètres du terminal',
         useLocal: 'Utiliser Local',
         switchedToLocal:
@@ -2758,7 +2762,7 @@ export const frOverrides = {
         failedSave: "Impossible d'enregistrer le paramètre du profil réel",
         prompt: {
           title: 'Restez connecté à vos sites',
-          body: "Autorisez Pulse à naviguer avec un instantané de votre profil de navigateur par défaut afin que les sites s'ouvrent avec vos sessions déjà connectées.",
+          body: "Autorisez PULSE à naviguer avec un instantané de votre profil de navigateur par défaut afin que les sites s'ouvrent avec vos sessions déjà connectées.",
           bulletSnapshot: 'Les cookies et identifiants de connexion sont copiés dans un instantané géré.',
           bulletLiveProfile: "Votre profil de navigateur actif n'est jamais ouvert directement.",
           bulletLocal: 'Rien ne quitte cet ordinateur.',
@@ -2835,7 +2839,7 @@ export const frOverrides = {
       halfDesktopHint: 'cette application, identique pour tous les profils',
       halfAgent: 'Agent',
       halfAgentIn: profile => `Agent dans ${profile}`,
-      defaultProfile: 'Pulse (par défaut)',
+      defaultProfile: 'PULSE (par défaut)',
       kindAgent: 'Agent',
       kindDesktop: 'Desktop',
       kindBoth: 'Agent + Desktop',
@@ -2859,7 +2863,7 @@ export const frOverrides = {
       toolsetOff: (name: string, profile: string) => `Outils agent de ${name} désactivés pour ${profile}`,
       toolsetToggleFailed: (name: string) =>
         `Impossible de modifier les outils agent de ${name} ; le panneau Desktop reste inchangé`,
-      legacyBackend: 'Ce backend est trop ancien pour gérer les plugins depuis cet écran ; mettez Pulse à jour.',
+      legacyBackend: 'Ce backend est trop ancien pour gérer les plugins depuis cet écran ; mettez PULSE à jour.',
       portableBadge: 'portable',
       serverStates: {
         connected: 'connecté',
@@ -2878,7 +2882,7 @@ export const frOverrides = {
         'Utilisez « + Ajouter à cet agent » sur un plugin : les entrées vérifiées sont installées depuis leur commit épinglé dans le profil sélectionné.',
       alreadyInstalled: (name: string) => `${name} est déjà installé dans ce profil.`,
       catalogProvenance: (sha: string) =>
-        `Installé depuis le catalogue Pulse${sha ? ` au commit épinglé ${sha}` : ''}.`,
+        `Installé depuis le catalogue PULSE${sha ? ` au commit épinglé ${sha}` : ''}.`,
       pinnedProvenance: (sha: string) =>
         `Épinglé au commit ${sha}. Les mises à jour sont refusées tant qu’il n’est pas réinstallé avec un nouvel épinglage.`,
       pinnedBadge: (sha: string) => `épinglé @ ${sha}`,
@@ -2906,9 +2910,9 @@ export const frOverrides = {
       deepLinkErrorTitle: 'Lien d’installation de plugin refusé',
       deepLinkCatalogInvalidName: 'Le nom de catalogue du lien est manquant ou invalide.',
       deepLinkCatalogUnknown: (name: string) =>
-        `\u00AB\u00A0${name}\u00A0\u00BB ne figure pas dans le catalogue de plugins Pulse. Rien n’a été installé.`,
+        `\u00AB\u00A0${name}\u00A0\u00BB ne figure pas dans le catalogue de plugins PULSE. Rien n’a été installé.`,
       deepLinkCatalogUnavailable:
-        'Impossible de charger le catalogue de plugins Pulse. Vérifiez votre connexion et rouvrez le lien.',
+        'Impossible de charger le catalogue de plugins PULSE. Vérifiez votre connexion et rouvrez le lien.',
       settingsToggle: (name: string) => `Paramètres : ${name}`,
       settingsForm: {
         save: 'Enregistrer les paramètres',
@@ -2996,7 +3000,7 @@ export const frOverrides = {
     loading: 'Chargement…',
     emptyTitle: "Rien d'appris pour le moment",
     emptyDesc:
-      'Au fur et à mesure que Pulse construit des skills et des mémoires pour votre travail, ils apparaissent ici.',
+      'Au fur et à mesure que PULSE construit des skills et des mémoires pour votre travail, ils apparaissent ici.',
     share: 'Partager la carte',
     shareHint:
       'Copiez le code pour partager cette carte, ou collez-en un pour le charger. Il inclut uniquement la disposition, pas votre texte de mémoire ou de skill.',
@@ -3076,7 +3080,7 @@ export const frOverrides = {
       placeholder: 'Rechercher des animaux…',
       loading: 'Chargement de la galerie petdex…',
       error: "Impossible d'atteindre la galerie petdex…",
-      staleBackend: 'Redémarrez Pulse pour utiliser les animaux — le backend précède cette fonctionnalité.',
+      staleBackend: 'Redémarrez PULSE pour utiliser les animaux — le backend précède cette fonctionnalité.',
       empty: 'Aucun animal correspondant.',
       turnOff: 'Éteindre',
       turnOn: 'Allumer',
@@ -3103,8 +3107,8 @@ export const frOverrides = {
       hatchComposing: 'Assemblage…',
       hatchSaving: 'Presque terminé…',
       namePlaceholder: 'Nommez votre animal',
-      staleBackend: 'Mettez à jour Pulse pour générer des animaux…',
-      backgroundHint: "Vous pouvez fermer — Pulse vous notifiera quand c'est terminé.",
+      staleBackend: 'Mettez à jour PULSE pour générer des animaux…',
+      backgroundHint: "Vous pouvez fermer — PULSE vous notifiera quand c'est terminé.",
       slowProviderHint: 'Cela peut prendre plusieurs minutes',
       remix: 'Remixer',
       remixConfirmTitle: 'Remixer cette apparence ?',
@@ -3144,7 +3148,7 @@ export const frOverrides = {
       },
       settings: {
         title: 'Paramètres',
-        detail: 'Configurer Pulse Desktop'
+        detail: 'Configurer PULSE Desktop'
       },
       capabilities: {
         title: 'Capacités',
@@ -3185,7 +3189,7 @@ export const frOverrides = {
     noSessions: 'Aucune session pour le moment.',
     gatewayRunning: 'Gateway de messagerie en cours',
     gatewayStopped: 'Gateway de messagerie arrêté',
-    pulseActiveSessions: (version, count) => `Pulse ${version} · Sessions actives ${count}`,
+    pulseActiveSessions: (version, count) => `PULSE ${version} · Sessions actives ${count}`,
     restartGateway: 'Redémarrer le gateway',
     openBrowser: 'Basculer le navigateur',
     toggleBrowser: 'Basculer le navigateur',
@@ -3194,7 +3198,7 @@ export const frOverrides = {
     sharedGatewayRestartDescription: bots => `Tous les bots de cet appareil se reconnecteront : ${bots}`,
     sharedGatewayRestartConfirm: 'Tout redémarrer',
     sharedGatewayRestarted: count => `Gateway partagé redémarré (${count} ${count === 1 ? 'bot' : 'bots'})`,
-    updatePulse: 'Mettre à jour Pulse',
+    updatePULSE: 'Mettre à jour PULSE',
     reloadWindow: 'Recharger la fenêtre',
     actionRunning: 'en cours',
     actionDone: 'terminé',
@@ -3359,11 +3363,11 @@ export const frOverrides = {
     telegramQr: {
       title: 'Choisissez comment connecter votre bot Telegram',
       subtitle:
-        "Les deux méthodes connectent un bot que vous contrôlez et enregistrent ses identifiants uniquement dans cette installation d'Pulse.",
+        "Les deux méthodes connectent un bot que vous contrôlez et enregistrent ses identifiants uniquement dans cette installation d'PULSE.",
       quickSetup: 'Configuration rapide',
       recommended: 'Recommandé',
       quickHelp:
-        "Scannez un code QR et confirmez dans Telegram. Pulse crée le bot et détecte automatiquement votre identifiant d'utilisateur Telegram.",
+        "Scannez un code QR et confirmez dans Telegram. PULSE crée le bot et détecte automatiquement votre identifiant d'utilisateur Telegram.",
       createWithQr: 'Créer avec un code QR',
       starting: 'Démarrage…',
       replaceWarning:
@@ -3598,7 +3602,7 @@ export const frOverrides = {
     switchToConnection: name => `Basculer vers ${name}`,
     switchConnectionFailed: name => `Impossible de se connecter à ${name}`,
     manageProfiles: 'Gérer les profils…',
-    connectGateway: 'Connecter un autre gateway Pulse…',
+    connectGateway: 'Connecter un autre gateway PULSE…',
     fleet: {
       allOnGateway: 'Tous les profils de cette gateway',
       gateway: gateway => `Profils sur ${gateway}`,
@@ -3606,14 +3610,14 @@ export const frOverrides = {
       onGateway: (name, gateway) => `${name} · ${gateway}`,
       switchTo: (name, gateway) => `Basculer vers ${name} sur ${gateway}`,
       deleteOn: gateway => ` sur ${gateway}`,
-      localDevice: 'Cet appareil (backend local — installe Pulse s’il manque, sinon ouvre une nouvelle session)',
+      localDevice: 'Cet appareil (backend local — installe PULSE s’il manque, sinon ouvre une nouvelle session)',
       switchDeviceTitle: 'Basculer vers cet appareil ?',
       switchDeviceDesc:
         'Cela ouvre une nouvelle session sur cet ordinateur. La conversation en cours reste sur l’autre gateway.',
       switchDeviceConfirm: 'Basculer',
       installDeviceTitle: 'Basculer vers cet appareil ?',
       installDeviceDesc:
-        'Pulse sera installé localement, puis une nouvelle session s’ouvrira sur cet ordinateur. Rien n’est installé tant que vous ne confirmez pas.',
+        'PULSE sera installé localement, puis une nouvelle session s’ouvrira sur cet ordinateur. Rien n’est installé tant que vous ne confirmez pas.',
       installDeviceConfirm: 'Installer localement',
       connectExistingInstead: 'Connecter un existant à la place'
     },
@@ -3628,7 +3632,7 @@ export const frOverrides = {
       badge: (host: string) => `S'exécute sur ${host}`,
       title: (profile: string) => `Connecter ${profile} à un hôte distant`,
       description:
-        "Les sessions de ce profil s'exécuteront sur le système Pulse distant indiqué, plutôt que sur cet ordinateur.",
+        "Les sessions de ce profil s'exécuteront sur le système PULSE distant indiqué, plutôt que sur cet ordinateur.",
       urlLabel: 'Adresse distante',
       urlPlaceholder: 'https://pulse.exemple.fr',
       urlInvalid: 'Saisissez une adresse complète commençant par http:// ou https://',
@@ -3664,7 +3668,7 @@ export const frOverrides = {
     defaultProfile: 'Profil par défaut',
     defaultSet: name => `${name} est maintenant le profil par défaut`,
     defaultDescription:
-      "Utilisé à l'ouverture de Pulse et pour les nouvelles conversations. Les sessions existantes restent dans leur profil.",
+      "Utilisé à l'ouverture de PULSE et pour les nouvelles conversations. Les sessions existantes restent dans leur profil.",
     failedSetDefault: 'Impossible de définir le profil par défaut',
     setColor: color => `Définir la couleur ${color}`,
     autoColor: 'Auto',
@@ -3701,7 +3705,7 @@ export const frOverrides = {
     deleteDescMid: ' et supprimera son ',
     deleteDescSuffix: ' répertoire. Cela ne peut pas être annulé.',
     deleting: 'Suppression...',
-    createDesc: 'Les profils sont des environnements Pulse indépendants : configuration, skills et SOUL.md séparés.',
+    createDesc: 'Les profils sont des environnements PULSE indépendants : configuration, skills et SOUL.md séparés.',
     nameLabel: 'Nom',
     cloneFrom: 'Cloner depuis',
     cloneFromNone: 'Aucun (vide)',
@@ -3735,7 +3739,7 @@ export const frOverrides = {
     failedRename: 'Échec du renommage du profil'
   },
   modelAssignment: {
-    saveFailed: 'Pulse n’a pas enregistré ce changement de modèle.',
+    saveFailed: 'PULSE n’a pas enregistré ce changement de modèle.',
     confirmTitle: 'Avertissement sur le choix du modèle',
     confirmDetail: 'Confirmez uniquement si vous acceptez ce compromis.',
     confirmAction: 'Confirmer',
@@ -3804,7 +3808,7 @@ export const frOverrides = {
     everyHourAt: minute => `Toutes les heures à :${minute}`,
     newCron: 'Nouveau cron',
     emptyDescNew:
-      "Planifiez une invite à exécuter selon une expression cron. Pulse l'exécutera et livrera les résultats vers la destination de votre choix.",
+      "Planifiez une invite à exécuter selon une expression cron. PULSE l'exécutera et livrera les résultats vers la destination de votre choix.",
     emptyDescSearch: 'Essayez une requête de recherche plus large.',
     emptyTitleNew: 'Aucune tâche planifiée pour le moment',
     emptyTitleSearch: 'Aucune correspondance',
@@ -4019,8 +4023,8 @@ export const frOverrides = {
     storageCorrupt: {
       title: 'La base de données des sessions est endommagée',
       body: (profiles: string) =>
-        `Pulse ne peut pas lire tout l’historique des sessions de ${profiles}. Les conversations absentes de cette liste n’ont pas été supprimées ; le fichier qui les contient est endommagé.`,
-      action: 'Quittez Pulse sur ce profil, puis inspectez le fichier sans le modifier, ou restaurez un instantané :',
+        `PULSE ne peut pas lire tout l’historique des sessions de ${profiles}. Les conversations absentes de cette liste n’ont pas été supprimées ; le fichier qui les contient est endommagé.`,
+      action: 'Quittez PULSE sur ce profil, puis inspectez le fichier sans le modifier, ou restaurez un instantané :',
       guide: 'Guide de récupération'
     },
     noFilterMatches: 'Aucune session ne correspond à ces filtres',
@@ -4063,9 +4067,9 @@ export const frOverrides = {
       removeFromSidebar: 'Masquer de la barre latérale',
       createFailed: 'Impossible de créer le projet',
       staleBackend:
-        'Mettez à jour le backend Pulse pour créer des projets — votre backend est plus ancien que cette application de bureau (Paramètres → Mises à jour → Backend).',
+        'Mettez à jour le backend PULSE pour créer des projets — votre backend est plus ancien que cette application de bureau (Paramètres → Mises à jour → Backend).',
       deleteConfirm:
-        'Cela supprime le projet enregistré de Pulse. Les fichiers, dépôts git et worktrees restent inchangés.',
+        'Cela supprime le projet enregistré de PULSE. Les fichiers, dépôts git et worktrees restent inchangés.',
       startWork: 'Nouveau worktree',
       newWorktreeTitle: 'Nouveau worktree',
       newWorktreeDesc: 'Nommez la branche pour ce worktree.',
@@ -4075,7 +4079,7 @@ export const frOverrides = {
       baseBranchNone: 'Aucune branche trouvée',
       startWorkFailed: 'Impossible de créer le worktree',
       worktreeStaleBackend:
-        'Mettez à jour le backend Pulse pour créer des worktrees depuis Desktop — votre backend est plus ancien que cette application (Paramètres → Mises à jour → Backend).',
+        'Mettez à jour le backend PULSE pour créer des worktrees depuis Desktop — votre backend est plus ancien que cette application (Paramètres → Mises à jour → Backend).',
       worktreeProjectLabel: 'Projet',
       worktreeProjectPlaceholder: 'Rechercher des projets…',
       worktreeProjectNone: 'Aucun projet avec un dossier',
@@ -4171,12 +4175,12 @@ export const frOverrides = {
   composer: {
     message: 'Message',
     wakingProfile: profile => `Réveil de ${profile}…`,
-    placeholderStarting: 'Démarrage de Pulse…',
-    placeholderReconnecting: 'Reconnexion à Pulse…',
+    placeholderStarting: 'Démarrage de PULSE…',
+    placeholderReconnecting: 'Reconnexion à PULSE…',
     placeholderFollowUp: 'Envoyer un suivi',
     newSessionPlaceholders: [
-      'Sur quoi travaillons-pulse ?',
-      'Donnez une tâche à Pulse',
+      'Sur quoi travaillons-nous ?',
+      'Donnez une tâche à PULSE',
       "Qu'avez-vous en tête ?",
       'Décrivez ce dont vous avez besoin',
       "Qu'est-ce qu'on attaque ?",
@@ -4213,8 +4217,8 @@ export const frOverrides = {
     transcribingDictation: 'Transcription de la dictée',
     voiceControls: 'Voix',
     voiceEngine: 'Moteur de conversation vocale',
-    voiceEngineChained: 'Reconnaissance vocale + voix Pulse',
-    voiceEngineLive: 'GPT-Live (duplex intégral, délègue à Pulse)',
+    voiceEngineChained: 'Reconnaissance vocale + voix PULSE',
+    voiceEngineLive: 'GPT-Live (duplex intégral, délègue à PULSE)',
     voiceEngineLiveNeedsKey: 'Nécessite une clé API OpenAI',
     voiceEngineChangeFailed: 'Impossible de changer le moteur de conversation vocale',
     voiceEngineChainedShort: 'reconnaissance vocale',
@@ -4239,7 +4243,7 @@ export const frOverrides = {
       '/resume': 'Reprendre une session enregistrée',
       '/details': 'contrôler le niveau de détail de la transcription',
       '/copy': "copier la sélection ou le dernier message de l'assistant",
-      '/quit': 'quitter Pulse',
+      '/quit': 'quitter PULSE',
       '/start': 'Accuser réception des pings de démarrage de la plateforme sans répondre',
       '/new': 'Démarrer une nouvelle conversation',
       '/topic': 'Activer ou inspecter les sessions par sujet des MP Telegram',
@@ -4266,7 +4270,7 @@ export const frOverrides = {
         'Mettre un prompt en file pour le prochain tour, ou lister/modifier/supprimer/déplacer/vider les prompts en file',
       '/steer': 'Injecter un message après le prochain appel d’outil sans interrompre',
       '/goal':
-        'Définir un objectif permanent sur lequel Pulse travaille au fil des tours jusqu’à ce qu’il soit atteint',
+        'Définir un objectif permanent sur lequel PULSE travaille au fil des tours jusqu’à ce qu’il soit atteint',
       '/heartbeat': 'Définir un prompt récurrent qui revient dans cette session lorsqu’elle est inactive',
       '/refine': 'Passer en revue cette conversation maintenant et enregistrer les leçons en mémoire/skills',
       '/review': 'Lancer un sous-agent indépendant pour relire le travail qui vient d’être discuté (PR, code, docs)',
@@ -4279,7 +4283,7 @@ export const frOverrides = {
       '/context':
         'Afficher la vue détaillée de la fenêtre de contexte avec jauge d’utilisation, répartition par catégorie, statistiques de compression et débit',
       '/whoami': 'Afficher votre accès aux commandes slash (admin / utilisateur)',
-      '/profile': 'Changer de profil Pulse actif',
+      '/profile': 'Changer de profil PULSE actif',
       '/codex-runtime': 'Activer/désactiver le runtime codex app-server pour les modèles OpenAI/Codex',
       '/personality': 'Définir une personnalité prédéfinie',
       '/battery': 'Afficher/masquer un indicateur de batterie coloré dans la barre d’état',
@@ -4305,10 +4309,10 @@ export const frOverrides = {
       '/palette': 'Ouvrir la palette de commandes floue (aussi Ctrl+P)',
       '/usage':
         'Afficher l’utilisation des jetons et les limites de débit ; `reset` utilise une réinitialisation de limite Codex en réserve',
-      '/subscription': 'Voir votre forfait Pulse et le modifier dans le navigateur',
-      '/topup': 'Afficher votre solde Pulse et gérer la facturation sur le portail',
+      '/subscription': 'Voir votre forfait Nous et le modifier dans le navigateur',
+      '/topup': 'Afficher votre solde Nous et gérer la facturation sur le portail',
       '/platform': 'Suspendre, reprendre ou lister une plateforme de gateway en échec',
-      '/version': 'Afficher la version de Pulse Agent',
+      '/version': 'Afficher la version de PULSE Agent',
       '/debug': 'Téléverser un rapport de débogage (infos système + journaux) et obtenir des liens partageables',
       '/model': 'Changer le modèle de cette session'
     },
@@ -4323,7 +4327,7 @@ export const frOverrides = {
       'composer.history': 'parcourir le popover / historique'
     },
     attachUrlTitle: 'Attacher une URL',
-    attachUrlDesc: "Pulse récupérera la page et l'inclura comme contexte pour ce tour.",
+    attachUrlDesc: "PULSE récupérera la page et l'inclura comme contexte pour ce tour.",
     urlPlaceholder: 'https://example.com/post',
     urlHintPre: "Incluez l'URL complète, par ex. ",
     attach: 'Attacher',
@@ -4578,7 +4582,7 @@ export const frOverrides = {
       createPr: 'Créer une PR',
       openPr: 'Ouvrir une PR',
       ghMissing: 'Installez la CLI GitHub (gh) et connectez-vous pour ouvrir des PR',
-      agentShip: "Demander à Pulse d'ouvrir une PR",
+      agentShip: "Demander à PULSE d'ouvrir une PR",
       agentShipUnavailable: "La conversation à l'origine de ces modifications n'est pas affichée.",
       agentShipPrompt:
         'Passez en revue les modifications actuelles, validez-les avec un message de validation conventionnel clair, poussez la branche, puis ouvrez une pull request.',
@@ -4590,23 +4594,23 @@ export const frOverrides = {
     }
   },
   updates: {
-    discontinuedTitle: "Cette version de Pulse n'est plus prise en charge",
+    discontinuedTitle: "Cette version de PULSE n'est plus prise en charge",
     discontinuedBody:
-      "Cette version de Pulse n'est plus prise en charge et risque de ne plus fonctionner — désinstallez-la. Vos données restent sur le disque.",
+      "Cette version de PULSE n'est plus prise en charge et risque de ne plus fonctionner — désinstallez-la. Vos données restent sur le disque.",
     channels: { stable: 'Stable', canary: 'Canary' },
-    appName: 'Pulse',
+    appName: 'PULSE',
     availableBodyRelease: tag => `La version ${tag} est prête à être installée.`,
     releaseAvailable: tag => `La version ${tag} est disponible.`,
     checkingShort: 'Vérification…',
     availableBodyAppInstaller:
-      'Une nouvelle version de Pulse est prête. Pulse va se fermer, Windows terminera la mise à jour, puis Pulse rouvrira automatiquement.',
+      'Une nouvelle version de PULSE est prête. PULSE va se fermer, Windows terminera la mise à jour, puis PULSE rouvrira automatiquement.',
     applyingBodyAppInstaller:
-      "Pulse va se fermer et Windows terminera la mise à jour. Pulse rouvrira ensuite automatiquement — vous n'avez rien à faire.",
+      "PULSE va se fermer et Windows terminera la mise à jour. PULSE rouvrira ensuite automatiquement — vous n'avez rien à faire.",
     applyingCloseAppInstaller:
-      'Cette fenêtre va se fermer, Windows terminera la mise à jour et Pulse rouvrira automatiquement.',
+      'Cette fenêtre va se fermer, Windows terminera la mise à jour et PULSE rouvrira automatiquement.',
     checkUnknownTitleAppInstaller: 'Impossible de vérifier les mises à jour',
     checkUnknownBodyAppInstaller:
-      "Windows n'a pas pu rechercher les mises à jour. Elles s'installent également automatiquement au redémarrage de Pulse.",
+      "Windows n'a pas pu rechercher les mises à jour. Elles s'installent également automatiquement au redémarrage de PULSE.",
     versionDetailsTitle: 'Détails de la version',
     versionDetailsBody:
       "Cette installation est gérée hors de l'application. Mettez-la à jour de la même manière que vous l'avez installée.",
@@ -4631,12 +4635,12 @@ export const frOverrides = {
     versionUnavailable: 'Version indisponible',
     bundleOutOfSync: "Version de l'application obsolète",
     bundleOutOfSyncDesc:
-      "Le runtime Pulse a été mis à jour, mais l'application Desktop utilise encore une ancienne version. Les nouvelles fonctions de l'interface, comme le mode Bot, resteront absentes jusqu'à sa mise à jour. Lancez la mise à jour ci-dessous pour reconstruire l'application. Si cet avertissement persiste, réinstallez-la avec le dernier installateur Desktop.",
+      "Le runtime PULSE a été mis à jour, mais l'application Desktop utilise encore une ancienne version. Les nouvelles fonctions de l'interface, comme le mode Bot, resteront absentes jusqu'à sa mise à jour. Lancez la mise à jour ci-dessous pour reconstruire l'application. Si cet avertissement persiste, réinstallez-la avec le dernier installateur Desktop.",
     bundleOutOfSyncAction: "Obtenir l'installateur",
     bundleSwapPending: 'Redémarrez pour terminer la mise à jour',
     bundleSwapPendingDesc:
-      "L'application mise à jour est déjà installée — Pulse doit seulement redémarrer pour la charger. Vos conversations et paramètres sont préservés.",
-    bundleSwapPendingAction: 'Redémarrer Pulse',
+      "L'application mise à jour est déjà installée — PULSE doit seulement redémarrer pour la charger. Vos conversations et paramètres sont préservés.",
+    bundleSwapPendingAction: 'Redémarrer PULSE',
     checkNow: 'Vérifier maintenant',
     seeWhatsNew: 'Voir les nouveautés',
     releaseNotes: 'Notes de version',
@@ -4659,9 +4663,9 @@ export const frOverrides = {
       fetch: 'Téléchargement…',
       pull: 'Presque prêt…',
       pydeps: 'Finalisation…',
-      update: 'Mise à jour de Pulse…',
+      update: 'Mise à jour de PULSE…',
       rebuild: "Reconstruction de l'application de bureau…",
-      restart: 'Redémarrage de Pulse…',
+      restart: 'Redémarrage de PULSE…',
       done: 'Mise à jour terminée',
       manual: 'Mise à jour depuis votre terminal',
       guiSkew: "Mettre à jour l'application de bureau",
@@ -4671,18 +4675,18 @@ export const frOverrides = {
     checkFailedTitle: 'Impossible de vérifier les mises à jour',
     tryAgain: 'Réessayer',
     notAvailableTitle: 'Mise à jour indisponible',
-    unsupportedMessage: "Cette version de Pulse ne peut pas se mettre à jour depuis l'application.",
+    unsupportedMessage: "Cette version de PULSE ne peut pas se mettre à jour depuis l'application.",
     connectionRetry: 'Vérifiez votre connexion et réessayez.',
-    gitUnusable: 'Pulse n’a pas pu exécuter Git sur cet ordinateur et n’a donc pas pu rechercher de mises à jour.',
+    gitUnusable: 'PULSE n’a pas pu exécuter Git sur cet ordinateur et n’a donc pas pu rechercher de mises à jour.',
     connectionSettings: 'Paramètres de connexion',
     openDownloadPage: 'Ouvrir la page de téléchargement',
     latestBody: 'Vous utilisez la dernière version.',
     latestBodyBackend: 'Le backend utilise la dernière version.',
     allSetTitle: 'Tout est prêt',
     availableTitle: 'Nouvelle mise à jour disponible',
-    availableBody: 'Une nouvelle version de Pulse est prête à être installée.',
+    availableBody: 'Une nouvelle version de PULSE est prête à être installée.',
     availableTitleBackend: 'Mise à jour du backend disponible',
-    availableBodyBackend: 'Une version plus récente du backend Pulse connecté est prête à être installée.',
+    availableBodyBackend: 'Une version plus récente du backend PULSE connecté est prête à être installée.',
     availableBodyNoChangelog:
       "Une version plus récente est prête. Les notes de version ne sont pas disponibles pour ce type d'installation.",
     updateNow: 'Mettre à jour maintenant',
@@ -4693,32 +4697,32 @@ export const frOverrides = {
     manualTitle: 'Mise à jour depuis votre terminal',
     manualUnavailableTitle: 'Mise à jour impossible ici',
     manualBody:
-      "Vous avez installé Pulse depuis la ligne de commande, les mises à jour s'y effectuent donc aussi. Collez ceci dans votre terminal :",
-    manualPickedUp: 'Pulse prendra en compte la nouvelle version au prochain lancement.',
+      "Vous avez installé PULSE depuis la ligne de commande, les mises à jour s'y effectuent donc aussi. Collez ceci dans votre terminal :",
+    manualPickedUp: 'PULSE prendra en compte la nouvelle version au prochain lancement.',
     manualBodyBackend:
-      'Le backend Pulse est géré en dehors de cette app. Exécutez ceci sur le serveur qui l’héberge :',
+      'Le backend PULSE est géré en dehors de cette app. Exécutez ceci sur le serveur qui l’héberge :',
     manualPickedUpBackend: 'Le backend chargera la nouvelle version une fois la mise à jour terminée.',
     guiSkewTitle: "Mettre à jour l'application de bureau",
     guiSkewBody:
-      "Le backend a été mis à jour, mais ce package d'application de bureau ne l'a pas été. Mettez à jour ou réinstallez l'application de bureau Pulse (votre AppImage / .deb / .rpm) pour qu'elle corresponde.",
+      "Le backend a été mis à jour, mais ce package d'application de bureau ne l'a pas été. Mettez à jour ou réinstallez l'application de bureau PULSE (votre AppImage / .deb / .rpm) pour qu'elle corresponde.",
     copy: 'Copier',
     copied: 'Copié',
     done: 'Terminé',
     applyingBody:
-      'Le programme de mise à jour de Pulse prend le relais dans sa propre fenêtre et rouvre Pulse automatiquement une fois terminé. Ne rouvrez pas Pulse vous-même pendant la mise à jour.',
+      'Le programme de mise à jour de PULSE prend le relais dans sa propre fenêtre et rouvre PULSE automatiquement une fois terminé. Ne rouvrez pas PULSE vous-même pendant la mise à jour.',
     applyingBodyBackend:
-      'Le backend distant applique la mise à jour et va redémarrer. Pulse se reconnecte automatiquement à son retour.',
-    applyingClose: 'Cette fenêtre se fermera pendant la mise à jour, puis Pulse se rouvre seul.',
+      'Le backend distant applique la mise à jour et va redémarrer. PULSE se reconnecte automatiquement à son retour.',
+    applyingClose: 'Cette fenêtre se fermera pendant la mise à jour, puis PULSE se rouvre seul.',
     errorTitle: 'Mise à jour non terminée',
     errorBody: "Pas de souci — rien n'a été perdu. Vous pouvez réessayer maintenant.",
-    blockerTitle: 'Fermer les aperçus locaux pour mettre à jour Pulse ?',
+    blockerTitle: 'Fermer les aperçus locaux pour mettre à jour PULSE ?',
     blockerBody:
-      'Pulse doit arrêter ces aperçus locaux avant la mise à jour. Aucun de vos fichiers ne sera modifié ni supprimé.',
-    foreignBlockerTitle: 'Fermez les autres processus pour mettre à jour Pulse',
+      'PULSE doit arrêter ces aperçus locaux avant la mise à jour. Aucun de vos fichiers ne sera modifié ni supprimé.',
+    foreignBlockerTitle: 'Fermez les autres processus pour mettre à jour PULSE',
     foreignBlockerBody:
-      "Pulse ne peut pas fermer automatiquement ces processus en toute sécurité. Fermez l'application, le terminal ou le service qui possède chacun d'eux, puis relancez la mise à jour.",
+      "PULSE ne peut pas fermer automatiquement ces processus en toute sécurité. Fermez l'application, le terminal ou le service qui possède chacun d'eux, puis relancez la mise à jour.",
     mixedBlockerBody:
-      'Pulse peut fermer les aperçus locaux ci-dessous. Les autres processus doivent être fermés manuellement avant de poursuivre la mise à jour.',
+      'PULSE peut fermer les aperçus locaux ci-dessous. Les autres processus doivent être fermés manuellement avant de poursuivre la mise à jour.',
     closePreviewsAndUpdate: 'Fermer les aperçus et mettre à jour',
     closePreviewsAndCheckAgain: 'Fermer les aperçus et revérifier',
     localPreview: 'Aperçu local',
@@ -4758,12 +4762,12 @@ export const frOverrides = {
     sessionsTitle: 'Chaque profil conserve ses propres sessions',
     sessionsText:
       'Cette liste appartient au profil par défaut. Nouvelle session démarre une tâche sur le profil sélectionné. Changez de profil dans la barre et la liste change avec lui.',
-    stayTitle: "Pulse reste à portée d'un clic",
+    stayTitle: "PULSE reste à portée d'un clic",
     stayText:
-      'Passez au profil de configuration et ouvrez Bienvenue dans Pulse lorsque vous avez besoin d’aide. La conversation y reste disponible.'
+      'Passez au profil de configuration et ouvrez Bienvenue dans PULSE lorsque vous avez besoin d’aide. La conversation y reste disponible.'
   },
   guidedGreeting: {
-    line: "Salut, entrez ! Je suis Pulse. Donnez-moi deux minutes pour préparer les lieux à votre façon, puis pulse pulse attaquerons à quelque chose que vous voulez vraiment accomplir.\n\nMais d'abord, comment dois-je vous appeler ?",
+    line: "Salut, entrez ! Je suis PULSE. Donnez-moi deux minutes pour préparer les lieux à votre façon, puis nous nous attaquerons à quelque chose que vous voulez vraiment accomplir.\n\nMais d'abord, comment dois-je vous appeler ?",
     nameSuggestion: name => `(Je peux aussi simplement vous appeler ${name}, si vous préférez.)`
   },
   install: {
@@ -4774,7 +4778,7 @@ export const frOverrides = {
       skipped: 'Ignoré',
       failed: 'Échoué'
     },
-    oneTimeTitle: 'Pulse nécessite une installation unique',
+    oneTimeTitle: 'PULSE nécessite une installation unique',
     unsupportedDesc: platform =>
       `L'installation automatisée au premier lancement n'est pas encore disponible sur ${platform}. Ouvrez le Terminal et exécutez la commande ci-dessous, puis relancez cette application. Les lancements suivants ignoreront cette étape.`,
     installCommand: "Commande d'installation",
@@ -4782,24 +4786,24 @@ export const frOverrides = {
     viewDocs: "Voir la documentation d'installation",
     installTo: 'Sera installé dans',
     retryAfterRun: "Je l'ai exécuté — réessayer",
-    setupChoiceTitle: 'Configurer Pulse Desktop',
+    setupChoiceTitle: 'Configurer PULSE Desktop',
     setupChoiceDesc:
-      'Connectez cette application à un gateway Pulse que vous exécutez déjà, ou installez Pulse localement sur cet ordinateur.',
-    connectExistingTitle: 'Se connecter à un Pulse existant',
+      'Connectez cette application à un gateway PULSE que vous exécutez déjà, ou installez PULSE localement sur cet ordinateur.',
+    connectExistingTitle: 'Se connecter à un PULSE existant',
     connectExistingShort: 'Connecter un existant',
     connectExistingDesc:
       'Utilisez un backend distant avec un jeton de session ou une connexion par navigateur. Aucune installation locale ne démarrera.',
-    installLocalTitle: 'Installer Pulse localement',
-    installLocalDesc: 'Téléchargez Pulse, créez son environnement Python et exécutez le backend sur cet ordinateur.',
-    localStartUnavailable: "L'installation locale n'a pas pu démarrer. Redémarrez Pulse Desktop et réessayez.",
-    remoteSetupTitle: 'Se connecter à un Pulse existant',
+    installLocalTitle: 'Installer PULSE localement',
+    installLocalDesc: 'Téléchargez PULSE, créez son environnement Python et exécutez le backend sur cet ordinateur.',
+    localStartUnavailable: "L'installation locale n'a pas pu démarrer. Redémarrez PULSE Desktop et réessayez.",
+    remoteSetupTitle: 'Se connecter à un PULSE existant',
     remoteSetupDesc:
-      "Entrez l'URL du gateway. Pulse Desktop détectera s'il a besoin d'un jeton ou d'une connexion par navigateur.",
+      "Entrez l'URL du gateway. PULSE Desktop détectera s'il a besoin d'un jeton ou d'une connexion par navigateur.",
     remoteUrlTitle: 'URL du gateway',
-    remoteUrlDesc: "Utilisez l'URL de base du gateway Pulse, y compris https:// pour les connexions distantes.",
+    remoteUrlDesc: "Utilisez l'URL de base du gateway PULSE, y compris https:// pour les connexions distantes.",
     remoteUrlPlaceholder: 'https://gateway.example.com/pulse',
     probing: "Détection de l'authentification du gateway...",
-    probeError: "Impossible d'atteindre ce gateway Pulse.",
+    probeError: "Impossible d'atteindre ce gateway PULSE.",
     probeErrorDetails: 'Détails',
     identityProvider: "votre fournisseur d'identité",
     authTitle: 'Authentification',
@@ -4820,12 +4824,12 @@ export const frOverrides = {
     applyRemote: 'Appliquer et se reconnecter',
     backToSetup: 'Retour',
     failedTitle: "Échec de l'installation",
-    settingUpTitle: 'Configuration de Pulse Agent',
+    settingUpTitle: 'Configuration de PULSE Agent',
     finishingTitle: 'Finalisation',
     failedDesc:
-      "L'une des étapes d'installation a échoué. Sous Windows, cela peut arriver si une autre instance Pulse CLI ou desktop est en cours d'exécution. Arrêtez toutes les instances Pulse en cours, puis réessayez. Consultez les détails ci-dessous ou le journal du bureau pour la transcription complète.",
+      "L'une des étapes d'installation a échoué. Sous Windows, cela peut arriver si une autre instance PULSE CLI ou desktop est en cours d'exécution. Arrêtez toutes les instances PULSE en cours, puis réessayez. Consultez les détails ci-dessous ou le journal du bureau pour la transcription complète.",
     activeDesc:
-      "Il s'agit d'une configuration unique. Le programme d'installation de Pulse télécharge les dépendances et configure votre machine. Les lancements suivants ignoreront cette étape.",
+      "Il s'agit d'une configuration unique. Le programme d'installation de PULSE télécharge les dépendances et configure votre machine. Les lancements suivants ignoreront cette étape.",
     progress: (completed, total) => `${completed} sur ${total} étapes terminées`,
     currentStage: stage => ` -- actuellement : ${stage}`,
     fetchingManifest: "Récupération du manifeste d'installation...",
@@ -4843,12 +4847,12 @@ export const frOverrides = {
     openLogs: 'Ouvrir les journaux'
   },
   onboarding: {
-    headerTitle: 'Configurons Pulse Agent pour vous',
+    headerTitle: 'Configurons PULSE Agent pour vous',
     headerDesc:
       'Connectez un fournisseur de modèles pour commencer à discuter. La plupart des options nécessitent un clic.',
     preparingInstall:
-      "Pulse finalise l'installation. Cela prend généralement moins d'une minute au premier lancement.",
-    starting: 'Démarrage de Pulse…',
+      "PULSE finalise l'installation. Cela prend généralement moins d'une minute au premier lancement.",
+    starting: 'Démarrage de PULSE…',
     lookingUpProviders: 'Recherche des fournisseurs...',
     collapse: 'Réduire',
     otherProviders: 'Autres fournisseurs',
@@ -4856,7 +4860,7 @@ export const frOverrides = {
     chooseLater: 'Je choisirai un fournisseur plus tard',
     recommended: 'Recommandé',
     connected: 'Connecté',
-    featuredPitch: 'Un abonnement, 300+ modèles de pointe — la méthode recommandée pour exécuter Pulse',
+    featuredPitch: 'Un abonnement, 300+ modèles de pointe — la méthode recommandée pour exécuter PULSE',
     fireworksPitch: 'API de modèles directe — modèles de pointe hébergés par Fireworks',
     localModelsTitle: 'Exécuter des modèles en local',
     localModelsPitch: 'Aucun compte requis — téléchargez un modèle et exécutez-le sur cette machine',
@@ -4886,7 +4890,7 @@ export const frOverrides = {
       local: {
         short: 'auto-hébergé',
         description:
-          'Pointez Pulse vers un point de terminaison local ou auto-hébergé compatible OpenAI (vLLM, llama.cpp, Ollama, etc).'
+          'Pointez PULSE vers un point de terminaison local ou auto-hébergé compatible OpenAI (vLLM, llama.cpp, Ollama, etc).'
       }
     },
     backToSignIn: 'Retour à la connexion',
@@ -4900,7 +4904,7 @@ export const frOverrides = {
     update: 'Mettre à jour',
     flowSubtitles: {
       pkce: 'Ouvre votre navigateur pour vous connecter, puis continue ici',
-      device_code: 'Ouvre une page de vérification dans votre navigateur — Pulse se connecte automatiquement',
+      device_code: 'Ouvre une page de vérification dans votre navigateur — PULSE se connecte automatiquement',
       external: 'Connectez-vous une fois dans votre terminal, puis revenez discuter'
     },
     startingSignIn: provider => `Démarrage de la connexion pour ${provider}...`,
@@ -4917,19 +4921,19 @@ export const frOverrides = {
     errorDetails: 'Détails',
     pickDifferentProvider: 'Choisissez un autre fournisseur',
     signInWith: provider => `Se connecter avec ${provider}`,
-    openedBrowser: provider => `Pulse avons ouvert ${provider} dans votre navigateur.`,
-    authorizeThere: 'Autorisez Pulse là-bas.',
+    openedBrowser: provider => `Nous avons ouvert ${provider} dans votre navigateur.`,
+    authorizeThere: 'Autorisez PULSE là-bas.',
     copyAuthCode: "Copiez le code d'autorisation et collez-le ci-dessous.",
     pasteAuthCode: "Coller le code d'autorisation",
     reopenAuthPage: "Rouvrir la page d'autorisation",
     autoBrowser: provider =>
-      `Pulse avons ouvert ${provider} dans votre navigateur. Autorisez Pulse là-bas et vous serez connecté automatiquement — rien à copier ou coller.`,
+      `Nous avons ouvert ${provider} dans votre navigateur. Autorisez PULSE là-bas et vous serez connecté automatiquement — rien à copier ou coller.`,
     reopenSignInPage: 'Rouvrir la page de connexion',
     waitingAuthorize: 'En attente de votre autorisation...',
     externalPending: provider =>
       `${provider} se connecte via sa propre CLI. Exécutez cette commande dans un terminal, puis revenez et choisissez « Je me suis connecté » :`,
     signedIn: 'Je me suis connecté',
-    deviceCodeOpened: provider => `Pulse avons ouvert ${provider} dans votre navigateur. Entrez ce code là-bas :`,
+    deviceCodeOpened: provider => `Nous avons ouvert ${provider} dans votre navigateur. Entrez ce code là-bas :`,
     reopenVerification: 'Rouvrir la page de vérification',
     copy: 'Copier',
     defaultModel: 'Modèle par défaut',
@@ -4942,21 +4946,21 @@ export const frOverrides = {
     docs: provider => `Documentation ${provider}`
   },
   freeTier: {
-    providerRowTitle: 'Pulse · offre gratuite',
-    providerRowPitch: 'Connectez-vous avec un compte Pulse pour débloquer davantage de modèles et outils.',
-    readyTitle: 'Pulse est prêt.',
+    providerRowTitle: 'Nous · offre gratuite',
+    providerRowPitch: 'Connectez-vous avec un compte Nous pour débloquer davantage de modèles et outils.',
+    readyTitle: 'PULSE est prêt.',
     readyCaption: 'Gratuit · connecteurs inclus',
     begin: 'Commencer',
-    signInInstead: 'Se connecter plutôt avec un compte Pulse',
+    signInInstead: 'Se connecter plutôt avec un compte Nous',
     otherProviders: 'Autres fournisseurs',
-    stripTitle: "L'inférence Pulse gratuite et les connecteurs sont maintenant disponibles.",
-    stripBody: 'Ouvrez le sélecteur de modèle pour les essayer ou connectez-vous avec un compte Pulse.',
+    stripTitle: "L'inférence Nous gratuite et les connecteurs sont maintenant disponibles.",
+    stripBody: 'Ouvrez le sélecteur de modèle pour les essayer ou connectez-vous avec un compte Nous.',
     openModelPicker: 'Ouvrir le sélecteur de modèle',
     dismiss: 'Fermer',
-    providerName: 'Pulse',
-    statusLabel: model => `Pulse · ${model}`,
+    providerName: 'Nous',
+    statusLabel: model => `Nous · ${model}`,
     signIn: 'Se connecter',
-    signInHeading: 'Connectez-vous avec un compte Pulse pour débloquer davantage de modèles et outils.',
+    signInHeading: 'Connectez-vous avec un compte Nous pour débloquer davantage de modèles et outils.',
     settingUp: "Configuration de l'inférence gratuite…",
     codeBody: 'Saisissez ce code dans votre navigateur pour terminer la connexion.',
     copyLink: 'Copier le lien',
@@ -4983,29 +4987,29 @@ export const frOverrides = {
     errorBody: "La connexion n'a pas abouti ; relancez-la.",
     busyHeading: 'Presque terminé',
     busyBody: wait =>
-      `Pulse n'a pas pu terminer votre connexion car le service Pulse est occupé. Réessayez dans ${wait}. Votre session reste disponible entre-temps.`,
+      `PULSE n'a pas pu terminer votre connexion car le service Nous est occupé. Réessayez dans ${wait}. Votre session reste disponible entre-temps.`,
     unreachableBody:
-      "Pulse n'a pas pu joindre le service Pulse pour terminer votre connexion. Vérifiez votre connexion Internet et réessayez. Votre session reste disponible.",
+      "PULSE n'a pas pu joindre le service Nous pour terminer votre connexion. Vérifiez votre connexion Internet et réessayez. Votre session reste disponible.",
     alreadySignedInHeading: 'Déjà connecté.',
-    alreadySignedInBody: 'Cette installation Pulse est déjà connectée à un compte Pulse.',
+    alreadySignedInBody: 'Cette installation PULSE est déjà connectée à un compte Nous.',
     setupFailed: {
       gateClosed:
-        'Cette version de Pulse ne peut pas démarrer sans compte Pulse. Connectez-vous ou créez-en un gratuitement en une minute.',
+        'Cette version de PULSE ne peut pas démarrer sans compte Nous. Connectez-vous ou créez-en un gratuitement en une minute.',
       paused:
-        "L'utilisation de Pulse sans connexion est momentanément suspendue. Pulse continuera à vérifier. La connexion est gratuite et vous permet de continuer immédiatement.",
+        "L'utilisation de PULSE sans connexion est momentanément suspendue. PULSE continuera à vérifier. La connexion est gratuite et vous permet de continuer immédiatement.",
       rateLimited: wait =>
-        `Beaucoup de personnes démarrent en ce moment ; Pulse réessaiera dans ${wait}. La connexion est gratuite et évite l'attente.`,
+        `Beaucoup de personnes démarrent en ce moment ; PULSE réessaiera dans ${wait}. La connexion est gratuite et évite l'attente.`,
       unreachable:
-        "Pulse n'a pas pu joindre le service Pulse. Vérifiez votre connexion Internet, puis appuyez sur Réessayer. Vous pouvez aussi connecter un autre fournisseur.",
+        "PULSE n'a pas pu joindre le service Nous. Vérifiez votre connexion Internet, puis appuyez sur Réessayer. Vous pouvez aussi connecter un autre fournisseur.",
       serverError:
-        'Le service Pulse a rencontré un problème. Réessayez dans un instant ou connectez un autre fournisseur.',
+        'Le service Nous a rencontré un problème. Réessayez dans un instant ou connectez un autre fournisseur.',
       powRequired:
-        "Le serveur Pulse a demandé une preuve de travail qui n'est pas encore gérée par votre Agent. Connectez-vous ou créez un compte Pulse gratuit pour continuer.",
+        "Le serveur Nous a demandé une preuve de travail qui n'est pas encore gérée par votre Agent. Connectez-vous ou créez un compte Nous gratuit pour continuer.",
       locked:
-        'Cette session ne peut pas continuer sans connexion. Connectez-vous ou créez un compte Pulse gratuit pour poursuivre.',
+        'Cette session ne peut pas continuer sans connexion. Connectez-vous ou créez un compte Nous gratuit pour poursuivre.',
       generic:
-        "Pulse n'a pas pu configurer l'accès gratuit sans connexion. Connectez-vous gratuitement ou choisissez un autre fournisseur.",
-      signInBelow: 'La connexion est gratuite. Choisissez Pulse ci-dessous.',
+        "PULSE n'a pas pu configurer l'accès gratuit sans connexion. Connectez-vous gratuitement ou choisissez un autre fournisseur.",
+      signInBelow: 'La connexion est gratuite. Choisissez Nous ci-dessous.',
       tryAgain: 'Réessayer',
       retrying: 'Nouvelle tentative…'
     }
@@ -5023,7 +5027,7 @@ export const frOverrides = {
     localDownloadsHeading: 'Local',
     noAuthenticatedProviders: 'Aucun fournisseur authentifié.',
     pro: 'Pro',
-    proNeedsSubscription: 'Les modèles Pro nécessitent un abonnement payant Pulse.',
+    proNeedsSubscription: 'Les modèles Pro nécessitent un abonnement payant Nous.',
     free: 'Gratuit',
     freeTier: 'Gratuit',
     priceTitle: 'Prix entrant / sortant par million de jetons',
@@ -5055,6 +5059,10 @@ export const frOverrides = {
       editModels: 'Modifier les modèles…',
       followDefault: 'Utiliser le modèle par défaut des Réglages',
       refreshModels: 'Actualiser les modèles',
+      favorites: 'Favoris',
+      addFavorite: 'Ajouter aux favoris',
+      removeFavorite: 'Retirer des favoris',
+      favoriteShortcut: '⇧ Clic',
       fast: 'Rapide',
       free: 'gratuit',
       cacheRead: 'lecture en cache',
@@ -5110,13 +5118,13 @@ export const frOverrides = {
       update: 'mise à jour',
       updateInProgress: 'Mise à jour en cours',
       commitsBehind: (count, branch) => `${count} commit${count === 1 ? '' : 's'} en retard sur ${branch}`,
-      desktopVersion: version => `Pulse Desktop v${version}`,
+      desktopVersion: version => `PULSE Desktop v${version}`,
       backendVersion: version => `Backend v${version}`,
       clientLabel: version => `client v${version}`,
       connectionSsh: host => `SSH : ${host}`,
       connectionRemote: host => `Distant : ${host}`,
       connectionCloud: host => `Cloud : ${host}`,
-      connectionCloudTooltip: host => `Pulse Cloud · ${host}`,
+      connectionCloudTooltip: host => `PULSE Cloud · ${host}`,
       connectionSshTooltip: host => `SSH · ${host}`,
       connectionRemoteTooltip: host => `Distant · ${host}`,
       backendLabel: version => `backend v${version}`,
@@ -5271,7 +5279,7 @@ export const frOverrides = {
     binaryTitle: 'Cela ressemble à un fichier binaire',
     binaryBody: label => `L'aperçu de ${label} peut afficher du texte illisible.`,
     largeTitle: 'Ce fichier est volumineux',
-    largeBody: (label, size) => `${label} fait ${size}. Pulse n'affichera que les 512 Ko premiers.`,
+    largeBody: (label, size) => `${label} fait ${size}. PULSE n'affichera que les 512 Ko premiers.`,
     previewAnyway: 'Aperçu quand même',
     truncated: 'Affichage des 512 Ko premiers.',
     noInlineTitle: 'Aucun aperçu en ligne',
@@ -5312,11 +5320,11 @@ export const frOverrides = {
         "Cette adresse pointe vers la machine qui exécute votre agent, pas vers celle-ci. Le panneau du navigateur charge les pages localement ; un serveur de développement distant nécessite donc une redirection de port ou un nom d'hôte accessible.",
       failedToLoad: "Échec du chargement de l'aperçu",
       tryAgain: 'Réessayer',
-      restarting: 'Pulse redémarre...',
-      askRestart: 'Demander à Pulse de redémarrer le serveur',
-      lookingRestart: taskId => `Pulse recherche un serveur d'aperçu à redémarrer (${taskId})`,
+      restarting: 'PULSE redémarre...',
+      askRestart: 'Demander à PULSE de redémarrer le serveur',
+      lookingRestart: taskId => `PULSE recherche un serveur d'aperçu à redémarrer (${taskId})`,
       restartingTitle: "Redémarrage du serveur d'aperçu",
-      restartingMessage: "Pulse travaille en arrière-plan. Surveillez la console d'aperçu pour suivre la progression.",
+      restartingMessage: "PULSE travaille en arrière-plan. Surveillez la console d'aperçu pour suivre la progression.",
       startRestartFailed: message => `Impossible de démarrer le redémarrage du serveur : ${message}`,
       restartFailed: 'Échec du redémarrage du serveur',
       hideConsole: "Masquer la console d'aperçu",
@@ -5328,17 +5336,17 @@ export const frOverrides = {
       reload: 'Recharger la page',
       address: 'Adresse',
       addressPlaceholder: 'Saisir une adresse',
-      blankPageBody: "Saisissez une adresse ci-dessus pour naviguer, ou demandez à Pulse d'ouvrir une page.",
+      blankPageBody: "Saisissez une adresse ci-dessus pour naviguer, ou demandez à PULSE d'ouvrir une page.",
       finishedRestarting: message =>
-        `Pulse a terminé le redémarrage du serveur d'aperçu${message ? `: ${message}` : ''}`,
+        `PULSE a terminé le redémarrage du serveur d'aperçu${message ? `: ${message}` : ''}`,
       failedRestarting: message => `Échec du redémarrage du serveur : ${message}`,
       unknownError: 'erreur inconnue',
       restartedTitle: "Serveur d'aperçu redémarré",
       reloadingNow: "Rechargement de l'aperçu maintenant.",
       restartFailedTitle: "Échec du redémarrage de l'aperçu",
-      restartFailedMessage: "Pulse n'a pas pu redémarrer le serveur.",
+      restartFailedMessage: "PULSE n'a pas pu redémarrer le serveur.",
       stillWorking:
-        "Pulse travaille toujours, mais aucun résultat de redémarrage n'est arrivé. La commande du serveur peut être en cours d'exécution au premier plan.",
+        "PULSE travaille toujours, mais aucun résultat de redémarrage n'est arrivé. La commande du serveur peut être en cours d'exécution au premier plan.",
       workspaceReloading: "Espace de travail modifié, rechargement de l'aperçu",
       fileChanged: url => `Fichier modifié, rechargement de l'aperçu : ${url}`,
       filesChanged: (count, url) => `${count} modifications de fichier, rechargement de l'aperçu : ${url}`,
@@ -5363,13 +5371,13 @@ export const frOverrides = {
   },
   interfaceMode: {
     title: 'Mode d’interface',
-    hint: 'Modifie ce qui est affiché, pas ce que Pulse peut faire.',
+    hint: 'Modifie ce qui est affiché, pas ce que PULSE peut faire.',
     sessionNote:
       'Défini par le mode Simple. Une modification ici dure le temps de cette session ; passez en mode Avancé pour la conserver.',
     simple: {
       label: 'Simple',
       description:
-        'Pour discuter avec Pulse. Barre latérale et conversation ; pas de panneaux terminal, fichiers ou diff.'
+        'Pour discuter avec PULSE. Barre latérale et conversation ; pas de panneaux terminal, fichiers ou diff.'
     },
     advanced: {
       label: 'Avancé',
@@ -5455,7 +5463,7 @@ export const frOverrides = {
     thread: {
       loadingSession: 'Chargement de la session',
       showEarlier: 'Afficher les messages précédents',
-      loadingResponse: 'Pulse charge une réponse',
+      loadingResponse: 'PULSE charge une réponse',
       loadingLocalModel: model => `Chargement de ${model} en mémoire`,
       processingPrompt: "Traitement de l'invite",
       resumeWhenBackgroundDone: count =>
@@ -5475,6 +5483,7 @@ export const frOverrides = {
       branchNewChat: 'Créer une branche dans une nouvelle conversation',
       react: 'Réagir',
       dismissError: "Ignorer l'erreur",
+      responseStopped: 'Réponse interrompue',
       errorLayers: {
         auth: "Erreur d'authentification",
         billing: 'Crédits épuisés',
@@ -5490,17 +5499,17 @@ export const frOverrides = {
         auth: "Le service d'IA a refusé votre connexion. Vérifiez les identifiants de ce fournisseur, puis renvoyez votre message.",
         billing:
           "Votre compte n'a plus de crédits chez ce fournisseur. Rechargez-le ou changez de fournisseur, puis réessayez.",
-        disk: "Votre disque est plein ; Pulse n'a pas pu enregistrer cette conversation. Libérez de l'espace, puis réessayez.",
+        disk: "Votre disque est plein ; PULSE n'a pas pu enregistrer cette conversation. Libérez de l'espace, puis réessayez.",
         endpoint:
-          "Pulse ne parvient pas à joindre votre serveur de modèle personnalisé. Vérifiez qu'il fonctionne, puis renvoyez votre message.",
+          "PULSE ne parvient pas à joindre votre serveur de modèle personnalisé. Vérifiez qu'il fonctionne, puis renvoyez votre message.",
         gateway:
-          'Pulse a rencontré un problème interne au démarrage de cette réponse. Renvoyez votre message ; si cela persiste, envoyez les diagnostics.',
+          'PULSE a rencontré un problème interne au démarrage de cette réponse. Renvoyez votre message ; si cela persiste, envoyez les diagnostics.',
         generic:
-          "Une erreur s'est produite pendant la réponse de Pulse. Réessayez ou copiez les détails si cela persiste.",
+          "Une erreur s'est produite pendant la réponse de PULSE. Réessayez ou copiez les détails si cela persiste.",
         provider:
           "Le service d'IA n'a pas pu traiter cette demande. Réessayez dans un instant ou changez de fournisseur.",
         runtime:
-          'Pulse a rencontré un problème interne au démarrage de cette réponse. Renvoyez votre message ; si cela persiste, envoyez les diagnostics.',
+          'PULSE a rencontré un problème interne au démarrage de cette réponse. Renvoyez votre message ; si cela persiste, envoyez les diagnostics.',
         streaming: 'La connexion a été interrompue avant la fin de la réponse. Réessayez pour la renvoyer.'
       },
       errorCodes: {
@@ -5544,7 +5553,7 @@ export const frOverrides = {
         },
         no_reply: {
           title: "La réponse n'a pas abouti",
-          body: 'Pulse a terminé ce tour sans réponse. Réessayez pour la renvoyer.'
+          body: 'PULSE a terminé ce tour sans réponse. Réessayez pour la renvoyer.'
         },
         stream_drop: {
           title: 'La réponse a été interrompue',
@@ -5558,7 +5567,7 @@ export const frOverrides = {
         ssl_cert_verification: {
           title: 'Échec de la connexion sécurisée',
           body: provider =>
-            `Pulse n'a pas pu vérifier la connexion sécurisée à ${provider}. Vérifiez votre réseau ou votre proxy, ou changez de fournisseur.`
+            `PULSE n'a pas pu vérifier la connexion sécurisée à ${provider}. Vérifiez votre réseau ou votre proxy, ou changez de fournisseur.`
         },
         context_overflow: {
           title: 'Cette conversation est trop longue',
@@ -5593,31 +5602,31 @@ export const frOverrides = {
         },
         invalid_response: {
           title: "Le service d'IA a envoyé une réponse illisible",
-          body: provider => `${provider} a renvoyé une réponse que Pulse n'a pas pu lire. Réessayez dans un instant.`
+          body: provider => `${provider} a renvoyé une réponse que PULSE n'a pas pu lire. Réessayez dans un instant.`
         },
         empty_response: {
           title: "Le service d'IA a envoyé une réponse vide",
           body: provider => `${provider} n'a rien renvoyé pour ce message. Réessayez dans un instant.`
         },
         loop_error: {
-          title: 'Pulse est resté bloqué dans une boucle',
-          body: 'La réponse répétait les mêmes étapes ; Pulse l’a donc arrêtée. Réessayez ou démarrez une nouvelle conversation.'
+          title: 'PULSE est resté bloqué dans une boucle',
+          body: 'La réponse répétait les mêmes étapes ; PULSE l’a donc arrêtée. Réessayez ou démarrez une nouvelle conversation.'
         },
         SESSION_NOT_OWNED: {
           title: 'Cette conversation est ouverte ailleurs',
-          body: 'Cette conversation est déjà ouverte dans une autre fenêtre Pulse ou un terminal. Fermez-la là-bas puis réessayez, ou démarrez-en une nouvelle ici.'
+          body: 'Cette conversation est déjà ouverte dans une autre fenêtre PULSE ou un terminal. Fermez-la là-bas puis réessayez, ou démarrez-en une nouvelle ici.'
         },
         disk_full: {
           title: 'Disque plein',
-          body: "Votre disque est plein ; Pulse n'a pas pu enregistrer cette conversation. Libérez de l'espace puis réessayez."
+          body: "Votre disque est plein ; PULSE n'a pas pu enregistrer cette conversation. Libérez de l'espace puis réessayez."
         },
         free_tier_disabled: {
-          title: "L'utilisation de Pulse sans connexion est désactivée pour le moment",
-          body: 'Connectez-vous avec un compte Pulse gratuit pour continuer.'
+          title: "L'utilisation de PULSE sans connexion est désactivée pour le moment",
+          body: 'Connectez-vous avec un compte Nous gratuit pour continuer.'
         },
         free_tier_rate_limited: {
           title: 'Vous avez épuisé le quota sans connexion',
-          body: 'Il sera bientôt renouvelé. Connectez-vous avec un compte Pulse gratuit pour obtenir un quota plus élevé.'
+          body: 'Il sera bientôt renouvelé. Connectez-vous avec un compte Nous gratuit pour obtenir un quota plus élevé.'
         },
         free_tier_at_capacity: {
           title: 'Le service sans connexion est très sollicité',
@@ -5625,19 +5634,19 @@ export const frOverrides = {
         },
         free_tier_model_not_free: {
           title: "Ce modèle n'est pas disponible sans connexion",
-          body: 'Pulse utilise le modèle gratuit pour le moment. Connectez-vous avec un compte Pulse gratuit pour accéder à plus de modèles.'
+          body: 'PULSE utilise le modèle gratuit pour le moment. Connectez-vous avec un compte Nous gratuit pour accéder à plus de modèles.'
         },
         free_tier_route: {
-          title: "Pulse n'a pas pu joindre le modèle gratuit par cette route",
-          body: 'Connectez-vous avec un compte Pulse gratuit ou vérifiez Réglages → Modèle.'
+          title: "PULSE n'a pas pu joindre le modèle gratuit par cette route",
+          body: 'Connectez-vous avec un compte Nous gratuit ou vérifiez le paramètre NOUS_INFERENCE_BASE_URL.'
         },
         free_tier_outage: {
           title: 'Le modèle gratuit rencontre des difficultés',
           body: 'Renvoyez votre message dans une minute.'
         },
         free_tier_refused: {
-          title: "Pulse n'a pas pu envoyer ce message sans connexion",
-          body: 'La connexion avec un compte Pulse est gratuite.'
+          title: "PULSE n'a pas pu envoyer ce message sans connexion",
+          body: 'La connexion avec un compte Nous est gratuite.'
         }
       },
       errorAuthKinds: {
@@ -5652,7 +5661,7 @@ export const frOverrides = {
       },
       errorDetails: 'Détails',
       errorGenericProvider: "Le service d'IA",
-      errorToastTitle: "Pulse n'a pas pu terminer la réponse",
+      errorToastTitle: "PULSE n'a pas pu terminer la réponse",
       errorRetry: 'Réessayer',
       errorLimitResets: (time: string) => `Le quota se réinitialise à ${time}`,
       errorRetryAtReset: (time: string) => `Réessayer à la réinitialisation du quota (${time})`,
@@ -5663,11 +5672,11 @@ export const frOverrides = {
       errorChooseModel: 'Choisir un modèle',
       errorCompressConversation: 'Compresser la conversation',
       errorCompressFailed: 'Impossible de compresser la conversation',
-      errorOpenPulseFolder: 'Ouvrir le dossier Pulse',
-      errorOpenPulseFolderFailed: "Impossible d'ouvrir le dossier Pulse",
+      errorOpenPULSEFolder: 'Ouvrir le dossier PULSE',
+      errorOpenPULSEFolderFailed: "Impossible d'ouvrir le dossier PULSE",
       errorUpdateApiKey: 'Mettre à jour la clé API',
       errorSignInAgain: provider => `Se reconnecter à ${provider}`,
-      errorSignInFreeTier: 'Se connecter avec un compte Pulse',
+      errorSignInFreeTier: 'Se connecter avec un compte Nous',
       errorOauthExpired: provider =>
         `Votre connexion à ${provider} a expiré ou a été révoquée. Reconnectez-vous pour continuer la conversation.`,
       errorOpenLogs: 'Ouvrir les journaux',
@@ -5700,11 +5709,11 @@ export const frOverrides = {
       attachingFile: 'Ajout en cours…'
     },
     approval: {
-      gatewayDisconnected: "La Gateway Pulse n'est pas connectée",
+      gatewayDisconnected: "La Gateway PULSE n'est pas connectée",
       sendFailed: "Impossible d'envoyer la réponse d'approbation",
       reconnect: 'Se reconnecter',
       timedOutSystemLine:
-        "Le délai d'approbation a expiré — la commande n'a pas été exécutée. Demandez à Pulse de réessayer ou augmentez la limite dans Paramètres → Sécurité → Délai d'approbation.",
+        "Le délai d'approbation a expiré — la commande n'a pas été exécutée. Demandez à PULSE de réessayer ou augmentez la limite dans Paramètres → Sécurité → Délai d'approbation.",
       openSafetySettings: 'Ouvrir les paramètres de sécurité',
       run: 'Exécuter',
       command: 'Commande',
@@ -5715,12 +5724,12 @@ export const frOverrides = {
       reject: 'Rejeter',
       alwaysTitle: 'Toujours autoriser cette commande ?',
       alwaysDescription: pattern =>
-        `Cela ajoute le motif « ${pattern} » à votre liste d'autorisation permanente (~/.pulse/config.yaml). Pulse ne redemandera plus pour ce type de commande — que ce soit dans cette session ou dans une session future.`,
+        `Cela ajoute le motif « ${pattern} » à votre liste d'autorisation permanente (~/.pulse/config.yaml). PULSE ne redemandera plus pour ce type de commande — que ce soit dans cette session ou dans une session future.`,
       alwaysAllow: 'Toujours autoriser'
     },
     clarify: {
       notReady: "La demande de clarification n'est pas encore prête",
-      gatewayDisconnected: "La Gateway Pulse n'est pas connectée",
+      gatewayDisconnected: "La Gateway PULSE n'est pas connectée",
       sendFailed: "Impossible d'envoyer la réponse de clarification",
       loadingQuestion: 'Chargement de la question…',
       other: 'Autre (saisissez votre réponse)',
@@ -5729,6 +5738,8 @@ export const frOverrides = {
       skipped: 'Ignoré',
       noAnswer: 'Pas de réponse',
       confirmAndContinueLabel: 'Confirmer et continuer',
+      singleSelectHint: 'Choisir une réponse',
+      multiSelectHint: 'Choisir toutes les réponses qui s’appliquent',
       questionProgress: (answered, total) => `${answered} réponse${answered === 1 ? '' : 's'} sur ${total}`,
       notDelivered:
         "Cette question n'a pas atteint l'app, elle ne peut donc pas être répondue ici. Appuyez sur Arrêter pour terminer le tour, puis répondez dans le chat."
@@ -5782,7 +5793,7 @@ export const frOverrides = {
       sendFailed: "Impossible d'envoyer la réponse de configuration MCP",
       reloadFailed:
         'Serveur enregistré, mais le rechargement des outils MCP a échoué — ils seront chargés à la prochaine session',
-      gatewayDisconnected: "La Gateway Pulse n'est pas connectée"
+      gatewayDisconnected: "La Gateway PULSE n'est pas connectée"
     },
     tool: {
       copyCode: 'Copier le code',
@@ -5967,20 +5978,20 @@ export const frOverrides = {
     }
   },
   prompts: {
-    gatewayDisconnected: "La Gateway Pulse n'est pas connectée",
+    gatewayDisconnected: "La Gateway PULSE n'est pas connectée",
     reconnect: 'Se reconnecter',
     sudoSendFailed: "Impossible d'envoyer le mot de passe sudo",
     secretSendFailed: "Impossible d'envoyer le secret",
     sudoTitle: 'Mot de passe administrateur',
     sudoDesc:
-      "Pulse a besoin de votre mot de passe sudo pour exécuter une commande privilégiée. Il n'est envoyé qu'à votre agent local.",
+      "PULSE a besoin de votre mot de passe sudo pour exécuter une commande privilégiée. Il n'est envoyé qu'à votre agent local.",
     sudoCommandUnavailable:
       "Cet agent n'a pas fourni la commande. Annulez si vous ne pouvez pas la vérifier dans la conversation.",
     sudoInstallDesc:
-      'Pulse a besoin de votre mot de passe sudo pour installer les paquets de Bot Screen (TigerVNC + Xfce) sur l’hôte du gateway. Il n’est envoyé qu’à cet hôte.',
+      'PULSE a besoin de votre mot de passe sudo pour installer les paquets de Bot Screen (TigerVNC + Xfce) sur l’hôte du gateway. Il n’est envoyé qu’à cet hôte.',
     sudoPlaceholder: 'mot de passe sudo',
     secretTitle: 'Secret requis',
-    secretDesc: "Pulse a besoin d'un identifiant pour continuer.",
+    secretDesc: "PULSE a besoin d'un identifiant pour continuer.",
     secretPlaceholder: 'valeur du secret',
     vaultUnlockSendFailed: "Impossible d'envoyer le mot de passe principal",
     vaultUnlockTitle: name => `Déverrouiller ${name}`,
@@ -5992,7 +6003,7 @@ export const frOverrides = {
     vaultSaveSendFailed: "Impossible d'enregistrer l'identifiant",
     vaultSaveTitle: site => `Enregistrer votre identifiant ${site} ?`,
     vaultSaveDesc: origin =>
-      `Pulse a atteint une page de connexion sur ${origin} et ne possède aucun identifiant pour celle-ci. Saisissez-le une fois ici : il sera chiffré sur cet ordinateur et rempli dans la page sans que le modèle voie le mot de passe.`,
+      `PULSE a atteint une page de connexion sur ${origin} et ne possède aucun identifiant pour celle-ci. Saisissez-le une fois ici : il sera chiffré sur cet ordinateur et rempli dans la page sans que le modèle voie le mot de passe.`,
     vaultSaveIdentifierLabel: "Adresse e-mail ou nom d'utilisateur",
     vaultSaveIdentifierPlaceholder: 'vous@exemple.fr',
     vaultSavePasswordPlaceholder: 'Mot de passe',
@@ -6002,10 +6013,10 @@ export const frOverrides = {
     vaultCodeSendFailed: "Impossible d'envoyer le code",
     vaultCodeTitle: site => `Code de vérification pour ${site}`,
     vaultCodeDesc: site =>
-      `${site} demande un code à usage unique reçu par SMS, e-mail ou application d'authentification. Saisissez-le ici : Pulse le remplira dans la page sans que le modèle le voie.`,
+      `${site} demande un code à usage unique reçu par SMS, e-mail ou application d'authentification. Saisissez-le ici : PULSE le remplira dans la page sans que le modèle le voie.`,
     vaultCodeLabel: 'Code',
     vaultCodeFootnote:
-      "Astuce : enregistrez la clé d'authentification avec cet identifiant dans Paramètres → Mots de passe et identifiants ; Pulse saisira alors les codes pour vous.",
+      "Astuce : enregistrez la clé d'authentification avec cet identifiant dans Paramètres → Mots de passe et identifiants ; PULSE saisira alors les codes pour vous.",
     vaultCodeSkip: 'Ignorer',
     vaultCodeConfirm: 'Saisir le code'
   },
@@ -6079,8 +6090,8 @@ export const frOverrides = {
     sessionExportFailed: "Impossible d'exporter la session",
     imageSaved: 'Image enregistrée',
     downloadStarted: 'Téléchargement démarré',
-    restartToUseSaveImage: "Redémarrez Pulse Desktop pour utiliser Enregistrer l'image.",
-    restartToSaveImages: 'Redémarrez Pulse Desktop pour enregistrer les images',
+    restartToUseSaveImage: "Redémarrez PULSE Desktop pour utiliser Enregistrer l'image.",
+    restartToSaveImages: 'Redémarrez PULSE Desktop pour enregistrer les images',
     imageDownloadFailed: "Échec du téléchargement de l'image",
     openImage: "Ouvrir l'image",
     downloadImage: "Télécharger l'image",
@@ -6114,14 +6125,14 @@ export const frOverrides = {
       },
       skills: {
         title: 'Apprenez-lui une seule fois',
-        text: "Les compétences sont des dossiers d'instructions que Pulse charge lorsque le travail le nécessite."
+        text: "Les compétences sont des dossiers d'instructions que PULSE charge lorsque le travail le nécessite."
       },
       messaging: {
-        title: 'Pulse loin de votre bureau',
+        title: 'PULSE loin de votre bureau',
         text: 'Connectez Telegram, Discord, Slack et plus encore : même agent, même mémoire.'
       },
       artifacts: {
-        title: 'Tout ce que Pulse a créé',
+        title: 'Tout ce que PULSE a créé',
         text: 'Images, fichiers et liens de chaque session, indexés au même endroit.'
       },
       cron: {
@@ -6134,7 +6145,7 @@ export const frOverrides = {
       },
       profiles: {
         title: 'Les profils sont séparés',
-        text: 'Chacun possède son propre Pulse, avec ses clés, sa mémoire et ses sessions.'
+        text: 'Chacun possède son propre PULSE, avec ses clés, sa mémoire et ses sessions.'
       },
       'composer-mentions': {
         title: 'Joindre et commander',

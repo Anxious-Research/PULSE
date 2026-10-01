@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as PulseApi from '@/pulse'
+import type * as PULSEApi from '@/pulse'
 import type { SessionInfo } from '@/pulse'
 import { $sessions } from '@/store/session'
 
@@ -16,13 +16,13 @@ import { CommandCenterView } from './index'
 // click alone, the call only after an explicit confirm, and never on cancel.
 
 vi.mock('@/pulse', async importOriginal => ({
-  ...(await importOriginal<typeof PulseApi>()),
+  ...(await importOriginal<typeof PULSEApi>()),
   getActionStatus: vi.fn(() => Promise.resolve({ running: false })),
   getLogs: vi.fn(() => Promise.resolve({ lines: [] })),
   getStatus: vi.fn(() => Promise.resolve({})),
   getUsageAnalytics: vi.fn(() => Promise.resolve({})),
   restartGateway: vi.fn(),
-  updatePulse: vi.fn()
+  updatePULSE: vi.fn()
 }))
 vi.mock('@/lib/session-export', () => ({ exportSession: vi.fn() }))
 vi.mock('./maintenance', () => ({ MaintenancePanel: () => null }))

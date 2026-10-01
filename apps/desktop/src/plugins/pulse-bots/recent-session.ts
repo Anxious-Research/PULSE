@@ -1,5 +1,5 @@
 /**
- * "Open recent session" : a bot row's left click always
+ * "Open recent session" (pulse-agent#93054): a bot row's left click always
  * lands on the canonical Bot Chat — that is the bot's stable identity and
  * stays so. Multi-task users also want the freshest ORDINARY conversation
  * (a cron run, a delegated job, a `+` side thread) one gesture away, so the
@@ -16,7 +16,7 @@ import * as sdk from '@pulse/plugin-sdk'
 import { haptic, host } from '@pulse/plugin-sdk'
 
 import { saveSelectedRosterBot } from './bot-state'
-import { prepareBotSource } from './canonical-chat'
+import { prepareBotSource, resolveExpectHistory } from './canonical-chat'
 import { openRosterBot } from './roster-actions'
 import { botConnectionRoute, botWorkspaceOwnerKey, setBotsWorkspaceOwner } from './routing'
 import type { RosterRow } from './types'
@@ -55,7 +55,7 @@ export async function openBotRecentSession(bot: RosterRow): Promise<boolean> {
       // stays where the row click expects it (same shape as `+` side threads).
       intent: 'tab',
       awaitHydration: true,
-      expectHistory: (bot.last_session?.message_count ?? 1) > 0,
+      expectHistory: resolveExpectHistory(bot.last_session),
       forceResume: true,
       hydrationTimeoutMs: Number.isFinite(sdk.BOT_CHAT_SESSION_HYDRATION_TIMEOUT_MS)
         ? sdk.BOT_CHAT_SESSION_HYDRATION_TIMEOUT_MS

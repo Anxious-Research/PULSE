@@ -63,7 +63,7 @@ def _discord_request(
         url, data=None if body is None else json.dumps(body).encode("utf-8"), method=method,
         headers={
             "Authorization": f"Bot {token}", "Content-Type": "application/json",
-            "User-Agent": "Pulse-Agent (https://github.com/Anxious-Research/PULSE)"})
+            "User-Agent": "PULSE-Agent (https://github.com/Anxious-Research/PULSE)"})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             if resp.status == 204:
@@ -631,16 +631,3 @@ for _name, _actions, _handler in (
         handler=lambda args, _h=_handler, **kw: _h(**{"action": "", **args}),
         check_fn=check_discord_tool_requirements,
         requires_env=["DISCORD_BOT_TOKEN"])
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from typing import TYPE_CHECKING  # noqa: F401,E402
-from typing import Tuple  # noqa: F401,E402
-
-def get_dynamic_schema() -> Optional[Dict[str, Any]]:
-    """Backward-compat wrapper — returns core schema."""
-    return get_dynamic_schema_core()
-# ---- END PLUGIN-COMPAT ----

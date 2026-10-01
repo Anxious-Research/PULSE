@@ -99,7 +99,7 @@ class LiveTranscriptWriter:
             d.mkdir(parents=True, exist_ok=True)
             path = d / f"task-{task_index}.log"
             path.write_text(
-                "=== Pulse subagent live transcript ===\n"
+                "=== PULSE subagent live transcript ===\n"
                 f"delegation: {delegation_id}   task: {task_index}\n"
                 f"goal: {_redact(goal_line)}\n"  # header bypasses event(), so redact here too
                 f"started: {time.strftime(_TIME_FMT)}\n"
@@ -302,14 +302,3 @@ def prune_stale_live_dirs(max_age_days: int = LIVE_RETENTION_DAYS) -> int:
             except OSError:
                 continue
     return removed
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-def new_live_delegation_id() -> str:
-    """Same shape as async_delegation's ids so the dir name matches the handle."""
-    return f"deleg_{uuid.uuid4().hex[:8]}"
-# ---- END PLUGIN-COMPAT ----

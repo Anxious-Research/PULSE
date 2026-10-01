@@ -56,15 +56,15 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { Button } from "@anxious-research/ui/ui/components/button";
-import { SelectionSwitcher } from "@anxious-research/ui/ui/components/selection-switcher";
-import { Spinner } from "@anxious-research/ui/ui/components/spinner";
-import { Typography } from "@anxious-research/ui/ui/components/typography/index";
-import { ConfirmDialog } from "@anxious-research/ui/ui/components/confirm-dialog";
+import { Button } from "@nous-research/ui/ui/components/button";
+import { SelectionSwitcher } from "@nous-research/ui/ui/components/selection-switcher";
+import { Spinner } from "@nous-research/ui/ui/components/spinner";
+import { Typography } from "@nous-research/ui/ui/components/typography/index";
+import { ConfirmDialog } from "@nous-research/ui/ui/components/confirm-dialog";
 import { cn } from "@/lib/utils";
 import { SidebarFooter } from "@/components/SidebarFooter";
 import { SidebarStatusStrip, gatewayLine } from "@/components/SidebarStatusStrip";
-import { useBelowBreakpoint } from "@anxious-research/ui/hooks/use-below-breakpoint";
+import { useBelowBreakpoint } from "@nous-research/ui/hooks/use-below-breakpoint";
 import { useSidebarStatus } from "@/hooks/useSidebarStatus";
 import { AuthWidget } from "@/components/AuthWidget";
 import { PageHeaderProvider } from "@/contexts/PageHeaderProvider";
@@ -74,6 +74,7 @@ import { ProfileSwitcher } from "@/components/ProfileSwitcher";
 import { ProfileScopeBanner } from "@/components/ProfileScopeBanner";
 import { MemoryPressureBanner } from "@/components/MemoryPressureBanner";
 import { MultiplexStandaloneBanner } from "@/components/MultiplexStandaloneBanner";
+import { SharedMetricsConsentBanner } from "@/components/SharedMetricsConsentBanner";
 import { useSystemActions } from "@/contexts/useSystemActions";
 import type { SystemAction } from "@/contexts/system-actions-context";
 // Route pages are lazy-loaded so the initial dashboard shell does not pay for
@@ -578,6 +579,7 @@ export default function App() {
       <ProfileScopeBanner />
       <MemoryPressureBanner status={sidebarStatus} />
       <MultiplexStandaloneBanner status={sidebarStatus} />
+      <SharedMetricsConsentBanner />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <div className="flex min-h-0 min-w-0 flex-1">
@@ -617,7 +619,7 @@ export default function App() {
                 <PluginSlot name="header-left" />
 
                 <Typography className="font-bold text-[1.125rem] leading-[0.95] tracking-[0.0525rem] text-midground uppercase">
-                  Pulse
+                  PULSE
                   <br />
                   Agent
                 </Typography>
@@ -945,7 +947,7 @@ function SidebarSystemActions({
   const navigate = useNavigate();
   const { activeAction, isBusy, isRunning, pendingAction, runAction } =
     useSystemActions();
-  const canUpdatePulse = status?.can_update_pulse === true;
+  const canUpdatePULSE = status?.can_update_pulse === true;
   // Served by the shared multiplexer: a restart blips every bot on this device — say which.
   const sharedGateway = sharedGatewayProfiles(status);
   const [restartConfirmOpen, setRestartConfirmOpen] = useState(false);
@@ -962,7 +964,7 @@ function SidebarSystemActions({
     let cancelled = false;
     setUpdateConfirmChecking(true);
     api
-      .checkPulseUpdate(false)
+      .checkPULSEUpdate(false)
       .then((info) => {
         if (!cancelled) setUpdateConfirmInfo(info);
       })
@@ -985,10 +987,10 @@ function SidebarSystemActions({
     }
     const cmd = updateConfirmInfo?.update_command ?? "pulse update";
     return (
-      t.status.updatePulseConfirmMessage ??
+      t.status.updatePULSEConfirmMessage ??
       `This will run 'pulse update' (${cmd}) and restart the gateway when it finishes.`
     );
-  }, [t.status.updatePulseConfirmMessage, updateConfirmInfo]);
+  }, [t.status.updatePULSEConfirmMessage, updateConfirmInfo]);
 
   const items: SystemActionItem[] = [
     {
@@ -999,12 +1001,12 @@ function SidebarSystemActions({
       spin: true,
     },
   ];
-  if (canUpdatePulse) {
+  if (canUpdatePULSE) {
     items.push({
       action: "update",
       icon: Download,
-      label: t.status.updatePulse,
-      runningLabel: t.status.updatingPulse,
+      label: t.status.updatePULSE,
+      runningLabel: t.status.updatingPULSE,
       spin: false,
     });
   }
@@ -1086,7 +1088,7 @@ function SidebarSystemActions({
         sharedGateway
           ? sharedGatewayRestartDescription(sharedGateway)
           : (t.status.restartGatewayConfirmMessage ??
-            "This restarts the Pulse gateway process. Connected channels and active sessions will reconnect afterward.")
+            "This restarts the PULSE gateway process. Connected channels and active sessions will reconnect afterward.")
       }
       loading={pendingAction === "restart"}
       onCancel={() => setRestartConfirmOpen(false)}
@@ -1101,7 +1103,7 @@ function SidebarSystemActions({
 
     <ConfirmDialog
       cancelLabel={t.common.cancel}
-      confirmLabel={t.status.updatePulseConfirmNow ?? "Update now"}
+      confirmLabel={t.status.updatePULSEConfirmNow ?? "Update now"}
       description={
         updateConfirmChecking ? t.common.loading : updateConfirmDescription
       }
@@ -1109,7 +1111,7 @@ function SidebarSystemActions({
       onCancel={() => setUpdateConfirmOpen(false)}
       onConfirm={confirmUpdate}
       open={updateConfirmOpen}
-      title={t.status.updatePulseConfirmTitle ?? `${t.status.updatePulse}?`}
+      title={t.status.updatePULSEConfirmTitle ?? `${t.status.updatePULSE}?`}
     />
     </>
   );

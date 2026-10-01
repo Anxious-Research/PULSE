@@ -45,6 +45,7 @@ import {
   updateEligibility,
   upsertConnection
 } from './connection-registry'
+import { matchingConnectionId } from './connection-route-identity'
 
 // Non-literal specifier on purpose: tsconfig.electron.json's project boundary
 // excludes apps/shared sources, but vitest resolves the workspace package fine
@@ -247,10 +248,10 @@ test('primary SSH reuse rejects a descriptor with different effective dialing co
   )
 })
 
-test('primary SSH reuse rejects a descriptor with a different remote Pulse path', async () => {
+test('primary SSH reuse rejects a descriptor with a different remote PULSE path', async () => {
   const registry = migrateV1ToRegistry({
     mode: 'ssh',
-    remote: { mode: 'ssh', host: 'build-host', remotePulsePath: '/srv/pulse', user: 'alice' },
+    remote: { mode: 'ssh', host: 'build-host', remotePULSEPath: '/srv/pulse', user: 'alice' },
     profiles: {}
   })
 
@@ -266,7 +267,7 @@ test('primary SSH reuse rejects a descriptor with a different remote Pulse path'
         ssh: {
           effectiveConfigFingerprint: 'same-effective-config',
           host: 'build-host',
-          remotePulsePath: '/opt/pulse',
+          remotePULSEPath: '/opt/pulse',
           remoteProfile: '',
           user: 'alice'
         }
@@ -287,7 +288,7 @@ test('registry primary reuses a matching primary backend descriptor', () => {
     lastUsed: 'pulse-vps',
     connections: [
       { id: LOCAL_CONNECTION_ID, kind: 'local', label: 'This device' },
-      { id: 'pulse-vps', kind: 'ssh', label: 'Pulse VPS', host: 'pulse-vps' }
+      { id: 'pulse-vps', kind: 'ssh', label: 'PULSE VPS', host: 'pulse-vps' }
     ]
   })
 
@@ -460,13 +461,13 @@ test('resolvedConnectionId reuses the exact URL envelope and rejects weak or dup
         headers: { 'CF-Access-Client-Id': { encoding: 'safeStorage', value: 'header-b' } }
       },
       {
-        id: 'cloud-pulse',
+        id: 'cloud-nous',
         kind: 'cloud',
-        label: 'Pulse cloud',
+        label: 'Nous cloud',
         url: sharedUrl,
         authMode: 'oauth',
         headers: { 'CF-Access-Client-Id': { encoding: 'safeStorage', value: 'header-cloud' } },
-        org: 'pulse'
+        org: 'nous'
       },
       {
         id: 'cloud-labs',
@@ -507,10 +508,10 @@ test('resolvedConnectionId reuses the exact URL envelope and rejects weak or dup
       baseUrl: sharedUrl,
       headers: { 'CF-Access-Client-Id': { encoding: 'safeStorage', value: 'header-cloud' } },
       mode: 'remote',
-      org: 'pulse',
+      org: 'nous',
       remoteKind: 'cloud'
     }),
-    'cloud-pulse'
+    'cloud-nous'
   )
   assert.equal(
     resolvedConnectionId(registry, {
@@ -569,7 +570,7 @@ test('resolvedConnectionId keeps same-host SSH routes distinct by port, key, pat
     host: 'work-host',
     keyPath: '/keys/a',
     kind: 'ssh' as const,
-    remotePulsePath: '/srv/pulse',
+    remotePULSEPath: '/srv/pulse',
     remoteProfile: 'alpha',
     user: 'root'
   }
@@ -584,7 +585,7 @@ test('resolvedConnectionId keeps same-host SSH routes distinct by port, key, pat
       { ...base, id: 'ssh-base', label: 'SSH base' },
       { ...base, id: 'ssh-port', label: 'SSH port', port: 2222 },
       { ...base, id: 'ssh-key', keyPath: '/keys/b', label: 'SSH key' },
-      { ...base, id: 'ssh-path', label: 'SSH path', remotePulsePath: '/opt/pulse' },
+      { ...base, id: 'ssh-path', label: 'SSH path', remotePULSEPath: '/opt/pulse' },
       { ...base, id: 'ssh-profile', label: 'SSH profile', remoteProfile: 'beta' }
     ]
   }
@@ -595,7 +596,7 @@ test('resolvedConnectionId keeps same-host SSH routes distinct by port, key, pat
   assert.equal(resolve(base), 'ssh-base')
   assert.equal(resolve({ ...base, port: 2222 }), 'ssh-port')
   assert.equal(resolve({ ...base, keyPath: '/keys/b' }), 'ssh-key')
-  assert.equal(resolve({ ...base, remotePulsePath: '/opt/pulse' }), 'ssh-path')
+  assert.equal(resolve({ ...base, remotePULSEPath: '/opt/pulse' }), 'ssh-path')
   assert.equal(resolve({ ...base, remoteProfile: 'beta' }), 'ssh-profile')
   assert.equal(
     resolvedConnectionId(registry, {
@@ -1269,13 +1270,13 @@ test('merge preserves fields the editor does not carry (org, ssh extras)', () =>
     id: 'c',
     kind: 'cloud' as const,
     label: 'Cloud',
-    org: 'pulse',
+    org: 'nous',
     url: 'https://a.cloud'
   }
 
   const renamed = mergeConnectionInput({ id: 'c', kind: 'cloud', label: 'Renamed', url: 'https://a.cloud' }, cloud)
 
-  assert.equal(renamed.org, 'pulse')
+  assert.equal(renamed.org, 'nous')
 
   const ssh = {
     host: 'homelab.lan',
@@ -1284,14 +1285,14 @@ test('merge preserves fields the editor does not carry (org, ssh extras)', () =>
     kind: 'ssh' as const,
     label: 'Box',
     port: 2222,
-    remotePulsePath: '/opt/pulse',
+    remotePULSEPath: '/opt/pulse',
     remoteProfile: 'research',
     user: 'k'
   }
 
   const labelOnly = mergeConnectionInput({ id: 's', kind: 'ssh', label: 'Renamed box' }, ssh)
 
-  assert.equal(labelOnly.remotePulsePath, '/opt/pulse')
+  assert.equal(labelOnly.remotePULSEPath, '/opt/pulse')
   assert.equal(labelOnly.remoteProfile, 'research')
   assert.equal(labelOnly.host, 'homelab.lan')
   assert.equal(labelOnly.user, 'k')
@@ -1411,12 +1412,12 @@ test('remote input normalizes URL and auth mode; cloud keeps org', () => {
   assert.equal(remote.authMode, 'token')
 
   const cloud = normalizeConnectionInput(
-    { kind: 'cloud', label: 'Cloud', url: 'https://foo.pulse.cloud', authMode: 'oauth', org: 'pulse' },
+    { kind: 'cloud', label: 'Cloud', url: 'https://foo.pulse.cloud', authMode: 'oauth', org: 'nous' },
     registry
   )
 
   assert.equal(cloud.kind, 'cloud')
-  assert.equal(cloud.org, 'pulse')
+  assert.equal(cloud.org, 'nous')
   assert.equal(cloud.authMode, 'oauth')
 })
 
@@ -1493,10 +1494,10 @@ test('normalizeRegistry round-trips a valid registry unchanged in shape', () => 
       {
         id: 'cloud-1',
         kind: 'cloud',
-        label: 'Pulse Cloud',
+        label: 'PULSE Cloud',
         url: 'https://a.pulse.cloud',
         authMode: 'oauth',
-        org: 'pulse'
+        org: 'nous'
       },
       { id: 'spark', kind: 'ssh', label: 'Spark', host: 'spark1', user: 'tek', port: 2222 }
     ]
@@ -1598,14 +1599,14 @@ test('migrate: v1 global remote becomes a labeled entry and the primary', () => 
 test('migrate: v1 cloud keeps cloud provenance + org', () => {
   const registry = migrateV1ToRegistry({
     mode: 'cloud',
-    remote: { url: 'https://a.pulse.cloud', authMode: 'oauth', org: 'pulse' }
+    remote: { url: 'https://a.pulse.cloud', authMode: 'oauth', org: 'nous' }
   })
 
   const cloud = registry.connections.find(c => c.kind === 'cloud')
 
   assert.ok(cloud)
   assert.equal(registry.primary, cloud.id)
-  assert.equal(cloud.org, 'pulse')
+  assert.equal(cloud.org, 'nous')
 })
 
 test('migrate: per-profile overrides become extra sources, deduped by URL', () => {
@@ -1918,6 +1919,46 @@ test('drift heal leaves a registry that already knows the v1 SSH route untouched
 
   assert.equal(drifted.changed, false)
   assert.equal(drifted.registry, first.registry)
+})
+
+test('drift heal aligns a registered SSH route whose identity fields drifted from the v1 route', () => {
+  // Same host/user as the registered entry, but the v1 route carries a keyPath
+  // the entry never had. matchingConnectionId compares keyPath too, so the live
+  // window would resolve to no connectionId and be treated as the local device.
+  const first = reconcileRegistryDrift(emptyRegistry(), {
+    mode: 'ssh',
+    remote: { host: 'devbox.example.com', user: 'omar' }
+  })
+
+  assert.equal(first.changed, true)
+
+  const drifted = reconcileRegistryDrift(first.registry, {
+    mode: 'ssh',
+    remote: { host: 'devbox.example.com', user: 'omar', keyPath: '~/.ssh/id_rsa' }
+  })
+
+  assert.equal(drifted.changed, true)
+  const sshEntries = drifted.registry.connections.filter(connection => connection.kind === 'ssh')
+  assert.equal(sshEntries.length, 1)
+  assert.equal(sshEntries[0].keyPath, '~/.ssh/id_rsa')
+  assert.equal(drifted.registry.primary, first.registry.primary)
+  assert.equal(
+    matchingConnectionId(
+      drifted.registry,
+      { host: 'devbox.example.com', user: 'omar', keyPath: '~/.ssh/id_rsa', kind: 'ssh' },
+      'primary'
+    ),
+    sshEntries[0].id
+  )
+
+  // Clearing the keyPath again re-aligns the entry.
+  const cleared = reconcileRegistryDrift(drifted.registry, {
+    mode: 'ssh',
+    remote: { host: 'devbox.example.com', user: 'omar' }
+  })
+
+  assert.equal(cleared.changed, true)
+  assert.equal(cleared.registry.connections.find(connection => connection.kind === 'ssh')?.keyPath, undefined)
 })
 
 test('drift heal respects a deliberate primary pick on a registered SSH route', () => {

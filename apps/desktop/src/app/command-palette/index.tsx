@@ -18,7 +18,7 @@ import { codiconIcon } from '@/components/ui/codicon'
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { HighlightMatches } from '@/components/ui/highlight-matches'
 import { KbdCombo } from '@/components/ui/kbd'
-import { getPulseConfigRecord, listAllProfileSessions } from '@/pulse'
+import { getPULSEConfigRecord, listAllProfileSessions } from '@/pulse'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { useI18n } from '@/i18n'
 import { sessionTitle } from '@/lib/chat-runtime'
@@ -379,7 +379,7 @@ const PaletteRow = memo(function PaletteRow({
   )
 })
 
-// Pulse session ids: <YYYYMMDD>_<HHMMSS>_<6 hex>. Used to offer a direct
+// PULSE session ids: <YYYYMMDD>_<HHMMSS>_<6 hex>. Used to offer a direct
 // "Go to session ‹id›" jump for ids that aren't in the recent-200 list.
 const SESSION_ID_RE = /^\d{8}_\d{6}_[a-f0-9]{6}$/
 
@@ -644,7 +644,7 @@ function CommandPaletteBody({ onExited }: { onExited: () => void }) {
   // reopen paints from cache and revalidates in the background.
   const configQuery = useQuery({
     queryKey: ['command-palette', 'config'],
-    queryFn: () => getPulseConfigRecord()
+    queryFn: () => getPULSEConfigRecord()
   })
 
   // staleTime 0 (not the 60s client default): renames, pins, and archives
@@ -972,7 +972,7 @@ function CommandPaletteBody({ onExited }: { onExited: () => void }) {
             icon: Download,
             id: 'cc-update-pulse',
             keywords: ['update', 'upgrade', 'pulse', 'version', 'system', 'restart'],
-            label: cc.updatePulse,
+            label: cc.updatePULSE,
             run: () => requestActiveUpdate()
           },
           {
@@ -1167,7 +1167,7 @@ function CommandPaletteBody({ onExited }: { onExited: () => void }) {
       ]
     })
 
-    // Apply a theme directly from the root search (e.g. "pulse" → Pulse). Live
+    // Apply a theme directly from the root search (e.g. "nous" → Nous). Live
     // preview via keepOpen, mirroring the nested theme picker. If the theme
     // can't render the current light/dark mode, flip to the one it supports.
     result.push({

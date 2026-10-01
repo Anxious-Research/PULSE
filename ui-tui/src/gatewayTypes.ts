@@ -7,13 +7,13 @@ import type {
   TranscriptMessage,
   Usage
 } from '@pulse/shared/gateway-events'
-import type { PulseSkin } from '@pulse/shared/skin'
+import type { PULSESkin } from '@pulse/shared/skin'
 
 import type { SessionInfo, SlashCategory } from './types.js'
 
 /** The cross-surface skin contract (canonical shape in `@pulse/shared`).
  *  Includes the paired light_colors/dark_colors overlays from #20379. */
-export type GatewaySkin = PulseSkin
+export type GatewaySkin = PULSESkin
 
 /** Distributive form of the shared `GatewayEvent<K>` so `switch (ev.type)`
  *  narrows `ev.payload` per case (the generic-defaulted interface does not). */
@@ -81,6 +81,8 @@ export interface ConfigDisplayConfig {
   /** Focus view (/focus) — display-only reduced-output mode. */
   focus_view?: boolean
   inline_diffs?: boolean
+  /** UI language id (`en`, `pl`, `pt-br`); the TUI fetches its pack via `i18n.catalog`. */
+  language?: string
   mouse_tracking?: boolean | null | number | string
   sections?: Record<string, string>
   show_cost?: boolean

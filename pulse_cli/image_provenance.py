@@ -1,4 +1,4 @@
-"""Image-authored deployment provenance for immutable Pulse runtimes.
+"""Image-authored deployment provenance for immutable PULSE runtimes.
 
 The image bakes ``/etc/pulse/image-provenance.json`` outside ``$PULSE_HOME`` and the checkout, so a
 bind-mounted checkout cannot hide the build fact and env/config cannot forge it. Absence preserves every

@@ -33,7 +33,7 @@ def _whatsapp_choose_mode(get_env_value, save_env_value):
         mode_label = "separate bot number" if current_mode == "bot" else "personal number (self-chat)"
         print(f"\n✓ Mode: {mode_label}")
         return current_mode
-    _say("", "How will you use WhatsApp with Pulse?", "",
+    _say("", "How will you use WhatsApp with PULSE?", "",
          "  1. Separate bot number (recommended)",
          "     People message the bot's number directly — cleanest experience.",
          "     Requires a second phone number with WhatsApp installed on a device.", "",
@@ -214,12 +214,12 @@ def cmd_whatsapp(args):
         _say("  Next steps:", "    1. Start the gateway:  pulse gateway",
              "    2. Send a message to the bot's WhatsApp number",
              "    3. The agent will reply automatically", "",
-             "  Tip: Agent responses are prefixed with '☤ Pulse Agent'")
+             "  Tip: Agent responses are prefixed with '☤ PULSE Agent'")
     else:
         _say("  Next steps:", "    1. Start the gateway:  pulse gateway",
              "    2. Open WhatsApp → Message Yourself",
              "    3. Type a message — the agent will reply", "",
-             "  Tip: Agent responses are prefixed with '☤ Pulse Agent'",
+             "  Tip: Agent responses are prefixed with '☤ PULSE Agent'",
              "  so you can tell them apart from your own messages.")
     _say("", "  Or install as a service: pulse gateway install")
 
@@ -317,8 +317,8 @@ def _sync_status(ssc) -> int:
     elif status.get("logged_in"):
         _err("\nOrg skills: not applicable — this account isn't a member of a shared organisation.")
     if not status.get("logged_in"):
-        _err("\nNot logged into Anxious Portal — sync is inert.")
-    elif not status.get("anxious_admin"):
+        _err("\nNot logged into Nous Portal — sync is inert.")
+    elif not status.get("nous_admin"):
         _err("\nSync is not enabled for your account yet.")
     elif not status.get("feature_enabled"):
         _err("\nSync feature is off for this instance (set PULSE_SYNC_ENABLED=1 "
@@ -380,7 +380,7 @@ def cmd_sync(args):
     except ssc.SyncInertError as e:
         _err(f"sync inert: {e}")
         return 1
-    if not identity.get("anxious_admin"):
+    if not identity.get("nous_admin"):
         _err("sync unavailable: not enabled for your account yet.")
         return 1
     if not ssc.resolve_sync_base_url():

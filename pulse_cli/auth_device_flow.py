@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, FrozenSet, Optional
 from urllib.parse import parse_qs, urlparse
 from pulse_cli.auth_constants import (
-    AuthError, DEFAULT_ANXIOUS_PORTAL_URL, DEVICE_AUTH_POLL_INTERVAL_CAP_SECONDS,
+    AuthError, DEFAULT_NOUS_PORTAL_URL, DEVICE_AUTH_POLL_INTERVAL_CAP_SECONDS,
     DEVICE_CODE_GRANT_TYPE, OAUTH_OVER_SSH_DOCS_URL, httpx)
 from utils import is_truthy_value
 
@@ -201,7 +201,7 @@ def _print_loopback_ssh_hint(redirect_uri: str, *, docs_url: str | None = None) 
     divider = "-" * 60
     print(
         f"\n{divider}\nRemote session detected — SSH tunnel required\n{divider}\n"
-        f"Pulse is waiting for the OAuth callback on {redirect_uri}\n"
+        f"PULSE is waiting for the OAuth callback on {redirect_uri}\n"
         "but your browser is on a different machine. Run this command\n"
         "in a NEW terminal on your local machine BEFORE opening the URL:\n\n"
         f"  ssh -N -L {port}:127.0.0.1:{port} {_ssh_user_at_host()}\n\n"
@@ -269,14 +269,14 @@ def _request_device_code(
     return data
 
 
-def _anxious_device_auth_timeout_message(portal_base_url: str) -> str:
+def _nous_device_auth_timeout_message(portal_base_url: str) -> str:
     """Actionable timeout text: the usual cause is Portal sign-in failing in the browser tab.
 
     A bare "Timed out waiting for device authorization" gives the user nothing to act on. The most common
     cause is Portal sign-in failing in the opened browser tab (including the server-side CAPTCHA loop from
     20605), so point at the Portal login page and the retry command. See #20605.
     """
-    portal = (portal_base_url or DEFAULT_ANXIOUS_PORTAL_URL).rstrip("/")
+    portal = (portal_base_url or DEFAULT_NOUS_PORTAL_URL).rstrip("/")
     return (
         "Timed out waiting for device authorization.\n"
         "  Portal sign-in is required before the device code can be approved.\n"
@@ -318,7 +318,7 @@ def _poll_device_token_generic(
     on_non_json_error: Callable[["httpx.Response"], Exception],
     on_error: Callable[["httpx.Response", Dict[str, Any]], Exception],
     on_timeout: Callable[[], Exception]) -> Dict[str, Any]:
-    """RFC 8628 device-code polling loop shared by the Anxious and xAI flows.
+    """RFC 8628 device-code polling loop shared by the Nous and xAI flows.
 
     ``authorization_pending`` sleeps and retries; ``slow_down`` grows the interval by 1s (cap 30s).
     A non-JSON 408/429/5xx, or a 403 carrying ``x-vercel-mitigated`` (edge/WAF mitigation, never a
@@ -369,7 +369,7 @@ def _poll_device_token_generic(
 def _poll_for_token(
     client: httpx.Client, portal_base_url: str, client_id: str, device_code: str,
     expires_in: int, poll_interval: int) -> Dict[str, Any]:
-    """Poll the Anxious token endpoint until the user approves or the code expires."""
+    """Poll the Nous token endpoint until the user approves or the code expires."""
     def _validate(payload: Dict[str, Any]) -> None:
         if "access_token" not in payload:
             raise ValueError("Token response did not include access_token")
@@ -393,8 +393,8 @@ def _poll_for_token(
         on_non_json_error=lambda _r: RuntimeError(
             "Token endpoint returned a non-JSON error response"),
         # Enriched at the SOURCE so the CLI login and the dashboard/desktop poller
-        # (web_server_oauth._anxious_promotion_poller surfaces it to the UI) both inherit the guidance.
-        on_timeout=lambda: TimeoutError(_anxious_device_auth_timeout_message(portal_base_url)))
+        # (web_server_oauth._nous_promotion_poller surfaces it to the UI) both inherit the guidance.
+        on_timeout=lambda: TimeoutError(_nous_device_auth_timeout_message(portal_base_url)))
 
 
 def _prompt_yes_no(prompt: str, *, default: str) -> bool:
@@ -430,7 +430,7 @@ def _offer_existing_oauth_credentials(
         existing = resolve()
         api_key = existing.get("api_key", "")
         if isinstance(api_key, str) and api_key and not is_expiring(api_key, 60):
-            print(f"Existing {display_name} credentials found in Pulse auth store.")
+            print(f"Existing {display_name} credentials found in PULSE auth store.")
             if _prompt_yes_no("Use existing credentials? [Y/n]: ", default="y"):
                 config_path = _update_config_for_provider(
                     provider_id, existing.get("base_url", default_base_url))

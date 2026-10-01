@@ -4,7 +4,7 @@ import path from 'node:path'
 
 import { app } from 'electron'
 
-import { resolveDesktopPulseHome } from './data-paths'
+import { resolveDesktopPULSEHome } from './data-paths'
 import { readDesktopLaunchConfig } from './renderer-heap-flags'
 import { wslgLaunchArgs } from './wslg-launch'
 import { spawnWslgLaunch } from './wslg-launch-process'
@@ -14,7 +14,7 @@ function configuredElectronFlags(env: NodeJS.ProcessEnv): string[] {
   // PULSE_DATA_DIR_SUFFIX channel installs and profiles/-rooted PULSE_HOME
   // values must pick the same config.yaml before the relaunch and inside the
   // app, or desktop.electron_flags silently never reaches the relaunch.
-  const home = resolveDesktopPulseHome({
+  const home = resolveDesktopPULSEHome({
     home: os.homedir(),
     env,
     // Linux-only pre-launch path; the win32 legacy-migration probe is never

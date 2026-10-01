@@ -266,9 +266,9 @@ def stage(
                 "Package": fields["Package"],
                 "Version": fields["Version"],
                 "Architecture": arch,
-                "Maintainer": fields.get("Maintainer", "Pulse Agent <noreply@anxiousresearchlab.com>"),
+                "Maintainer": fields.get("Maintainer", "PULSE Agent <noreply@anxious-research.com>"),
                 "Installed-Size": fields.get("Installed-Size", "0"),
-                "Description": fields.get("Description", "Pulse Agent"),
+                "Description": fields.get("Description", "PULSE Agent"),
                 "Filename": filename,
                 "Size": str(size),
                 "SHA256": sha256,
@@ -296,14 +296,14 @@ def stage(
     # line ends the record, and apt then never sees the hashes ("weak
     # security information"). One paragraph, no blank lines.
     release_fields = [
-        "Origin: Pulse Agent",
+        "Origin: PULSE Agent",
         "Label: pulse-agent",
         f"Suite: {suite}",
         f"Codename: {suite}",
         f"Architectures: {ARCH}",
         f"Components: {COMPONENT}",
         "Acquire-By-Hash: yes",
-        f"Description: Pulse Agent apt repository ({suite})",
+        f"Description: PULSE Agent apt repository ({suite})",
         "Date: " + time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime()),
     ]
     checksums = []
@@ -515,7 +515,7 @@ def main(argv: list | None = None) -> int:
     ap.add_argument("--pool", required=True, type=Path)
     ap.add_argument("--out", required=True, type=Path)
     # pulse-nightly is the suite actually published today
-    # (https://pulse-assets.anxiousresearchlab.com/releases/termux/nightly/,
+    # (https://pulse-assets.anxious-research.com/releases/termux/nightly/,
     # verified 2026-09-06); pulse-stable/pulse-canary are what CI stages
     # for the stable/canary channels.
     ap.add_argument(

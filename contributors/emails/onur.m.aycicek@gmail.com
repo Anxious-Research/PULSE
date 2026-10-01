@@ -1,2 +1,2 @@
 onuraycicek
-# Group room ordering, Pulse-Bot-Mode#105
+# Group room ordering, PULSE-Bot-Mode#105

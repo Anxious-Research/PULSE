@@ -4,7 +4,7 @@
  *
  *   source (plain ESM js) -> import allowlist (`@pulse/plugin-sdk` / `react*`
  *   only) -> bare-specifier rewrite to live shim blobs (see sdk/runtime.ts)
- *   -> blob `import()` -> validate default PulsePlugin -> register(ctx)
+ *   -> blob `import()` -> validate default PULSEPlugin -> register(ctx)
  *
  * Loading the same plugin id again disposes the previous registrations first
  * (agent rewrites a plugin file -> clean reload) — everything taken out
@@ -34,11 +34,12 @@
 
 import { atom } from 'nanostores'
 
+import { isReadFileErrorResult } from '@/lib/desktop-fs'
 import { installPluginSdk, sdkImportMap } from '@/sdk/runtime'
 import { notifyError } from '@/store/notifications'
 
 import { trackGatewayEventDisposers } from './events'
-import { createPluginContext, type PulsePlugin } from './plugin'
+import { createPluginContext, type PULSEPlugin } from './plugin'
 import { $pluginRecords, dropPlugin, pluginActive, type PluginKind, publishPlugin } from './plugins-store'
 
 interface LoadOptions {
@@ -396,12 +397,12 @@ export async function loadRuntimePlugin(
 
     const url = URL.createObjectURL(new Blob([rewriteSpecifiers(source)], { type: 'text/javascript' }))
 
-    let mod: { default?: PulsePlugin }
+    let mod: { default?: PULSEPlugin }
     let deadline: ReturnType<typeof setTimeout> | undefined
 
     try {
       mod = await Promise.race([
-        import(/* @vite-ignore */ url) as Promise<{ default?: PulsePlugin }>,
+        import(/* @vite-ignore */ url) as Promise<{ default?: PULSEPlugin }>,
         new Promise<never>((_, reject) => {
           deadline = setTimeout(
             () =>
@@ -420,7 +421,7 @@ export async function loadRuntimePlugin(
     const plugin = mod.default
 
     if (!plugin?.id || typeof plugin.register !== 'function') {
-      throw new Error(`${origin} has no valid default PulsePlugin export`)
+      throw new Error(`${origin} has no valid default PULSEPlugin export`)
     }
 
     // A disk/runtime copy of a plugin that now ships BUNDLED (e.g. a
@@ -599,7 +600,13 @@ async function readPackageMarker(desktop: Window['pulseDesktop'], folder: string
       return null
     }
 
-    const parsed = JSON.parse((await desktop.readFileText(marker.path)).text) as {
+    const read = await desktop.readFileText(marker.path)
+
+    if (isReadFileErrorResult(read)) {
+      return null
+    }
+
+    const parsed = JSON.parse(read.text) as {
       catalogName?: string
       package?: string
       repo?: string
@@ -669,9 +676,13 @@ async function readPluginSourceText(file: string): Promise<string> {
 
   const result = await desktop.readFileText(file)
 
+  if (isReadFileErrorResult(result)) {
+    throw new Error(result.message || `Plugin read failed: ${result.error}`)
+  }
+
   if (result.truncated) {
     throw new PluginSourceOversizeError(
-      "plugin.js exceeds this shell's 512 KiB read limit — update Pulse Desktop to load larger plugins"
+      "plugin.js exceeds this shell's 512 KiB read limit — update PULSE Desktop to load larger plugins"
     )
   }
 
@@ -780,7 +791,11 @@ async function watchDiskPluginFile(desktop: NonNullable<Window['pulseDesktop']>,
   }
 
   try {
-    record.watchId = (await desktop.watchPreviewFile(record.file)).id
+    const watch = await desktop.watchPreviewFile(record.file)
+
+    // Structured "folder gone" answer — nothing to watch; the poll still
+    // reconciles new folders and edits need a manual reload.
+    record.watchId = isReadFileErrorResult(watch) ? null : watch.id
   } catch {
     // Unwatchable — the poll still reconciles new folders; edits need a
     // manual "Reload desktop plugins".
@@ -923,7 +938,7 @@ export async function uninstallDiskPlugin(pluginId: string): Promise<{ ok: boole
   const remove = window.pulseDesktop?.removeDesktopPlugin
 
   if (!remove) {
-    return { ok: false, error: 'this Pulse Desktop build cannot remove desktop plugins — delete the folder by hand' }
+    return { ok: false, error: 'this PULSE Desktop build cannot remove desktop plugins — delete the folder by hand' }
   }
 
   const result = await remove({ name: record.origin })

@@ -1,4 +1,4 @@
-"""Pulse Desktop (Chat GUI) uninstaller: removes only GUI state — built Electron artifacts, the packaged
+"""PULSE Desktop (Chat GUI) uninstaller: removes only GUI state — built Electron artifacts, the packaged
 app, and the desktop's own ``userData`` — never agent source, venv, config, sessions or .env."""
 
 import os
@@ -25,13 +25,13 @@ def _env_dir(var: str, fallback: Path) -> Path:
 
 
 def desktop_userdata_dir() -> Path:
-    """Electron ``app.getPath('userData')`` for an app named "Pulse" on each platform (GUI-only state)."""
+    """Electron ``app.getPath('userData')`` for an app named "PULSE" on each platform (GUI-only state)."""
     home = Path.home()
     if sys.platform == "darwin":
-        return home / "Library" / "Application Support" / "Pulse"
+        return home / "Library" / "Application Support" / "PULSE"
     if sys.platform == "win32":
-        return _env_dir("APPDATA", home / "AppData" / "Roaming") / "Pulse"
-    return _env_dir("XDG_CONFIG_HOME", home / ".config") / "Pulse"
+        return _env_dir("APPDATA", home / "AppData" / "Roaming") / "PULSE"
+    return _env_dir("XDG_CONFIG_HOME", home / ".config") / "PULSE"
 
 
 def source_built_gui_artifacts(pulse_home: Path) -> "list[Path]":
@@ -44,19 +44,27 @@ def source_built_gui_artifacts(pulse_home: Path) -> "list[Path]":
             agent_root / "node_modules", pulse_home / "desktop-build-stamp.json"]
 
 
+def desktop_install_record() -> Path:
+    """Where ``pulse update`` records the installed ``PULSE.app`` copies it keeps current. The apps
+    are machine-wide, so the record sits under the default root whichever profile runs; deleting it
+    is what stops an uninstalled app from being put back by the next update."""
+    from pulse_constants import get_default_pulse_root  # noqa: PLC0415
+    return get_default_pulse_root() / "desktop-installed-apps.json"
+
+
 def packaged_gui_app_paths() -> "list[Path]":
     """Standard install locations of the packaged desktop distributable for the current OS. Every candidate
     is returned; the caller filters to those that exist. Never globs system-wide — only the well-known
-    electron-builder output locations for the "Pulse" product."""
+    electron-builder output locations for the "PULSE" product."""
     home = Path.home()
     if sys.platform == "darwin":
-        return [Path("/Applications/Pulse.app"), home / "Applications" / "Pulse.app"]
+        return [Path("/Applications/PULSE.app"), home / "Applications" / "PULSE.app"]
     if sys.platform == "win32":
         local_base = _env_dir("LOCALAPPDATA", home / "AppData" / "Local")
         # NSIS per-user install (perMachine=false), an older/alternate layout, NSIS per-machine (needs admin).
         program_files = os.environ.get("ProgramFiles")
-        return [local_base / "Programs" / "Pulse", local_base / "pulse-desktop"] + (
-            [Path(program_files) / "Pulse"] if program_files else [])
+        return [local_base / "Programs" / "PULSE", local_base / "pulse-desktop"] + (
+            [Path(program_files) / "PULSE"] if program_files else [])
     # Linux: an AppImage lives wherever the user put it and deb/rpm files belong to the package manager
     # (see the hint in ``uninstall_gui``), so only the desktop entry + hicolor icons are cleaned here.
     from pulse_cli.linux_desktop_entry import LEGACY_DESKTOP_ENTRY_NAME, desktop_entry_path
@@ -66,7 +74,7 @@ def packaged_gui_app_paths() -> "list[Path]":
     # The legacy entry is a hidden alias of the app-id entry since #124492 — remove it with the real one.
     return [desktop_entry_path(),
             data_base / "applications" / LEGACY_DESKTOP_ENTRY_NAME,
-            data_base / "applications" / "Pulse.desktop"] + [
+            data_base / "applications" / "PULSE.desktop"] + [
         icons / size / "apps" / "pulse.png"
         for size in ("scalable", "24x24", "32x32", "48x48", "256x256", "512x512", "1024x1024")]
 
@@ -137,7 +145,7 @@ def uninstall_gui(pulse_home: "Path | None" = None, *, remove_userdata: bool = T
                 removed.append(path)
         return found
     log_info("Removing built GUI artifacts (renderer, release, node_modules)...")
-    _remove_existing(source_built_gui_artifacts(home))
+    _remove_existing([*source_built_gui_artifacts(home), desktop_install_record()])
     log_info("Removing installed desktop app...")
     if not _remove_existing(packaged_gui_app_paths()):
         log_info("No packaged desktop app found in standard locations")
@@ -147,7 +155,7 @@ def uninstall_gui(pulse_home: "Path | None" = None, *, remove_userdata: bool = T
     if not removed:
         log_info("No desktop GUI artifacts found to remove")
     if sys.platform.startswith("linux"):
-        # The desktop entry was removed above but the menu caches still list it; reindex so Pulse
+        # The desktop entry was removed above but the menu caches still list it; reindex so PULSE
         # disappears from the launcher.
         try:
             from pulse_cli.linux_desktop_entry import desktop_entry_path, refresh_desktop_databases

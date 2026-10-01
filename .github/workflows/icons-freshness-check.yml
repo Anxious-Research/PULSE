@@ -1,11 +1,11 @@
 name: Icon Assets Freshness
 
 # The committed icon outputs must match what scripts/generate_icons.py
-# renders from assets/anxious-girl-*.svg + assets/backgrounds/*.svg. Regular
+# renders from assets/nous-girl-*.svg + assets/backgrounds/*.svg. Regular
 # builds and user installs consume the committed files and never render, so
 # this lane is what keeps them honest: regenerate, structural --check, then
 # fail on any byte difference. Fix a red run with
-# `node scripts/generate-icons.mjs` on a Pulse runtime interpreter and commit.
+# `node scripts/generate-icons.mjs` on a PULSE runtime interpreter and commit.
 #
 # Byte-determinism note: resvg renders the same SVG to identical bytes on any
 # host for pure-shape artwork. If the master ever contains <text>, font
@@ -24,9 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # v7.0.1
 
-      # The generator runs on a Pulse runtime interpreter; [] exports one as PULSE_PYTHON.
+      # The generator runs on a PULSE runtime interpreter; [] exports one as PULSE_PYTHON.
       - uses: ./.github/actions/setup-pm
         with:
           toolchain: all

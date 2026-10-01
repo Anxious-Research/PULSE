@@ -15,7 +15,7 @@
  * old plugin.js bundle and rendered it against a hand-built jsx stub.
  */
 
-import type * as PulseSdk from '@pulse/plugin-sdk'
+import type * as PULSESdk from '@pulse/plugin-sdk'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -36,7 +36,7 @@ const { ensureAgent, ensureBotMetadata, notifyError, openRosterBot, requestProfi
   }))
 
 vi.mock('@pulse/plugin-sdk', async importOriginal => {
-  const sdk = await importOriginal<typeof PulseSdk>()
+  const sdk = await importOriginal<typeof PULSESdk>()
 
   return {
     ...sdk,

@@ -1,7 +1,7 @@
 // electron-builder custom win.sign hook: Azure Trusted Signing for the MSIX
 // package only. Windows install validation checks the package signature
 // (AppxSignature.p7x over AppxBlockMap.xml); inner files are covered by the
-// block-map hashes, NOT per-file Authenticode, so Pulse.exe and every
+// block-map hashes, NOT per-file Authenticode, so PULSE.exe and every
 // payload binary stay unsigned and this hook signs exactly one artifact per
 // build.
 //

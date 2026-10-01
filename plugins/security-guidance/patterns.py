@@ -20,9 +20,9 @@ Forked from Anthropic's claude-plugins-official repository
   See the License for the specific language governing permissions and
   limitations under the License.
 
-AnxiousResearchLab modifications: pattern data unchanged from upstream; the upstream RuleId
-telemetry table (Claude Code PostToolUse metrics) is dropped — Pulse has no consumer.
-Pulse-side wiring lives in __init__.py.
+NousResearch modifications: pattern data unchanged from upstream; the upstream RuleId
+telemetry table (Claude Code PostToolUse metrics) is dropped — PULSE has no consumer.
+PULSE-side wiring lives in __init__.py.
 """
 _JS_EXTS = (".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".mts", ".cts", ".vue", ".svelte")
 _PY_EXTS = (".py", ".pyi", ".ipynb")

@@ -360,7 +360,7 @@ describe('GatewaySettings', () => {
 
     const oauthProbe = {
       authMode: 'oauth',
-      providers: [{ displayName: 'Anxious Research', name: 'pulse', supportsPassword: false }],
+      providers: [{ displayName: 'Nous Research', name: 'nous', supportsPassword: false }],
       reachable: true
     }
 
@@ -379,7 +379,7 @@ describe('GatewaySettings', () => {
       // The env override still owns the URL: the editor stays read-only.
       expect(((await screen.findByDisplayValue(envUrl)) as HTMLInputElement).disabled).toBe(true)
 
-      fireEvent.click(await screen.findByRole('button', { name: 'Sign in with Anxious Research' }))
+      fireEvent.click(await screen.findByRole('button', { name: 'Sign in with Nous Research' }))
 
       await waitFor(() => expect(oauthLoginConnectionConfig).toHaveBeenCalledWith(envUrl))
     })
@@ -396,7 +396,7 @@ describe('GatewaySettings', () => {
       render(<GatewaySettings embedded />)
 
       expect(((await screen.findByDisplayValue(envUrl)) as HTMLInputElement).disabled).toBe(false)
-      expect(await screen.findByRole('button', { name: 'Sign in with Anxious Research' })).toBeTruthy()
+      expect(await screen.findByRole('button', { name: 'Sign in with Nous Research' })).toBeTruthy()
       expect(oauthLoginConnectionConfig).not.toHaveBeenCalled()
     })
   })
@@ -545,7 +545,7 @@ describe('GatewaySettings', () => {
       sshUser: '',
       sshPort: 22,
       sshKeyPath: '',
-      sshRemotePulsePath: '',
+      sshRemotePULSEPath: '',
       sshRemoteProfile: ''
     })
     const sshConfigHosts = vi.fn().mockResolvedValue({ hosts: ['github.com'] })

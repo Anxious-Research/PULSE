@@ -24,7 +24,7 @@ _STATE_DB_GUARD_BYPASS_ENV = "PULSE_STATE_DB_GUARD_BYPASS"
 
 
 def _real_platform_state_root() -> Optional[Path]:
-    """The REAL platform-default Pulse root. Avoids ``Path.home()`` /
+    """The REAL platform-default PULSE root. Avoids ``Path.home()`` /
     ``pulse_constants`` (tests monkeypatch Path.home to a tempdir); ``expanduser``
     reads HOME/passwd, which the conftest never rewrites."""
     try:
@@ -45,7 +45,7 @@ def _real_platform_state_root() -> Optional[Path]:
 # : Env marker exported by the hermetic test conftest at the same moment it : redirects ``PULSE_HOME`` to
 # the per-session tmp isolation root. Unlike ``PYTEST_*`` (owned by pytest, and : routinely scrubbed by
 # tests that rebuild a child environment), this marker : is OURS: it declares "this process tree is running
-# under Pulse test : isolation", and it inherits into subprocess children by default — so a : child that
+# under PULSE test : isolation", and it inherits into subprocess children by default — so a : child that
 # received the patched ``PULSE_HOME`` also received the marker, : and a child that resolves a production DB
 # while carrying it is, by : definition, an isolation escape (#82770).
 _TEST_ISOLATION_MARKER_ENV = "PULSE_TEST_ISOLATION"

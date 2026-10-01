@@ -2,7 +2,7 @@ name: debug-desk
 repo: https://github.com/aydnOktay/pulse-debug-desk
 sha: 57cbd4d23eba978dc9a53ab6387a84c336992b74
 description: Today's git digest in the current repo, plus the last failed terminal
-  command the Pulse agent ran. Desktop pane, status chip, optional local LLM
+  command the PULSE agent ran. Desktop pane, status chip, optional local LLM
   summary. Does not watch OS or editor terminals.
 maintainer: aydnOktay
 tier: community

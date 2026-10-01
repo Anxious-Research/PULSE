@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run a Pulse instance in an isolated sandbox — separate PULSE_HOME,
+# Run a PULSE instance in an isolated sandbox — separate PULSE_HOME,
 # separate Electron userData, and a distinct Desktop app name so it doesn't compete
 # with your main desktop instance's single-instance lock.
 #
@@ -19,7 +19,7 @@
 # ~/.pulse) so config, sessions, skills, etc. are pre-populated:
 #   scripts/dev-sandbox.sh --from ~/.pulse pulse desktop
 #
-# Override the app name (default: PulseSandbox):
+# Override the app name (default: PULSESandbox):
 #   PULSE_DEV_SANDBOX_NAME=Staging scripts/dev-sandbox.sh pulse desktop
 #
 # Override the persistent sandbox dir name (default: .pulse-sandbox):
@@ -32,11 +32,11 @@ ENTRYPOINT="$(basename "$0")"
 # The minimal entrypoint is an alias, but its existing data and app identity stay separate.
 if [ "$ENTRYPOINT" = dev-minimal-sandbox.sh ]; then
   DEFAULT_DIR=.pulse-minimal-sandbox
-  APP_PREFIX=PulseMinimalSandbox
+  APP_PREFIX=PULSEMinimalSandbox
   TEMP_PREFIX=pulse-minimal-sandbox
 else
   DEFAULT_DIR=.pulse-sandbox
-  APP_PREFIX=PulseSandbox
+  APP_PREFIX=PULSESandbox
   TEMP_PREFIX=pulse-sandbox
 fi
 
@@ -44,7 +44,7 @@ print_help() {
   cat <<EOF
 Usage: $ENTRYPOINT [--persistent] [--from DIR] [--] <command...>
 
-Run a Pulse instance in an isolated sandbox.
+Run a PULSE instance in an isolated sandbox.
 
 Options:
   --persistent    Keep the sandbox dir across restarts (under the worktree

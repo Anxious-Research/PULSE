@@ -20,7 +20,7 @@ PID is dead, or whose PID is alive with a different process creation time (PID r
 STALE and is ignored — an attaching client must never dial a recycled PID's port.
 
 **Relationship to ``spawn-ledger.json``** (``pulse_cli/process_identity.py``): the ledger stays
-the append-only machine roster of every long-lived Pulse process (Desktop's attach ladder reads
+the append-only machine roster of every long-lived PULSE process (Desktop's attach ladder reads
 it) and is still written unchanged. It cannot be the host record: it has no lock, no
 single-writer semantics, no removal on exit, and no place to publish a protocol version or
 an authentication handle. The record here is authoritative for "who owns this host role"; the
@@ -276,7 +276,7 @@ def probe_owner(record: HostRecord, *, timeout: float = PROBE_TIMEOUT_S) -> Opti
     import urllib.request
 
     token = read_token(record.role)
-    headers = {"X-Pulse-Token": token, "Authorization": f"Bearer {token}"} if token else {}
+    headers = {"X-PULSE-Token": token, "Authorization": f"Bearer {token}"} if token else {}
     request = urllib.request.Request(
         f"http://{host}:{record.port}{HOST_IDENTITY_PATH}", headers=headers)
     try:

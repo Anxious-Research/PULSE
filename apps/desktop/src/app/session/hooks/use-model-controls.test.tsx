@@ -154,21 +154,21 @@ describe('useModelControls', () => {
     const queryClient = new QueryClient()
     $activeSessionId.set('runtime-1')
     setCurrentModel('tencent/hy3:free')
-    setCurrentProvider('pulse')
+    setCurrentProvider('nous')
     setCurrentModelSource('manual')
     queryClient.setQueryData(modelOptionsQueryKey('default'), {
       model: 'tencent/hy3:free',
-      provider: 'pulse',
+      provider: 'nous',
       providers: []
     })
     queryClient.setQueryData(modelOptionsQueryKey('default', 'runtime-1'), {
       model: 'tencent/hy3:free',
-      provider: 'pulse',
+      provider: 'nous',
       providers: []
     })
     vi.mocked(getGlobalModelInfo).mockResolvedValue({
       model: 'poolside/laguna-xs-2.1:free',
-      provider: 'pulse'
+      provider: 'nous'
     })
 
     const { result } = renderHook(() =>
@@ -178,16 +178,16 @@ describe('useModelControls', () => {
       })
     )
 
-    result.current.applySavedMainModel('pulse', 'poolside/laguna-xs-2.1:free')
+    result.current.applySavedMainModel('nous', 'poolside/laguna-xs-2.1:free')
     await result.current.refreshCurrentModel()
 
     // Settings changes the profile default, not the active session. The footer
     // and its session-scoped picker cache must keep showing the live runtime.
     expect($currentModel.get()).toBe('tencent/hy3:free')
-    expect($currentProvider.get()).toBe('pulse')
+    expect($currentProvider.get()).toBe('nous')
     expect(queryClient.getQueryData(modelOptionsQueryKey('default', 'runtime-1'))).toMatchObject({
       model: 'tencent/hy3:free',
-      provider: 'pulse'
+      provider: 'nous'
     })
 
     // The global cache reflects the save, and the next fresh draft may reseed
@@ -195,20 +195,20 @@ describe('useModelControls', () => {
     expect(getCurrentModelSource()).toBe('default')
     expect(queryClient.getQueryData(modelOptionsQueryKey('default'))).toMatchObject({
       model: 'poolside/laguna-xs-2.1:free',
-      provider: 'pulse'
+      provider: 'nous'
     })
 
     $activeSessionId.set(null)
     await result.current.refreshCurrentModel()
 
     expect($currentModel.get()).toBe('poolside/laguna-xs-2.1:free')
-    expect($currentProvider.get()).toBe('pulse')
+    expect($currentProvider.get()).toBe('nous')
   })
 
   it('paints a saved profile default immediately when no session is active', () => {
     const queryClient = new QueryClient()
     setCurrentModel('tencent/hy3:free')
-    setCurrentProvider('pulse')
+    setCurrentProvider('nous')
     setCurrentModelSource('manual')
 
     const { result } = renderHook(() =>
@@ -218,19 +218,19 @@ describe('useModelControls', () => {
       })
     )
 
-    result.current.applySavedMainModel('pulse', 'poolside/laguna-xs-2.1:free')
+    result.current.applySavedMainModel('nous', 'poolside/laguna-xs-2.1:free')
 
     expect($currentModel.get()).toBe('poolside/laguna-xs-2.1:free')
-    expect($currentProvider.get()).toBe('pulse')
+    expect($currentProvider.get()).toBe('nous')
     expect(getCurrentModelSource()).toBe('default')
     expect(queryClient.getQueryData(modelOptionsQueryKey('default'))).toEqual({
       model: 'poolside/laguna-xs-2.1:free',
-      provider: 'pulse',
+      provider: 'nous',
       providers: [
         {
           models: ['poolside/laguna-xs-2.1:free'],
-          name: 'pulse',
-          slug: 'pulse'
+          name: 'nous',
+          slug: 'nous'
         }
       ]
     })
@@ -238,11 +238,11 @@ describe('useModelControls', () => {
 
   it('preserves a populated model catalog when painting a saved profile default', () => {
     const queryClient = new QueryClient()
-    const providers = [{ models: ['tencent/hy3:free'], name: 'Pulse', slug: 'pulse' }]
+    const providers = [{ models: ['tencent/hy3:free'], name: 'Nous', slug: 'nous' }]
 
     queryClient.setQueryData(modelOptionsQueryKey('default'), {
       model: 'tencent/hy3:free',
-      provider: 'pulse',
+      provider: 'nous',
       providers
     })
 
@@ -253,11 +253,11 @@ describe('useModelControls', () => {
       })
     )
 
-    result.current.applySavedMainModel('pulse', 'poolside/laguna-xs-2.1:free')
+    result.current.applySavedMainModel('nous', 'poolside/laguna-xs-2.1:free')
 
     expect(queryClient.getQueryData(modelOptionsQueryKey('default'))).toEqual({
       model: 'poolside/laguna-xs-2.1:free',
-      provider: 'pulse',
+      provider: 'nous',
       providers
     })
   })
@@ -410,7 +410,7 @@ describe('useModelControls', () => {
     // who did nothing wrong; the pick still applies to the next turn.
     $activeSessionId.set('session-1')
     setCurrentModel('fable-5')
-    setCurrentProvider('pulse')
+    setCurrentProvider('nous')
 
     const requestGateway = vi.fn(async () => {
       throw new Error('session busy — /interrupt the current turn before switching models')
@@ -430,7 +430,7 @@ describe('useModelControls', () => {
   it('still rolls back and reports a real switch failure', async () => {
     $activeSessionId.set('session-1')
     setCurrentModel('fable-5')
-    setCurrentProvider('pulse')
+    setCurrentProvider('nous')
 
     const requestGateway = vi.fn(async () => {
       throw new Error('no such model')
@@ -443,7 +443,7 @@ describe('useModelControls', () => {
     await expect(controls.selectModel({ model: 'bogus', provider: 'xai' })).resolves.toBe(false)
 
     expect($currentModel.get()).toBe('fable-5')
-    expect($currentProvider.get()).toBe('pulse')
+    expect($currentProvider.get()).toBe('nous')
     expect(notifyError).toHaveBeenCalled()
   })
 
@@ -648,7 +648,7 @@ describe('useModelControls', () => {
 
   it('refreshes legacy/default-derived composer state from the profile default', async () => {
     setCurrentModel('openai/gpt-5.5')
-    setCurrentProvider('pulse')
+    setCurrentProvider('nous')
     setCurrentModelSource('')
     vi.mocked(getGlobalModelInfo).mockResolvedValue({ model: 'gpt-5.5', provider: 'openai-codex' })
 

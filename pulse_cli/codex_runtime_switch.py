@@ -18,12 +18,12 @@ _ARG_SYNONYMS = {
     "off": "auto", "default": "auto", "disable": "auto", "pulse": "auto"}
 
 _PULSE_TOOLS_CALLBACK_NOTE = (
-    "Pulse tool callback registered: codex can now use "
+    "PULSE tool callback registered: codex can now use "
     "web_search, web_extract, browser_*, vision_analyze, "
     "image_generate, skill_view, skills_list, text_to_speech, "
     "kanban_* (worker + orchestrator) via MCP.",
     "  (delegate_task, memory, session_search, todo run "
-    "only on the default Pulse runtime — they need the "
+    "only on the default PULSE runtime — they need the "
     "agent loop context.)")
 
 
@@ -185,18 +185,18 @@ def apply(
         ok, ver = _check_binary_cached(codex_bin)
         if ok:
             msg_lines.append(f"codex CLI: {ver}")
-        # Migrate Pulse' MCP servers + Codex's curated plugins into ~/.codex/config.toml so the
-        # spawned codex subprocess sees the same tool surface AND can call back into Pulse.
+        # Migrate PULSE' MCP servers + Codex's curated plugins into ~/.codex/config.toml so the
+        # spawned codex subprocess sees the same tool surface AND can call back into PULSE.
         msg_lines.extend(_migration_lines(config))
         msg_lines.append(
             "OpenAI/Codex turns now run through `codex app-server` "
             "(terminal/file ops/patching inside Codex; "
-            "Pulse tools available via MCP callback).")
+            "PULSE tools available via MCP callback).")
         msg_lines.append(
             "Effective on next session — current cached agent keeps "
             "the prior runtime to preserve prompt cache.")
     else:
-        msg_lines.append("OpenAI/Codex turns will use the default Pulse runtime.")
+        msg_lines.append("OpenAI/Codex turns will use the default PULSE runtime.")
         msg_lines.append("Effective on next session.")
     return CodexRuntimeStatus(
         success=True, new_value=new_value, old_value=current,

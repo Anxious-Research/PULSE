@@ -18,7 +18,7 @@ def _is_windows() -> bool:
 
 
 #: Launcher command names install.ps1's Set-PathVariable exposes from the
-#: managed binary dir (the default Pulse root's ``bin``, next to uv.exe)
+#: managed binary dir (the default PULSE root's ``bin``, next to uv.exe)
 #: on the user PATH. Keep in lockstep with WINDOWS_BIN_LAUNCHERS in
 #: pulse_cli/_launchers.py and scripts/install.ps1.
 _WINDOWS_BIN_LAUNCHERS = ("pulse", "pulse-acp")
@@ -68,7 +68,7 @@ def ensure_windows_bin_launchers(
     python with ``PYTHONPATH=<repo>;<venv>/site-packages``, never the venv
     interpreter (no-boot-through-venv; ``pyvenv.cfg`` is inert dead
     config). The canonical launcher home is
-    the managed binary dir — the default Pulse root's ``bin``
+    the managed binary dir — the default PULSE root's ``bin``
     (``%LOCALAPPDATA%\\pulse\\bin``, next to the managed uv) — which lives
     OUTSIDE the git checkout so no git operation can ever touch it. It is
     a per-machine dir shared by every profile: ``get_pulse_home()`` would
@@ -110,7 +110,7 @@ def ensure_windows_bin_launchers(
 
     root = Path(root)
 
-    # Per-machine anchor: the DEFAULT Pulse root, not get_pulse_home() —
+    # Per-machine anchor: the DEFAULT PULSE root, not get_pulse_home() —
     # under ``pulse -p <name>`` that returns ``profiles\\<name>``, which
     # would fail the managed-clone gate below and silently skip the heal
     # for profile users. The launcher dir serves the whole machine.

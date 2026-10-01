@@ -1,5 +1,5 @@
 #!/usr/bin/env -S bash -c 'exec "$BASH" "$(dirname "$0")/_pulse-python" "$0" "$@"'
-"""Drive the Pulse TUI under PULSE_DEV_PERF and summarize the pipeline.
+"""Drive the PULSE TUI under PULSE_DEV_PERF and summarize the pipeline.
 
 Usage:
   scripts/profile-tui.py [--session SID] [--hold KEY] [--seconds N] [--rate HZ]

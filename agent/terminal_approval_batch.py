@@ -178,7 +178,7 @@ def bind_prepared_dispatch(dispatch):
         nonlocal claimed
         with lock:
             if claimed:
-                raise RuntimeError("Pulse tool execution callback invoked more than once")
+                raise RuntimeError("PULSE tool execution callback invoked more than once")
             claimed = True
         return invoke(*args, **kwargs)
 
@@ -232,6 +232,13 @@ def consume_prepared_guard(command, env_type, has_host_access):
             or slot.guard_key != (command, env_type, has_host_access)):
         return None
     decision, slot.decision = slot.decision, None  # single-use, even for identical calls
+    # Batching exists to publish the human asks together. An approval nobody answered (/yolo,
+    # approvals.mode off, the allowlist, a clean command) is policy, and the policy in force NOW
+    # governs: switching YOLO or "Approvals: off" off mid-batch must stop the later commands.
+    if decision is not None and decision.get("approved") and not decision.get("user_approved"):
+        from tools.approval_context import _get_approval_mode
+        if not (decision.get("smart_approved") and _get_approval_mode() == "smart"):
+            return None
     return decision
 
 

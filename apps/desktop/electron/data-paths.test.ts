@@ -4,7 +4,7 @@ import path from 'node:path'
 
 import { afterEach, test, vi } from 'vitest'
 
-import { platformDefaultPulseHome, resolveDesktopPulseHome, resolveDesktopUserData } from './data-paths'
+import { platformDefaultPULSEHome, resolveDesktopPULSEHome, resolveDesktopUserData } from './data-paths'
 import { controlSocketPath } from './ssh-connection'
 
 afterEach((): void => {
@@ -15,7 +15,7 @@ test.skipIf(process.platform === 'win32')('local SSH sockets use the suffixed de
   vi.stubEnv('PULSE_DATA_DIR_SUFFIX', 'magic-test')
   const socket: string = controlSocketPath('user', 'host', 22)
 
-  assert.equal(path.dirname(socket), path.join(platformDefaultPulseHome(os.homedir()), 'desktop-ssh'))
+  assert.equal(path.dirname(socket), path.join(platformDefaultPULSEHome(os.homedir()), 'desktop-ssh'))
 })
 
 test('default data roots append the suffix literally on each platform', (): void => {
@@ -23,16 +23,16 @@ test('default data roots append the suffix literally on each platform', (): void
     const paths: typeof path = platform === 'win32' ? path.win32 : path.posix
     const home: string = platform === 'win32' ? 'C:\\Users\\test' : '/home/test'
     const local: string = paths.join(home, 'AppData', 'Local')
-    const userData: string = paths.join(home, 'app-data', 'Pulse')
+    const userData: string = paths.join(home, 'app-data', 'PULSE')
     const base: string = platform === 'win32' ? paths.join(local, 'pulse') : paths.join(home, '.pulse')
 
     for (const suffix of ['', '-asdfasdf', 'magic-test', ' spaced ']) {
       const env: NodeJS.ProcessEnv = { LOCALAPPDATA: local, PULSE_DATA_DIR_SUFFIX: suffix }
 
-      assert.equal(platformDefaultPulseHome(home, env, platform), base + suffix)
+      assert.equal(platformDefaultPULSEHome(home, env, platform), base + suffix)
       assert.equal(resolveDesktopUserData(userData, env), userData + suffix)
       assert.equal(
-        resolveDesktopPulseHome({ home, env, platform, directoryExists: (): boolean => false }),
+        resolveDesktopPULSEHome({ home, env, platform, directoryExists: (): boolean => false }),
         base + suffix
       )
     }
@@ -49,16 +49,16 @@ test('explicit homes and userData retain precedence, and suffixed Windows homes 
   }
 
   assert.equal(resolveDesktopUserData('/default/electron', env), path.resolve(env.PULSE_DESKTOP_USER_DATA_DIR!))
-  assert.equal(resolveDesktopPulseHome({ home, env, platform: 'linux' }), env.PULSE_HOME)
+  assert.equal(resolveDesktopPULSEHome({ home, env, platform: 'linux' }), env.PULSE_HOME)
   delete env.PULSE_HOME
-  assert.equal(resolveDesktopPulseHome({ home, env, platform: 'linux' }), '/explicit/electron/pulse-home')
+  assert.equal(resolveDesktopPULSEHome({ home, env, platform: 'linux' }), '/explicit/electron/pulse-home')
 
   const windowsHome: string = 'C:\\Users\\test'
   const windowsEnv: NodeJS.ProcessEnv = { PULSE_DATA_DIR_SUFFIX: 'magic-test' }
   const expected: string = path.win32.join(windowsHome, 'AppData', 'Local', 'pulsemagic-test')
 
   assert.equal(
-    resolveDesktopPulseHome({
+    resolveDesktopPULSEHome({
       home: windowsHome,
       env: windowsEnv,
       platform: 'win32',
@@ -67,7 +67,7 @@ test('explicit homes and userData retain precedence, and suffixed Windows homes 
     expected
   )
   assert.equal(
-    resolveDesktopPulseHome({
+    resolveDesktopPULSEHome({
       home: windowsHome,
       env: windowsEnv,
       platform: 'win32',

@@ -400,11 +400,11 @@ def _resolve_api_mode(agent, api_mode, provider_name, base_url):
         host.startswith("bedrock-runtime.") and base_url_host_matches(url, "amazonaws.com")
     ):
         agent.api_mode = "bedrock_converse"
-    elif agent.provider in {"anxious", "anxious-portal", "anxiousresearchlab"}:
+    elif agent.provider in {"nous", "nous-portal", "nousresearch"}:
         # Portal is dual-wire (anthropic/* → Messages, else chat_completions); covers direct
         # AIAgent construction without a resolved runtime.
-        from pulse_cli.providers import anxious_api_mode
-        agent.api_mode = anxious_api_mode(agent.model)
+        from pulse_cli.providers import nous_api_mode
+        agent.api_mode = nous_api_mode(agent.model)
     else:
         # Host-mandated wire check — LAST, so the provider-slug rewrites above always win.
         # Covers api.meta.ai → codex_responses (prompt caching: 0% on chat vs 93-99%).
@@ -442,16 +442,16 @@ def _finalize_routing(agent, api_mode, credential_pool):
     with suppress(Exception):
         agent._get_transport()
 
-    # The Anxious agent key lives ~1 h. Without the proactive refresher every agent in the process
+    # The Nous agent key lives ~1 h. Without the proactive refresher every agent in the process
     # discovers expiry reactively, on its own next request, all in the same minute: with 200
     # in-process subagents that was a 401 storm each hour (620 in one run) and the credential
     # pool benched the provider for all of them. The gateway and web server start this thread
     # at boot; the CLI process (and everything spawned inside it) never did. Idempotent,
     # process-wide, daemon.
-    if agent.provider == "anxious":
+    if agent.provider == "nous":
         with suppress(Exception):
-            from pulse_cli.anxious_auth_keepalive import start_anxious_auth_keepalive
-            start_anxious_auth_keepalive()
+            from pulse_cli.nous_auth_keepalive import start_nous_auth_keepalive
+            start_nous_auth_keepalive()
 
     with suppress(Exception):
         from pulse_cli.model_normalize import (
@@ -461,7 +461,7 @@ def _finalize_routing(agent, api_mode, credential_pool):
         if agent.provider not in _AGGREGATOR_PROVIDERS:
             agent.model = normalize_model_for_provider(agent.model, agent.provider)
 
-    # Anxious model policy follows the ROUTE (the welcome host serves one model); a credential-pool
+    # Nous model policy follows the ROUTE (the welcome host serves one model); a credential-pool
     # swap can change the route later, so ``_swap_credential`` applies the same helper again.
     from pulse_cli.anon_auth import pin_model_for_route
     agent.model = pin_model_for_route(agent.provider, agent.base_url, agent.model)
@@ -576,7 +576,7 @@ _TURN_STATE: Dict[str, Any] = {
     # a stale rebuild instead of clobbering a newer one.
     "_tool_snapshot_generation": 0,
     "_rate_limit_state": None,  # from x-ratelimit-* headers; read by /usage
-    # Credits tracking (dev-only, PULSE_DEV_CREDITS) from x-anxious-credits-* headers; session
+    # Credits tracking (dev-only, PULSE_DEV_CREDITS) from x-nous-credits-* headers; session
     # start is latched on the first header so cumulative spend can be reported.
     "_credits_state": None,
     "_credits_session_start_micros": None,
@@ -700,7 +700,11 @@ def _setup_logging(agent):
     # agent.log (INFO+) + errors.log (WARNING+); idempotent so per-message gateway agents
     # don't duplicate handlers.
     from pulse_logging import setup_logging, setup_verbose_logging
-    setup_logging(pulse_home=_ra()._pulse_home)
+    # The ACTIVE home, not run_agent's import-time freeze: a Desktop serve backend builds agents
+    # for several profiles inside set_pulse_home_override(), and the frozen launch home made
+    # setup_logging() see a home it already served, so it never adopted the profile and every
+    # profile's records landed in the launch profile's agent.log (#125974).
+    setup_logging(pulse_home=get_pulse_home())
 
     if agent.verbose_logging:
         setup_verbose_logging()
@@ -923,11 +927,12 @@ def _routed_client_kwargs(agent, fallback_model, _provider_timeout) -> Optional[
             raise ProviderCredentialsExhaustedError(_exhausted_message, provider=_explicit)
     if _explicit and _explicit not in {"auto", "openrouter", "custom"}:
         # Explicit non-OpenRouter provider with no creds and no usable fallback: fail fast.
-        from agent.auxiliary_unavailable import missing_provider_credentials_message
-        raise RuntimeError(missing_provider_credentials_message(_explicit))
+        from agent.auxiliary_unavailable import ProviderNotConfiguredError, missing_provider_credentials_message
+        raise ProviderNotConfiguredError(missing_provider_credentials_message(_explicit))
     from pulse_constants import profile_cli_selector
+    from agent.auxiliary_unavailable import ProviderNotConfiguredError
     _sel = profile_cli_selector()
-    raise RuntimeError(
+    raise ProviderNotConfiguredError(
         "No LLM provider configured. Run `pulse model` to "
         "select a provider, or run `pulse setup` for first-time "
         "configuration."
@@ -2085,12 +2090,12 @@ def _enforce_minimum_context(agent):
         raise ValueError(
             f"Model {agent.model} has a context window of {_ctx:,} tokens, "
             f"which is below the minimum {MINIMUM_CONTEXT_LENGTH:,} required "
-            f"by Pulse Agent.  {remedy}"
+            f"by PULSE Agent.  {remedy}"
         )
 
 
 def _warn_nonagentic_pulse_model(agent):
-    # Anxious Pulse 3/4 are chat models, not tool-call-tuned. cli.py show_banner() already
+    # Nous PULSE 3/4 are chat models, not tool-call-tuned. cli.py show_banner() already
     # warns on the CLI, so skip platform=="cli"; non-quiet non-CLI surfaces still get it.
     if agent.quiet_mode or (agent.platform or "cli") == "cli":
         return
@@ -2099,7 +2104,7 @@ def _warn_nonagentic_pulse_model(agent):
         _pulse_warn = _check_pulse_model_warning(agent.model or "")
         if _pulse_warn:
             _user_msg = (
-                "⚠ Anxious Research Lab Pulse 3 & 4 models are NOT agentic — they "
+                "⚠ Nous Research PULSE 3 & 4 models are NOT agentic — they "
                 "lack reliable tool-calling for agent workflows (delegation, "
                 "cron, proactive tools). Consider an agentic model instead "
                 "(Claude, GPT, Gemini, Qwen-Coder, etc.)."
@@ -2299,8 +2304,12 @@ def _snapshot_primary_runtime(agent):
 
 def _init_usage_state(agent):
     from agent.runtime_cwd import scope_terminal_cwd
+    # Prefer the session's explicitly adopted workspace (a Desktop session created under the
+    # spawn-time home pin records none; a picked/adopted one does — agent.session_cwd is set
+    # at build time and on every workspace move). TERMINAL_CWD is the launch fallback.
+    working_dir = getattr(agent, "session_cwd", None) or scope_terminal_cwd() or None
     agent._subdirectory_hints = SubdirectoryHintTracker(
-        working_dir=scope_terminal_cwd() or None, enabled=not agent.skip_context_files)
+        working_dir=working_dir, enabled=not agent.skip_context_files)
     _set_defaults(agent, _USAGE_STATE)
 
 
@@ -2499,25 +2508,3 @@ def init_agent(
 
 
 __all__ = ["init_agent"]
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'ToolGuardrailDecision': ('agent.tool_guardrails', 'ToolGuardrailDecision'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

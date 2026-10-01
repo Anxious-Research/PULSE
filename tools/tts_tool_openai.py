@@ -1,6 +1,6 @@
 """OpenAI-compatible TTS backends for ``tools.tts_tool``: OpenAI and DeepInfra.
 
-Also owns the managed-gateway (Anxious portal ``openai-audio`` proxy) route selection that
+Also owns the managed-gateway (Nous portal ``openai-audio`` proxy) route selection that
 decides where the OpenAI client points. Seams defined on the origin module (``_load_tts_config``,
 ``_import_openai_client``, ``_resolve_provider_key``, ``_generate_openai_tts``) are resolved
 through :func:`_origin` at call time.
@@ -15,7 +15,7 @@ from urllib.parse import urljoin
 
 from tools.managed_tool_gateway import resolve_managed_tool_gateway
 from tools.tool_backend_helpers import (
-    ANXIOUS_MANAGED_PROVIDER, managed_anxious_tools_enabled, anxious_tool_gateway_unavailable_message,
+    NOUS_MANAGED_PROVIDER, managed_nous_tools_enabled, nous_tool_gateway_unavailable_message,
     read_selection, resolve_openai_audio_api_key, selection_error)
 from tools.tts_tool_delivery import _origin, _section
 from tools.tts_tool_providers import _tts_response_format_from_path
@@ -35,23 +35,23 @@ def _managed_openai_audio_route() -> Optional[tuple]:
     gateway = resolve_managed_tool_gateway("openai-audio")
     if gateway is None:
         return None
-    return gateway.anxious_user_token, urljoin(f"{gateway.gateway_origin.rstrip('/')}/", "v1"), True
+    return gateway.nous_user_token, urljoin(f"{gateway.gateway_origin.rstrip('/')}/", "v1"), True
 
 
 def _resolve_openai_audio_client_config() -> tuple[str, str, bool]:
     """``(api_key, base_url, is_managed)`` for the OpenAI audio client (``is_managed`` = the restricted
-    Anxious proxy, so callers coerce the request). Strict on the stored ``tts`` selection: ``"anxious"``
+    Nous proxy, so callers coerce the request). Strict on the stored ``tts`` selection: ``"nous"``
     → managed ONLY (error if unavailable); any other → direct credentials ONLY (``tts.openai.api_key``
     then ``VOICE_TOOLS_OPENAI_KEY``/``OPENAI_API_KEY``); unset → config key → env key → managed."""
     origin = _origin()
     openai_cfg = _section(origin._load_tts_config(), "openai")
     selected = read_selection("tts")
-    if selected == ANXIOUS_MANAGED_PROVIDER:
+    if selected == NOUS_MANAGED_PROVIDER:
         route = _managed_openai_audio_route()
         if route is None:
             raise ValueError(selection_error(
-                "tts", ANXIOUS_MANAGED_PROVIDER,
-                "the Anxious Tool Gateway is not available (not entitled or unreachable)"))
+                "tts", NOUS_MANAGED_PROVIDER,
+                "the Nous Tool Gateway is not available (not entitled or unreachable)"))
         return route
     direct_api_key = openai_cfg.get("api_key") or resolve_openai_audio_api_key()
     if direct_api_key:
@@ -64,8 +64,8 @@ def _resolve_openai_audio_client_config() -> tuple[str, str, bool]:
     route = _managed_openai_audio_route()
     if route is None:
         message = "Neither tts.openai.api_key in config nor VOICE_TOOLS_OPENAI_KEY/OPENAI_API_KEY is set"
-        if managed_anxious_tools_enabled():
-            message += ". " + anxious_tool_gateway_unavailable_message("managed OpenAI audio for TTS")
+        if managed_nous_tools_enabled():
+            message += ". " + nous_tool_gateway_unavailable_message("managed OpenAI audio for TTS")
         raise ValueError(message)
     return route
 

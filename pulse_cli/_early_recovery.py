@@ -107,12 +107,48 @@ def _read_marker_attempts(marker_path: Path) -> int:
         return 0
 
 
+def _process_state(pid: int) -> str | None:
+    """Single-letter process state (``ps`` style), or ``None`` when unknowable.
+
+    ``os.kill(pid, 0)`` also succeeds for a ZOMBIE — a process that exited but
+    whose parent has not reaped it yet. Reading the state lets callers treat a
+    zombie as dead, so a crashed update stage lingering under an un-reaping
+    parent cannot keep a stale update marker "live" for the whole age ceiling
+    (#77259, #120635, #125932). Best-effort and stdlib-only: on any failure the
+    answer is ``None`` and callers keep their signal-0 verdict.
+    """
+    if sys.platform == "linux":
+        try:
+            with open(f"/proc/{pid}/stat", "rb") as fh:
+                stat = fh.read()
+        except OSError:
+            return None
+        # Field 3 is the state, but comm may contain spaces/parens: anchor on
+        # the closing paren of comm instead of splitting on whitespace.
+        comm_end = stat.rfind(b")")
+        if comm_end < 0:
+            return None
+        return stat[comm_end + 2 : comm_end + 3].decode("ascii", "replace") or None
+    if sys.platform == "darwin":
+        try:
+            out = subprocess.run(
+                ["ps", "-o", "stat=", "-p", str(pid)],
+                capture_output=True, text=True, encoding="utf-8", errors="replace",
+                timeout=5, check=False,
+            ).stdout
+        except (OSError, subprocess.SubprocessError):
+            return None
+        return out.strip()[:1] or None
+    return None
+
+
 def _pid_is_running(pid: int) -> bool:
     """Best-effort stdlib-only process liveness probe.
 
     ``os.kill(pid, 0)`` is not a no-op on Windows, so use the Win32 process handle API there. An
     access-denied result counts as live: racing an elevated updater is worse than postponing
-    recovery for one launch.
+    recovery for one launch. A zombie (exited, un-reaped) counts as dead — see
+    :func:`_process_state`.
     """
     if pid <= 0:
         return False
@@ -145,6 +181,9 @@ def _pid_is_running(pid: int) -> bool:
         return True
     except OSError:
         return False
+    state = _process_state(pid)
+    if state is not None and state.upper().startswith("Z"):
+        return False  # exited, unreaped — not a live owner
     return True
 
 
@@ -357,7 +396,7 @@ def _held_open(path: Path) -> bool:
     Best effort, not exact: Linux answers through /proc, but a live git that owns ``index.lock`` without
     an open fd (``commit`` waiting in the editor, or between closing the lock and renaming it) reads as
     dead; Windows refuses to unlink a file another process has open, so the caller's unlink is its probe;
-    macOS/BSD have no portable check at all. The claim only orders Pulse launches, so on those paths a
+    macOS/BSD have no portable check at all. The claim only orders PULSE launches, so on those paths a
     live git's lock can be removed; its command then fails and the marker stays for the next launch.
     """
     proc = Path("/proc")
@@ -417,7 +456,7 @@ def restore_interrupted_pull(project_root: Path | None = None) -> bool:
             return False
         with _restore_claim(marker.parent) as claimed:
             if not claimed:
-                print("⚠ Another Pulse launch is still repairing the checkout after an interrupted "
+                print("⚠ Another PULSE launch is still repairing the checkout after an interrupted "
                       "`pulse update`; if this one fails, launch again in a moment.", file=sys.stderr)
                 return False
             if not marker.is_file():

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Canvas LMS API CLI for Pulse Agent.
+"""Canvas LMS API CLI for PULSE Agent.
 
 A thin CLI wrapper around the Canvas REST API.
 Authenticates using a personal access token from environment variables.
@@ -127,7 +127,7 @@ def list_assignments(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Canvas LMS API CLI for Pulse Agent"
+        description="Canvas LMS API CLI for PULSE Agent"
     )
     sub = parser.add_subparsers(dest="command", required=True)
 

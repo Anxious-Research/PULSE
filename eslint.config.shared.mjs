@@ -1,5 +1,5 @@
 /**
- * Shared ESLint flat config for all Pulse TS workspaces.
+ * Shared ESLint flat config for all PULSE TS workspaces.
  *
  * Usage in a workspace's eslint.config.mjs:
  *

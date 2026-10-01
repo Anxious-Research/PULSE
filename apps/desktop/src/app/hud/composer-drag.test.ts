@@ -8,7 +8,7 @@ import { useHudComposerDrag } from './composer-drag'
 const LONG_PRESS_MS = 140
 
 const desktopWindow = window as unknown as { pulseDesktop?: Window['pulseDesktop'] }
-const initialPulseDesktop = desktopWindow.pulseDesktop
+const initialPULSEDesktop = desktopWindow.pulseDesktop
 
 const beginMove = vi.fn()
 const endMove = vi.fn()
@@ -47,8 +47,8 @@ afterEach(() => {
   vi.useRealTimers()
   document.body.innerHTML = ''
 
-  if (initialPulseDesktop) {
-    desktopWindow.pulseDesktop = initialPulseDesktop
+  if (initialPULSEDesktop) {
+    desktopWindow.pulseDesktop = initialPULSEDesktop
   } else {
     delete desktopWindow.pulseDesktop
   }

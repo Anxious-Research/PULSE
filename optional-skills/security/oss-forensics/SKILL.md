@@ -2,7 +2,7 @@
 name: oss-forensics
 description: "GitHub supply-chain forensics: recovery, IOCs, reporting."
 version: 1.0.0
-author: Teknium (teknium1), Pulse Agent
+author: Teknium (teknium1), PULSE Agent
 license: MIT
 platforms: [linux, macos, windows]
 category: security

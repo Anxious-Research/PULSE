@@ -1,4 +1,4 @@
-# Anxious-approved MCP catalog entry.
+# Nous-approved MCP catalog entry.
 # Presence in this directory = approval. Merged via PR review.
 manifest_version: 1
 
@@ -6,10 +6,10 @@ name: monday
 description: Boards, items, docs, and workflows in monday.com.
 source: https://developer.monday.com/apps/docs/mondaycom-mcp-integration
 
-# Official vendor-hosted remote MCP (URL-only — Pulse never spawns a local
+# Official vendor-hosted remote MCP (URL-only — PULSE never spawns a local
 # process for this entry). Native OAuth 2.1 + Dynamic Client Registration
 # (verified live: RFC 9728 protected-resource metadata -> AS metadata with
-# registration_endpoint); Pulse's MCP client + mcp_oauth_manager handle
+# registration_endpoint); PULSE's MCP client + mcp_oauth_manager handle
 # discovery, PKCE, token exchange, and refresh.
 
 transport:
@@ -20,7 +20,7 @@ auth:
   type: oauth
 
 # Excluded: the 'Advanced API access' trio is a generic execute-any-GraphQL
-# escape hatch (meta-layer — Pulse policy: no server-side API-execute
+# escape hatch (meta-layer — PULSE policy: no server-side API-execute
 # indirection); get_sprint_summary is an AI-product feature;
 # create_notification pings other users' bell/email.
 tools:
@@ -40,6 +40,6 @@ suggest:
     - monday.com
 
 post_install: |
-  On first connection Pulse opens a browser to authorize with
+  On first connection PULSE opens a browser to authorize with
   monday.com (or run `pulse mcp login monday`). Approve access,
   then restart the session so tools load.

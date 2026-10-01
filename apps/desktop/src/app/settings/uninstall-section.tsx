@@ -146,7 +146,7 @@ export function UninstallSection(): ReactElement | null {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium">{t.settings.uninstallSection.uninstallPulse}</p>
+            <p className="text-sm font-medium">{t.settings.uninstallSection.uninstallPULSE}</p>
             <p className="text-xs text-muted-foreground">{u.chooseHowMuch}</p>
             <div className="mt-1 flex flex-col gap-2">
               {visibleOptions.map((opt: ModeOption): ReactElement => (

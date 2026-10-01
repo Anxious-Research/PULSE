@@ -1,15 +1,15 @@
-# Pulse Desktop ☤
+# PULSE Desktop ☤
 
 <p align="center">
   <a href="https://github.com/Anxious-Research/PULSE/releases"><img src="https://img.shields.io/badge/Download-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-FFD700?style=for-the-badge" alt="Download"></a>
   <a href="https://pulse-agent.anxious-research.com/docs/"><img src="https://img.shields.io/badge/Docs-pulse--agent.anxious-research.com-FFD700?style=for-the-badge" alt="Documentation"></a>
-  <a href="https://https://github.com/Anxious-Research/PULSE/issues"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
+  <a href="https://discord.gg/NousResearch"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
   <a href="https://github.com/Anxious-Research/PULSE/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
 </p>
 
-**The native desktop app for [Pulse Agent](../../README.md) — the self-improving AI agent from [Anxious Research](https://anxious-research.com).** Same agent, same skills, same memory as the CLI and gateway, in a polished native window — chat with streaming tool output, side-by-side previews, a file browser, voice, and settings, no terminal required. Available for **macOS, Windows, and Linux**.
+**The native desktop app for [PULSE Agent](../../README.md) — the self-improving AI agent from [Nous Research](https://anxious-research.com).** Same agent, same skills, same memory as the CLI and gateway, in a polished native window — chat with streaming tool output, side-by-side previews, a file browser, voice, and settings, no terminal required. Available for **macOS, Windows, and Linux**.
 
-> **Intel Macs:** the `Pulse-Setup.dmg` bootstrap installer is built for
+> **Intel Macs:** the `PULSE-Setup.dmg` bootstrap installer is built for
 > Apple Silicon (arm64) only, so on an Intel Mac it reports "not supported on
 > this Mac". The desktop release pipeline also builds a native `darwin-x64`
 > bundle (signed, notarized, with its own update feed); use that build, or
@@ -17,10 +17,10 @@
 > [Platform Support](../../website/docs/getting-started/platform-support.md#build-targets-and-support-priority).
 
 <table>
-<tr><td><b>Chat with the full agent</b></td><td>Streaming responses, live tool activity, structured tool summaries, and the same conversation history as every other Pulse surface.</td></tr>
+<tr><td><b>Chat with the full agent</b></td><td>Streaming responses, live tool activity, structured tool summaries, and the same conversation history as every other PULSE surface.</td></tr>
 <tr><td><b>Side-by-side previews</b></td><td>Render web pages, files, and tool outputs in a right-hand pane while you keep chatting.</td></tr>
 <tr><td><b>File browser</b></td><td>Explore and preview the working directory without leaving the app.</td></tr>
-<tr><td><b>Voice</b></td><td>Talk to Pulse and hear it back.</td></tr>
+<tr><td><b>Voice</b></td><td>Talk to PULSE and hear it back.</td></tr>
 <tr><td><b>Settings & onboarding</b></td><td>Manage providers, models, tools, and credentials from a real UI. First-run setup gets you to your first message in seconds.</td></tr>
 <tr><td><b>Stays current</b></td><td>Built-in updates pull the latest agent and rebuild the app in place.</td></tr>
 </table>
@@ -29,19 +29,19 @@
 
 ## Install
 
-### Install with Pulse (recommended)
+### Install with PULSE (recommended)
 
-Already have the Pulse CLI? Just run:
+Already have the PULSE CLI? Just run:
 
 ```bash
 pulse desktop
 ```
 
-It builds and launches the GUI against your existing install — same config, keys, sessions, and skills. If Desktop cannot find a usable runtime or saved remote connection, first launch lets you connect to an existing Pulse gateway or install Pulse locally. Local onboarding then walks you through choosing a provider and model.
+It builds and launches the GUI against your existing install — same config, keys, sessions, and skills. If Desktop cannot find a usable runtime or saved remote connection, first launch lets you connect to an existing PULSE gateway or install PULSE locally. Local onboarding then walks you through choosing a provider and model.
 
 ### Prebuilt installers
 
-Prebuilt installers are built and distributed via [the Pulse Desktop website.](https://pulse-agent.anxious-research.com/).
+Prebuilt installers are built and distributed via [the PULSE Desktop website.](https://pulse-agent.anxious-research.com/).
 
 ---
 
@@ -59,8 +59,8 @@ payload. See [BUILDING.md](BUILDING.md) for package and release contracts.
 ## Screenshot shortcut (macOS)
 
 Enable **Settings → Keyboard Shortcuts → Screenshot shortcut**, then press the
-left and right Command keys together in any app. Pulse captures that app's
-frontmost window and attaches the image to the last-active Pulse composer,
+left and right Command keys together in any app. PULSE captures that app's
+frontmost window and attaches the image to the last-active PULSE composer,
 including split-pane chats. It does not send the draft or capture the whole
 screen. Release both keys before taking another screenshot.
 
@@ -127,7 +127,7 @@ The app has three boundaries:
   filesystem/git/window capabilities, and exposes a narrow preload bridge.
 - **React** owns the Desktop routes, panes, interaction state, and
   `@assistant-ui/react` transcript.
-- **Pulse Agent** runs as a headless `pulse serve` process and exposes the
+- **PULSE Agent** runs as a headless `pulse serve` process and exposes the
   `tui_gateway` JSON-RPC/WebSocket API. The renderer connects through
   [`apps/shared`](../shared/), which is also used by the browser dashboard.
 
@@ -156,12 +156,12 @@ Before changing the app, read:
 
 ### Connections, projects, and switching
 
-Desktop supports a managed local backend, explicit remote gateways, and Pulse
+Desktop supports a managed local backend, explicit remote gateways, and PULSE
 Cloud connections. Remote and cloud modes use the same remote-capability path;
 authentication and discovery differ, not the renderer feature model.
 
 When no usable local runtime or saved remote connection exists, the first-run
-screen offers **Connect to existing Pulse** before starting the local installer.
+screen offers **Connect to existing PULSE** before starting the local installer.
 Desktop probes the gateway to discover token or OAuth authentication, requires a
 successful HTTP and WebSocket connection test, and saves the connection using
 the same encrypted Desktop configuration used by Settings. A saved remote
@@ -170,7 +170,7 @@ still includes the local-install option; this is a remote operating mode, not a
 separate client-only application.
 
 In remote mode the gateway host is the execution boundary: agent tools,
-terminal commands, and file operations run against the remote Pulse host, not
+terminal commands, and file operations run against the remote PULSE host, not
 the computer displaying the Desktop UI.
 
 Remote gateways that sit behind an access proxy may require extra headers on
@@ -196,8 +196,8 @@ Electron `userData/connection.json` remote block:
 Per-profile remote entries under `profiles[name].headers` use the same shape.
 Desktop applies these headers only to matching remote gateway requests, treats
 `https` and `wss` as the same gateway origin for WebSocket upgrades, and drops
-transport- or Pulse-managed header names such as `Authorization`, `Cookie`,
-`Host`, `Origin`, `Referer`, and `X-Pulse-Session-Token`.
+transport- or PULSE-managed header names such as `Authorization`, `Cookie`,
+`Host`, `Origin`, `Referer`, and `X-PULSE-Session-Token`.
 
 Projects are the workspace abstraction. A project may own multiple folders,
 repositories, worktrees, and sessions; a bare new chat remains detached unless
@@ -239,7 +239,7 @@ rm "$HOME/.pulse/pulse-agent/.pulse-bootstrap-complete"
 # Rebuild a broken Python venv
 rm -rf "$HOME/.pulse/pulse-agent/venv"
 # Reset a stuck macOS microphone prompt (macOS only)
-tccutil reset Microphone com.anxious-research.pulse
+tccutil reset Microphone com.nousresearch.pulse
 ```
 
 **Windows (PowerShell):**
@@ -251,13 +251,13 @@ Remove-Item "$env:LOCALAPPDATA\pulse\pulse-agent\.pulse-bootstrap-complete"
 Remove-Item -Recurse -Force "$env:LOCALAPPDATA\pulse\pulse-agent\venv"
 ```
 
-> The default Pulse home on Windows is `%LOCALAPPDATA%\pulse`. Set the `PULSE_HOME` env var if you've relocated it.
+> The default PULSE home on Windows is `%LOCALAPPDATA%\pulse`. Set the `PULSE_HOME` env var if you've relocated it.
 
 ---
 
 ## Community
 
-- 💬 [Discord](https://https://github.com/Anxious-Research/PULSE/issues)
+- 💬 [Discord](https://discord.gg/NousResearch)
 - 📖 [Documentation](https://pulse-agent.anxious-research.com/docs/)
 - 🐛 [Issues](https://github.com/Anxious-Research/PULSE/issues)
 
@@ -267,4 +267,4 @@ Remove-Item -Recurse -Force "$env:LOCALAPPDATA\pulse\pulse-agent\venv"
 
 MIT — see [LICENSE](../../LICENSE).
 
-Built by [Anxious Research](https://anxious-research.com).
+Built by [Nous Research](https://anxious-research.com).

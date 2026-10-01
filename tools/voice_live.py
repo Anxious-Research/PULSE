@@ -1,8 +1,8 @@
-"""GPT-Live voice chat mode: the full-duplex voice frontend that delegates to Pulse.
+"""GPT-Live voice chat mode: the full-duplex voice frontend that delegates to PULSE.
 
 ``voice.voice_chat_mode: gpt-live`` replaces the chained STT → turn → TTS loop with ONE
 full-duplex voice model (OpenAI ``gpt-live-1``) that owns the microphone and the speaker and
-delegates every real request to Pulse as its *client-delegation* backend. Pulse stays the
+delegates every real request to PULSE as its *client-delegation* backend. PULSE stays the
 agent: whatever model/provider the session has selected answers, with the full toolset.
 
 Division of labour (the Live API has no tools of its own in client mode):
@@ -13,11 +13,11 @@ Division of labour (the Live API has no tools of its own in client mode):
   (``POST /v1/live/sessions``), so the key never reaches the client;
 * the renderer turns each ``session.delegation.created`` into a normal ``prompt.submit`` on the
   active session (surface ``voice-live``) and streams the reply back as
-  ``session.commentary.append`` — Pulse' answer is what the voice speaks.
+  ``session.commentary.append`` — PULSE' answer is what the voice speaks.
 
 Vendor contract: https://developers.openai.com/api/docs/guides/live (+ live-delegation,
 voice-webrtc). Billing is $0.05/min of session time on the OpenAI key, separate from the
-Pulse turn.
+PULSE turn.
 """
 
 from __future__ import annotations
@@ -44,9 +44,9 @@ GPT_LIVE_VOICES = (
 
 # Persona for the voice layer. Short on purpose: the live model has a small context window and
 # the vendor guide asks for role + style + a labelled delegation policy, nothing more. The
-# backend (Pulse) carries the real instructions, tools and memory.
+# backend (PULSE) carries the real instructions, tools and memory.
 LIVE_PERSONA = (
-    "You are Pulse, a calm and friendly voice assistant. Speak naturally at an unhurried pace. "
+    "You are PULSE, a calm and friendly voice assistant. Speak naturally at an unhurried pace. "
     "Be clear and direct, not overly cheerful. If the user is frustrated, acknowledge it briefly "
     "and focus on the next helpful step.\n\n"
     "Backchannel policy: Use moderate backchannels. Acknowledge naturally without competing with "
@@ -54,7 +54,7 @@ LIVE_PERSONA = (
     "Interruption policy: Stop speaking when the user interrupts. Listen to what they say.\n\n"
     "Delegation policy:\n"
     "Backend tools:\n"
-    "- Pulse agent: a full AI agent with tools — it can run commands, read and edit files, "
+    "- PULSE agent: a full AI agent with tools — it can run commands, read and edit files, "
     "browse the web, search, remember things across sessions, schedule tasks, and reason "
     "carefully about anything. It is the one who actually does work and knows facts.\n\n"
     "Delegate to the backend when:\n"
@@ -115,7 +115,7 @@ def _resolve_credentials(live: Dict[str, Any]) -> tuple[str, str]:
     """``(api_key, base_url)`` — ``voice.gpt_live.api_key`` first, else the same OpenAI audio
     chain the STT/TTS providers use (``VOICE_TOOLS_OPENAI_KEY`` → ``OPENAI_API_KEY`` → pool).
 
-    The Anxious-managed audio proxy does not carry ``/live/sessions``; this mode is direct-key only.
+    The Nous-managed audio proxy does not carry ``/live/sessions``; this mode is direct-key only.
     """
     from tools.tool_backend_helpers import resolve_openai_audio_api_key
     api_key = str(live.get("api_key") or "").strip() or resolve_openai_audio_api_key()

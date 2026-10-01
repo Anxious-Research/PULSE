@@ -16,7 +16,7 @@ export const DEFAULT_HEALTH_PROBE_TIMEOUT_MS = 5_000
 type FetchPublicJson = (url: string, options?: { timeoutMs?: number }) => Promise<unknown>
 type FetchJson = (url: string, token?: string | null, options?: { timeoutMs?: number }) => Promise<unknown>
 
-export interface PulseReadyOptions {
+export interface PULSEReadyOptions {
   fetchPublicJson: FetchPublicJson
   fetchJson: FetchJson
   token?: string | null
@@ -36,7 +36,7 @@ export interface PulseReadyOptions {
   probeHealth?: (url: string, options?: { timeoutMs?: number }) => Promise<unknown>
   /**
    * Whether `probeHealth` actually presents credentials. Distinguishes the
-   * two very different meanings of a 401 (see `waitForPulseReady`).
+   * two very different meanings of a 401 (see `waitForPULSEReady`).
    */
   probeIsCredentialed?: boolean
   /**
@@ -58,7 +58,7 @@ export const REMOTE_SESSION_EXPIRED_MESSAGE =
   'Your remote gateway session has expired. Open Settings → Gateway and click "Sign in" again.'
 
 export const REMOTE_UNSIGNED_OAUTH_MESSAGE =
-  'Remote Pulse gateway uses OAuth, but you are not signed in. ' +
+  'Remote PULSE gateway uses OAuth, but you are not signed in. ' +
   'Open Settings → Gateway and click "Sign in", or switch back to Local.'
 
 /**
@@ -111,20 +111,20 @@ export function isServerSideHttpError(error: unknown): {
 }
 
 /**
- * The one factory for the actionable Pulse Cloud agent-is-down error, shared by
+ * The one factory for the actionable Nous Cloud agent-is-down error, shared by
  * both startup boundaries that can observe a server-side HTTP fault:
  *
  *  - OAuth WS-ticket mint (buildRemoteConnection → mintGatewayWsTicket), which
  *    runs BEFORE the readiness loop; and
- *  - readiness-probe exhaustion in waitForPulseReady().
+ *  - readiness-probe exhaustion in waitForPULSEReady().
  *
  * Returns null unless the backend is a *.agents.anxious-research.com host AND the
  * error classifies as 502/503/504. When it matches, returns an error carrying:
  * isCloudBackendDown, statusCode, detail, and the original cause. The renderer
  * overlay keys on isCloudBackendDown/statusCode; main owns the classification.
  */
-export function makePulseCloudBackendDownError(baseUrl: string, error: unknown): Error | null {
-  if (!isPulseCloudAgentUrl(baseUrl)) {
+export function makeNousCloudBackendDownError(baseUrl: string, error: unknown): Error | null {
+  if (!isNousCloudAgentUrl(baseUrl)) {
     return null
   }
 
@@ -139,18 +139,18 @@ export function makePulseCloudBackendDownError(baseUrl: string, error: unknown):
   try {
     hostname = new URL(baseUrl).hostname
   } catch {
-    // baseUrl is known to parse (isPulseCloudAgentUrl already did); keep the raw
+    // baseUrl is known to parse (isNousCloudAgentUrl already did); keep the raw
     // value as a last resort rather than throwing.
   }
 
   const detail = error instanceof Error ? error.message : String(error ?? '')
 
   const err = new Error(
-    `Pulse Cloud agent ${hostname} is down ` +
+    `Nous Cloud agent ${hostname} is down ` +
       `(HTTP ${serverError.statusCode}: server-side fault). ` +
       'Check https://portal.anxious-research.com for backend status, ' +
       'or switch to Local mode in Settings → Gateway. ' +
-      'You can also reach out on Discord at https://github.com/Anxious-Research/PULSE/issues ' +
+      'You can also reach out on Discord at discord.gg/NousResearch ' +
       'for immediate assistance. ' +
       `Original detail: ${detail}`
   ) as any
@@ -164,13 +164,12 @@ export function makePulseCloudBackendDownError(baseUrl: string, error: unknown):
 }
 
 /**
- * True when the backend URL points at a Pulse-managed Pulse Cloud instance
- * (e.g. example.agents.pulse.invalid). PULSE ships no managed cloud, so this
- * matcher stays dormant; it exists for self-hosted managed fleets
+ * True when the backend URL points at a Nous-managed PULSE Cloud instance
+ * (e.g. ares-3009.agents.anxious-research.com). These are Fly.io-hosted machines
  * the user cannot restart themselves — a 503 from one means the server is down
  * and the recovery path is Portal/Discord/wait.
  */
-export function isPulseCloudAgentUrl(baseUrl: string): boolean {
+export function isNousCloudAgentUrl(baseUrl: string): boolean {
   try {
     const host = new URL(baseUrl).hostname
 
@@ -226,7 +225,7 @@ export function makeReauthRequiredError(detail?: string): Error {
 
 /**
  * No native token and no live cookie: boot cannot self-heal. Must carry
- * `isReauthRequired` so startPulse latches; a bare `needsOauthLogin` (the
+ * `isReauthRequired` so startPULSE latches; a bare `needsOauthLogin` (the
  * IPC-shaped hint) only drives Sign in copy and would retry after #88070,
  * hiding the overlay. A confirmed ticket-mint 401/403 carries the same tag
  * (see gatewayTicketFailure, #95701).
@@ -250,7 +249,7 @@ function supersededError() {
   return error
 }
 
-export async function waitForPulseReady(baseUrl: string, options: PulseReadyOptions): Promise<void> {
+export async function waitForPULSEReady(baseUrl: string, options: PULSEReadyOptions): Promise<void> {
   const timeoutMs = options.timeoutMs ?? DEFAULT_BACKEND_READY_TIMEOUT_MS
   const pollMs = options.pollMs ?? DEFAULT_BACKEND_READY_POLL_MS
   const healthProbeTimeoutMs = options.healthProbeTimeoutMs ?? DEFAULT_HEALTH_PROBE_TIMEOUT_MS
@@ -306,7 +305,7 @@ export async function waitForPulseReady(baseUrl: string, options: PulseReadyOpti
       }
 
       if (options.alreadyBound && isConnectionRefusedError(error)) {
-        throw new Error(`Pulse backend did not become ready: ${(error as Error).message}`)
+        throw new Error(`PULSE backend did not become ready: ${(error as Error).message}`)
       }
 
       // An explicitly missing route means the backend predates /api/health.
@@ -327,17 +326,17 @@ export async function waitForPulseReady(baseUrl: string, options: PulseReadyOpti
 
   const detail = lastError instanceof Error ? lastError.message : 'timeout'
 
-  // When a Pulse-managed cloud agent returns a server-side HTTP error
+  // When a Nous-managed cloud agent returns a server-side HTTP error
   // (502/503/504), the backend server itself is down — the user cannot
   // restart it and the generic "did not become ready" message is opaque.
   // Surface an actionable error instead (#85335). This is the SAME factory
   // buildRemoteConnection uses at the OAuth WS-ticket-mint boundary, so both
   // startup paths produce the identical Cloud-down shape.
-  const cloudError = makePulseCloudBackendDownError(baseUrl, lastError)
+  const cloudError = makeNousCloudBackendDownError(baseUrl, lastError)
 
   if (cloudError !== null) {
     throw cloudError
   }
 
-  throw new Error(`Pulse backend did not become ready: ${detail}`)
+  throw new Error(`PULSE backend did not become ready: ${detail}`)
 }

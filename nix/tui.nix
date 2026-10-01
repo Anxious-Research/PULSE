@@ -1,4 +1,4 @@
-# Self-contained Pulse TUI, compiled by the same recipe as npm.
+# Self-contained PULSE TUI, compiled by the same recipe as npm.
 { pulseNpmLib, ... }:
 pulseNpmLib.buildNpmPackage {
   dirs = [

@@ -27,14 +27,12 @@ if TYPE_CHECKING:  # string annotations only; never imported at runtime (cycle)
 # Log-record parity with the origin module.
 logger = logging.getLogger("gateway.run")
 
-_TOPIC_RESTORE_STEPS = (
-    "1. Create or open a topic. To create a new one, open All Messages and send any message there.",
-    "2. Send /topic <session-id> inside that topic.",
-)
+def _topic_restore_steps() -> tuple:
+    return (t("gateway.topic.restore_step_1"), t("gateway.topic.restore_step_2"))
 
 
 def _collapse_title(title: str) -> str:
-    return re.sub(r"\s+", " ", str(title or "")).strip() or "Pulse Chat"
+    return re.sub(r"\s+", " ", str(title or "")).strip() or t("gateway.topic.default_title")
 
 
 class GatewayTopicThreadsMixin:
@@ -125,57 +123,21 @@ class GatewayTopicThreadsMixin:
     # ── Telegram topic mode: user-facing text ───────────────────────────────────────────────
 
     def _telegram_topic_root_lobby_message(self) -> str:
-        return (
-            "This main chat is reserved for system commands.\n\n"
-            "To start a new Pulse chat, open the All Messages topic at the top "
-            "of this bot interface and send any message there. Telegram will "
-            "create a new topic for that message; each topic works as an "
-            "independent Pulse session."
-        )
+        return t("gateway.topic.root_lobby")
 
     def _telegram_topic_root_new_message(self) -> str:
-        return (
-            "To start a new parallel Pulse chat, open the All Messages topic "
-            "at the top of this bot interface and send any message there. "
-            "Telegram will create a new topic for it.\n\n"
-            "Each topic is an independent Pulse session. Use /new inside an "
-            "existing topic only if you want to replace that topic's current session."
-        )
+        return t("gateway.topic.root_new")
 
     def _telegram_topic_new_header(self, source: SessionSource) -> Optional[str]:
-        return (
-            "Started a new Pulse session in this topic.\n\n"
-            "Tip: for parallel work, open All Messages and send a message there "
-            "to create a separate topic instead of using /new here. /new replaces "
-            "the session attached to the current topic."
-        ) if self._is_telegram_topic_lane(source) else None
+        return t("gateway.topic.new_header") if self._is_telegram_topic_lane(source) else None
 
     def _telegram_topic_help_text(self) -> str:
-        return (
-            "/topic — enable multi-session DM mode (one bot, many parallel chats)\n"
-            "\n"
-            "Usage:\n"
-            "  /topic             Enable topic mode, or show status if already on\n"
-            "  /topic help        Show this message\n"
-            "  /topic off         Disable topic mode and clear topic bindings\n"
-            "  /topic <id>        Inside a topic: restore a previous session by ID\n"
-            "\n"
-            "How it works:\n"
-            "1. Run /topic once in this DM — Pulse checks BotFather Threads\n"
-            "   Settings are enabled and flips on multi-session mode.\n"
-            "2. Tap All Messages at the top of the bot and send any message.\n"
-            "   Telegram creates a new topic for that message; each topic is\n"
-            "   an independent Pulse session (fresh history, fresh context).\n"
-            "3. The root DM becomes a system lobby — send /topic, /status,\n"
-            "   /help, /usage there. Normal prompts go in a topic.\n"
-            "4. /new inside a topic resets just that topic's session.\n"
-            "5. /topic <id> inside a topic restores an old session into it."
-        )
+        return t("gateway.topic.help")
 
     # ── Telegram topic bindings ─────────────────────────────────────────────────────────────
 
     def _record_telegram_topic_binding(self, source: SessionSource, session_entry) -> None:
-        """Persist the Telegram topic -> Pulse session binding for topic lanes (off-loop)."""
+        """Persist the Telegram topic -> PULSE session binding for topic lanes (off-loop)."""
         session_db = self._sync_session_db()
         if session_db is None or not source.chat_id or not source.thread_id:
             return
@@ -190,7 +152,7 @@ class GatewayTopicThreadsMixin:
         compression rotation reloads the oversized parent next message, retriggering compression.
 
         Telegram topic lanes persist a (chat_id, thread_id) -> session_id row so reopening a topic in a
-        fresh process resumes the right Pulse session. See #20470, #29712, #33414.
+        fresh process resumes the right PULSE session. See #20470, #29712, #33414.
         """
         if not self._is_telegram_topic_lane(source):
             return
@@ -257,7 +219,7 @@ class GatewayTopicThreadsMixin:
         if not callable(create_topic):
             return
         try:
-            thread_id = await create_topic(int(source.chat_id), "System")
+            thread_id = await create_topic(int(source.chat_id), t("gateway.topic.system_topic_name"))
         except Exception:
             logger.debug("Failed to create Telegram System topic", exc_info=True)
             return
@@ -265,7 +227,7 @@ class GatewayTopicThreadsMixin:
             return
         try:
             send_result = await adapter.send(
-                source.chat_id, "System topic for Pulse commands and status.", metadata={"thread_id": str(thread_id)},
+                source.chat_id, t("gateway.topic.system_topic_intro"), metadata={"thread_id": str(thread_id)},
             )
             message_id = getattr(send_result, "message_id", None)
         except Exception:
@@ -287,7 +249,7 @@ class GatewayTopicThreadsMixin:
             return
         try:
             await adapter.send_image_file(
-                chat_id=source.chat_id, image_path=str(image_path), caption="BotFather → Bot Settings → Threads Settings",
+                chat_id=source.chat_id, image_path=str(image_path), caption=t("gateway.topic.setup_image_caption"),
                 metadata={"thread_id": str(source.thread_id)} if source.thread_id else None,
             )
         except Exception:
@@ -309,7 +271,7 @@ class GatewayTopicThreadsMixin:
     # ── Discord auto-thread lanes ───────────────────────────────────────────────────────────
 
     def _is_discord_auto_thread_lane(self, source: SessionSource) -> bool:
-        """Return True only for Discord threads Pulse just auto-created."""
+        """Return True only for Discord threads PULSE just auto-created."""
         return (
             source.platform == Platform.DISCORD and source.chat_type == "thread"
             and bool(getattr(source, "auto_thread_created", False)) and bool(source.thread_id)
@@ -490,7 +452,7 @@ class GatewayTopicThreadsMixin:
         return is_truthy_value((getattr(platform_cfg, "extra", None) or {}).get("disable_topic_auto_rename"))
 
     async def _rename_telegram_topic_for_session_title(self, source: SessionSource, session_id: str, title: str) -> None:
-        """Best-effort rename of a Telegram DM topic when Pulse auto-titles a session."""
+        """Best-effort rename of a Telegram DM topic when PULSE auto-titles a session."""
         if not await asyncio.to_thread(self._is_telegram_topic_lane, source) or not source.chat_id or not source.thread_id:
             return
         # Operator kill-switch, e.g. user-managed topics (ad-hoc Threaded Mode) that auto-rename
@@ -550,7 +512,7 @@ class GatewayTopicThreadsMixin:
             return format_session_db_unavailable(prefix=t("gateway.shared.session_db_unavailable_prefix"))
         chat_id = str(source.chat_id or "")
         if not chat_id:
-            return "Could not determine chat ID."
+            return t("gateway.topic.no_chat_id")
         profile_name = self._telegram_topic_profile_name(source)
         currently_enabled = False
         with suppress(Exception):
@@ -558,12 +520,12 @@ class GatewayTopicThreadsMixin:
                 chat_id=chat_id, user_id=str(source.user_id or ""), profile_name=profile_name,
             )
         if not currently_enabled:
-            return "Multi-session topic mode is not currently enabled for this chat."
+            return t("gateway.topic.mode_not_enabled")
         try:
             await self._session_db.disable_telegram_topic_mode(chat_id=chat_id, profile_name=profile_name)
         except Exception as exc:
             logger.exception("Failed to disable Telegram topic mode")
-            return f"Failed to disable topic mode: {exc}"
+            return t("gateway.topic.disable_failed", error=exc)
         # Reset per-profile+chat debounce state so the next activation doesn't see a stale cooldown.
         # See #76423.
         cooldown_key = self._telegram_topic_cooldown_key(source)
@@ -571,22 +533,10 @@ class GatewayTopicThreadsMixin:
             store = getattr(self, attr, None)
             if isinstance(store, dict):
                 store.pop(cooldown_key, None)
-        return (
-            "Multi-session topic mode is now OFF for this chat.\n\n"
-            "Existing topics in Telegram aren't removed — they'll just stop "
-            "being gated as independent sessions. The root DM works as a "
-            "normal Pulse chat again. Run /topic to re-enable later."
-        )
+        return t("gateway.topic.mode_disabled")
 
     async def _telegram_topic_root_status_message(self, source: SessionSource) -> str:
-        lines = [
-            "Telegram multi-session topics are enabled.",
-            "",
-            "To create a new Pulse chat, open All Messages at the top of this "
-            "bot interface and send any message there. Telegram will create a "
-            "new topic for it.",
-            "",
-        ]
+        lines = [t("gateway.topic.status_enabled"), "", t("gateway.topic.status_how_to"), ""]
         try:
             sessions = await self._session_db.list_unlinked_telegram_sessions_for_user(
                 chat_id=str(source.chat_id), user_id=str(source.user_id),
@@ -596,36 +546,37 @@ class GatewayTopicThreadsMixin:
             logger.debug("Failed to list unlinked Telegram sessions", exc_info=True)
             sessions = []
         if sessions:
-            lines.append("Previous unlinked sessions:")
+            lines.append(t("gateway.topic.previous_unlinked"))
             for session in sessions:
                 preview = str(session.get("preview") or "").strip()
                 lines.append(
-                    f"- {session.get('title') or 'Untitled session'} — `{session.get('id') or ''}`"
+                    f"- {session.get('title') or t('gateway.topic.untitled_session')} — `{session.get('id') or ''}`"
                     + (f" — {preview}" if preview else "")
                 )
-            lines.extend(["", "To restore one:", *_TOPIC_RESTORE_STEPS, f"Example: Send /topic {sessions[0].get('id')} inside a topic."])
+            lines.extend(["", t("gateway.topic.restore_one"), *_topic_restore_steps(),
+                          t("gateway.topic.restore_example", session_id=sessions[0].get("id"))])
         else:
-            lines.extend(["No previous unlinked Telegram sessions found.", "", "To restore a previous session later:", *_TOPIC_RESTORE_STEPS])
+            lines.extend([t("gateway.topic.no_unlinked"), "", t("gateway.topic.restore_later"), *_topic_restore_steps()])
         return "\n".join(lines)
 
     async def _restore_telegram_topic_session(self, event: MessageEvent, raw_session_id: str) -> str:
-        """Restore an existing Telegram-owned Pulse session into this topic."""
+        """Restore an existing Telegram-owned PULSE session into this topic."""
         source = event.source
         db = self._session_db
         session_id = await db.resolve_session_id(raw_session_id.strip())
         session = await db.get_session(session_id) if session_id else None
         if not session:
-            return f"Session not found: {raw_session_id.strip()}"
+            return t("gateway.topic.session_not_found", session_id=raw_session_id.strip())
         if str(session.get("source") or "") != "telegram":
-            return "That session is not a Telegram session and cannot be restored into this topic."
+            return t("gateway.topic.not_telegram_session")
         if str(session.get("user_id") or "") != str(source.user_id):
-            return "That session does not belong to this Telegram user."
+            return t("gateway.topic.not_your_session")
         linked = await db.is_telegram_session_linked_to_topic(session_id=session_id)
         topic_profile = self._telegram_topic_profile_name(source)
         current_binding = await db.get_telegram_topic_binding(
             chat_id=str(source.chat_id), thread_id=str(source.thread_id), profile_name=topic_profile,
         )
-        already_linked = "That session is already linked to another Telegram topic."
+        already_linked = t("gateway.topic.already_linked")
         if linked and (not current_binding or current_binding.get("session_id") != session_id):
             return already_linked
         try:
@@ -648,5 +599,5 @@ class GatewayTopicThreadsMixin:
                 if projected is not None and projected.get("content"):
                     last_assistant = str(projected.get("content"))
                     break
-        response = f"Session restored: {title}"
-        return response + (f"\n\nLast Pulse message:\n{last_assistant}" if last_assistant else "")
+        response = t("gateway.topic.restored", title=title)
+        return response + (t("gateway.topic.restored_last_message", text=last_assistant) if last_assistant else "")

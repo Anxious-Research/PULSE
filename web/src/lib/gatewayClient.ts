@@ -15,7 +15,7 @@
 
 import {
   JsonRpcGatewayClient,
-  buildPulseWebSocketUrl,
+  buildPULSEWebSocketUrl,
   type ConnectionState,
   type GatewayEvent,
   type GatewayEventName,
@@ -48,12 +48,12 @@ export class GatewayClient extends JsonRpcGatewayClient {
     const authParam = token ? (["token", token] as const) : await buildWsAuthParam();
     if (!authParam[1]) {
       throw new Error(
-        "Session token not available — page must be served by the Pulse dashboard server",
+        "Session token not available — page must be served by the PULSE dashboard server",
       );
     }
 
     await super.connect(
-      buildPulseWebSocketUrl({
+      buildPULSEWebSocketUrl({
         authParam,
         basePath: PULSE_BASE_PATH,
         path: "/api/ws",

@@ -345,7 +345,7 @@ def run_oneshot(
 
 
 def _create_session_db_for_oneshot():
-    """Best-effort SessionDB — oneshot bypasses ``PulseCLI._init_agent()``, so it must wire the
+    """Best-effort SessionDB — oneshot bypasses ``PULSECLI._init_agent()``, so it must wire the
     SQLite store itself or ``session_search`` is advertised but always unavailable. The registry
     handle is the one in-process tools (delegation, goals) acquire during the run, so the process
     holds one writer; ``_close_agent``'s ``close()`` releases the refcount."""
@@ -407,7 +407,7 @@ def _resolve_model_and_provider(cfg: dict, model: Optional[str], provider: Optio
         if isinstance(model_cfg, dict):
             cfg_provider = str(model_cfg.get("provider") or "").strip().lower()
         current_provider = cfg_provider or os.getenv("PULSE_INFERENCE_PROVIDER", "").strip().lower() or "auto"
-        # Same owner as PulseCLI startup: a provider-qualified string (``custom:<name>:<model>``,
+        # Same owner as PULSECLI startup: a provider-qualified string (``custom:<name>:<model>``,
         # ``<provider>/<model>``) selects that provider before auto-detection can hand the unsplit
         # string to the configured default (#73943).
         route = _ms.resolve_startup_model_route(
@@ -585,6 +585,8 @@ def _run_agent(
             session_id=resume_sid,
             credential_pool=runtime.get("credential_pool"),
             fallback_model=get_fallback_chain(cfg) or None,
+            # The resolved provider's request body (a custom entry's extra_body), as `pulse chat` passes it.
+            request_overrides=runtime.get("request_overrides"),
             ephemeral_system_prompt=skills_prompt,
             reasoning_config=reasoning_config,
             # The only interactive callback wired: no user sits at a terminal. Sudo prompts gate on
@@ -642,12 +644,8 @@ def _close_agent(agent, session_db) -> None:
         _quietly("session store cleanup", lambda: session_db.close())
 
 
-def _oneshot_clarify_callback(question: str, choices=None, multi_select=False) -> str:
+def _oneshot_clarify_callback(questions: list) -> dict:
     """Clarify is disabled in oneshot mode — tell the agent to pick a default and proceed."""
-    if choices:
-        what = "subset" if multi_select else "option"
-        return (
-            f"[oneshot mode: no user available. Pick the best {what} from "
-            f"{choices} using your own judgment and continue.]"
-        )
-    return "[oneshot mode: no user available. Make the most reasonable assumption you can and continue.]"
+    return {"answers": {}, "outcome": "undelivered", "notice": (
+        "oneshot mode: no user available. Pick the best choices using your own judgment, "
+        "or make the most reasonable assumption you can, and continue.")}

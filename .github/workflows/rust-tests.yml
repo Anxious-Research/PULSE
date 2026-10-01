@@ -1,7 +1,7 @@
 # .github/workflows/rust-tests.yml
 name: Rust tests
 
-# `cargo test` for the Tauri bootstrap installer (Pulse-Setup). Nothing in CI
+# `cargo test` for the Tauri bootstrap installer (PULSE-Setup). Nothing in CI
 # compiled this crate before: `.rs` lives under `apps/`, so the change
 # classifier matched it as `frontend` and ran the TypeScript matrix, which
 # cannot notice a Rust error. The crate's unit tests existed in the tree and had
@@ -36,7 +36,7 @@ jobs:
       run:
         working-directory: apps/bootstrap-installer/src-tauri
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # v7.0.1
 
       # Tauri links against the system webkit2gtk on Linux, so the crate does
       # not compile without these even for `cargo test --lib`.
@@ -62,7 +62,7 @@ jobs:
       # No restore-keys: a partial hit leaves a stale target dir, and cargo
       # re-resolves correctly on top of a Cargo.toml-keyed hit anyway.
       - name: Restore cargo cache
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/registry

@@ -171,10 +171,26 @@ function findToolPartIndex(
   const overlaps = (index: number) => hasToolMatchOverlap(matchValues, toolPartMatchValues(parts[index]))
 
   if (stableId) {
-    const stableIndex = parts.findIndex(part => part.type === 'tool-call' && part.toolCallId === stableId)
+    const stableIndex = parts.findIndex(
+      part => part.type === 'tool-call' && part.toolCallId === stableId && !Object.hasOwn(part, 'result')
+    )
 
     if (stableIndex >= 0) {
       return stableIndex
+    }
+
+    const repeatedIndex =
+      phase === 'complete'
+        ? parts.findLastIndex(
+            part =>
+              part.type === 'tool-call' &&
+              part.toolCallId === stableId &&
+              (payload?.result === undefined || JSON.stringify(payload.result) === JSON.stringify(part.result))
+          )
+        : -1
+
+    if (repeatedIndex >= 0) {
+      return repeatedIndex
     }
 
     // Some live streams start without an id, then complete with one. Fall
@@ -404,7 +420,7 @@ export interface SettledClarifyProjection {
  *
  * Only an UNRESOLVED part (never completed: no `result` key, sealed or not)
  * can own an event. Tool call ids are not unique across turns — llama.cpp
- * emits one constant id for every call and Pulse' own deterministic ids
+ * emits one constant id for every call and PULSE' own deterministic ids
  * repeat — so a part that already carries its completion is a finished call
  * from an earlier turn, not the owner of the new one. Routing to it would
  * draw the new call over the old row and leave the live turn empty.
@@ -840,7 +856,7 @@ export function applyStoredToolResultToParts(
       ? toolMessage.content
       : (toolMessage.text ?? toolMessage.context ?? toolMessage.name)
 
-  // Tool-call ids are not unique across turns (llama.cpp/Pulse reuse them),
+  // Tool-call ids are not unique across turns (llama.cpp/PULSE reuse them),
   // so only an unresolved part may own a stored result. Property presence,
   // not truthiness: `false`/`null`/`''`/`0` are completed results too.
   const partIndex = parts.findIndex(
@@ -895,9 +911,8 @@ export function storedToolMessagePart(toolMessage: SessionMessage, fallbackIndex
 }
 
 export function withUniqueToolCallIds(messages: ChatMessage[]): ChatMessage[] {
-  const seen = new Set<string>()
-
   return messages.map(message => {
+    const seen = new Set<string>()
     let changed = false
 
     const parts = message.parts.map((part, index) => {

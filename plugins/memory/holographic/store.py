@@ -1,4 +1,4 @@
-"""SQLite-backed fact store with entity resolution and trust scoring (single-user Pulse memory plugin)."""
+"""SQLite-backed fact store with entity resolution and trust scoring (single-user PULSE memory plugin)."""
 
 import os
 import re

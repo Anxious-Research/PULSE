@@ -1,4 +1,4 @@
-"""Skills configuration for Pulse Agent. `pulse skills` enters this module."""
+"""Skills configuration for PULSE Agent. `pulse skills` enters this module."""
 from typing import List, Optional, Set
 
 from pulse_cli.config import cfg_get, load_config, save_config

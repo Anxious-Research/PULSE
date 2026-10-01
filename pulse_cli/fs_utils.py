@@ -1,4 +1,4 @@
-"""Filesystem helpers shared across Pulse CLI subsystems."""
+"""Filesystem helpers shared across PULSE CLI subsystems."""
 
 import os
 import shutil

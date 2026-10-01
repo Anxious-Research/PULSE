@@ -1,6 +1,6 @@
 # Usage
 
-This skill is triggered by natural language in Pulse — no slash command or CLI flags.
+This skill is triggered by natural language in PULSE — no slash command or CLI flags.
 
 ## Trigger Phrases
 

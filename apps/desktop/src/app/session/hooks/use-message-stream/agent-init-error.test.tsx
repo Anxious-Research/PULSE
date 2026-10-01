@@ -84,7 +84,7 @@ describe('useMessageStream agent-init error surfacing (#63078)', () => {
 
     act(() =>
       stream.handleEvent({
-        payload: { message: 'Pulse could not start the assistant for this session. Details: no provider.' },
+        payload: { message: 'PULSE could not start the assistant for this session. Details: no provider.' },
         session_id: SID,
         type: 'error'
       })
@@ -126,7 +126,7 @@ describe('useMessageStream agent-init error surfacing (#63078)', () => {
 
     act(() =>
       stream.handleEvent({
-        payload: { message: 'Pulse could not start the assistant for this session. Details: no provider.' },
+        payload: { message: 'PULSE could not start the assistant for this session. Details: no provider.' },
         session_id: SID,
         type: 'error'
       })

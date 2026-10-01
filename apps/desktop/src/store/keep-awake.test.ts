@@ -6,7 +6,7 @@ import { $keepAwake, setKeepAwake } from './keep-awake'
 
 const KEY = 'pulse.desktop.keepAwake.v1'
 const desktopWindow = window as unknown as { pulseDesktop?: Window['pulseDesktop'] }
-const initialPulseDesktop = desktopWindow.pulseDesktop
+const initialPULSEDesktop = desktopWindow.pulseDesktop
 const setKeepAwakeBridge = vi.fn()
 
 beforeEach(() => {
@@ -16,7 +16,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  desktopWindow.pulseDesktop = initialPulseDesktop
+  desktopWindow.pulseDesktop = initialPULSEDesktop
 })
 
 describe('keep-awake store', () => {

@@ -1,5 +1,5 @@
-"""Bot Desktop runtime: one headless Xfce desktop per Pulse profile, served over RFB on a private
-Unix socket, viewed and driven from Pulse Desktop.
+"""Bot Desktop runtime: one headless Xfce desktop per PULSE profile, served over RFB on a private
+Unix socket, viewed and driven from PULSE Desktop.
 
 Layout under ``<PULSE_HOME>/bot-desktop/``: ``display`` (allocated X display number), ``rfb.sock``
 (Xvnc RFB Unix socket, 0600), ``Xauthority``, ``env`` (DISPLAY/XAUTHORITY/DBUS_SESSION_BUS_ADDRESS
@@ -93,7 +93,7 @@ def package_manager() -> Optional[str]:
 
 def install_command() -> Optional[str]:
     """The distro command that installs the Bot Desktop packages, as the human would type it on THIS host:
-    prefixed with ``sudo`` unless Pulse already runs as root, so it is both what the pane shows and what
+    prefixed with ``sudo`` unless PULSE already runs as root, so it is both what the pane shows and what
     :mod:`tools.bot_desktop.install` runs. ``None`` when no package manager is present.
 
     Not a promise that it can run here: see :func:`installable`. The published Docker image supervises
@@ -720,8 +720,13 @@ def _spawn_and_wait(sd: Path, wait_seconds: float) -> DesktopStatus:
         env_file = sd / "env"
         env_file.unlink(missing_ok=True)
 
-        child_env = {k: v for k, v in os.environ.items() if k not in {
-            "DISPLAY", "XAUTHORITY", "WAYLAND_DISPLAY", "DBUS_SESSION_BUS_ADDRESS", "SESSION_MANAGER"}}
+        # The agent drives this desktop and its dock opens a terminal, so it starts from the
+        # scrubbed child env like any other agent child, keeping the user's HOME.
+        from tools.environments.local import served_profile_child_env
+        child_env = served_profile_child_env(inherit_credentials=False)
+        child_env["HOME"] = child_env["PULSE_REAL_HOME"]
+        for key in ("DISPLAY", "XAUTHORITY", "WAYLAND_DISPLAY", "DBUS_SESSION_BUS_ADDRESS", "SESSION_MANAGER"):
+            child_env.pop(key, None)
         child_env.update({
             "PULSE_BD_PROFILE": _profile_name(),
             "PULSE_BD_DISPLAY_NUM": str(num),

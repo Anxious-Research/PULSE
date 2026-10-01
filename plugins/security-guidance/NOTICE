@@ -1,4 +1,4 @@
-Pulse Agent security-guidance plugin
+PULSE Agent security-guidance plugin
 =====================================
 
 This plugin (plugins/security-guidance/) includes work originally
@@ -23,8 +23,8 @@ unmodified.
 Original work
 -------------
 
-The Pulse-side plugin glue code (__init__.py, plugin.yaml, README.md,
-tests) is original work by AnxiousResearchLab and is licensed under the MIT
+The PULSE-side plugin glue code (__init__.py, plugin.yaml, README.md,
+tests) is original work by NousResearch and is licensed under the MIT
 License that applies to the rest of the pulse-agent project, except
 where it imports from patterns.py — that import does not change the
 license of either file.

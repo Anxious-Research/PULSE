@@ -1,9 +1,9 @@
 """
-Pulse MCP Server — expose messaging conversations as MCP tools (`pulse mcp serve`).
+PULSE MCP Server — expose messaging conversations as MCP tools (`pulse mcp serve`).
 
 A stdio MCP server letting any MCP client (Claude Code, Cursor, Codex, ...) list
 conversations, read history, send messages, poll live events, and manage approvals.
-Matches OpenClaw's 9-tool channel bridge surface plus the Pulse-specific
+Matches OpenClaw's 9-tool channel bridge surface plus the PULSE-specific
 channels_list. Client config: {"mcpServers": {"pulse": {"command": "pulse", "args": ["mcp", "serve"]}}}
 """
 
@@ -263,7 +263,7 @@ def _latest_ts(messages) -> float:
 
 class EventBridge:
     """Background poller watching SessionDB for new messages, feeding an in-memory
-    event queue with waiter support (the Pulse analogue of OpenClaw's WebSocket
+    event queue with waiter support (the PULSE analogue of OpenClaw's WebSocket
     gateway bridge, polling SQLite instead)."""
 
     def __init__(self):
@@ -690,11 +690,11 @@ _TOOL_NAMES = (
 
 
 def create_mcp_server(event_bridge: Optional[EventBridge] = None) -> "MCPServer":
-    """Create and return the Pulse MCP server with all tools registered."""
+    """Create and return the PULSE MCP server with all tools registered."""
     if not _MCP_SERVER_AVAILABLE:
         raise ImportError(f"MCP server requires the 'mcp' package. Install with: {sys.executable} -m pip install 'mcp'")
     mcp = MCPServer("pulse", instructions=(
-        "Pulse Agent messaging bridge. Use these tools to interact with "
+        "PULSE Agent messaging bridge. Use these tools to interact with "
         "conversations across Telegram, Discord, Slack, WhatsApp, Signal, "
         "Matrix, and other connected platforms."
     ))
@@ -705,7 +705,7 @@ def create_mcp_server(event_bridge: Optional[EventBridge] = None) -> "MCPServer"
 
 
 def run_mcp_server(verbose: bool = False) -> None:
-    """Start the Pulse MCP server on stdio."""
+    """Start the PULSE MCP server on stdio."""
     if not _MCP_SERVER_AVAILABLE:
         print("Error: MCP server requires the 'mcp' package.\n"
               f"Install with: {sys.executable} -m pip install 'mcp'", file=sys.stderr)

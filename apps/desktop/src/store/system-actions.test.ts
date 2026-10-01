@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as PulseApi from '@/pulse'
+import type * as PULSEApi from '@/pulse'
 import { registerGatewayReconnect } from '@/store/gateway-reconnect'
 
 // The REST layer is the only seam these flows own; the confirm dialog and
@@ -10,7 +10,7 @@ const getActionStatus = vi.fn()
 const restartGateway = vi.fn()
 
 vi.mock('@/pulse', async importOriginal => ({
-  ...(await importOriginal<typeof PulseApi>()),
+  ...(await importOriginal<typeof PULSEApi>()),
   getActionStatus: (name: string, timeout?: number) => getActionStatus(name, timeout),
   getStatus: async () => ({}),
   restartGateway: () => restartGateway()

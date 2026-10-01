@@ -120,7 +120,7 @@ def _python_execution_target(argv: Sequence[str]) -> Optional[Tuple[str, str]]:
 
 
 def _looks_like_pulse(argv: Sequence[str]) -> bool:
-    """Return whether argv identifies a supported Pulse execution target."""
+    """Return whether argv identifies a supported PULSE execution target."""
     if not argv:
         return False
     program = os.path.basename(argv[0]).lower().removesuffix(".exe")
@@ -186,7 +186,7 @@ def _store_install_layout(this_home: str) -> Tuple[Optional[str], Optional[str]]
     """``(<install root>, <our profile name>)`` for the home holding the store, else ``(None, None)``.
 
     Derived with the canonical ``named_profile_home`` predicate, never a ``basename == "profiles"``
-    string test: an arbitrary ``<X>/profiles/<n>/`` tree is not a Pulse install, and promoting
+    string test: an arbitrary ``<X>/profiles/<n>/`` tree is not a PULSE install, and promoting
     ``<X>`` to "ours" swallows an unrelated instance living under it — the literal two-instance
     shape of #92401. The root store (``~/.pulse/state.db``) is its own root with no profile name,
     so ANY named-profile selection contradicts it.
@@ -261,7 +261,7 @@ def _argv_scoped_to_other_home(argv: Sequence[str], db_path: Path) -> bool:
 
     ``state.db`` lives at the PULSE_HOME root, so an absolute-path token
     containing a ``/.pulse`` segment (or naming a ``state.db``/WAL/SHM under
-    some other parent) identifies that token's own Pulse home.  When at least
+    some other parent) identifies that token's own PULSE home.  When at least
     one such token exists AND no token references this instance's state.db,
     its sidecars, or its home directory, the process provably works on a
     different generation and must not be counted as an uninspectable holder

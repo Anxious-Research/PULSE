@@ -687,7 +687,7 @@ export function missingGetWindowsWarning({ platform, arch, halfInstalledDir }) {
     lines.push(
       `[stage-native-deps] ${halfInstalledDir} exists but is not a loadable package — an ` +
         'interrupted npm install left it half-extracted (look for TAR_ENTRY_ERROR in the install log). ' +
-        'To restore read_window_below: close every Pulse window and gateway so the extract is not ' +
+        'To restore read_window_below: close every PULSE window and gateway so the extract is not ' +
         'interrupted again, then run `pulse desktop --force-build` — it removes the stale dir before npm.'
     )
   }

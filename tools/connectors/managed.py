@@ -268,5 +268,5 @@ def run_managed_action(
         logger.debug("manage_connections %s failed: %s", action, exc)
         return tool_error(
             f"The connector gateway request failed: {exc}. "
-            "If this persists, the user can manage connections in the Anxious Portal."
+            "If this persists, the user can manage connections in the Nous Portal."
         )

@@ -2,12 +2,12 @@ name: orcaslicer
 repo: https://github.com/mazzanfar/pulse-orcaslicer
 sha: 08bcbeffff712702896fba0d101d8fa669d129d2
 version: "0.5.0"
-title: OrcaSlicer for Pulse
+title: OrcaSlicer for PULSE
 description: >-
   Prepare, slice, preflight and export 3D prints with stock OrcaSlicer profiles.
   Includes explicit printer upload/control, camera snapshots and monitoring
   through supported protocols. Protocol and hardware limits are documented.
-  Independent of OrcaSlicer and Anxious Research Lab.
+  Independent of OrcaSlicer and Nous Research.
   Disclosure — executes the installed local slicer and exposes printer upload,
   start, pause, resume and cancel; agent-supplied confirmation is not independent
   human authentication. Printer/camera credentials are read from ORCA_*/PULSE_ORCA_*

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pulse CLI - Main entry point.
+"""PULSE CLI - Main entry point.
 
 Usage:
     pulse                     # Interactive chat (default)
@@ -436,7 +436,7 @@ def _inside_mcp_add_args(argv: list, index: int) -> bool:
 
     ``mcp add --args`` is command-argv passthrough. Flags after that point
     belong to the child MCP command (for example Docker MCP Toolkit's
-    ``--profile``), not to Pulse' own profile selector.
+    ``--profile``), not to PULSE' own profile selector.
     """
     try:
         mcp_index = argv.index("mcp", 0, index)
@@ -593,6 +593,7 @@ def _apply_profile_override() -> None:
     _explicit_cli_profile = None
     argv = sys.argv[1:]
     profile_name, consume, profile_index = _scan_profile_flag(argv)
+    from_sticky_profile = False
 
     # PULSE_HOME already set with no explicit flag: trust it only when it
     # points at a specific profile dir ("profiles" as immediate parent). If it
@@ -614,6 +615,7 @@ def _apply_profile_override() -> None:
                 name = active_path.read_text(encoding="utf-8-sig").strip()
                 if name and name != "default":
                     profile_name = name  # consume stays 0: nothing to strip
+                    from_sticky_profile = True
         except (UnicodeDecodeError, OSError):
             pass  # corrupted file, skip
 
@@ -625,8 +627,21 @@ def _apply_profile_override() -> None:
         pulse_home = resolve_profile_env(profile_name)
     except FileNotFoundError as exc:
         pulse_home = _resolve_sudo_user_profile_env(profile_name)
+        error = str(exc)
+        if not pulse_home and from_sticky_profile:
+            from pulse_cli.main_profile_recovery import is_stale_profile_recovery_command
+
+            if is_stale_profile_recovery_command(argv):
+                pulse_home = resolve_profile_env("default")
+                print(
+                    f"Warning: saved profile '{profile_name}' no longer exists; "
+                    "running this recovery command in the default profile.",
+                    file=sys.stderr,
+                )
+            else:
+                error = f"Saved profile '{profile_name}' no longer exists. Switch back with: pulse profile use default"
         if not pulse_home:
-            print(f"Error: {exc}", file=sys.stderr)
+            print(f"Error: {error}", file=sys.stderr)
             sys.exit(1)
     except ValueError as exc:
         print(f"Error: {exc}", file=sys.stderr)
@@ -752,7 +767,7 @@ from datetime import datetime
 
 from pulse_cli.model_setup_flows import (
     _model_flow_openrouter,
-    _model_flow_anxious,
+    _model_flow_nous,
     _model_flow_openai_codex,
     _model_flow_xai_oauth,
     _model_flow_qwen_oauth,
@@ -1072,7 +1087,7 @@ def _auth_store_logged_in(auth_file: Path, registry, strict_profile_scope: bool)
 
 
 def _has_any_provider_configured(*, strict_profile_scope: bool = False) -> bool:
-    """Check if at least one inference provider is usable. Never creates one: the Anxious free tier
+    """Check if at least one inference provider is usable. Never creates one: the Nous free tier
     counts only once its identity exists, and the boot bootstrap (``pulse_cli.free_tier_bootstrap``)
     is the only thing that creates it; ``cmd_chat`` runs the bootstrap before asking.
 
@@ -1145,7 +1160,7 @@ def _has_any_provider_configured(*, strict_profile_scope: bool = False) -> bool:
         except Exception:
             pass
 
-    # Claude Code OAuth credentials count only once Pulse is explicitly
+    # Claude Code OAuth credentials count only once PULSE is explicitly
     # configured — having Claude Code installed isn't consent to use its tokens.
     if _has_pulse_config and not strict_profile_scope:
         try:
@@ -1159,7 +1174,7 @@ def _has_any_provider_configured(*, strict_profile_scope: bool = False) -> bool:
         except Exception:
             pass
 
-    # Nothing explicit anywhere: an existing Anxious free-tier identity counts while the tier is on.
+    # Nothing explicit anywhere: an existing Nous free-tier identity counts while the tier is on.
     try:
         from pulse_cli.anon_auth import guest_enabled, has_guest
         return guest_enabled() and has_guest()
@@ -1741,7 +1756,7 @@ def _first_run_setup_guard(args) -> None:
     """No provider configured: offer `pulse setup` (TTY) or exit 1 with guidance."""
     print()
     print(
-        "It looks like Pulse isn't configured yet -- no API keys or providers found."
+        "It looks like PULSE isn't configured yet -- no API keys or providers found."
     )
     print()
     print("  Run:  pulse setup")
@@ -1851,6 +1866,9 @@ def cmd_chat(args):
         os.environ["PULSE_SESSION_SOURCE_EXPLICIT"] = "1"
 
     _pin_kanban_board_env()
+    from pulse_cli.observability.shared_metrics_consent import offer_consent_before_chat
+
+    offer_consent_before_chat(args)
     _confirm_startup_expensive_model_override(args)
 
     passthrough = {k: getattr(args, k, d) for k, d in _CHAT_PASSTHROUGH}
@@ -1884,7 +1902,9 @@ def cmd_chat(args):
 
     try:
         from cli import main as cli_main
+        from pulse_cli.observability.shared_metrics_process import begin_process
 
+        begin_process("cli")
         cli_main(**kwargs)
     except ValueError as e:
         print(f"Error: {e}")
@@ -1892,7 +1912,7 @@ def cmd_chat(args):
     except ImportError as e:
         # Mixed-version installs (new cli.py, older pulse_cli.config) crash
         # here — e.g. missing resolve_turn_limit / split_model_config_default
-        # (#96900). The agent-setup mixin prints this hint too late: PulseCLI
+        # (#96900). The agent-setup mixin prints this hint too late: PULSECLI
         # construction already failed. Fast-chat launch also goes through
         # cmd_chat, so this one catch covers `pulse` / `pulse chat`.
         from pulse_constants import emit_partial_update_hint
@@ -1941,7 +1961,7 @@ def _forward_command(name: str, module: str, attr: str, *, forward_return: bool 
 
 
 cmd_setup = _forward_command("cmd_setup", "pulse_cli.setup", "run_setup_wizard", doc='Interactive setup wizard.')
-cmd_login = _forward_command("cmd_login", "pulse_cli.auth", "login_command", doc='Authenticate Pulse CLI with a provider.')
+cmd_login = _forward_command("cmd_login", "pulse_cli.auth", "login_command", doc='Authenticate PULSE CLI with a provider.')
 cmd_logout = _forward_command("cmd_logout", "pulse_cli.auth", "logout_command", doc='Clear provider authentication.')
 cmd_auth = _forward_command("cmd_auth", "pulse_cli.auth_commands", "auth_command", doc='Manage pooled credentials.')
 cmd_status = _forward_command("cmd_status", "pulse_cli.status", "show_status", doc='Show status of all components.')
@@ -1954,8 +1974,8 @@ cmd_doctor = _forward_command("cmd_doctor", "pulse_cli.doctor", "run_doctor", fo
 cmd_dump = _forward_command("cmd_dump", "pulse_cli.dump", "run_dump", doc='Dump setup summary for support/debugging.')
 cmd_debug = _forward_command("cmd_debug", "pulse_cli.debug", "run_debug", doc='Debug tools (share report, etc.).')
 cmd_skin = _forward_command("cmd_skin", "pulse_cli.skin_cmd", "skin_command", doc='Skin management (list / use / set).')
-cmd_import = _forward_command("cmd_import", "pulse_cli.backup", "run_import", forward_return=True, doc='Restore a Pulse backup from a zip file.')
-cmd_dashboard_register = _forward_command("cmd_dashboard_register", "pulse_cli.dashboard_register", "cmd_dashboard_register", doc='Register a self-hosted dashboard OAuth client with Anxious Portal.')
+cmd_import = _forward_command("cmd_import", "pulse_cli.backup", "run_import", forward_return=True, doc='Restore a PULSE backup from a zip file.')
+cmd_dashboard_register = _forward_command("cmd_dashboard_register", "pulse_cli.dashboard_register", "cmd_dashboard_register", doc='Register a self-hosted dashboard OAuth client with Nous Portal.')
 cmd_gateway_enroll = _forward_command("cmd_gateway_enroll", "pulse_cli.gateway_enroll", "cmd_gateway_enroll", doc='Enroll a self-hosted gateway with a relay connector.')
 cmd_prompt_size = _forward_command("cmd_prompt_size", "pulse_cli.prompt_size", "cmd_prompt_size", doc='Show a byte/char breakdown of the system prompt + tool schemas.')
 cmd_pairing = _forward_command("cmd_pairing", "pulse_cli.pairing", "pairing_command")
@@ -1975,13 +1995,13 @@ def cmd_model(args):
             print("  Cleared model picker cache.")
         except Exception:
             pass
+    from pulse_cli.observability.shared_metrics_setup import provider_setup_surface
     from pulse_cli.setup import run_setup_action_with_navigation
 
-    run_setup_action_with_navigation(
-        "Model & Provider",
-        lambda: select_provider_and_model(args=args),
-        cancelled_message="No change.",
-    )
+    with provider_setup_surface("cli_model"):
+        run_setup_action_with_navigation(
+            "Model & Provider", lambda: select_provider_and_model(args=args), cancelled_message="No change.",
+        )
 
 
 # Provider id -> flow(config, current_model, args). Lambdas resolve the
@@ -1992,7 +2012,7 @@ _PROVIDER_MODEL_FLOWS = {
     "openrouter": lambda c, m, a: _model_flow_openrouter(c, m),
     "moa": lambda c, m, a: _model_flow_moa(c, m),
     "ai-gateway": lambda c, m, a: _model_flow_ai_gateway(c, m),
-    "anxious": lambda c, m, a: _model_flow_anxious(c, m, args=a),
+    "nous": lambda c, m, a: _model_flow_nous(c, m, args=a),
     "openai-codex": lambda c, m, a: _model_flow_openai_codex(c, m),
     "xai-oauth": lambda c, m, a: _model_flow_xai_oauth(c, m, args=a),
     "qwen-oauth": lambda c, m, a: _model_flow_qwen_oauth(c, m),
@@ -2062,7 +2082,7 @@ def _resolve_active_provider(config, model_cfg, effective_provider, custom_provi
             if exc.code == "no_provider_configured":
                 # The picker that is about to open IS the fix; a warning that says
                 # "run `pulse model`" from inside `pulse model` is circular.
-                print("No provider is set up yet — pick one below. (Anxious Portal works without an API key.)")
+                print("No provider is set up yet — pick one below. (Nous Portal works without an API key.)")
             elif effective_provider == "auto":
                 print(f"Warning: {format_auth_error(exc)} Falling back to auto provider detection.")
             active = None  # no provider yet; default to first in list
@@ -2151,31 +2171,33 @@ def select_provider_and_model(args=None):
     # Provider-specific setup + model selection. Flows resolve the
     # _model_flow_* names at call time so test monkeypatches on
     # pulse_cli.main keep intercepting.
-    flow = _PROVIDER_MODEL_FLOWS.get(selected_provider)
-    if flow is None and _is_profile_plugin_flow_provider(selected_provider):
-        # Registered plugin profile with no bespoke flow: the generic one, keyed by its auth_type.
-        flow = lambda c, m, a: _model_flow_plugin_provider(c, selected_provider, m)  # noqa: E731
-    if flow is not None:
-        flow(config, current_model, args)
-    elif (
-        selected_provider.startswith("custom:")
-        or selected_provider in _custom_provider_map
-    ):
-        provider_info = _named_custom_provider_map(load_config()).get(selected_provider)
-        if provider_info is None:
-            print(
-                "Warning: the selected saved custom provider is no longer available. "
-                "It may have been removed from config.yaml. No change."
-            )
-            return
-        _model_flow_named_custom(config, provider_info)
-    elif selected_provider == "remove-custom":
-        _remove_custom_provider(config)
-    elif (
-        selected_provider in _GENERIC_API_KEY_PROVIDERS
-        or _is_profile_api_key_provider(selected_provider)
-    ):
-        _model_flow_api_key_provider(config, selected_provider, current_model)
+    from pulse_cli.observability.shared_metrics_setup import cli_provider_setup
+    with cli_provider_setup(selected_provider):
+        flow = _PROVIDER_MODEL_FLOWS.get(selected_provider)
+        if flow is None and _is_profile_plugin_flow_provider(selected_provider):
+            # Registered plugin profile with no bespoke flow: the generic one, keyed by its auth_type.
+            flow = lambda c, m, a: _model_flow_plugin_provider(c, selected_provider, m)  # noqa: E731
+        if flow is not None:
+            flow(config, current_model, args)
+        elif (
+            selected_provider.startswith("custom:")
+            or selected_provider in _custom_provider_map
+        ):
+            provider_info = _named_custom_provider_map(load_config()).get(selected_provider)
+            if provider_info is None:
+                print(
+                    "Warning: the selected saved custom provider is no longer available. "
+                    "It may have been removed from config.yaml. No change."
+                )
+                return
+            _model_flow_named_custom(config, provider_info)
+        elif selected_provider == "remove-custom":
+            _remove_custom_provider(config)
+        elif (
+            selected_provider in _GENERIC_API_KEY_PROVIDERS
+            or _is_profile_api_key_provider(selected_provider)
+        ):
+            _model_flow_api_key_provider(config, selected_provider, current_model)
 
     # Every flow persists through _save_model_choice; a changed model.default means a pick
     # landed, so offer its reasoning effort here once instead of inside each flow.
@@ -2299,7 +2321,7 @@ def cmd_config(args):
 
 
 def cmd_backup(args):
-    """Back up Pulse home directory to a zip file."""
+    """Back up PULSE home directory to a zip file."""
     from pulse_cli import backup
 
     if getattr(args, "quick", False):
@@ -2319,7 +2341,7 @@ def cmd_version(args):
 
 
 def cmd_uninstall(args):
-    """Uninstall Pulse Agent (or just the Chat GUI with --gui).
+    """Uninstall PULSE Agent (or just the Chat GUI with --gui).
 
     ``--yes`` paths run from the desktop app's non-interactive cleanup scripts,
     so the TTY gate applies only when we actually need to prompt.
@@ -2398,14 +2420,14 @@ def _update_preflight_handled(args) -> bool:
     if handle_metadata_args(args, PROJECT_ROOT):
         sys.exit(0)
     if is_managed():
-        managed_error("update Pulse Agent")
+        managed_error("update PULSE Agent")
         return True
 
     # --plan is read-only and deployment-kind aware, so it runs BEFORE the
     # docker/nix/apt refusal gates: on an image/package-managed install the
     # plan itself reports "not updatable in place" plus the right mechanism.
     if getattr(args, "plan", False):
-        # Read-only plan phase (#91277 Phase 2): inventory every running Pulse runtime across profiles, its
+        # Read-only plan phase (#91277 Phase 2): inventory every running PULSE runtime across profiles, its
         # supervisor, and its running code version — without mutating anything. Safe on a live fleet.
         from pulse_cli.update_inventory import (
             collect_runtime_inventory,
@@ -2467,7 +2489,11 @@ from pulse_cli.update_receipt import update_receipt_scope
 
 @update_receipt_scope()
 def cmd_update(args):
-    """Update Pulse Agent: hangup protection + update lock around ``_cmd_update_impl``."""
+    """Update PULSE Agent: hangup protection + update lock around ``_cmd_update_impl``."""
+    # Marks this frame as the CURRENT updater for
+    # _old_updater.in_historical_update(); historical on-disk updaters do not
+    # declare this local, so only they hand off through retired shims.
+    _pulse_current_updater_frame = True
     from pulse_cli.update_owning_install import retarget_to_owning_install
 
     retarget_to_owning_install(PROJECT_ROOT)
@@ -2686,7 +2712,7 @@ def _dashboard_prepare_runtime(args, headless_backend) -> bool:
     Returns ``start_mcp_discovery_after_bind`` for start_server.
     """
     # Attach gui.log early so dashboard startup/build failures are captured in
-    # the same logs directory as every other Pulse surface.
+    # the same logs directory as every other PULSE surface.
     try:
         from pulse_logging import setup_logging as _setup_logging_gui
         _setup_logging_gui(mode="gui")
@@ -2796,6 +2822,9 @@ def cmd_dashboard(args):
     # (Docker/s6, CI, --no-open pipelines) fall through to start_server's
     # fail-closed SystemExit unchanged.
     _maybe_setup_dashboard_auth_interactively(args)
+    if _headless_backend:
+        from pulse_cli.observability.shared_metrics_process import begin_process
+        begin_process("serve")
 
     # The in-browser Chat tab (embedded TUI over PTY/WebSocket) is always
     # available — desktop and dashboard both rely on `/api/ws` + `/api/pty`.
@@ -2825,7 +2854,7 @@ def cmd_completion(args, parser=None):
 
 
 def cmd_logs(args):
-    """View and filter Pulse log files."""
+    """View and filter PULSE log files."""
     from pulse_cli.logs import tail_log, list_logs
 
     log_name = getattr(args, "log_name", "agent") or "agent"
@@ -2846,7 +2875,7 @@ def cmd_logs(args):
 
 
 def cmd_console(args):
-    """Open the safe Pulse command console."""
+    """Open the safe PULSE command console."""
     from pulse_cli.console_engine import run_console_repl
 
     return run_console_repl()
@@ -3351,11 +3380,11 @@ def _advertise_agent_env() -> None:
     ``AI_AGENT`` is the cross-agent standard (huggingface_hub reads it); the
     value must be our id in the public agent-harness registry
     (``pulse-agent``) — matching is exact. ``PULSE_AGENT`` is the
-    Pulse-specific marker. setdefault: never clobber an outer harness.
+    PULSE-specific marker. setdefault: never clobber an outer harness.
 
     ``AI_AGENT`` is the emerging cross-agent standard (huggingface_hub's agent detection reads it; pi and
     other agents set it — earendil-works/pi#7493) so generic tooling can attribute subprocesses to the
-    harness that spawned them. Pulse running inside another agent's terminal).
+    harness that spawned them. PULSE running inside another agent's terminal).
     """
     os.environ.setdefault("AI_AGENT", "pulse-agent")
     os.environ.setdefault("PULSE_AGENT", "true")
@@ -3516,7 +3545,7 @@ def _build_cli_parser():
         cmd_dashboard=cmd_dashboard,
         cmd_dashboard_register=cmd_dashboard_register,
     )
-    # "desktop" is canonical (Pulse-Setup.exe tells users to run it, so it
+    # "desktop" is canonical (PULSE-Setup.exe tells users to run it, so it
     # must be the name --help shows); "gui" is a deprecated alias.
     build_gui_parser(subparsers, cmd_gui=cmd_gui)
     build_logs_parser(subparsers, cmd_logs=cmd_logs)
@@ -3673,6 +3702,8 @@ def main():
     if getattr(args, "oneshot", None):
         _run_oneshot_from_args(args)
 
+    from pulse_cli.observability.shared_metrics_disabled import set_process_surface
+    set_process_surface(args.command)
     # No subcommand (optionally with top-level --resume / --continue) → chat.
     if args.command is None:
         _default_to_chat(args)
@@ -3689,31 +3720,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-import hashlib  # noqa: F401,E402
-import shlex  # noqa: F401,E402
-import stat  # noqa: F401,E402
-import tempfile  # noqa: F401,E402
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'line_input': ('pulse_cli.cli_output', 'line_input'),
-}
-
-_plugin_compat_prev_getattr = __getattr__
-
-
-def __getattr__(name):  # PEP 562 — chained onto the module's own __getattr__
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        return _plugin_compat_prev_getattr(name)
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

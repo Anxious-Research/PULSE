@@ -1,4 +1,4 @@
-"""Persistent session goals — the Ralph loop for Pulse.
+"""Persistent session goals — the Ralph loop for PULSE.
 
 A goal is a free-form objective that stays active across turns; after each turn an auxiliary-model
 judge decides whether it is satisfied. The continuation prompt is a normal user message appended via
@@ -369,6 +369,28 @@ class GoalGate:
             last_exit_code=(int(data["last_exit_code"]) if data.get("last_exit_code") is not None else None),
             last_output_tail=str(data.get("last_output_tail") or ""),
         )
+
+
+def _gate_workspace() -> Tuple[Optional[str], Optional[str]]:
+    """``(cwd, refusal)`` for this check's gates. A multi-session backend's process directory is not
+    the session's project, so gates run in the scoped session workspace (#125369). A declared
+    workspace that is not a directory on this host (deleted, remote, container) is a refusal: a
+    relative gate run anywhere else would check a different project and could pass a failing goal,
+    and no agent turn can fix it, so the caller pauses instead of retrying.
+    No declared workspace keeps the classic resolution (TERMINAL_CWD, else the launch directory)."""
+    from agent.runtime_cwd import resolve_agent_cwd, scoped_session_cwd
+
+    declared = scoped_session_cwd()
+    if declared:
+        path = Path(declared).expanduser()
+        if path.is_dir():
+            return str(path), None
+        return None, (f"the session workspace {declared} is not a directory on this host, "
+                      "and running gates anywhere else would check a different project")
+    try:
+        return str(resolve_agent_cwd()), None
+    except OSError:
+        return None, None  # deleted launch directory: subprocess reports it per gate
 
 
 def run_gate(gate: GoalGate, *, cwd: Optional[str] = None) -> Tuple[bool, int, str]:
@@ -922,7 +944,7 @@ def judge_goal(
     try:
         raw = _call_goal_judge_llm(call_llm, JUDGE_SYSTEM_PROMPT, prompt, timeout)
     except AuxiliaryClientUnavailable as exc:
-        # No client at all (e.g. a dead Anxious refresh token): name the cause so the user is sent to
+        # No client at all (e.g. a dead Nous refresh token): name the cause so the user is sent to
         # re-authenticate, not to context-length / model debugging (#42177). Still fails open.
         logger.info("goal judge: auxiliary client unavailable (%s) — falling through to continue", exc)
         return "continue", f"goal_judge auxiliary client unavailable: {exc}", False, None, True
@@ -1289,8 +1311,15 @@ class GoalManager:
         if state is None or not state.gates:
             return None
 
+        gate_cwd, refusal = _gate_workspace()
+        if refusal:
+            return self._pause_decision(
+                f"quality gates not run: {refusal}", "gate_failed", f"gates not run: {refusal}",
+                f"⏸ Goal paused — quality gates not run: {refusal}. Fix the workspace or "
+                f"/goal gate remove the gates, then /goal resume.",
+            )
         for gate in state.gates:
-            passed, exit_code, tail = run_gate(gate)
+            passed, exit_code, tail = run_gate(gate, cwd=gate_cwd)
             gate.last_exit_code = exit_code
             gate.last_output_tail = tail
             if passed:

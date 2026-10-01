@@ -22,8 +22,8 @@ from typing import Any, Optional
 from fastapi import APIRouter, HTTPException
 
 from gateway.status import (
-    multiplexer_liveness_for_profile, profile_platforms_from_multiplexer, resolve_gateway_liveness,
-    retained_gateway_state)
+    multiplexer_liveness_for_profile, profile_name_for_home, profile_platforms_from_multiplexer,
+    resolve_gateway_liveness, retained_gateway_state)
 from pulse_cli._subprocess_compat import windows_hide_flags
 from pulse_cli.config import OPTIONAL_ENV_VARS, get_env_path
 from pulse_constants import get_process_pulse_home
@@ -294,7 +294,7 @@ def _platform_payloads(scoped_dir: Optional[Path], entries) -> list[dict[str, An
     # profile's standalone days outranks nothing: only a record proving a live own gateway does —
     # the same rung order ``resolve_gateway_liveness`` uses (own runtime PID before the multiplexer),
     # so the two surfaces cannot disagree. Unscoped, the profile is the process's own home (a pooled
-    # ``pulse --profile X serve``); the default home resolves to a name the multiplexer never serves.
+    # ``pulse --profile X serve``).
     own_home = scoped_dir if scoped_dir is not None else get_process_pulse_home()
     if (
         runtime is None
@@ -302,7 +302,10 @@ def _platform_payloads(scoped_dir: Optional[Path], entries) -> list[dict[str, An
     ):
         served = multiplexer_liveness_for_profile(own_home)
         if served is not None:
-            runtime = {**served[1], "platforms": profile_platforms_from_multiplexer(served[1], own_home.name)}
+            # Fold on the profile NAME, not ``own_home.name``: the default root's basename is
+            # ``.pulse`` (or any custom PULSE_HOME), so its flat keys never matched (#123088).
+            served_name = profile_name_for_home(own_home) or "default"
+            runtime = {**served[1], "platforms": profile_platforms_from_multiplexer(served[1], served_name)}
     return [_messaging_platform_payload(entry, env_on_disk, runtime, scoped=scoped_dir is not None, profile_home=scoped_dir)
             for entry in entries]
 
@@ -701,7 +704,7 @@ async def _telegram_onboarding_request(method: str, path: str, *, body=None, bea
 
 @router.post("/api/messaging/telegram/onboarding/start")
 async def start_telegram_onboarding(body: TelegramOnboardingStart):
-    bot_name = (body.bot_name or "Pulse Agent").strip() or "Pulse Agent"
+    bot_name = (body.bot_name or "PULSE Agent").strip() or "PULSE Agent"
     payload = await _telegram_onboarding_request("POST", "/v1/telegram/pairings", body={"bot_name": bot_name})
 
     def field(key: str) -> str:
@@ -792,7 +795,7 @@ async def apply_telegram_onboarding(pairing_id: str, body: TelegramOnboardingApp
         _telegram_onboarding_pairings.pop(pairing_id, None)
 
     # Best-effort restart: the QR flow pulls users into Telegram on another device, so a
-    # saved token waiting on a manual restart click reads as "Pulse is broken" from the
+    # saved token waiting on a manual restart click reads as "PULSE is broken" from the
     # chat side. The save stays authoritative; a failed restart is reported for the UI banner.
     restart_result = _restart_gateway_after(effective_profile, what="Telegram onboarding", label="Telegram onboarding")
     return {

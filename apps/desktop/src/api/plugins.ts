@@ -1,6 +1,6 @@
 import { reconnectBackoffDelayMs } from '@pulse/shared'
 
-import type { PulseConnection } from '@/global'
+import type { PULSEConnection } from '@/global'
 import { RECONNECT_ATTEMPT_TIMEOUT_MS, withTimeout } from '@/lib/with-timeout'
 
 import { getApiRequestConnection, getApiRequestProfile, pulseApi, profileScoped } from './client'
@@ -19,7 +19,7 @@ import { getApiRequestConnection, getApiRequestProfile, pulseApi, profileScoped 
  *  openSecondary bounds the same *For/plain pair.
  *
  *  Exported for tests. */
-export async function activeConnection(): Promise<PulseConnection> {
+export async function activeConnection(): Promise<PULSEConnection> {
   const getConnectionFor = window.pulseDesktop.getConnectionFor
   const connectionId = getApiRequestConnection()
   const profile = getApiRequestProfile()
@@ -44,7 +44,7 @@ export async function activeConnection(): Promise<PulseConnection> {
 export interface PluginRestOptions {
   method?: string
   body?: unknown
-  /** Single-file multipart upload (see PulseApiRequest.upload). */
+  /** Single-file multipart upload (see PULSEApiRequest.upload). */
   upload?: { filename: string; contentType?: string; bytes: ArrayBuffer }
   timeoutMs?: number
 }
@@ -71,7 +71,7 @@ function pluginPathSuffix(caller: string, path: string): string {
  *  declared-capability seam; today the namespace IS the boundary. */
 export async function pluginRest<T>(pluginId: string, path: string, opts: PluginRestOptions = {}): Promise<T> {
   if (!window.pulseDesktop?.api) {
-    throw new Error('Pulse desktop bridge unavailable')
+    throw new Error('PULSE desktop bridge unavailable')
   }
 
   const suffix = pluginPathSuffix('pluginRest', path)

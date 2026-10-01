@@ -25,7 +25,7 @@ function fixture() {
   const app = path.join(root, 'apps', 'desktop')
   fs.mkdirSync(path.join(app, 'assets'), { recursive: true })
   fs.copyFileSync(path.join(desktop, 'assets/msix-manifest.xml'), path.join(app, 'assets/msix-manifest.xml'))
-  fs.writeFileSync(path.join(app, 'product-identity.cjs'), "module.exports={store:true,artifactNamePascal:'PulseBundled'}\n")
+  fs.writeFileSync(path.join(app, 'product-identity.cjs'), "module.exports={store:true,artifactNamePascal:'PULSEBundled'}\n")
   fs.writeFileSync(path.join(app, 'package.json'), JSON.stringify({ name: 'pulse', version: '0.27.1' }))
   const env = { ...process.env, ...gitIdentityEnv,
     GIT_AUTHOR_DATE: '2026-09-07T00:18:00Z', GIT_COMMITTER_DATE: '2026-09-07T00:18:00Z' }

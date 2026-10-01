@@ -31,7 +31,7 @@ _SECRET_SUBSTRINGS = ("KEY", "TOKEN", "SECRET", "PASSWORD", "CREDENTIAL", "PASSW
 
 # Non-secret runtime-location flags that repo-root modules a sandbox script
 # imports may read at import time. PULSE_DELEGATED_CHILD_CONTEXT must ride
-# along or a child that imports Pulse code loses the Kanban mutation guard
+# along or a child that imports PULSE code loses the Kanban mutation guard
 # while still inheriting PULSE_HOME.
 _PULSE_CHILD_ALLOWED = frozenset({
     "PULSE_HOME", "PULSE_PROFILE", "PULSE_CONFIG", "PULSE_ENV", "PULSE_DELEGATED_CHILD_CONTEXT",
@@ -146,12 +146,12 @@ def _build_child_env(*, rpc_endpoint: str, rpc_token: str, tmpdir: str,
         child_env["PULSE_HOME"] = _home_override
         apply_scratch_tmp_env(child_env)  # TMPDIR follows the routed home, like HOME does
     # PYTHONPATH: the staging dir (pulse_tools.py) must always be importable even when project
-    # mode changes CWD. Pulse's root is added ONLY when the child runs in Pulse's Python env —
-    # exposing Pulse's site-packages to an external interpreter can mix incompatible compiled
-    # extensions (3.12 NumPy under a 3.9 venv). Inherited Pulse-owned entries are stripped first.
-    # Before re-injecting PYTHONPATH, strip Pulse-owned entries that leaked through _scrub_child_env
+    # mode changes CWD. PULSE's root is added ONLY when the child runs in PULSE's Python env —
+    # exposing PULSE's site-packages to an external interpreter can mix incompatible compiled
+    # extensions (3.12 NumPy under a 3.9 venv). Inherited PULSE-owned entries are stripped first.
+    # Before re-injecting PYTHONPATH, strip PULSE-owned entries that leaked through _scrub_child_env
     # (PYTHONPATH is in _SAFE_ENV_PREFIXES so it passes the scrub). External project interpreters
-    # must not inherit Pulse dependencies (#74817). PM's own interpreter, however, can be a
+    # must not inherit PULSE dependencies (#74817). PM's own interpreter, however, can be a
     # bare bundled Python whose dependencies live in the selected generation, not sys.prefix.
     from tools.environments.local_pythonpath import (
         _strip_pulse_owned_pythonpath, _validated_runtime_venv, _same_path,
@@ -178,7 +178,7 @@ def _build_child_env(*, rpc_endpoint: str, rpc_token: str, tmpdir: str,
     elif child_python not in _external_env_logged:
         # Surface once per interpreter so "import pulse_constants fails" is diagnosable.
         _external_env_logged.add(child_python)
-        logger.info("execute_code: child interpreter %s is outside the Pulse "
+        logger.info("execute_code: child interpreter %s is outside the PULSE "
                     "environment; pulse root omitted from PYTHONPATH", child_python)
     if _existing_pp:
         _pp_parts.append(_existing_pp)
@@ -192,7 +192,7 @@ _PROBE_CACHE_MAX = 32
 _usable_python_cache: dict = {}
 _python_prefix_cache: dict = {}
 
-# Interpreter paths already reported as outside the Pulse environment.
+# Interpreter paths already reported as outside the PULSE environment.
 _external_env_logged: set = set()
 
 
@@ -243,7 +243,7 @@ def _python_environment_prefix(python_path: str) -> str:
 
 
 def _uses_pulse_python_environment(python_path: str) -> bool:
-    """Whether *python_path* belongs to Pulse's active Python environment. Short-circuits when
+    """Whether *python_path* belongs to PULSE's active Python environment. Short-circuits when
     it IS the running interpreter (by path or realpath — covers ``uv run`` venvs) so no probe
     runs on the default strict path and a flaky probe can never drop the pulse root."""
     if python_path == sys.executable or os.path.realpath(python_path) == os.path.realpath(sys.executable):

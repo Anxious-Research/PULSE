@@ -2,7 +2,7 @@
 name: grounded-citations
 description: "Ground answers and documents in cited, verifiable sources."
 version: 1.2.0
-author: Pulse Agent + Teknium
+author: PULSE Agent + Teknium
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

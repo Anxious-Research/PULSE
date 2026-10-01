@@ -95,7 +95,7 @@ test('profile SSH identity includes port, key, paths, and remote profile', () =>
     user: 'pulse',
     port: 2222,
     keyPath: '/keys/a',
-    remotePulsePath: '/srv/pulse',
+    remotePULSEPath: '/srv/pulse',
     remoteProfile: 'worker'
   }
 
@@ -119,14 +119,14 @@ test('profile SSH route fails closed when any dial field differs', () => {
     user: 'pulse',
     port: 2222,
     keyPath: '/keys/a',
-    remotePulsePath: '/srv/pulse',
+    remotePULSEPath: '/srv/pulse',
     remoteProfile: 'worker'
   }
 
   const variants = [
     { ...ssh, port: 2200 },
     { ...ssh, keyPath: '/keys/b' },
-    { ...ssh, remotePulsePath: '/opt/pulse' },
+    { ...ssh, remotePULSEPath: '/opt/pulse' },
     { ...ssh, remoteProfile: 'default' },
     { ...ssh, user: 'other' }
   ]
@@ -177,7 +177,7 @@ test('v1 profile SSH pool key is the profile, not conn:id::profile', () => {
     user: 'pulse',
     port: 2222,
     keyPath: '/keys/a',
-    remotePulsePath: '/srv/pulse',
+    remotePULSEPath: '/srv/pulse',
     remoteProfile: 'worker'
   }
 
@@ -351,7 +351,7 @@ test('local config without overrides returns null', () => {
 //
 // "Make primary" on a registered remote gateway only writes connections.json;
 // the v1 config.mode stays 'local'. The route resolver must still expose that
-// remote transport, or startPulse() spawns a loopback `pulse serve` the
+// remote transport, or startPULSE() spawns a loopback `pulse serve` the
 // desktop never uses (duplicated MCP sets, port squat, respawn-on-poll).
 
 test('falls back to a REMOTE registry primary when the v1 mode is local (#91564/#90316)', () => {
@@ -378,10 +378,10 @@ test('falls back to a CLOUD registry primary when the v1 mode is local', () => {
       {
         id: 'cloud-1',
         kind: 'cloud',
-        label: 'Pulse Cloud',
+        label: 'PULSE Cloud',
         url: 'https://agent.pulse.cloud',
         authMode: 'oauth',
-        org: 'pulse'
+        org: 'nous'
       }
     ])
   })
@@ -389,7 +389,7 @@ test('falls back to a CLOUD registry primary when the v1 mode is local', () => {
   assert.equal(route?.kind, 'cloud')
   assert.equal(route?.source, 'registry')
   assert.equal((route as any)?.authMode, 'oauth')
-  assert.equal((route as any)?.org, 'pulse')
+  assert.equal((route as any)?.org, 'nous')
 })
 
 test('falls back to an SSH registry primary when the v1 mode is local', () => {

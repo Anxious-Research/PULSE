@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as PulseApi from '@/pulse'
+import type * as PULSEApi from '@/pulse'
 import { getActionStatus } from '@/pulse'
 import { $desktopActionTasks } from '@/store/activity'
 
@@ -22,7 +22,7 @@ function spawn(name: string) {
 }
 
 vi.mock('@/pulse', async importOriginal => ({
-  ...(await importOriginal<typeof PulseApi>()),
+  ...(await importOriginal<typeof PULSEApi>()),
   getActionStatus: vi.fn(async (name: string) => ({
     exit_code: running[name] ? null : 0,
     lines: [`${name} run ${runs[name]} output`],

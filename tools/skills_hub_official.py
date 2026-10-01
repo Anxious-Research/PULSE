@@ -1,4 +1,4 @@
-"""Skills Hub official sources: repo-shipped optional skills and the centralized Pulse index."""
+"""Skills Hub official sources: repo-shipped optional skills and the centralized PULSE index."""
 
 import logging
 from pathlib import Path, PurePosixPath
@@ -32,7 +32,7 @@ def _entry_provider(entry: dict) -> str:
 
 
 class OptionalSkillSource(SkillSource):
-    """Skills from the repo's ``optional-skills/`` directory: official (Anxious-maintained) but not
+    """Skills from the repo's ``optional-skills/`` directory: official (Nous-maintained) but not
     activated by default — absent from the system prompt and not copied to ~/.pulse/skills/ at
     setup. Discoverable via the Skills Hub as source "official" with "builtin" trust."""
 
@@ -279,8 +279,8 @@ class OptionalSkillSource(SkillSource):
         return results
 
 
-class PulseIndexSource(SkillSource):
-    """Skill source backed by the centralized Pulse Skills Index: a JSON catalog on the docs site,
+class PULSEIndexSource(SkillSource):
+    """Skill source backed by the centralized PULSE Skills Index: a JSON catalog on the docs site,
     rebuilt daily by CI, with metadata + resolved GitHub paths for every skill — search and path
     discovery cost zero GitHub API calls. When unavailable every method returns empty/None so
     downstream sources take over transparently."""

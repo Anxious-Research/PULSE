@@ -4,8 +4,8 @@ import type {
   CustomEndpointUpdate,
   CustomEndpointValidationResponse,
   EnvVarInfo,
-  PulseConfig,
-  PulseConfigRecord,
+  PULSEConfig,
+  PULSEConfigRecord,
   LogsResponse,
   OAuthPollResponse,
   OAuthProvidersResponse,
@@ -128,8 +128,8 @@ export function getLogs(params: {
   })
 }
 
-export function getPulseConfig(profile?: string): Promise<PulseConfig> {
-  return pulseApi<PulseConfig>({
+export function getPULSEConfig(profile?: string): Promise<PULSEConfig> {
+  return pulseApi<PULSEConfig>({
     ...profileScoped(profile),
     path: '/api/config',
     timeoutMs: STARTUP_REQUEST_TIMEOUT_MS
@@ -141,10 +141,10 @@ export function getPulseConfig(profile?: string): Promise<PulseConfig> {
 async function fetchBoundConfigRecord(
   profile: ProfileScope,
   request: { path: string; timeoutMs?: number }
-): Promise<PulseConfigRecord> {
+): Promise<PULSEConfigRecord> {
   const origin = capabilityScoped(profile ?? undefined)
 
-  const record = await window.pulseDesktop.api<PulseConfigRecord>({ ...origin, ...request })
+  const record = await window.pulseDesktop.api<PULSEConfigRecord>({ ...origin, ...request })
 
   if (record && typeof record === 'object') {
     bindConfigReadOrigin(record, origin)
@@ -153,31 +153,31 @@ async function fetchBoundConfigRecord(
   return record
 }
 
-export function getPulseConfigRecord(
+export function getPULSEConfigRecord(
   profile?: ProfileScope,
   { includeDefaults = true }: { includeDefaults?: boolean } = {}
-): Promise<PulseConfigRecord> {
+): Promise<PULSEConfigRecord> {
   return fetchBoundConfigRecord(profile, {
     path: includeDefaults ? '/api/config' : '/api/config?include_defaults=false'
   })
 }
 
-export function getPulseConfigDefaults(): Promise<PulseConfigRecord> {
+export function getPULSEConfigDefaults(): Promise<PULSEConfigRecord> {
   return fetchBoundConfigRecord(undefined, {
     path: '/api/config/defaults',
     timeoutMs: STARTUP_REQUEST_TIMEOUT_MS
   })
 }
 
-export function getPulseConfigSchema(profile?: null | string): Promise<ConfigSchemaResponse> {
+export function getPULSEConfigSchema(profile?: null | string): Promise<ConfigSchemaResponse> {
   return pulseApi<ConfigSchemaResponse>({
     ...profileScoped(profile),
     path: '/api/config/schema'
   })
 }
 
-export function savePulseConfig(
-  config: PulseConfigRecord,
+export function savePULSEConfig(
+  config: PULSEConfigRecord,
   profile?: ProfileScope,
   { preserveLanguage = false }: { preserveLanguage?: boolean } = {}
 ): Promise<{ ok: boolean }> {
@@ -189,10 +189,10 @@ export function savePulseConfig(
   })
 }
 
-/** Capability-scoped counterpart of savePulseConfig — writes the config of
+/** Capability-scoped counterpart of savePULSEConfig — writes the config of
  *  the profile/connection the Capabilities scope selector points at (possibly
- *  on another registered gateway), mirroring getPulseConfigRecord. */
-export function savePulseConfigRecord(config: PulseConfigRecord, profile?: ProfileScope): Promise<{ ok: boolean }> {
+ *  on another registered gateway), mirroring getPULSEConfigRecord. */
+export function savePULSEConfigRecord(config: PULSEConfigRecord, profile?: ProfileScope): Promise<{ ok: boolean }> {
   return window.pulseDesktop.api<{ ok: boolean }>({
     ...resolveConfigWriteScope(config, profile),
     path: '/api/config',

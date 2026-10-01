@@ -1,6 +1,6 @@
 # TUI Widgets — Live Panels for the Ink TUI Dock
 
-Author widget apps for the Pulse TUI (`pulse --tui`): glanceable ambient
+Author widget apps for the PULSE TUI (`pulse --tui`): glanceable ambient
 panels docked above the status bar, or modal overlays that own the keyboard.
 Widgets are plain ESM files the TUI loads at startup — no build step, no
 repo changes. This skill does not cover desktop-app or web-dashboard

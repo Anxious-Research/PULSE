@@ -75,7 +75,7 @@ export function createLocalBackendLifecycle<Child>(
   }
 
   const shutdown = createBackendShutdownCoordinator((): Promise<void> => {
-    controller.abort(markExpectedTransition(new Error('Pulse Desktop is quitting.')))
+    controller.abort(markExpectedTransition(new Error('PULSE Desktop is quitting.')))
     deps.cancelSetup()
 
     return waitForTeardown([...starts, ...[...children].map(stop), ...stops.values()], deps.timeoutMs ?? 7_000)

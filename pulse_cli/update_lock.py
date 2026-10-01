@@ -1,4 +1,4 @@
-"""Cross-process mutual exclusion for in-flight Pulse updates.
+"""Cross-process mutual exclusion for in-flight PULSE updates.
 
 The marker file the Tauri updater writes (``UpdateMarkerGuard`` in
 ``apps/bootstrap-installer/src-tauri/src/update.rs``) and the Electron desktop reads
@@ -32,16 +32,21 @@ MARKER_NAME = ".pulse-update-in-progress"
 # update_child_env in apps/bootstrap-installer/src-tauri/src/update.rs.
 HANDOFF_PID_ENV = "PULSE_UPDATE_HANDOFF_PID"
 
+# Bound on the parent chain walked by _is_ancestor_pid. Real ancestries are a
+# handful of links (init -> desktop -> staged updater -> shim -> us); the cap
+# only exists so an unexpected chain can never spin the walk.
+_MAX_ANCESTRY_DEPTH = 128
+
 # Exit code meaning "another updater/instance owns this install right now" — the same
 # contract as the Windows shim / venv-holder guards in _cmd_update_impl, matched by the
-# Tauri updater (UPDATE_EXIT_CONCURRENT in update.rs) to show "Pulse is still running".
+# Tauri updater (UPDATE_EXIT_CONCURRENT in update.rs) to show "PULSE is still running".
 UPDATE_EXIT_CONCURRENT = 2
 
 
 def update_marker_path() -> Path:
     """Path of the shared update marker.
 
-    Uses the *process* Pulse home (never the context-local profile override): the Rust
+    Uses the *process* PULSE home (never the context-local profile override): the Rust
     updater resolves ``$PULSE_HOME`` or the platform default and the desktop pins that same
     value into the updater's env, so a profile-scoped path would be one the other owners never look at.
     """
@@ -176,8 +181,24 @@ def _is_ancestor_pid(pid: int) -> bool:
     """True when ``pid`` is a live ancestor of this process.
 
     The orchestrating updater spawns ``pulse update`` as a (grand)child, so a live marker
-    owned by an ancestor can only be the claim we already run under — an unrelated concurrent
-    updater is never in our parent chain. Never our own pid; any failure is "not an ancestor".
+    owned by one of our ancestors can only be the claim we are already running under — an
+    unrelated concurrent updater is never in our parent chain. This heals the fleet of staged
+    ``pulse-setup`` binaries that predate the HANDOFF_PID_ENV export and can never send it.
+
+    The chain is walked one link at a time and each ancestor is tested as it is
+    discovered. ``psutil.Process.parents()`` cannot be used here: it builds the
+    whole chain up to the lowest pid *before* returning, and its per-link
+    ``parent()`` tolerates only ``NoSuchProcess``. So any process we may not
+    inspect anywhere above us raises ``AccessDenied`` and discards the
+    ancestors already collected — including the orchestrator one link down.
+    That is not exotic: under firejail with ``ptrace_scope=1``, and in hardened
+    containers, ``/proc/1`` is unreadable, so the GUI update deadlocked against
+    its own parent on every attempt. Walking incrementally means a failure
+    *above* the match can no longer hide it.
+
+    Never includes our own pid, and any failure encountered before a match
+    counts as "not an ancestor": an unprovable ancestry must fall back to the
+    normal refusal.
     """
     if pid <= 0:
         return False
@@ -185,7 +206,27 @@ def _is_ancestor_pid(pid: int) -> bool:
         return True
     try:
         import psutil
-        return any(parent.pid == pid for parent in psutil.Process().parents())
+
+        proc = psutil.Process()
+        seen = {proc.pid}
+        for _ in range(_MAX_ANCESTRY_DEPTH):
+            parent = proc.parent()
+            if parent is None:
+                return False
+            if parent.pid == pid:
+                return True
+            if parent.pid in seen:
+                # Defensive only: psutil's create_time check already rejects a
+                # reused ppid, so a true cycle should be unreachable.
+                return False
+            seen.add(parent.pid)
+            proc = parent
+        logger.debug(
+            "Gave up walking process ancestry for pid %s after %s links",
+            pid,
+            _MAX_ANCESTRY_DEPTH,
+        )
+        return False
     except ImportError:
         # -I -S -B takeover child: walk the same chain with stdlib probes.
         child = os.getpid()
@@ -247,7 +288,7 @@ def describe_holder(holder: UpdateHolder | None) -> str:
     elapsed = f"{minutes}m {seconds}s" if minutes else f"{seconds}s"
     who = f", process {holder.pid}" if holder else ""
     return (
-        f"✗ Another Pulse update is already running (started {elapsed} ago{who}).\n"
+        f"✗ Another PULSE update is already running (started {elapsed} ago{who}).\n"
         "\n"
         "  Running two at once would corrupt the install. Wait for it to finish\n"
         "  (watch `pulse logs`), or close the Desktop/dashboard window that\n"

@@ -64,7 +64,7 @@ user-activated extensions. If you tighten `desktop-slash-commands.ts`, keep
 
 ## Bot Mode (`src/plugins/pulse-bots/`) — one bot = ONE canonical forever-chat, identified by NAME
 
-Each bot is a Pulse **profile** with a persistent identity. This invariant regressed repeatedly,
+Each bot is a PULSE **profile** with a persistent identity. This invariant regressed repeatedly,
 cost users conversation history each time, and is not open for re-litigation in a routine PR.
 
 The chat's only identity is **(profile, session titled exactly "Bot Chat")**; the state DB's
@@ -106,4 +106,4 @@ sign-in). `deriveBillingView` branches on `billing.free_tier_account` BEFORE `lo
 `logged_out` notice's Sign in opens the same dialog, never a portal link (a link writes no
 credential). The sign-in dialog is a single claimed owner (first mount wins, like the
 real-profile consent prompt); its states map 1:1 to the poll route's `status` + `reason`. Copy is the ruled free-tier copy: never
-"guest", "anonymous", "claim" or "Pulse Portal" in user-facing text.
+"guest", "anonymous", "claim" or "Nous Portal" in user-facing text.

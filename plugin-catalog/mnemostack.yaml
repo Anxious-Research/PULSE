@@ -7,7 +7,7 @@ description: Persistent agent memory over a mnemostack service or a local Qdrant
   soft retraction. Multi-tenant when pointed at a shared authenticated service; the
   tenant is resolved server-side from the service key. Disclosure — the pinned directory
   is a discovery shim; the provider code installs from PyPI at the version pinned in
-  plugin.yaml pip_dependencies (pulse-mnemostack==1.0.3) into the Pulse venv.
+  plugin.yaml pip_dependencies (pulse-mnemostack==1.0.3) into the PULSE venv.
   Configured via MNEMOSTACK_* env vars; no key is required for a purely local
   Qdrant setup.
 maintainer: udjin-labs

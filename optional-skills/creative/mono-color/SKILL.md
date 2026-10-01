@@ -2,7 +2,7 @@
 name: mono-color
 description: "Generate one- or two-ink editorial print poster images."
 version: 1.0.0
-author: Yan Liu (adapted by Anxious Research Lab)
+author: Yan Liu (adapted by Nous Research)
 license: MIT
 dependencies: []
 platforms: [linux, macos, windows]
@@ -26,7 +26,7 @@ The user asks for a monochrome editorial poster, duotone print, risograph/zine p
 
 ## Prerequisites
 
-- The Pulse `image_generate` tool (search/describe it via the deferred-tool catalog if not loaded). If image generation is unavailable, deliver prompt-only and say so.
+- The PULSE `image_generate` tool (search/describe it via the deferred-tool catalog if not loaded). If image generation is unavailable, deliver prompt-only and say so.
 - The `design-system/` catalogs bundled with this skill (see Quick Reference).
 
 ## Quick Reference

@@ -17,7 +17,7 @@
  * Ported from tests/bot-open-focus-identity.test.mjs.
  */
 
-import type * as PulseSdk from '@pulse/plugin-sdk'
+import type * as PULSESdk from '@pulse/plugin-sdk'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { RosterRow } from './types'
@@ -28,7 +28,7 @@ const { ackStoredSessionId, openBotCanonicalChat } = vi.hoisted(() => ({
 }))
 
 vi.mock('@pulse/plugin-sdk', async importOriginal => {
-  const sdk = await importOriginal<typeof PulseSdk>()
+  const sdk = await importOriginal<typeof PULSESdk>()
 
   return { ...sdk, ackStoredSessionId }
 })

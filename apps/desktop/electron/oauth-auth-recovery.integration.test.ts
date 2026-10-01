@@ -7,7 +7,7 @@ import { join } from 'node:path'
 import { expect, test } from 'vitest'
 
 import { httpStatusError, readStatusCode } from './api-transport'
-import { isReauthRequiredError, waitForPulseReady } from './backend-health'
+import { isReauthRequiredError, waitForPULSEReady } from './backend-health'
 import { isGatewayAuthRejection, normalizeRemoteBaseUrl, withTransientRetries } from './connection-config'
 import { createMediaProtocolHandler } from './media-protocol'
 import { createNativeAccessTokenCoordinator } from './native-access-token'
@@ -54,7 +54,7 @@ async function fixture(beforeRefreshResponse?: () => Promise<void>) {
 
     if (req.url === '/auth/native/refresh') {
       state.refreshes++
-      expect(JSON.parse(body)).toMatchObject({ refresh_token: 'old-rt', provider: 'pulse' })
+      expect(JSON.parse(body)).toMatchObject({ refresh_token: 'old-rt', provider: 'nous' })
       await beforeRefreshResponse?.()
       res.statusCode = state.refreshStatus
       res.end(
@@ -65,7 +65,7 @@ async function fixture(beforeRefreshResponse?: () => Promise<void>) {
                 access_token: 'fresh',
                 refresh_token: 'fresh-rt',
                 expires_at: 9_000,
-                provider: 'pulse',
+                provider: 'nous',
                 user_id: 'test'
               }
         )
@@ -143,7 +143,7 @@ async function fixture(beforeRefreshResponse?: () => Promise<void>) {
       accessToken: 'old',
       refreshToken: 'old-rt',
       expiresAt,
-      provider: 'pulse',
+      provider: 'nous',
       userId: 'test'
     })
 
@@ -227,7 +227,7 @@ test('HTTP outage, dead-refresh and cookie coexistence reach the correct ticket/
     let clock = 0
 
     try {
-      await waitForPulseReady(f.baseUrl, {
+      await waitForPULSEReady(f.baseUrl, {
         fetchPublicJson: async () => {
           throw new Error('must not anonymously downgrade')
         },

@@ -210,8 +210,8 @@ describe('PluginsTab', () => {
       {
         description: '',
         has_desktop_half: true,
-        key: 'pulse-prices',
-        name: 'pulse-prices',
+        key: 'nous-prices',
+        name: 'nous-prices',
         source: 'catalog',
         status: 'enabled',
         version: '1'
@@ -220,7 +220,7 @@ describe('PluginsTab', () => {
 
     renderPlugins({ profile: null })
 
-    const detail = within(screen.getByRole('row', { name: /^pulse-prices/ }))
+    const detail = within(screen.getByRole('row', { name: /^nous-prices/ }))
     expect(detail.getByText('unavailable (remote backend)')).toBeTruthy()
     expect(detail.queryByText('copying…')).toBeNull()
   })
@@ -230,8 +230,8 @@ describe('PluginsTab', () => {
       {
         description: '',
         has_desktop_half: true,
-        key: 'pulse-prices',
-        name: 'pulse-prices',
+        key: 'nous-prices',
+        name: 'nous-prices',
         source: 'catalog',
         status: 'enabled',
         version: '1'
@@ -240,7 +240,7 @@ describe('PluginsTab', () => {
 
     renderPlugins({ profile: null })
 
-    const detail = within(screen.getByRole('row', { name: /^pulse-prices/ }))
+    const detail = within(screen.getByRole('row', { name: /^nous-prices/ }))
     expect(detail.getByText('copying…')).toBeTruthy()
     expect(detail.queryByText('unavailable (remote backend)')).toBeNull()
   })
@@ -277,7 +277,7 @@ describe('PluginsTab', () => {
         kind: 'disk',
         status: 'loaded',
         packageName: 'pulse-media-studio',
-        packageOrigin: { repo: 'https://github.com/Anxious-Research/pulse-media-studio.git', sha: 'abc' }
+        packageOrigin: { repo: 'https://github.com/NousResearch/pulse-media-studio.git', sha: 'abc' }
       }
     })
 
@@ -290,7 +290,7 @@ describe('PluginsTab', () => {
       expect($pluginInstallRequest.get()).toMatchObject({
         legacyHint: 'agent',
         profile: 'workbot',
-        repo: 'https://github.com/Anxious-Research/pulse-media-studio.git',
+        repo: 'https://github.com/NousResearch/pulse-media-studio.git',
         sha: 'abc'
       })
     })

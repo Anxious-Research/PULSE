@@ -1,6 +1,6 @@
 """Resumable, hash-verified, multi-connection downloads.
 
-Every large fetch in Pulse goes through this one downloader: pm
+Every large fetch in PULSE goes through this one downloader: pm
 packages (pinned sha256 from lock.json) and local models (deliberately
 unverified — catalog sizes may lag an upstream re-upload, so sha256 is
 optional per source).

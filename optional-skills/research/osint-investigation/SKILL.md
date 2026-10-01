@@ -3,7 +3,7 @@ name: osint-investigation
 description: Follow the money via public records and sanctions data.
 version: 0.1.0
 platforms: [linux, macos, windows]
-author: Pulse Agent (adapted from ShinMegamiBoson/OpenPlanter, MIT)
+author: PULSE Agent (adapted from ShinMegamiBoson/OpenPlanter, MIT)
 license: MIT
 metadata:
   pulse:

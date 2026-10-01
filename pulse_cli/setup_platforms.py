@@ -170,7 +170,7 @@ def _setup_telegram():
         "TELEGRAM_ALLOWED_USERS", "Allowed user IDs (comma-separated, leave empty for open access)",
         "Telegram allowlist configured - only listed users can use the bot",
         "⚠️  No allowlist set - anyone who finds your bot can use it!", preset=allowed_users)
-    _info(None, "📬 Home Channel: where Pulse delivers cron job results,",
+    _info(None, "📬 Home Channel: where PULSE delivers cron job results,",
           "   cross-platform messages, and notifications.",
           "   For Telegram DMs, this is your user ID (same as above).")
     first_user_id = allowed_users.split(",")[0].strip() if allowed_users else ""
@@ -193,7 +193,7 @@ def _setup_bluebubbles():
     print_header("BlueBubbles (iMessage)")
     if declines_reconfigure("BlueBubbles", "Reconfigure BlueBubbles?", "BLUEBUBBLES_SERVER_URL"):
         return
-    _info("Connects Pulse to iMessage via BlueBubbles — a free, open-source",
+    _info("Connects PULSE to iMessage via BlueBubbles — a free, open-source",
           "macOS server that bridges iMessage to any device.",
           "   Requires a Mac running BlueBubbles Server v1.0.0+",
           "   Download: https://bluebubbles.app/", None,
@@ -233,7 +233,7 @@ def _setup_webhooks():
     print_warning("   internet. For security, run the gateway in a sandboxed environment")
     print_warning("   (Docker, VM, etc.) to limit blast radius from prompt injection.")
     print()
-    _info("   Full guide: https://pulse-agent.anxiousresearchlab.com/docs/user-guide/messaging/webhooks/", None)
+    _info("   Full guide: https://pulse-agent.anxious-research.com/docs/user-guide/messaging/webhooks/", None)
     _save_port("WEBHOOK_PORT", prompt("Webhook port (default 8644)"), "8644")
     save_prompted("WEBHOOK_SECRET", "Global HMAC secret (shared across all routes)", password=True,
                    success_msg="Webhook secret saved",
@@ -246,7 +246,7 @@ def _setup_webhooks():
           "   2. Point your service (GitHub, GitLab, etc.) at:",
           "      http://your-server:8644/webhooks/<route-name>", None,
           "   Route configuration guide:",
-          "   https://pulse-agent.anxiousresearchlab.com/docs/user-guide/messaging/webhooks/#configuring-routes",
+          "   https://pulse-agent.anxious-research.com/docs/user-guide/messaging/webhooks/#configuring-routes",
           None,
           # Printed twice upstream; kept verbatim for output parity.
           "   Open config in your editor:  pulse config edit",
@@ -323,7 +323,7 @@ def setup_gateway(config: dict):
     from pulse_cli.setup import _info, print_header, print_info, print_success, prompt_checklist
     from pulse_cli.gateway import _all_platforms, _platform_status, _configure_platform
     print_header("Messaging Platforms")
-    _info("Connect to messaging platforms to chat with Pulse from anywhere.",
+    _info("Connect to messaging platforms to chat with PULSE from anywhere.",
           "Toggle with Space, confirm with Enter.", None)
     platforms = _all_platforms()
 

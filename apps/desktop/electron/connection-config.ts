@@ -11,7 +11,7 @@
  *
  * Background on the two auth models a remote gateway can use:
  *   - 'token': legacy static dashboard session token. REST uses an
- *     `X-Pulse-Session-Token` header; WS uses `?token=`.
+ *     `X-PULSE-Session-Token` header; WS uses `?token=`.
  *   - 'oauth': hosted gateways gate behind an OAuth provider. REST is authed
  *     by an HttpOnly session cookie; WS upgrades require a single-use
  *     `?ticket=` minted at POST /api/auth/ws-ticket. The gateway advertises
@@ -112,6 +112,39 @@ function isStaleAppTokenRejection(error: unknown) {
   return Boolean(error && typeof error === 'object' && (error as any).appTokenRejected === true)
 }
 
+/**
+ * User-facing copy for a ticket mint that failed as a TRANSPORT fault (the
+ * gateway never answered with a usable HTTP status — timeout, refused
+ * connection, DNS). Distinguishing these lets the user act on the real
+ * problem instead of a blanket "could not reach" (#98647's diagnostic-cost
+ * complaint): a timeout suggests a network/VPN path issue, a refused
+ * connection a stopped gateway, DNS a wrong hostname.
+ */
+export function gatewayTicketTransportMessage(error: unknown): string {
+  const code =
+    error && typeof error === 'object' && typeof (error as { code?: unknown }).code === 'string'
+      ? (error as { code: string }).code
+      : ''
+
+  if (['ETIMEDOUT', 'ETIMEOUT', 'ENETUNREACH', 'EHOSTUNREACH', 'EAI_AGAIN', 'ENOTFOUND'].includes(code)) {
+    return (
+      'Could not reach the remote PULSE gateway while refreshing its WebSocket ticket: ' +
+      'the connection timed out or the host could not be resolved. ' +
+      'Check your network/VPN path and the gateway URL, then reconnect.'
+    )
+  }
+
+  if (code === 'ECONNREFUSED') {
+    return (
+      'Could not reach the remote PULSE gateway while refreshing its WebSocket ticket: ' +
+      'the connection was refused. The gateway process is likely down or listening on another port. ' +
+      'Start the gateway (or fix its URL), then reconnect.'
+    )
+  }
+
+  return 'Could not reach the remote PULSE gateway while refreshing its WebSocket ticket. Try reconnecting.'
+}
+
 function gatewayTicketFailure(error, authMessage, transportMessage) {
   const needsOauthLogin = isGatewayAuthRejection(error)
 
@@ -130,7 +163,7 @@ function gatewayTicketFailure(error, authMessage, transportMessage) {
     // cookie path only sees a 401/403 after the gateway's transparent AT/RT
     // rotation has already failed, and the native-bearer path only after
     // mintGatewayWsTicket's forced /auth/native/refresh has. Nothing will
-    // change until the user signs in, so tag it the way startPulse latches
+    // change until the user signs in, so tag it the way startPULSE latches
     // (isReauthRequiredError): the boot is marked non-retryable and the
     // overlay's Sign in button stops flickering away under the renderer's
     // transient-boot retry loop (#95701).
@@ -139,7 +172,7 @@ function gatewayTicketFailure(error, authMessage, transportMessage) {
 
   // Preserve structured HTTP context when the source error carried an integer
   // statusCode (the fetch layer attaches err.statusCode). Downstream Cloud
-  // classification (isServerSideHttpError / makePulseCloudBackendDownError) and
+  // classification (isServerSideHttpError / makeNousCloudBackendDownError) and
   // the renderer overlay depend on it surviving the ticket-error wrapper. Auth
   // semantics are unchanged: 401/403 route to reauth, 5xx stays a transport
   // failure, everything else keeps current behavior.
@@ -268,7 +301,7 @@ function connectionScopeKey(profile) {
   return String(profile ?? '').trim() || null
 }
 
-/** Which Pulse profile the remote SSH dashboard should actually run as.
+/** Which PULSE profile the remote SSH dashboard should actually run as.
  *  Registry pool keys (`conn:mac-mini::default`) are desktop routing labels —
  *  they must never be sent to the remote as a profile name. `default` and
  *  empty mean the remote root home. */
@@ -389,7 +422,7 @@ function remoteRequestMatchesBaseUrl(requestUrl, baseUrl) {
 }
 
 // True for connection modes that resolve to a REMOTE backend. 'cloud' is a
-// Pulse Cloud connection (cloud-auto-discovery Q3/Q6): it carries a
+// PULSE Cloud connection (cloud-auto-discovery Q3/Q6): it carries a
 // remote-shaped block and reuses the entire remote connect/probe/reconnect
 // path, so every resolution site treats it exactly like 'remote'. The only
 // places that distinguish cloud from remote are the settings UI (which card to
@@ -464,15 +497,15 @@ function normalizeSshConfig(entry) {
     out.keyPath = keyPath
   }
 
-  const remotePulsePath = String(entry.remotePulsePath || '').trim()
+  const remotePULSEPath = String(entry.remotePULSEPath || '').trim()
 
-  if (remotePulsePath) {
-    out.remotePulsePath = remotePulsePath
+  if (remotePULSEPath) {
+    out.remotePULSEPath = remotePULSEPath
   }
 
   // A Desktop profile can be a local routing label rather than the profile
-  // name used by the remote Pulse installation. Preserve an explicit mapping
-  // when it is a valid Pulse profile identifier; otherwise fall back to the
+  // name used by the remote PULSE installation. Preserve an explicit mapping
+  // when it is a valid PULSE profile identifier; otherwise fall back to the
   // historical same-name behavior in the caller.
   const remoteProfile = String(entry.remoteProfile || '').trim()
 
@@ -572,7 +605,7 @@ function profileRemoteOverride(config, profile) {
 }
 
 // Validate a remote profile mapping the same way the SSH path does (a valid
-// Pulse profile identifier, never a reserved alias). Invalid/blank → no
+// PULSE profile identifier, never a reserved alias). Invalid/blank → no
 // mapping, so callers fall back to the historical same-name behavior.
 function normalizeRemoteProfileName(value) {
   const remoteProfile = String(value || '').trim()

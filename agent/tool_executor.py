@@ -57,6 +57,7 @@ from tools.tool_result_storage import (
     extract_persisted_path,
 )
 from tools.budget_config import BudgetConfig, DEFAULT_BUDGET, budget_for_context_window
+from pulse_cli.observability.shared_metrics_efficiency import note_tool_result, record_tool_batch
 
 # A tool result this large (raw stdout, file dumps) is the biggest allocation a turn ever drops.
 # The commit only flags it: the string is still referenced by the publish frames here, so the
@@ -131,14 +132,14 @@ _DEFAULT_IMAGE_PARALLEL_REQUESTS = 4
 _DEFAULT_CONCURRENT_TOOL_TIMEOUT_S = 420.0
 # Long enough for an approval round-trip, short enough that one wedged dispatch can't starve the batch.
 _START_ORDER_GATE_TIMEOUT_S = 120.0
-# Fallback only; the effective bound derives from approvals.timeout (_authorization_gate_lock_timeout).
+# Fallback only; the effective bound derives from the turn's approval window (_authorization_gate_lock_timeout).
 _AUTHORIZATION_GATE_LOCK_TIMEOUT_S = 360.0
 
 
 def _authorization_gate_lock_timeout() -> float:
-    """Authorization-lock bound = ``tools.approval_human_wait.human_wait_ceiling`` (approval timeout +
-    margin, capped so it can't overflow Lock.acquire): never break serialization while a
-    prompt is answerable, never let a wedged holder park workers forever. Deliberately NOT
+    """Authorization-lock bound = ``tools.approval_human_wait.human_wait_ceiling`` (the turn's approval window +
+    margin — unbounded on CLI/TUI/Desktop — capped so it can't overflow Lock.acquire): never break serialization
+    while a prompt is answerable, never let a wedged holder park workers forever. Deliberately NOT
     min()'d with the fallback so the gate never gives up early.
 
     Delegates to ``tools.approval_human_wait.human_wait_ceiling`` — the same bound that clamps a human-wait window's
@@ -415,8 +416,11 @@ def _unwrap_tool_search_call(
             # in the batch dispatcher, not against a synthetic registry name.
             return function_name, function_args, None
         if underlying not in _tool_search_scoped_names(agent):
+            # Session-gated GUI tools name their missing surface (#120413);
+            # anything else keeps the generic block.
             return function_name, function_args, (
-                f"'{underlying}' is not available in this session. Use tool_search to find tools you can call."
+                _ts.out_of_scope_reason(underlying)
+                or f"'{underlying}' is not available in this session. Use tool_search to find tools you can call."
             )
         # Validate before unwrapping: the generic bridge hides the concrete
         # parameter schema from provider-native tool-call validation.
@@ -639,7 +643,7 @@ def _run_with_activity_heartbeat(agent, function_name: str, fn):
 
 _PRUNED_TOOL_ARGUMENTS_ERROR = "suspected_pruned_tool_arguments"
 _PRUNED_TOOL_ARGUMENTS_MESSAGE = (
-    "Tool was not executed because effect-capable arguments contain a Pulse context-compression artifact. "
+    "Tool was not executed because effect-capable arguments contain a PULSE context-compression artifact. "
     "Recover the exact content from its durable source or re-read it, then issue a complete new call; "
     "do not retry these arguments. To remove a marker that already landed in a file, match it by its "
     f"{_COMPRESSION_MARKER_PREFIX.strip('⟪:')} prefix (e.g. a terminal sed on that line) instead of quoting the full marker."
@@ -688,7 +692,7 @@ def _dispatch_authorized_once(
     begin_execution,
     authorization_gate: _ConcurrentToolAuthorizationGate | None,
 ) -> Any:
-    """Pulse policy (scope → plugin pre-hooks → pruned-arg check → guardrails) then the one real dispatch.
+    """PULSE policy (scope → plugin pre-hooks → pruned-arg check → guardrails) then the one real dispatch.
 
     Plugin ``modify`` hooks may rewrite ``ref.args`` (mirrored into ``state.args``).
     ``begin_execution`` (concurrent start-order gate) is advanced exactly once on every
@@ -760,7 +764,7 @@ def _run_agent_tool_execution_middleware(
     begin_execution=None,
     authorization_gate: _ConcurrentToolAuthorizationGate | None = None,
 ) -> _ManagedToolResult:
-    """Run Relay rewrites before Pulse policy and dispatch exactly once."""
+    """Run Relay rewrites before PULSE policy and dispatch exactly once."""
     from agent import relay_tools
     from pulse_cli.middleware import (
         apply_tool_request_middleware,
@@ -774,7 +778,7 @@ def _run_agent_tool_execution_middleware(
     def _authorized_dispatch(final_args: dict[str, Any]) -> Any:
         with dispatch_lock:
             if state.dispatched:
-                raise RuntimeError("Pulse tool execution callback invoked more than once")
+                raise RuntimeError("PULSE tool execution callback invoked more than once")
             state.dispatched = True
             state.blocked = False
             state.args = final_args
@@ -1072,6 +1076,9 @@ def _commit_tool_result(
     pre-persist content for UI previews) or ``None`` when the flush failed (stop the batch).
     """
     function_name, function_args, tool_call_id, effective_task_id = ref.name, ref.args, ref.call_id, ref.task_id
+    from pulse_cli.observability.shared_metrics_harness import observe_tool_outcome
+
+    observe_tool_outcome(agent, function_name, is_error)
     if observed:
         if not blocked:
             function_result = agent._append_guardrail_observation(
@@ -1111,6 +1118,7 @@ def _commit_tool_result(
             config=budget,
         )
     _record_persisted_path_for_stub(agent, tool_call_id, persisted_result)
+    note_tool_result(agent, function_name, tool_call_id, function_result, persisted_result)
 
     subdir_hints = agent._subdirectory_hints.check_tool_call(function_name, function_args)
     if subdir_hints:
@@ -1184,7 +1192,10 @@ def _finalize_tool_batch(agent, messages: list, effective_task_id: str, num_tool
     steer marker is never truncated/discarded when enforcement replaces a result."""
     if num_tools <= 0:
         return
-    enforce_turn_budget(messages[-num_tools:], env=get_active_env(effective_task_id), config=budget)
+    batch = messages[-num_tools:]
+    contents_before = [message.get("content") for message in batch]
+    enforce_turn_budget(batch, env=get_active_env(effective_task_id), config=budget)
+    record_tool_batch(agent, batch, contents_before)
     agent._apply_pending_steer_to_tool_results(messages, num_tools)
 
 

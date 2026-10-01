@@ -188,7 +188,7 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
           dist = desktop / 'pulse-desktop/dist'
           launcher = desktop / 'icons/hicolor/1024x1024/apps/pulse.png'
           for path in [launcher, dist / 'apple-touch-icon.png',
-                       dist / 'anxious-girl.png', dist / 'anxious-girl-dark.png',
+                       dist / 'nous-girl.png', dist / 'nous-girl-dark.png',
                        Path('${self'.packages.web}/favicon.ico')]:
               with Image.open(path) as image:
                   image.load()
@@ -448,7 +448,7 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
 
             # The agent package that the module installs, and the runtime
             # that the launcher pins. These must be the same store path: a
-            # second Pulse runtime beside the services is the fault that
+            # second PULSE runtime beside the services is the fault that
             # `programs.enable` plus a plain desktop package would give.
             agentPackages = builtins.filter (p: (p.pname or "") == "pulse-agent") cfg.home.packages;
 
@@ -1214,7 +1214,7 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
         '';
 
         # Verify PULSE_NODE is set in wrapper and points to Node 26+
-        # (Pulse pins its toolchain to Node 26 everywhere)
+        # (PULSE pins its toolchain to Node 26 everywhere)
         pulse-node = pkgs.runCommand "pulse-node-version" { } ''
           set -e
           echo "=== Checking PULSE_NODE in wrapper ==="
@@ -1228,7 +1228,7 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
 
           NODE_MAJOR=$("$PULSE_NODE" --version | sed 's/^v//' | cut -d. -f1)
           test "$NODE_MAJOR" -ge 26 || \
-            (echo "FAIL: Node v$NODE_MAJOR < 26, Pulse requires Node 26"; exit 1)
+            (echo "FAIL: Node v$NODE_MAJOR < 26, PULSE requires Node 26"; exit 1)
           echo "PASS: Node v$NODE_MAJOR >= 26"
 
           echo "=== All PULSE_NODE checks passed ==="
@@ -1361,8 +1361,8 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
           echo "ok" > $out/result
         '';
 
-        # A fresh declarative install must be current to the Pulse it ships
-        # with. Pulse cannot stamp config.yaml in managed mode, so an
+        # A fresh declarative install must be current to the PULSE it ships
+        # with. PULSE cannot stamp config.yaml in managed mode, so an
         # unstamped file reads as version 0 and trips the support-floor
         # warning at every boot.
         generated-config-version =

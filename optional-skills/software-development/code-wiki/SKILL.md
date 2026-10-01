@@ -2,7 +2,7 @@
 name: code-wiki
 description: "Generate wiki docs + Mermaid diagrams for any codebase."
 version: 0.1.0
-author: Teknium (teknium1), Pulse Agent
+author: Teknium (teknium1), PULSE Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
@@ -13,7 +13,7 @@ metadata:
 
 # Code Wiki Skill
 
-Generate a full wiki for any codebase — overview, architecture, per-module deep-dives, Mermaid class and sequence diagrams. Inspired by Google CodeWiki, but works on local repos, private repos, and any language. Uses only existing Pulse tools (`terminal`, `read_file`, `search_files`, `write_file`); no Docker, no external services, no extra dependencies.
+Generate a full wiki for any codebase — overview, architecture, per-module deep-dives, Mermaid class and sequence diagrams. Inspired by Google CodeWiki, but works on local repos, private repos, and any language. Uses only existing PULSE tools (`terminal`, `read_file`, `search_files`, `write_file`); no Docker, no external services, no extra dependencies.
 
 This skill produces **reference documentation** (what/how). It does not produce strategic narrative (why — that's a different skill).
 
@@ -307,7 +307,7 @@ sequenceDiagram
 
 ### Walkthrough
 
-1. **User input** — [`cli.py:PulseCLI.run_session`](<link>)
+1. **User input** — [`cli.py:PULSECLI.run_session`](<link>)
 2. **Message dispatch** — [`run_agent.py:AIAgent.chat`](<link>)
 ````
 

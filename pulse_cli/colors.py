@@ -1,4 +1,4 @@
-"""Shared ANSI color utilities for Pulse CLI modules."""
+"""Shared ANSI color utilities for PULSE CLI modules."""
 
 import os
 import sys

@@ -1,7 +1,7 @@
 # Kanban Setup — Project Bootstrap & Profile Configuration
 
 Once the brief is locked and the team is designed, the next step is producing
-the actual `setup.sh` that creates the project workspace, configures Pulse
+the actual `setup.sh` that creates the project workspace, configures PULSE
 profiles, and fires the initial kanban task.
 
 This file documents the patterns. The companion script
@@ -11,7 +11,7 @@ JSON.
 > **Credit:** the single-project-workspace layout, profile-config patching
 > approach, SOUL.md-per-profile convention, and `--workspace dir:<path>` rule
 > are adapted from alt-glitch's original multi-agent video pipeline:
-> [AnxiousResearchLab/kanban-video-pipeline](https://github.com/AnxiousResearchLab/kanban-video-pipeline).
+> [NousResearch/kanban-video-pipeline](https://github.com/NousResearch/kanban-video-pipeline).
 > This skill generalizes those patterns across video styles and replaces the
 > string-replacement config patcher with a ruamel.yaml-based one.
 
@@ -121,7 +121,7 @@ PY
 }
 ```
 
-ruamel.yaml must be installed in the user's Python (it ships with Pulse).
+ruamel.yaml must be installed in the user's Python (it ships with PULSE).
 If absent: `pip install ruamel.yaml==0.18.17`.
 
 The setup script should also **validate** the patch by re-reading the file
@@ -223,7 +223,7 @@ The director turns this into actual `kanban_create` calls.
 ## API-key prerequisites check
 
 Before firing the kanban, verify required keys are available. Check both
-the Pulse `.env` (`${PULSE_HOME:-$HOME/.pulse}/.env`) and macOS Keychain
+the PULSE `.env` (`${PULSE_HOME:-$HOME/.pulse}/.env`) and macOS Keychain
 (if on macOS):
 
 ```bash

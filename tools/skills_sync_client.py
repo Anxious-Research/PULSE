@@ -3,7 +3,7 @@
 HEAD, three-way merge on a 409). Driven by the debounced ``skill_manage`` push hook, the curator
 tick ``maybe_pull_skills`` and ``pulse sync``. Lives under tools/ so it never imports the CLI at
 module load; ``skills_sync_client_wire`` / ``skills_sync_client_org`` are re-exported here.
-ACCESS GATE (pre-launch): INERT unless the user is a Anxious admin per the ``tool_gateway_admin``
+ACCESS GATE (pre-launch): INERT unless the user is a Nous admin per the ``tool_gateway_admin``
 JWT claim (NAS's misleading name for the global portal-admin permission; replace before shipping).
 OPT-IN DEFAULT (provisional): local intent is the ``sync`` flag in ``.usage.json``; the DURABLE
 cross-device state is the ``sync-manifest`` blob in the plane. Only ~/.pulse/skills/ skills qualify."""
@@ -26,24 +26,24 @@ from tools.skills_sync_client_org import (
     ORG_DIR_NAME, list_locally_modified_org_skills, list_org_skill_names, resolve_org_identity)
 
 logger = logging.getLogger(__name__)
-# Gate claim (NAS's wire name; means "Anxious admin" / Permissions.ADMIN_ACCESS). The bearer comes
-# from resolve_anxious_runtime_credentials(); its payload is decoded unverified to read this.
-ANXIOUS_ADMIN_CLAIM = "tool_gateway_admin"
+# Gate claim (NAS's wire name; means "Nous admin" / Permissions.ADMIN_ACCESS). The bearer comes
+# from resolve_nous_runtime_credentials(); its payload is decoded unverified to read this.
+NOUS_ADMIN_CLAIM = "tool_gateway_admin"
 
 
 class SyncInertError(RuntimeError):
-    """Sync must no-op: not logged in, no bearer, or not a Anxious admin. Caught by the gate-and-swallow hooks."""
+    """Sync must no-op: not logged in, no bearer, or not a Nous admin. Caught by the gate-and-swallow hooks."""
 
 
 def resolve_identity() -> Dict[str, Any]:
-    """``{api_key, base_url, owner, anxious_admin, claims}``; SyncInertError if not logged in / no bearer.
+    """``{api_key, base_url, owner, nous_admin, claims}``; SyncInertError if not logged in / no bearer.
     ``owner`` is advisory (local ref naming; the server derives the real one). The JWT is decoded
     WITHOUT verification: safe, the claims only decide whether to attempt sync, never authz."""
     try:
-        from pulse_cli.auth import resolve_anxious_runtime_credentials
-        creds = resolve_anxious_runtime_credentials() or {}
+        from pulse_cli.auth import resolve_nous_runtime_credentials
+        creds = resolve_nous_runtime_credentials() or {}
     except Exception as e:
-        raise SyncInertError(f"no Anxious credentials: {e}") from e
+        raise SyncInertError(f"no Nous credentials: {e}") from e
     if not (api_key := creds.get("api_key")):
         raise SyncInertError("no bearer token available")
     try:
@@ -54,13 +54,13 @@ def resolve_identity() -> Dict[str, Any]:
         claims = {}
     owner = claims.get("sub") or claims.get("privy_did") or claims.get("tid") or "unknown"
     return {"api_key": api_key, "base_url": creds.get("base_url"), "owner": str(owner),
-            "anxious_admin": claims.get(ANXIOUS_ADMIN_CLAIM) is True, "claims": claims}
+            "nous_admin": claims.get(NOUS_ADMIN_CLAIM) is True, "claims": claims}
 
 
-# Configuration -- env-first so Pulse Cloud can enable sync via environment alone. Every knob:
+# Configuration -- env-first so PULSE Cloud can enable sync via environment alone. Every knob:
 # PULSE_SYNC_<KEY> env -> config.yaml ``sync.<key>`` -> default (base_url = the sync plane, NOT
 # the inference URL; enabled; default_opt_in; org_auto_propose).
-DEFAULT_SYNC_BASE_URL = "https://gateway-gateway.anxiousresearchlab.com"
+DEFAULT_SYNC_BASE_URL = "https://gateway-gateway.anxious-research.com"
 
 _TRUE, _FALSE = {"1", "true", "yes", "on"}, {"0", "false", "no", "off", ""}
 
@@ -103,7 +103,7 @@ def _sync_config_bool(env_var: str, config_key: str, *, default: bool) -> bool:
 
 
 def sync_feature_enabled() -> bool:
-    """Master switch; the gate-and-swallow entrypoints ALSO require the Anxious-admin gate and a base URL."""
+    """Master switch; the gate-and-swallow entrypoints ALSO require the Nous-admin gate and a base URL."""
     return _sync_config_bool("PULSE_SYNC_ENABLED", "enabled", default=False)
 
 
@@ -115,7 +115,7 @@ def sync_org_auto_propose() -> bool:
 
 def sync_default_opt_in() -> bool:
     """False (default): opt-IN -- a skill syncs only after ``pulse sync enable`` or a plane manifest
-    opting it in. True: opt-OUT -- every eligible skill syncs unless disabled (Pulse Cloud default)."""
+    opting it in. True: opt-OUT -- every eligible skill syncs unless disabled (PULSE Cloud default)."""
     return _sync_config_bool("PULSE_SYNC_DEFAULT_OPT_IN", "default_opt_in", default=False)
 
 
@@ -221,7 +221,7 @@ def _default_device_label() -> str:
 
 def stable_device_id() -> str:
     """Per-device label at ~/.pulse/skills/.sync_device_id. An existing file always wins; else seeded
-    from PULSE_SYNC_DEVICE_NAME (first use only, for Pulse Cloud) or a friendly default, then persisted."""
+    from PULSE_SYNC_DEVICE_NAME (first use only, for PULSE Cloud) or a friendly default, then persisted."""
     with suppress(OSError):
         val = _device_id_path().read_text(encoding="utf-8-sig").strip()
         if val:
@@ -448,10 +448,10 @@ def pull_skills(client: Optional[SyncClient] = None, *, identity: Optional[Dict[
 
 # Gated public entrypoints (gate-and-swallow, like maybe_run_curator): never raise; dict or None.
 def _gate_and_swallow(op: str, run: Callable[[Dict[str, Any]], Optional[Dict[str, Any]]]):
-    """Run *run(identity)* only if all gates hold (Anxious admin, feature on, base URL); None if inert/error."""
+    """Run *run(identity)* only if all gates hold (Nous admin, feature on, base URL); None if inert/error."""
     try:
         identity = resolve_identity()
-        if not identity.get("anxious_admin") or not sync_feature_enabled() or not resolve_sync_base_url():
+        if not identity.get("nous_admin") or not sync_feature_enabled() or not resolve_sync_base_url():
             return None
         return run(identity)
     except Exception as e:
@@ -472,13 +472,13 @@ def maybe_pull_skills() -> Optional[Dict[str, Any]]:
 
 def sync_status() -> Dict[str, Any]:
     """Snapshot for ``pulse sync status``; never raises. ``org_available`` False = not in a shared org."""
-    status: Dict[str, Any] = {"anxious_admin": False, "logged_in": False, "feature_enabled": sync_feature_enabled(),
+    status: Dict[str, Any] = {"nous_admin": False, "logged_in": False, "feature_enabled": sync_feature_enabled(),
                               "default_opt_in": sync_default_opt_in(), "base_url": resolve_sync_base_url(),
                               "opted_in_skills": [], "local_head": None, "owner": None, "org_available": False,
                               "org_id": None, "org_role": None, "org_skills": [], "org_skills_modified": []}
     try:
         identity = resolve_identity()
-        status.update(logged_in=True, owner=identity.get("owner"), anxious_admin=bool(identity.get("anxious_admin")))
+        status.update(logged_in=True, owner=identity.get("owner"), nous_admin=bool(identity.get("nous_admin")))
     except SyncInertError:
         pass
     except Exception as e:
@@ -496,73 +496,3 @@ def sync_status() -> Dict[str, Any]:
     except Exception as e:
         logger.debug("skills_sync_client: sync_status org lookup failed: %s", e)
     return status
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from datetime import datetime  # noqa: F401,E402
-import hashlib  # noqa: F401,E402
-import time  # noqa: F401,E402
-from datetime import timezone  # noqa: F401,E402
-
-KIND_COMMIT = "commit"
-
-KIND_TREE = "tree"
-
-MODE_DIR = "dir"
-
-MODE_EXEC = "exec"
-
-MODE_FILE = "file"
-
-SYNC_MANIFEST_TYPE = "sync-manifest"
-
-def dev_gate_open() -> bool:
-    """Whether the access gate permits sync. Never raises."""
-    try:
-        return bool(resolve_identity().get("anxious_admin"))
-    except SyncInertError:
-        return False
-    except Exception as e:
-        logger.debug("skills_sync_client: dev_gate_open check failed: %s", e)
-        return False
-
-def org_sync_available() -> bool:
-    """True iff this token can see the org-skill surface (multi-member org)."""
-    try:
-        resolve_org_identity()
-        return True
-    except Exception:
-        return False
-
-def user_conflict_ref(owner: str, n: int) -> str:
-    return f"refs/user/{owner}/conflict/{n}"
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'ARTIFACT_TYPE_SKILL': ('tools.skills_sync_client_wire', 'ARTIFACT_TYPE_SKILL'),
-    'SYNC_MANIFEST_ENTRY_NAME': ('tools.skills_sync_client_wire', 'SYNC_MANIFEST_ENTRY_NAME'),
-    'SYNC_MANIFEST_VERSION': ('tools.skills_sync_client_wire', 'SYNC_MANIFEST_VERSION'),
-    'WIRE_VERSION': ('tools.skills_sync_client_wire', 'WIRE_VERSION'),
-    'canonical_json_bytes': ('tools.skills_sync_client_wire', 'canonical_json_bytes'),
-    'maybe_pull_org_skills': ('tools.skills_sync_client_org', 'maybe_pull_org_skills'),
-    'org_head_ref': ('tools.skills_sync_client_org', 'org_head_ref'),
-    'org_skill_is_locally_modified': ('tools.skills_sync_client_org', 'org_skill_is_locally_modified'),
-    'parse_sync_manifest': ('tools.skills_sync_client_wire', 'parse_sync_manifest'),
-    'propose_skill': ('tools.skills_sync_client_org', 'propose_skill'),
-    'pull_org_skills': ('tools.skills_sync_client_org', 'pull_org_skills'),
-    'wire_address': ('tools.skills_sync_client_wire', 'wire_address'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

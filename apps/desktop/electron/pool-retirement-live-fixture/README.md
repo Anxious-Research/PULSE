@@ -1,7 +1,7 @@
 # Native pool retirement integration
 
 From `apps/desktop`, after installing the repository-pinned Node dependencies and a
-Pulse Python environment (including the serve dependencies):
+PULSE Python environment (including the serve dependencies):
 
 ```sh
 PULSE_TEST_REAL_SERVE=1 \

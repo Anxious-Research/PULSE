@@ -36,8 +36,8 @@ _PRE_UPDATE_SNAPSHOT_MAX_FILE_SIZE = 1 << 30  # 1 GiB
 #: Reinstalling through the official installer swaps in a Python whose SQLite is safe; the
 #: one-liner differs per OS (mirrors ``uninstall._REINSTALL_HINT``). windows -> command
 _REINSTALL_ONE_LINER = {
-    True: "iex (irm https://pulse-agent.anxiousresearchlab.com/install.ps1)",
-    False: "curl -fsSL https://pulse-agent.anxiousresearchlab.com/install.sh | bash",
+    True: "iex (irm https://pulse-agent.anxious-research.com/install.ps1)",
+    False: "curl -fsSL https://pulse-agent.anxious-research.com/install.sh | bash",
 }
 
 
@@ -48,7 +48,7 @@ def _sqlite_partial_completion_lines(sqlite_version: str) -> list[str]:
     from pulse_cli.update_cmd import _m
     return [
         f"⚠ Update partially complete — your Python's SQLite ({sqlite_version}) has a known "
-        "corruption bug. Pulse works, but sessions could be damaged.",
+        "corruption bug. PULSE works, but sessions could be damaged.",
         f"  Fix: run the installer again ({_REINSTALL_ONE_LINER[bool(_m()._is_windows())]}) "
         "which installs a safe Python, then run `pulse doctor` to confirm.",
     ]
@@ -102,7 +102,7 @@ def _print_curator_first_run_notice() -> None:
     )
     print("  Preview now:  pulse curator run --dry-run")
     print("  Pause it:     pulse curator pause")
-    print("  Docs:         https://pulse-agent.anxiousresearchlab.com/docs/user-guide/features/curator")
+    print("  Docs:         https://pulse-agent.anxious-research.com/docs/user-guide/features/curator")
 
 
 def _print_fts_optimize_available_notice() -> None:
@@ -375,7 +375,7 @@ def _post_update_sqlite_runtime_status():
 
 
 def _print_verified_update_completion(message: str) -> bool:
-    """Print a success completion only after probing the next Pulse runtime."""
+    """Print a success completion only after probing the next PULSE runtime."""
     from pulse_cli.update_cmd import _post_update_sqlite_runtime_status
     if not message.startswith("✓"):
         _print_update_completion(message)
@@ -444,7 +444,7 @@ def _restore_state_db_from_snapshot(state_path: Path, snap_state: Path) -> bool:
     except LiveConnectionError as exc:
         print(
             f"  ✗ Auto-restore refused: {exc} Close the in-process database "
-            "handles (or restart Pulse) and retry."
+            "handles (or restart PULSE) and retry."
         )
         return False
     restored = verify_sqlite_integrity(state_path, check_header=True, run_pragma=True)
@@ -590,7 +590,7 @@ def _ensure_fhs_path_guard() -> None:
         return  # already on PATH, nothing to do
 
     path_line = 'export PATH="/usr/local/bin:$PATH"'
-    path_comment = "# Pulse Agent — ensure /usr/local/bin is on PATH (RHEL non-login shells)"
+    path_comment = "# PULSE Agent — ensure /usr/local/bin is on PATH (RHEL non-login shells)"
     wrote_any = False
     for candidate in (".bashrc", ".bash_profile"):
         cfg = Path(home) / candidate
@@ -907,7 +907,7 @@ def _install_default_tools_after_update() -> None:
     from pm.paths import lockfile_path
 
     # Sealed payloads ship their tools; the lazy-install policy (config or the
-    # Docker/test bridge) means the user asked Pulse not to fetch on its own.
+    # Docker/test bridge) means the user asked PULSE not to fetch on its own.
     if sealed() or not lazy_installs_allowed():
         return
     for name in default_packages(Lockfile(lockfile_path()).names()):
@@ -927,16 +927,6 @@ def _print_checkpoint_footprint_notice() -> None:
     notice = checkpoint_footprint_notice()
     if notice:
         print(f"\n\033[1;33mℹ  {notice}\033[0m")
-
-
-def _print_plugin_compat_notice() -> None:
-    """Installed plugins importing paths that the Sep 2026 decomposition scheduled for removal."""
-    from pulse_cli.plugin_compat import compat_report, removal_in_effect, summary_lines
-    lines = summary_lines(compat_report(force=True))
-    if not lines:
-        return
-    colour = "\033[1;31m" if removal_in_effect() else "\033[1;33m"
-    print(f"\n{colour}⚠  {lines[0]}\033[0m\n   {lines[1]}")
 
 
 def _print_post_update_notices_and_self_heals() -> None:
@@ -962,7 +952,6 @@ def _print_post_update_notices_and_self_heals() -> None:
         ('cua-driver refresh failed: %s', _refresh_cua_driver_after_update),
         ('Default PM tool install failed: %s', _install_default_tools_after_update),
         ('Checkpoint footprint notice failed: %s', _print_checkpoint_footprint_notice),
-        ('Plugin compat notice failed: %s', _print_plugin_compat_notice),
         # Legacy PULSE_NEMO_RELAY_ATIF_*/ATOF_* vars produce no traces since the Relay cutover;
         # generate each profile's relay-plugins.toml instead of leaving exports silently dead.
         ('Relay exporter migration failed: %s', _migrate_relay_exporter_env),
@@ -994,9 +983,9 @@ def _run_post_update_maintenance(
     if sys.platform == "darwin" and had_desktop_app_before_update:
         print()
         print(
-            "  ℹ macOS: if Pulse re-prompts for permissions you already "
+            "  ℹ macOS: if PULSE re-prompts for permissions you already "
             "granted (toggle shows ON), the stored grant is stale — run "
-            "`tccutil reset ScreenCapture com.anxiousresearchlab.pulse` (repeat "
+            "`tccutil reset ScreenCapture com.nousresearch.pulse` (repeat "
             "per affected service), toggle it ON in System Settings, then "
             "fully quit & relaunch once."
         )

@@ -42,6 +42,7 @@ from pulse_cli.models_catalog_static import (
     _LIVE_FIRST_PICKER_PROVIDERS,
     _MODELS_DEV_PREFERRED,
     _OPENAI_FAST_MODE_PREFIXES,
+    _OPENAI_ULTRAFAST_MODELS,
     _PROVIDER_ALIASES,
     _PROVIDER_LABELS,
     _PROVIDER_MODELS,
@@ -194,7 +195,7 @@ _ai_gateway_catalog_cache: list[tuple[str, str]] | None = None
 
 
 # ---------------------------------------------------------------------------
-# Anxious Portal free-model helpers — the Portal models endpoint is the source of truth for what is
+# Nous Portal free-model helpers — the Portal models endpoint is the source of truth for what is
 # offered (free or paid); we surface it as-is, no local allowlist filtering.
 # ---------------------------------------------------------------------------
 
@@ -221,10 +222,10 @@ def _is_model_free(model_id: str, pricing: dict[str, dict[str, str]]) -> bool:
     return bool(entry) and (_is_subscription_billed(entry) or _zero_priced(entry, ("prompt", "completion"), "1"))
 
 
-def partition_anxious_models_by_tier(
+def partition_nous_models_by_tier(
     model_ids: list[str], pricing: dict[str, dict[str, str]], free_tier: bool
 ) -> tuple[list[str], list[str]]:
-    """Split Anxious models into (selectable, unavailable): free-tier users may only select free models
+    """Split Nous models into (selectable, unavailable): free-tier users may only select free models
     (paid ones are returned as unavailable, shown grayed out)."""
     if not free_tier or not pricing:  # no pricing → can't determine, show everything
         return (model_ids, [])
@@ -242,7 +243,7 @@ def _union_with_portal_recommendations(
     silently return the inputs unchanged — never block the picker on a Portal-side hiccup.
     """
     try:
-        payload = fetch_anxious_recommended_models(portal_base_url, force_refresh=force_refresh)
+        payload = fetch_nous_recommended_models(portal_base_url, force_refresh=force_refresh)
     except Exception:
         payload = None
     block = payload.get(tier_key) if isinstance(payload, dict) else None
@@ -290,7 +291,7 @@ def _pricing_profile_key() -> str:
     return pulse_home_key()
 
 
-def get_cached_anxious_free_tier() -> Optional[bool]:
+def get_cached_nous_free_tier() -> Optional[bool]:
     """This profile's live cached entitlement, or ``None`` if unknown/expired."""
     cached = _free_tier_cache.get(_pricing_profile_key())
     if cached is None or time.monotonic() - cached[1] >= _FREE_TIER_CACHE_TTL:
@@ -298,22 +299,22 @@ def get_cached_anxious_free_tier() -> Optional[bool]:
     return cached[0]
 
 
-def check_anxious_free_tier(*, force_fresh: bool = False, cached_only: bool = False) -> bool:
-    """True only when the Anxious Portal user is KNOWN to be free-tier (unknown/error → False so this
+def check_nous_free_tier(*, force_fresh: bool = False, cached_only: bool = False) -> bool:
+    """True only when the Nous Portal user is KNOWN to be free-tier (unknown/error → False so this
     never blocks users). Cached ``_FREE_TIER_CACHE_TTL`` seconds so an upgrade shows within minutes.
     ``cached_only`` returns the live cached answer or the fail-open ``False`` without contacting Portal."""
     now = time.monotonic()
     profile_key = _pricing_profile_key()
     if not force_fresh:
-        cached_result = get_cached_anxious_free_tier()
+        cached_result = get_cached_nous_free_tier()
         if cached_result is not None:
             return cached_result
     if cached_only:
         return False
     try:
-        from pulse_cli.anxious_account import get_anxious_portal_account_info
+        from pulse_cli.nous_account import get_nous_portal_account_info
 
-        result = get_anxious_portal_account_info(force_fresh=force_fresh).is_free_tier
+        result = get_nous_portal_account_info(force_fresh=force_fresh).is_free_tier
     except Exception:
         result = False  # default to paid on error — don't block users
     _free_tier_cache[profile_key] = (result, now)
@@ -321,25 +322,25 @@ def check_anxious_free_tier(*, force_fresh: bool = False, cached_only: bool = Fa
 
 
 # ---------------------------------------------------------------------------
-# Anxious Portal recommended models — curated paid/free suggestions plus dedicated compaction (aux)
+# Nous Portal recommended models — curated paid/free suggestions plus dedicated compaction (aux)
 # and vision picks, TTL-cached per process. Fields read: {paid,free}RecommendedModels:
 # [{modelName}], {paid,free}Recommended{Compaction,Vision}Model: {modelName} | null
 # ---------------------------------------------------------------------------
 
-ANXIOUS_RECOMMENDED_MODELS_PATH = "/api/anxious/recommended-models"
-_ANXIOUS_RECOMMENDED_CACHE_TTL: int = 600  # seconds (10 minutes)
+NOUS_RECOMMENDED_MODELS_PATH = "/api/nous/recommended-models"
+_NOUS_RECOMMENDED_CACHE_TTL: int = 600  # seconds (10 minutes)
 # (result_dict, monotonic timestamp), scoped to the profile and portal.
-_anxious_recommended_cache: dict[tuple[str, str], tuple[dict[str, Any], float]] = {}
+_nous_recommended_cache: dict[tuple[str, str], tuple[dict[str, Any], float]] = {}
 
 
-def _anxious_recommended_disk_path() -> "Path":
+def _nous_recommended_disk_path() -> "Path":
     from pulse_constants import get_pulse_home
-    return get_pulse_home() / "cache" / "anxious_recommended_cache.json"
+    return get_pulse_home() / "cache" / "nous_recommended_cache.json"
 
 
-def _read_anxious_recommended_disk(base: str) -> tuple[dict[str, Any], float] | None:
+def _read_nous_recommended_disk(base: str) -> tuple[dict[str, Any], float] | None:
     """Return the last good payload and its age for the freshness check."""
-    blob = _read_json_cache(_anxious_recommended_disk_path(), errors=(OSError, json.JSONDecodeError, UnicodeDecodeError))
+    blob = _read_json_cache(_nous_recommended_disk_path(), errors=(OSError, json.JSONDecodeError, UnicodeDecodeError))
     entry = (blob or {}).get(base)
     data = entry.get("data") if isinstance(entry, dict) else None
     if not isinstance(data, dict) or not data:
@@ -351,43 +352,43 @@ def _read_anxious_recommended_disk(base: str) -> tuple[dict[str, Any], float] | 
     return data, age
 
 
-def _write_anxious_recommended_disk(base: str, data: dict[str, Any]) -> None:
+def _write_nous_recommended_disk(base: str, data: dict[str, Any]) -> None:
     """Merge ``data`` into the per-base disk map atomically; failures are debug-logged (the in-process
     cache still works)."""
     if not data:
         return
-    path = _anxious_recommended_disk_path()
+    path = _nous_recommended_disk_path()
     try:
         blob = _read_json_cache(path, errors=(OSError, json.JSONDecodeError, UnicodeDecodeError)) or {}
         blob[base] = {"data": data, "ts": time.time()}
         _write_json_cache(path, blob, indent=2)
     except OSError as exc:
-        logger.debug("anxious recommended-models disk cache write failed: %s", exc)
+        logger.debug("nous recommended-models disk cache write failed: %s", exc)
 
 
-def fetch_anxious_recommended_models(
+def fetch_nous_recommended_models(
     portal_base_url: str = "", timeout: float = 5.0, *, force_refresh: bool = False
 ) -> dict[str, Any]:
-    """Fetch the Portal's public ``/api/anxious/recommended-models`` payload (no auth).
+    """Fetch the Portal's public ``/api/nous/recommended-models`` payload (no auth).
 
-    Reuse successful results for ``_ANXIOUS_RECOMMENDED_CACHE_TTL`` seconds, including across
+    Reuse successful results for ``_NOUS_RECOMMENDED_CACHE_TTL`` seconds, including across
     process restarts. ``force_refresh`` bypasses both caches. Stale disk data remains a fallback
     on live failure; reading it never renews its freshness.
     """
-    base = (portal_base_url or "https://portal.anxiousresearchlab.com").rstrip("/")
+    base = (portal_base_url or "https://portal.anxious-research.com").rstrip("/")
     now = time.monotonic()
     cache_key = (_pricing_profile_key(), base)
-    cached = _anxious_recommended_cache.get(cache_key)
-    if not force_refresh and cached is not None and now - cached[1] < _ANXIOUS_RECOMMENDED_CACHE_TTL:
+    cached = _nous_recommended_cache.get(cache_key)
+    if not force_refresh and cached is not None and now - cached[1] < _NOUS_RECOMMENDED_CACHE_TTL:
         return cached[0]
-    disk = _read_anxious_recommended_disk(base)
-    if not force_refresh and disk is not None and 0 <= disk[1] < _ANXIOUS_RECOMMENDED_CACHE_TTL:
+    disk = _read_nous_recommended_disk(base)
+    if not force_refresh and disk is not None and 0 <= disk[1] < _NOUS_RECOMMENDED_CACHE_TTL:
         data, age = disk
-        _anxious_recommended_cache[cache_key] = (data, now - age)
+        _nous_recommended_cache[cache_key] = (data, now - age)
         return data
     try:
         data = _get_json(
-            f"{base}{ANXIOUS_RECOMMENDED_MODELS_PATH}", timeout=timeout,
+            f"{base}{NOUS_RECOMMENDED_MODELS_PATH}", timeout=timeout,
             headers={"Accept": "application/json", "Accept-Encoding": "gzip"}
         )
         if not isinstance(data, dict):
@@ -395,23 +396,23 @@ def fetch_anxious_recommended_models(
     except Exception:
         data = {}
     if data:
-        _write_anxious_recommended_disk(base, data)
+        _write_nous_recommended_disk(base, data)
     else:
         data = disk[0] if disk is not None else data
-    _anxious_recommended_cache[cache_key] = (data, now)
+    _nous_recommended_cache[cache_key] = (data, now)
     return data
 
 
-def _resolve_anxious_portal_url() -> str:
+def _resolve_nous_portal_url() -> str:
     """Best-effort lookup of the Portal base URL the user is authed against."""
     try:
-        from pulse_cli.auth import DEFAULT_ANXIOUS_PORTAL_URL, get_provider_auth_state
+        from pulse_cli.auth import DEFAULT_NOUS_PORTAL_URL, get_provider_auth_state
 
-        state = get_provider_auth_state("anxious") or {}
+        state = get_provider_auth_state("nous") or {}
         portal = str(state.get("portal_base_url") or "").strip()
-        return (portal or str(DEFAULT_ANXIOUS_PORTAL_URL)).rstrip("/")
+        return (portal or str(DEFAULT_NOUS_PORTAL_URL)).rstrip("/")
     except Exception:
-        return "https://portal.anxiousresearchlab.com"
+        return "https://portal.anxious-research.com"
 
 
 def _extract_model_name(entry: Any) -> Optional[str]:
@@ -420,18 +421,18 @@ def _extract_model_name(entry: Any) -> Optional[str]:
     return model_name.strip() if isinstance(model_name, str) and model_name.strip() else None
 
 
-def get_anxious_recommended_aux_model(
+def get_nous_recommended_aux_model(
     *, vision: bool = False, free_tier: Optional[bool] = None, portal_base_url: str = "",
     force_refresh: bool = False) -> Optional[str]:
     """The Portal's recommended model for an auxiliary task: free tier → free pick only; paid tier →
     paid pick, falling back to the free one when the Portal returned ``null`` (staged rollouts)."""
-    base = portal_base_url or _resolve_anxious_portal_url()
-    payload = fetch_anxious_recommended_models(base, force_refresh=force_refresh)
+    base = portal_base_url or _resolve_nous_portal_url()
+    payload = fetch_nous_recommended_models(base, force_refresh=force_refresh)
     if not payload:
         return None
     if free_tier is None:
         try:
-            free_tier = check_anxious_free_tier()
+            free_tier = check_nous_free_tier()
         except Exception:
             free_tier = False  # assume paid on detection error — paid users see both fields anyway
     kind = "Vision" if vision else "Compaction"
@@ -459,36 +460,36 @@ def pick_silent_default_model(model_ids: list[str], provider: str = "openrouter"
     return preferred if preferred in model_ids else (model_ids[0] if model_ids else "")
 
 
-def recommended_anxious_default_model() -> dict[str, Any]:
-    """The model a Anxious account lands on without choosing one, honouring the account's tier.
+def recommended_nous_default_model() -> dict[str, Any]:
+    """The model a Nous account lands on without choosing one, honouring the account's tier.
 
     Curated catalog plus the Portal's recommendations for the tier, narrowed to the org's policy,
     then (free tier) to the rows the tier may select, then :func:`pick_silent_default_model`.
     Contacts the Portal for a fresh tier read, so never call it on a hot path. Returns
-    ``{"provider": "anxious", "model": str, "free_tier": bool}``; ``model`` may be ``""`` when nothing
+    ``{"provider": "nous", "model": str, "free_tier": bool}``; ``model`` may be ``""`` when nothing
     is selectable (callers degrade). Shared by ``GET /api/model/recommended-default`` and the
     sign-in completion in ``pulse_cli.anon_auth`` so both land on the same model.
     """
     from pulse_cli import models_pricing as mp
     from pulse_cli.auth import get_provider_auth_state
 
-    model_ids = get_curated_anxious_model_ids()
-    pricing = mp.get_pricing_for_provider("anxious") or {}
-    free_tier = check_anxious_free_tier(force_fresh=True)
+    model_ids = get_curated_nous_model_ids()
+    pricing = mp.get_pricing_for_provider("nous") or {}
+    free_tier = check_nous_free_tier(force_fresh=True)
     try:
-        portal_url = (get_provider_auth_state("anxious") or {}).get("portal_base_url", "") or ""
+        portal_url = (get_provider_auth_state("nous") or {}).get("portal_base_url", "") or ""
     except Exception:
         portal_url = ""
     # Narrow to policy BEFORE the tier split, so a rescued id still has to pass the free/paid predicate.
-    policy_allowed = mp.anxious_policy_allowed_ids()
+    policy_allowed = mp.nous_policy_allowed_ids()
     union = union_with_portal_free_recommendations if free_tier else union_with_portal_paid_recommendations
     model_ids, pricing = union(model_ids, pricing, portal_url)
-    model_ids = mp.restrict_to_anxious_policy(model_ids, policy_allowed, rescue_empty=True)
+    model_ids = mp.restrict_to_nous_policy(model_ids, policy_allowed, rescue_empty=True)
     if free_tier:
-        model_ids, _unavailable = partition_anxious_models_by_tier(model_ids, pricing, free_tier=True)
+        model_ids, _unavailable = partition_nous_models_by_tier(model_ids, pricing, free_tier=True)
         # Never default onto a subscription-billed row: spending that plan is the user's call.
         model_ids = [mid for mid in model_ids if not _is_subscription_billed(pricing.get(mid))] or model_ids
-    return {"provider": "anxious", "model": pick_silent_default_model(model_ids, provider="anxious"),
+    return {"provider": "nous", "model": pick_silent_default_model(model_ids, provider="nous"),
             "free_tier": bool(free_tier)}
 
 
@@ -511,7 +512,7 @@ def _openrouter_model_is_free(pricing: Any) -> bool:
 
 def _openrouter_model_supports_tools(item: Any) -> bool:
     """True when ``supported_parameters`` advertises ``tools`` (pulse-agent is tool-calling-first).
-    Permissive when the field is absent/malformed: some OpenRouter-compatible gateways (Anxious Portal,
+    Permissive when the field is absent/malformed: some OpenRouter-compatible gateways (Nous Portal,
     private mirrors) don't populate it, and the picker must not silently empty for them.
 
     Ported from Kilo-Org/kilocode#9068.
@@ -520,7 +521,7 @@ def _openrouter_model_supports_tools(item: Any) -> bool:
     return "tools" in params if isinstance(params, list) else True
 
 
-# Reasoning-capability cache slots, one set per catalog (OpenRouter, Anxious Portal). The logic
+# Reasoning-capability cache slots, one set per catalog (OpenRouter, Nous Portal). The logic
 # lives in models_reasoning_caps and reads/writes these by name so tests can reset them here.
 # ``*_cache``: model id → parsed caps for the process lifetime; ``*_failed_at``: monotonic time
 # of the last failed fetch (60s re-fetch suppression); the flags are once-per-process guards.
@@ -528,10 +529,10 @@ _openrouter_reasoning_caps_cache: dict[str, Optional[dict[str, Any]]] | None = N
 _openrouter_reasoning_caps_failed_at: float | None = None
 _openrouter_caps_disk_checked = False
 _openrouter_caps_warm_started = False
-_anxious_reasoning_caps_cache: dict[str, Optional[dict[str, Any]]] | None = None
-_anxious_reasoning_caps_failed_at: float | None = None
-_anxious_caps_disk_checked = False
-_anxious_caps_warm_started = False
+_nous_reasoning_caps_cache: dict[str, Optional[dict[str, Any]]] | None = None
+_nous_reasoning_caps_failed_at: float | None = None
+_nous_caps_disk_checked = False
+_nous_caps_warm_started = False
 
 
 from agent.reasoning_effort import CODEX_ASTRA_EFFORTS, clamp_effort as _clamp_effort, is_astra_model
@@ -648,15 +649,15 @@ def model_ids(*, force_refresh: bool = False) -> list[str]:
     return [mid for mid, _ in fetch_openrouter_models(force_refresh=force_refresh)]
 
 
-def get_curated_anxious_model_ids() -> list[str]:
-    """Curated Anxious Portal model ids: the remote catalog manifest, else the in-repo
-    ``_PROVIDER_MODELS["anxious"]`` snapshot. Always a list."""
+def get_curated_nous_model_ids() -> list[str]:
+    """Curated Nous Portal model ids: the remote catalog manifest, else the in-repo
+    ``_PROVIDER_MODELS["nous"]`` snapshot. Always a list."""
     try:
-        from pulse_cli.model_catalog import get_curated_anxious_models
-        remote = get_curated_anxious_models()
+        from pulse_cli.model_catalog import get_curated_nous_models
+        remote = get_curated_nous_models()
     except Exception:
         remote = None
-    return list(remote or _PROVIDER_MODELS.get("anxious", []))
+    return list(remote or _PROVIDER_MODELS.get("nous", []))
 
 
 def _ai_gateway_model_is_free(pricing: Any) -> bool:
@@ -879,7 +880,7 @@ def curated_models_for_provider(
     if normalized == "openrouter":
         return fetch_openrouter_models(force_refresh=force_refresh)
 
-    # Try live API first (Codex, Anxious, etc. all support /models)
+    # Try live API first (Codex, Nous, etc. all support /models)
     live = provider_model_ids(normalized)
     if live:
         return [(m, "") for m in live]
@@ -952,14 +953,14 @@ def detect_static_provider_for_model(
     if alias_match:
         return alias_match
 
-    # Step 0: a bare provider name typed as the model (`/model anxious`) is a provider switch to that
+    # Step 0: a bare provider name typed as the model (`/model nous`) is a provider switch to that
     # provider's default. Skip "custom" (no catalog) and "openrouter" (needs an explicit model).
     resolved_provider = _PROVIDER_ALIASES.get(name_lower, name_lower)
     if resolved_provider not in {"custom", "openrouter"}:
         default_models = _PROVIDER_MODELS.get(resolved_provider, [])
         if resolved_provider in _PROVIDER_LABELS and default_models and resolved_provider not in current_keys:
             # Cost-safe default, not ``default_models[0]``: metered aggregators list most-capable-first,
-            # so [0] would silently escalate `/model anxious` to the priciest flagship.
+            # so [0] would silently escalate `/model nous` to the priciest flagship.
             return (resolved_provider, get_default_model_for_provider(resolved_provider) or default_models[0])
 
     # A model in the current provider's own catalog never suggests switching.
@@ -1009,10 +1010,10 @@ def _configured_provider_ids() -> set[str]:
 
 
 def _resolve_provider_prefix(model_name: str) -> Optional[tuple[str, str]]:
-    """Route an explicit ``vendor/model`` prefix (``anxious/deepseek-v4-pro``, ``ollama/qwen3.5:4b``) to
+    """Route an explicit ``vendor/model`` prefix (``nous/deepseek-v4-pro``, ``ollama/qwen3.5:4b``) to
     a provider the user defined in ``providers:`` (by raw name or alias) instead of the default.
 
-    ``anxious/deepseek-v4-pro`` or ``ollama/qwen3.5:4b`` should route to the named provider instead of falling
+    ``nous/deepseek-v4-pro`` or ``ollama/qwen3.5:4b`` should route to the named provider instead of falling
     back to the configured default (which silently sends non-default models to the wrong endpoint, #87189).
     """
     if "/" not in model_name:
@@ -1038,7 +1039,7 @@ def detect_provider_for_model(
 
     Never hands back a provider the user holds no credentials for: an unauthenticated guess is
     skipped and the ladder continues (``None`` = stay on the current provider). Exceptions: the user
-    NAMED the provider (``/model anxious``), or there is no current provider yet (``auto``) — then the
+    NAMED the provider (``/model nous``), or there is no current provider yet (``auto``) — then the
     first guess is returned so the credential step fails loudly instead of silently ignoring input."""
     from pulse_cli.models_detect import (
         current_provider_catalog_match, current_provider_owns_vendor, provider_has_credentials)
@@ -1149,7 +1150,7 @@ def _strip_vendor_prefix(model_id: str) -> str:
 
 
 def model_supports_fast_mode(model_id: Optional[str]) -> bool:
-    """Return whether Pulse should expose the /fast toggle for this model."""
+    """Return whether PULSE should expose the /fast toggle for this model."""
     from agent.model_metadata import is_grok_46_family
 
     return (
@@ -1178,24 +1179,41 @@ def _fast_mode_route_supported(
     elif is_grok_46_family(str(model_id or "")):
         allowed = {"xai": "api.x.ai"}
     else:
-        allowed = {"openai": "api.openai.com", "openai-codex": "chatgpt.com"}
+        allowed = {
+            "openai": "api.openai.com",
+            "openai-api": "api.openai.com",
+            "openai-codex": "chatgpt.com",
+        }
     if provider and normalize_provider(provider) not in allowed:
         return False
     host = (urlparse(str(base_url or "")).hostname or "").lower()
     return not host or host in allowed.values()
 
 
+def model_supports_ultrafast(model_id: Optional[str]) -> bool:
+    """OpenAI Ultrafast (``service_tier: "ultrafast"``) is published per model, not per family."""
+    from agent.model_metadata import strip_codex_context_variant_suffix
+
+    base = _strip_vendor_prefix(strip_codex_context_variant_suffix(str(model_id or ""))).split(":")[0]
+    return base in _OPENAI_ULTRAFAST_MODELS
+
+
 def resolve_fast_mode_overrides(
-    model_id: Optional[str], *, provider: Optional[str] = None, base_url: Optional[str] = None
+    model_id: Optional[str], *, provider: Optional[str] = None, base_url: Optional[str] = None,
+    tier: Optional[str] = None,
 ) -> dict[str, Any] | None:
     """Fast/priority request_overrides — ``{"speed": "fast"}`` (Anthropic Fast Mode) or
     ``{"service_tier": "priority"}`` (OpenAI / xAI Priority Processing) — or None if unsupported.
+    ``tier="ultrafast"`` asks for OpenAI Ultrafast instead: ``{"service_tier": "ultrafast"}`` on an
+    Ultrafast model, None elsewhere (never a silent downgrade to a different paid tier).
     With ``provider``/``base_url`` the route is gated too (``_fast_mode_route_supported``) so proxies
     never see the params. Single fast-mode gate for ``/fast`` and ``agent.fast_mode`` windows."""
     if not model_supports_fast_mode(model_id):
         return None
     if (provider or base_url) and not _fast_mode_route_supported(model_id, provider, base_url):
         return None
+    if tier == "ultrafast":
+        return {"service_tier": "ultrafast"} if model_supports_ultrafast(model_id) else None
     return {"speed": "fast"} if _is_anthropic_fast_model(model_id) else {"service_tier": "priority"}
 
 
@@ -1368,20 +1386,20 @@ def _copilot_catalog(normalized: str, force_refresh: bool) -> Optional[list[str]
     return CuratedFallbackModels(_PROVIDER_MODELS.get("copilot", []))
 
 
-def _anxious_catalog(normalized: str, force_refresh: bool) -> Optional[list[str]]:
+def _nous_catalog(normalized: str, force_refresh: bool) -> Optional[list[str]]:
     try:
-        from pulse_cli.auth import fetch_anxious_models, resolve_anxious_runtime_credentials
+        from pulse_cli.auth import fetch_nous_models, resolve_nous_runtime_credentials
 
-        creds = resolve_anxious_runtime_credentials()
+        creds = resolve_nous_runtime_credentials()
         if creds:
-            live = fetch_anxious_models(api_key=creds.get("api_key", ""), inference_base_url=creds.get("base_url", ""))
+            live = fetch_nous_models(api_key=creds.get("api_key", ""), inference_base_url=creds.get("base_url", ""))
             if live:
                 return live
     except Exception:
         pass
     # Live failed / no creds: the docs-hosted manifest — NOT the in-repo snapshot — so newly added
-    # Portal models still surface without a Pulse release.
-    return get_curated_anxious_model_ids() or None
+    # Portal models still surface without a PULSE release.
+    return get_curated_nous_model_ids() or None
 
 
 def _api_key_credentials(normalized: str) -> tuple[str, str]:
@@ -1431,7 +1449,7 @@ def _openai_catalog(normalized: str, force_refresh: bool) -> Optional[list[str]]
     # entries, so intersect with the curated agentic catalog so ``/model`` matches ``pulse model``.
     # Model not in live /v1/models — check the curated catalog before rejecting. Providers may omit models
     # from their live listing that are still valid (stale cache, partial rollout, gated previews). Use the
-    # pure-catalog helper (no extra live fetch) so we only accept models Pulse actually ships. (#46850)
+    # pure-catalog helper (no extra live fetch) so we only accept models PULSE actually ships. (#46850)
     # Their /v1/models listing is access-scoped and authoritative — a model absent from it is one this key
     # CANNOT serve, so the curated soft-accept would manufacture a selection that 400s at first use. Custom
     # OpenAI-compatible proxies keep the fallback (incomplete listings are common there).
@@ -1513,7 +1531,7 @@ _PROVIDER_CATALOG_FETCHERS: dict[str, Any] = {
     "openai-codex": _codex_catalog,
     "copilot": _copilot_catalog,
     "copilot-acp": _copilot_catalog,
-    "anxious": _anxious_catalog,
+    "nous": _nous_catalog,
     "stepfun": _api_key_provider_live,
     "gmi": _api_key_provider_live,
     "anthropic": _anthropic_catalog,
@@ -2177,7 +2195,7 @@ def copilot_default_headers(*, is_agent_turn: bool = True) -> dict[str, str]:
     except ImportError:
         return {
             "Editor-Version": COPILOT_EDITOR_VERSION,
-            "User-Agent": "PulseAgent/1.0",
+            "User-Agent": "PULSEAgent/1.0",
             "Openai-Intent": "conversation-edits",
             "x-initiator": "agent" if is_agent_turn else "user"}
 
@@ -2892,86 +2910,3 @@ def cached_fetch_api_models(
     if _cache_entry_valid(entry, fp):
         return _catalog(entry)
     return _chat_catalog_rows(live)
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-from typing import NamedTuple  # noqa: F401,E402
-from difflib import get_close_matches  # noqa: F401,E402
-import http.client  # noqa: F401,E402
-
-def is_anxious_free_tier(account_info: dict[str, Any]) -> bool:
-    """Return True if the account info indicates a free (unpaid) tier.
-
-    Prefer the Portal's explicit ``paid_service_access.allowed`` entitlement
-    decision.  Legacy payloads fall back to ``subscription.monthly_charge == 0``.
-    Returns False when both signals are missing or unparseable.
-    """
-    paid_access = account_info.get("paid_service_access")
-    if isinstance(paid_access, dict):
-        allowed = paid_access.get("allowed")
-        if isinstance(allowed, bool):
-            return not allowed
-        paid = paid_access.get("paid_access")
-        if isinstance(paid, bool):
-            return not paid
-
-    sub = account_info.get("subscription")
-    if not isinstance(sub, dict):
-        return False
-    charge = sub.get("monthly_charge")
-    if charge is None:
-        return False
-    try:
-        return float(charge) == 0
-    except (TypeError, ValueError):
-        return False
-
-_PLUGIN_COMPAT_LAZY = {
-    'LMStudioLoadResult': ('pulse_cli.models_local', 'LMStudioLoadResult'),
-    'PROVIDER_GROUPS': ('pulse_cli.models_catalog_static', 'PROVIDER_GROUPS'),
-    'ProviderEntry': ('pulse_cli.models_catalog_static', 'ProviderEntry'),
-    'atomic_json_write': ('utils', 'atomic_json_write'),
-    'base_url_host_matches': ('utils', 'base_url_host_matches'),
-    'compute_sale_discount': ('pulse_cli.models_pricing', 'compute_sale_discount'),
-    'ensure_lmstudio_model_loaded': ('pulse_cli.models_local', 'ensure_lmstudio_model_loaded'),
-    'fetch_ai_gateway_pricing': ('pulse_cli.models_pricing', 'fetch_ai_gateway_pricing'),
-    'fetch_lmstudio_models': ('pulse_cli.models_local', 'fetch_lmstudio_models'),
-    'fetch_models_with_pricing': ('pulse_cli.models_pricing', 'fetch_models_with_pricing'),
-    'fetch_ollama_local_models': ('pulse_cli.models_local', 'fetch_ollama_local_models'),
-    'get_cached_anxious_inference_base_url': ('pulse_cli.models_pricing', 'get_cached_anxious_inference_base_url'),
-    'get_pricing_for_provider': ('pulse_cli.models_pricing', 'get_pricing_for_provider'),
-    'group_providers': ('pulse_cli.models_catalog_static', 'group_providers'),
-    'lmstudio_model_reasoning_options': ('pulse_cli.models_local', 'lmstudio_model_reasoning_options'),
-    'anxious_catalog_url': ('pulse_cli.models_reasoning_caps', 'anxious_catalog_url'),
-    'anxious_model_reasoning_capabilities': ('pulse_cli.models_reasoning_caps', 'anxious_model_reasoning_capabilities'),
-    'anxious_policy_allowed_ids': ('pulse_cli.models_pricing', 'anxious_policy_allowed_ids'),
-    'ollama_model_supports_thinking': ('pulse_cli.models_local', 'ollama_model_supports_thinking'),
-    'openrouter_model_reasoning_capabilities': ('pulse_cli.models_reasoning_caps', 'openrouter_model_reasoning_capabilities'),
-    'parse_openrouter_reasoning_capabilities': ('pulse_cli.models_reasoning_caps', 'parse_openrouter_reasoning_capabilities'),
-    'peek_cached_pricing': ('pulse_cli.models_pricing', 'peek_cached_pricing'),
-    'pricing_cache_scope': ('pulse_cli.models_pricing', 'pricing_cache_scope'),
-    'probe_lmstudio_models': ('pulse_cli.models_local', 'probe_lmstudio_models'),
-    'probe_ollama_local_models': ('pulse_cli.models_local', 'probe_ollama_local_models'),
-    'provider_group_for_slug': ('pulse_cli.models_catalog_static', 'provider_group_for_slug'),
-    'refresh_reasoning_caps_async': ('pulse_cli.models_reasoning_caps', 'refresh_reasoning_caps_async'),
-    'restrict_to_anxious_policy': ('pulse_cli.models_pricing', 'restrict_to_anxious_policy'),
-    'should_use_ollama_native_catalog': ('pulse_cli.models_local', 'should_use_ollama_native_catalog'),
-    'url_origin': ('pulse_cli.urllib_security', 'url_origin'),
-    'validate_requested_model': ('pulse_cli.models_validate', 'validate_requested_model'),
-    'warm_anxious_reasoning_caps_async': ('pulse_cli.models_reasoning_caps', 'warm_anxious_reasoning_caps_async'),
-    'warm_openrouter_reasoning_caps_async': ('pulse_cli.models_reasoning_caps', 'warm_openrouter_reasoning_caps_async'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

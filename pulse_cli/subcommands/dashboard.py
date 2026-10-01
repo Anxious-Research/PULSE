@@ -40,9 +40,9 @@ def _add_server_runtime_args(parser) -> None:
     # manager / PID file: they scan the process table for `pulse dashboard|serve`
     # cmdlines and SIGTERM them — the same path `pulse update` uses.
     parser.add_argument(
-        "--stop", action="store_true", help="Stop all running Pulse web server processes and exit")
+        "--stop", action="store_true", help="Stop all running PULSE web server processes and exit")
     parser.add_argument(
-        "--status", action="store_true", help="List running Pulse web server processes and exit")
+        "--status", action="store_true", help="List running PULSE web server processes and exit")
 
 
 def _configure_serve_parser(parser, *, cmd_dashboard: Callable) -> None:
@@ -65,7 +65,7 @@ def build_serve_parser(
     """Build the standalone parser used by the lean ``serve`` dispatch path."""
     parser = argparse.ArgumentParser(
         prog="pulse serve",
-        description="Run the Pulse backend server - the JSON-RPC/WebSocket gateway the "
+        description="Run the PULSE backend server - the JSON-RPC/WebSocket gateway the "
             "desktop app and remote clients connect to. Headless: it never opens "
             "a browser UI.",
         add_help=add_help, exit_on_error=exit_on_error)
@@ -78,7 +78,7 @@ def build_dashboard_parser(
     """Attach ``dashboard`` (browser UI) and ``serve`` (headless backend the desktop spawns)."""
     dashboard_parser = subparsers.add_parser(
         "dashboard", help="Start the web UI dashboard",
-        description="Launch the Pulse Agent web dashboard for managing config, API keys, and sessions",
+        description="Launch the PULSE Agent web dashboard for managing config, API keys, and sessions",
     )
     _add_server_runtime_args(dashboard_parser)
     dashboard_parser.add_argument(
@@ -94,8 +94,8 @@ def build_dashboard_parser(
     # surfaces that merely share this server.
     serve_parser = subparsers.add_parser(
         "serve",
-        help="Start the Pulse backend server (headless; powers the desktop app and remote backends)",
-        description="Run the Pulse backend server — the JSON-RPC/WebSocket gateway the "
+        help="Start the PULSE backend server (headless; powers the desktop app and remote backends)",
+        description="Run the PULSE backend server — the JSON-RPC/WebSocket gateway the "
             "desktop app and remote clients connect to. Headless: it never opens "
             "a browser UI.")
     _configure_serve_parser(serve_parser, cmd_dashboard=cmd_dashboard)
@@ -104,8 +104,8 @@ def build_dashboard_parser(
     dashboard_subparsers = dashboard_parser.add_subparsers(dest="dashboard_subcommand")
     dashboard_register_parser = dashboard_subparsers.add_parser(
         "register",
-        help="Register a self-hosted dashboard with Anxious Portal (writes the OAuth client ID to .env)",
-        description="Register this install as a self-hosted dashboard with your Anxious "
+        help="Register a self-hosted dashboard with Nous Portal (writes the OAuth client ID to .env)",
+        description="Register this install as a self-hosted dashboard with your Nous "
             "Portal account. Creates an OAuth client, writes "
             "PULSE_DASHBOARD_OAUTH_CLIENT_ID into ~/.pulse/.env, and prints "
             "how to engage the login gate. Requires being logged in (pulse setup).")
@@ -118,7 +118,7 @@ def build_dashboard_parser(
             "https://pulse.example.com/auth/callback. Omit for localhost-only use.")
     dashboard_register_parser.add_argument(
         "--portal-url", dest="portal_url", default=None,
-        help="Override the Anxious Portal base URL for registration (default: the "
+        help="Override the Nous Portal base URL for registration (default: the "
             "portal you logged into). The access token must be valid at this "
             "portal. Also settable via PULSE_DASHBOARD_PORTAL_URL. Mainly for "
             "testing against a staging/preview portal.")

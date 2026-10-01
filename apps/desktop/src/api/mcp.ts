@@ -34,7 +34,7 @@ export function testMcpServer(name: string, profile?: ProfileScope): Promise<Mcp
 }
 
 /** Replace the whole `mcp_servers` map (the mcp.json editor's save). Unlike
- *  `savePulseConfig`, this REPLACES rather than deep-merges, so deletes,
+ *  `savePULSEConfig`, this REPLACES rather than deep-merges, so deletes,
  *  re-enables (dropping `enabled: false`), and removed nested fields persist. */
 export function saveMcpServers(
   servers: Record<string, Record<string, unknown>>,
@@ -64,7 +64,7 @@ export function mcpOAuthRpc(scope?: ProfileScope) {
 // ---------------------------------------------------------------------------
 // MCP servers — structured list / test / enable toggle / catalog (parity with
 // `pulse mcp` and the dashboard MCP page). Raw JSON editing stays in
-// config.yaml via savePulseConfig.
+// config.yaml via savePULSEConfig.
 // ---------------------------------------------------------------------------
 
 export function listMcpServers(): Promise<{ servers: McpServerSummary[] }> {

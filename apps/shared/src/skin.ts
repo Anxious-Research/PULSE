@@ -1,5 +1,5 @@
 /**
- * Canonical Pulse skin — the theme SDK's cross-surface contract.
+ * Canonical PULSE skin — the theme SDK's cross-surface contract.
  *
  * A skin is authored once as YAML in `$PULSE_HOME/skins/<name>.yaml` (or a
  * built-in), resolved by the Python skin engine (`pulse_cli/skin_engine.py`),
@@ -92,7 +92,7 @@ export type SkinColors = Partial<Record<SkinColorToken, string>> & { [key: strin
 export type SkinBranding = Partial<Record<SkinBrandingToken, string>> & { [key: string]: string | undefined }
 
 /** The resolved skin payload (matches Python's `resolve_skin()`). */
-export interface PulseSkin {
+export interface PULSESkin {
   name?: string
   description?: string
   colors?: SkinColors

@@ -199,7 +199,7 @@ def print_fast_version_info(*, check_updates: bool = True) -> None:
         from pulse_cli import __release_date__
         from pulse_cli.version_info import get_version_info
 
-        print(f"Pulse Agent v{get_version_info().derived_version} ({__release_date__})")
+        print(f"PULSE Agent v{get_version_info().derived_version} ({__release_date__})")
     print(f"Install directory: {project_root_str()}")
     # Authoritative resolver first (code-scoped stamp → managed → nix → git → pip; also self-heals
     # poisoned shared-home 'docker' stamps); cheap stdlib stamp probe only if it fails.

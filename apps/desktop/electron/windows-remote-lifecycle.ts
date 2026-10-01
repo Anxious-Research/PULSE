@@ -1,5 +1,6 @@
 import crypto from 'node:crypto'
 
+import { resolveReadyTimeoutMs } from './remote-lifecycle'
 import { assertBootstrapNotSuperseded, redactSecrets, SSH_ERROR } from './ssh-connection'
 
 const LOCKFILE_SCHEMA_VERSION = 2
@@ -19,8 +20,8 @@ function powerShellCommand(script) {
   return `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ${encodedPowerShell(script)}`
 }
 
-async function probeWindowsRemote(ssh, explicitPulsePath = '') {
-  const explicit = psLiteral(explicitPulsePath)
+async function probeWindowsRemote(ssh, explicitPULSEPath = '') {
+  const explicit = psLiteral(explicitPULSEPath)
 
   const script = [
     '$ErrorActionPreference="Stop"',
@@ -37,7 +38,7 @@ async function probeWindowsRemote(ssh, explicitPulsePath = '') {
     'if($explicit){Assert-NoReparse $explicit $false;$explicitPython=[IO.Path]::Combine([IO.Path]::GetDirectoryName($explicit), "python.exe");Assert-NoReparse $explicitPython $false}',
     // PULSE_HOME is only trusted when it names a directory on the REMOTE: a stale User-scope
     // value (older install.ps1 persisted one) or a client path leaked over SSH otherwise fails
-    // assertSafeRemoteHome as "Unsafe remote Pulse home" (#118988).
+    // assertSafeRemoteHome as "Unsafe remote PULSE home" (#118988).
     '$pulseHome=$env:PULSE_HOME',
     'if(-not $pulseHome -or -not (Test-Path -LiteralPath $pulseHome -PathType Container)){$pulseHome=Join-Path $env:LOCALAPPDATA "pulse"}',
     'Assert-NoReparse $pulseHome $true',
@@ -59,9 +60,9 @@ async function probeWindowsRemote(ssh, explicitPulsePath = '') {
     '$candidates+=$fallbackProfileCandidate',
     '$pulse=$null',
     'foreach($candidate in $candidates){Assert-NoReparse $candidate $true;$candidatePython=[IO.Path]::Combine([IO.Path]::GetDirectoryName($candidate), "python.exe");Assert-NoReparse $candidatePython $true;try{$item=Get-Item -LiteralPath $candidate -Force -ErrorAction Stop;if(($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -eq 0 -and -not $item.PSIsContainer){$pulse=$item.FullName;break}}catch [Management.Automation.ItemNotFoundException]{continue}}',
-    'if(-not $pulse){throw "Pulse is not installed on the remote Windows host."}',
+    'if(-not $pulse){throw "PULSE is not installed on the remote Windows host."}',
     'Assert-NoReparse $pulse $false',
-    'if($explicit -and $pulse -ne $explicit){throw "The configured Pulse path is not an executable file."}',
+    'if($explicit -and $pulse -ne $explicit){throw "The configured PULSE path is not an executable file."}',
     '$python=[IO.Path]::Combine([IO.Path]::GetDirectoryName($pulse), "python.exe")',
     'Assert-NoReparse $python $false',
     '[ordered]@{os="Windows";arch=$env:PROCESSOR_ARCHITECTURE;pulseHome=$pulseHome;pulsePath=$pulse;python=$python}|ConvertTo-Json -Compress'
@@ -78,7 +79,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
-public static class PulseMarkerNoFollow {
+public static class PULSEMarkerNoFollow {
   [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
   private static extern SafeFileHandle CreateFile(string name, uint access, uint share, IntPtr security, uint creation, uint flags, IntPtr template);
   public static FileStream OpenRead(string name) {
@@ -107,7 +108,7 @@ public static class PulseMarkerNoFollow {
     '$stream=$null;$memory=$null',
     'try{',
     'Assert-NoReparse $marker $true',
-    'if(-not (Test-Path -LiteralPath $marker -PathType Leaf)){$result="CLEAR"}else{$stream=[PulseMarkerNoFollow]::OpenRead($marker)',
+    'if(-not (Test-Path -LiteralPath $marker -PathType Leaf)){$result="CLEAR"}else{$stream=[PULSEMarkerNoFollow]::OpenRead($marker)',
     'Assert-NoReparse $marker $false',
     '$memory=New-Object IO.MemoryStream;$stream.CopyTo($memory);$bytes=$memory.ToArray()',
     'if($bytes.Length -le 256){',
@@ -149,7 +150,7 @@ async function assertWindowsRemoteInstallUpdateClear(ssh, pulseHome) {
         .split(/\r?\n/)
         .pop() || ''
   } catch (cause) {
-    const error: any = new Error('Could not prove that the remote Pulse install is clear for SSH startup.')
+    const error: any = new Error('Could not prove that the remote PULSE install is clear for SSH startup.')
     error.kind = 'update-in-progress'
     error.cause = cause
     throw error
@@ -163,8 +164,8 @@ async function assertWindowsRemoteInstallUpdateClear(ssh, pulseHome) {
 
   const error: any = new Error(
     live
-      ? `Remote Pulse update process ${live[1]} is still running; SSH startup is paused.`
-      : 'The remote Pulse update marker is unreadable or malformed; refusing SSH startup.'
+      ? `Remote PULSE update process ${live[1]} is still running; SSH startup is paused.`
+      : 'The remote PULSE update marker is unreadable or malformed; refusing SSH startup.'
   )
 
   error.kind = 'update-in-progress'
@@ -178,7 +179,7 @@ const TRANSPORT_KINDS = new Set([
   SSH_ERROR.UNREACHABLE
 ])
 
-async function detectRemotePlatform(ssh, explicitPulsePath = '') {
+async function detectRemotePlatform(ssh, explicitPULSEPath = '') {
   try {
     const output = (await ssh.exec('uname -s; uname -m')).trim().split('\n')
 
@@ -195,7 +196,7 @@ async function detectRemotePlatform(ssh, explicitPulsePath = '') {
   }
 
   try {
-    return await probeWindowsRemote(ssh, explicitPulsePath)
+    return await probeWindowsRemote(ssh, explicitPULSEPath)
   } catch (cause: any) {
     if (TRANSPORT_KINDS.has(cause?.kind)) {
       throw cause
@@ -278,7 +279,7 @@ function atomicWindowsSpawnCommand(runtime, reservation: any = {}) {
       : '  if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}',
     reservation.ownershipId
       ? `  $spawned=$spawnLines[-1]|ConvertFrom-Json; $lock=[ordered]@{schemaVersion=2;protocolVersion=1;ownershipId=${psLiteral(reservation.ownershipId)};spawnNonce=${psLiteral(reservation.spawnNonce)};pid=[int]$spawned.pid;creationTimeNs=[string]$spawned.creationTimeNs;port=0;profile=${psLiteral(reservation.profile)};pulsePath=${psLiteral(reservation.pulsePath)};pulseHome=${psLiteral(reservation.pulseHome)};tokenFingerprint=${psLiteral(reservation.tokenFingerprint)};startedAt=${psLiteral(reservation.startedAt)}}|ConvertTo-Json -Compress; ` +
-        `  & ${helper('write-lock').map(psLiteral).join(' ')} ${psLiteral(reservation.ownershipId)} $lock|Out-Null; if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}; $spawnLines|Write-Output`
+        `  $lock | & ${helper('write-lock').map(psLiteral).join(' ')} ${psLiteral(reservation.ownershipId)} | Out-Null; if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}; $spawnLines|Write-Output`
       : '',
     '  if([IO.File]::Exists($marker)){throw "remote update marker claimed during backend spawn"}',
     '}finally{try{$mutex.Unlock(0,1)}catch{};$mutex.Dispose()}'
@@ -551,25 +552,25 @@ async function connectWindowsRemote(deps) {
     ssh,
     ownershipId,
     profile = '',
-    remotePulsePath = '',
+    remotePULSEPath = '',
     reuseToken = '',
     signal,
     pickLocalPort,
     forward,
     cancelForward,
-    waitForPulse,
+    waitForPULSE,
     probeReuseProof,
     rememberLog = () => {},
-    readyTimeoutMs = 45_000
+    readyTimeoutMs = resolveReadyTimeoutMs()
   } = deps
 
   assertBootstrapNotSuperseded(signal)
-  const runtime = await probeWindowsRemote(ssh, remotePulsePath)
+  const runtime = await probeWindowsRemote(ssh, remotePULSEPath)
   await assertWindowsRemoteInstallUpdateClear(ssh, runtime.pulseHome)
   const inspection = await helper(ssh, runtime, 'inspect', [runtime.pulsePath])
 
   if (!inspection.supported) {
-    const error: any = new Error('Update Pulse on the remote Windows host before connecting with Desktop SSH.')
+    const error: any = new Error('Update PULSE on the remote Windows host before connecting with Desktop SSH.')
     error.kind = 'update-required'
     throw error
   }
@@ -721,7 +722,7 @@ async function connectWindowsRemote(deps) {
     localPort = await pickLocalPort()
     await forward(localPort, remotePort)
     const baseUrl = `http://127.0.0.1:${localPort}`
-    await waitForPulse(baseUrl, token)
+    await waitForPULSE(baseUrl, token)
     assertBootstrapNotSuperseded(signal)
     await helper(ssh, runtime, 'write-lock', [ownershipId], JSON.stringify({ ...owned, port: remotePort }))
 
@@ -761,7 +762,7 @@ function buildWindowsInteractiveCommand(remoteCwd = '') {
     )
   }
 
-  script.push('$host.UI.RawUI.WindowTitle="Pulse SSH"', 'powershell.exe -NoLogo')
+  script.push('$host.UI.RawUI.WindowTitle="PULSE SSH"', 'powershell.exe -NoLogo')
 
   return powerShellCommand(script.join(';'))
 }

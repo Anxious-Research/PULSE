@@ -286,9 +286,9 @@ async def console_ws(ws: WebSocket) -> None:
     out = _ConsoleSender(ws)
 
     try:
-        from pulse_cli.console_engine import PulseConsoleEngine
+        from pulse_cli.console_engine import PULSEConsoleEngine
 
-        engine = PulseConsoleEngine(output_limit=_CONSOLE_OUTPUT_LIMIT)
+        engine = PULSEConsoleEngine(output_limit=_CONSOLE_OUTPUT_LIMIT)
         if profile and profile.lower() != "current":
             _resolve_profile_dir(profile)
     except HTTPException as exc:
@@ -324,7 +324,7 @@ async def console_ws(ws: WebSocket) -> None:
             if command_id == command_generation:
                 pending_confirmation = None
                 await out.error_then_complete(
-                    "Command timed out. Pulse Console returned to the prompt.", line, command_id, "timeout",
+                    "Command timed out. PULSE Console returned to the prompt.", line, command_id, "timeout",
                 )
         except Exception as exc:
             if command_id == command_generation:
@@ -451,7 +451,7 @@ async def pty_ws(ws: WebSocket) -> None:
         await ws.send_text(
             "\r\n\x1b[31mChat unavailable: the embedded terminal requires a "
             "POSIX PTY, which native Windows Python doesn't provide.\x1b[0m\r\n"
-            "\x1b[33mInstall Pulse inside WSL2 to use the dashboard's /chat "
+            "\x1b[33mInstall PULSE inside WSL2 to use the dashboard's /chat "
             "tab — the rest of the dashboard works here.\x1b[0m\r\n"
         )
         await ws.close(code=1011)

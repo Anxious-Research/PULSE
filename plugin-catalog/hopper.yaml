@@ -1,7 +1,7 @@
 name: hopper
 repo: https://github.com/mykeura/hopper
 sha: 68427cf7770b393b6b4b694722d24431058fbd3f
-description: Add and manage custom OpenRouter models in Pulse without modifying the core catalog.
+description: Add and manage custom OpenRouter models in PULSE without modifying the core catalog.
 maintainer: mykeura
 tier: community
 category: models

@@ -1,4 +1,4 @@
-"""Anxious free-tier JSON-RPC handlers: a renderer reads the profile's local auth state (pull); nothing
+"""Nous free-tier JSON-RPC handlers: a renderer reads the profile's local auth state (pull); nothing
 is pushed except the boot bootstrap's one ``setup.ready`` event. ``free_tier.status`` answers from the
 auth store with zero network and zero side effects; ``free_tier.provision`` is the explicit retry when
 the boot bootstrap could not create the identity (desktop-only entry); ``free_tier.ack_notice``

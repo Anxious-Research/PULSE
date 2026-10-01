@@ -1,4 +1,4 @@
-"""Gateway restart/drain, Pulse update and background-action status dashboard routes.
+"""Gateway restart/drain, PULSE update and background-action status dashboard routes.
 
 Extracted from ``pulse_cli.web_server``; helpers/state that tests monkeypatch on
 ``web_server`` stay there and are late-bound (cycle-safe).
@@ -54,7 +54,7 @@ _ACTION_LOG_TAIL_MAX_CHUNK_BYTES = 64 * 1024
 
 _UPDATE_ACTION_COMPLETED_RE = re.compile(r"^=== pulse-update completed ([0-9a-f]{32}) ===$")
 
-_MANAGED_EXTERNALLY_MESSAGE = "Pulse updates are managed outside this dashboard in containerized environments."
+_MANAGED_EXTERNALLY_MESSAGE = "PULSE updates are managed outside this dashboard in containerized environments."
 
 # Per-kind dashboard error codes the UI keys on, by admission-refusal code.
 _UPDATE_REFUSAL_ERROR_CODES = {
@@ -256,13 +256,13 @@ async def update_pulse():
 
 _NON_APPLYABLE_MESSAGES = {
     "docker": format_docker_update_message,
-    "apt": lambda: "Pulse is managed by Termux APT; run `pkg upgrade pulse-agent`.",
+    "apt": lambda: "PULSE is managed by Termux APT; run `pkg upgrade pulse-agent`.",
 }
 
 
 @router.get("/api/pulse/update/check")
 async def check_pulse_update(force: bool = False, profile: Optional[str] = None):
-    """Report whether a Pulse update is available, without applying it.
+    """Report whether a PULSE update is available, without applying it.
 
     Returns install_method ('apt'|'git'|'docker'|'nix'|'nixos'|'unknown'),
     current_version, behind (commits behind, 0 = up to date, -1 = unknown count,

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { DesktopConnectionsRegistry, DesktopProfileRoute, PulseConnection } from '@/global'
+import type { DesktopConnectionsRegistry, DesktopProfileRoute, PULSEConnection } from '@/global'
 import { deferred } from '@/test/deferred'
 
 import { _resetConnectionsForTests, initializeConnectionsRegistry } from './connections'
@@ -27,7 +27,7 @@ const registry: DesktopConnectionsRegistry = {
   version: 2
 }
 
-function descriptor(connectionId: string, profile: string): PulseConnection {
+function descriptor(connectionId: string, profile: string): PULSEConnection {
   return {
     baseUrl: 'http://localhost:7070',
     connectionId,

@@ -11,7 +11,7 @@ const windowsMock = vi.hoisted(() => ({
 vi.mock('@/store/windows', () => windowsMock)
 
 const desktopWindow = window as unknown as { pulseDesktop?: Window['pulseDesktop'] }
-const initialPulseDesktop = desktopWindow.pulseDesktop
+const initialPULSEDesktop = desktopWindow.pulseDesktop
 
 function installBridge() {
   const onExternalOpenFailed = vi.fn()
@@ -37,8 +37,8 @@ afterEach(() => {
   vi.restoreAllMocks()
   cleanup()
 
-  if (initialPulseDesktop) {
-    desktopWindow.pulseDesktop = initialPulseDesktop
+  if (initialPULSEDesktop) {
+    desktopWindow.pulseDesktop = initialPULSEDesktop
   } else {
     delete desktopWindow.pulseDesktop
   }

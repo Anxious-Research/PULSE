@@ -92,7 +92,7 @@ const HANDLERS: GatewayEventHandler[] = [
 
 /** The gateway-event dispatcher, extracted from useMessageStream. */
 export function useGatewayEventHandler(deps: GatewayEventDeps) {
-  const { activeSessionIdRef, compactedTurnRef, refreshPulseConfig, sessionStateByRuntimeIdRef } = deps
+  const { activeSessionIdRef, compactedTurnRef, refreshPULSEConfig, sessionStateByRuntimeIdRef } = deps
 
   // One pin per concurrent unscoped stream, not a single shared slot: two chats
   // streaming at once used to clobber each other's pin (#46194 / #62823).
@@ -100,7 +100,7 @@ export function useGatewayEventHandler(deps: GatewayEventDeps) {
 
   // session.info arrives in bursts (agent build ready + turn end + title /
   // MCP / compress edges within the same second). Each used to fire its own
-  // refreshPulseConfig — two REST calls (config + defaults) per event, per
+  // refreshPULSEConfig — two REST calls (config + defaults) per event, per
   // turn, including for BACKGROUND sessions whose values the fetch can't even
   // apply. Coalesce to one trailing fetch per burst; the caller gates on
   // `apply` so background traffic doesn't schedule anything.
@@ -112,16 +112,16 @@ export function useGatewayEventHandler(deps: GatewayEventDeps) {
     }
 
     if (typeof window === 'undefined') {
-      void refreshPulseConfig()
+      void refreshPULSEConfig()
 
       return
     }
 
     configRefreshTimerRef.current = window.setTimeout(() => {
       configRefreshTimerRef.current = null
-      void refreshPulseConfig()
+      void refreshPULSEConfig()
     }, 300)
-  }, [refreshPulseConfig])
+  }, [refreshPULSEConfig])
 
   useEffect(
     () => () => {

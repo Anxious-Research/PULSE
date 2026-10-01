@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Agent emoji reaction in the Pulse desktop app: the counterpart to the user's tapback
+"""Agent emoji reaction in the PULSE desktop app: the counterpart to the user's tapback
 (same store, one-per-author, ``author="agent"``). Lives in the ``desktop_ui`` toolset so it
 costs nothing elsewhere (adapters expose reactions via ``send_message(action="react")``);
 defaults to the triggering message and emits ``message.reaction`` for live painting."""
@@ -116,25 +116,3 @@ registry.register(
         messages_back=args.get("messages_back")),
     check_fn=check_react_requirements, emoji="💛",
 )
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-
-_PLUGIN_COMPAT_LAZY = {
-    'env_var_enabled': ('utils', 'env_var_enabled'),
-}
-
-
-def __getattr__(name):  # PEP 562 — lazy so no import cycles
-    target = _PLUGIN_COMPAT_LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    from pulse_cli.plugin_compat import warn_once
-    warn_once(__name__, name, *target)
-    return getattr(importlib.import_module(target[0]), target[1])
-# ---- END PLUGIN-COMPAT ----

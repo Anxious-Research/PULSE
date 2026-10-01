@@ -149,6 +149,8 @@ def check_api_response(
 
     agent._turn_received_provider_response = True
     finish_reason = _derive_finish_reason(agent, response, messages)
+    from pulse_cli.observability.shared_metrics_harness import record_reply_finish
+    record_reply_finish(agent, response, finish_reason)
 
     # HTTP-200 refusals are deterministic: one fallback try, else return the refusal.
     if finish_reason == "content_filter":
@@ -201,12 +203,12 @@ def check_api_response(
         _last_preflight_pressure = None
 
     _retry.has_retried_429 = False
-    # Clearing Anxious rate-limit state proves the limit reset so other sessions may resume.
-    if agent.provider == "anxious":
+    # Clearing Nous rate-limit state proves the limit reset so other sessions may resume.
+    if agent.provider == "nous":
         try:
-            from agent.anxious_rate_guard import clear_anxious_rate_limit
+            from agent.nous_rate_guard import clear_nous_rate_limit
             from pulse_cli.anon_auth import is_anonymous_agent
-            clear_anxious_rate_limit(anonymous=is_anonymous_agent(agent))
+            clear_nous_rate_limit(anonymous=is_anonymous_agent(agent))
         except Exception:
             pass
     from agent import relay_llm

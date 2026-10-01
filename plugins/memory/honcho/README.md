@@ -6,7 +6,7 @@ AI-native cross-session user modeling with multi-pass dialectic reasoning, sessi
 
 ## Requirements
 
-- The `honcho-ai` SDK, prepared through PM by `pulse memory setup` when you select Honcho. Restart Pulse after preparation; do not install into its selected environment with pip.
+- The `honcho-ai` SDK, prepared through PM by `pulse memory setup` when you select Honcho. Restart PULSE after preparation; do not install into its selected environment with pip.
 - A Honcho Cloud account — connect via OAuth sign-in or an API key from
   [app.honcho.dev](https://app.honcho.dev) — or a self-hosted instance
 
@@ -170,11 +170,11 @@ Config is read from the first file that exists:
 
 | Priority | Path | Scope |
 |----------|------|-------|
-| 1 | `$PULSE_HOME/honcho.json` | Profile-local (isolated Pulse instances) |
+| 1 | `$PULSE_HOME/honcho.json` | Profile-local (isolated PULSE instances) |
 | 2 | `~/.pulse/honcho.json` | Default profile (shared host blocks) |
 | 3 | `~/.honcho/config.json` | Global (cross-app interop) |
 
-Host key is derived from the active Pulse profile: `pulse` (default) or `pulse_<profile>`.
+Host key is derived from the active PULSE profile: `pulse` (default) or `pulse_<profile>`.
 
 For every key, resolution order is: **host block > root > env var > default**.
 
@@ -227,7 +227,7 @@ Step 7 used to derive a peer from the session key (`user-default-<dir>`). That p
 
 **Setup — gateway identity tree.** `pulse honcho setup` only asks about identity mapping when it detects a connected gateway platform (it inspects the gateway config; off-gateway the step is skipped because these keys do nothing without a runtime user ID). When it runs, it asks *who talks to this gateway?* and derives the keys:
 
-- **just me** → `pinUserPeer: true`. Every non-agent gateway user collapses to `peerName`; the pin overrides all aliases, so pick this only when no user-side identity needs its own peer. Personal use where you connect Pulse to your own Telegram/Discord/etc. If separate agents reach the gateway and each needs a distinct peer, do **not** pin — leave `pinUserPeer: false` and map them via `userPeerAliases` (the `[e]` editor).
+- **just me** → `pinUserPeer: true`. Every non-agent gateway user collapses to `peerName`; the pin overrides all aliases, so pick this only when no user-side identity needs its own peer. Personal use where you connect PULSE to your own Telegram/Discord/etc. If separate agents reach the gateway and each needs a distinct peer, do **not** pin — leave `pinUserPeer: false` and map them via `userPeerAliases` (the `[e]` editor).
 - **me + other people, pooled** → `pinUserPeer: false` + `userPeerAliases` mapping your runtime IDs to `peerName`. You stay on the shared history; everyone else gets their own peer.
 - **me + other people / only other people** → `pinUserPeer: false`, optional `runtimePeerPrefix`. Each runtime user → own peer. For bots serving many humans.
 
@@ -274,7 +274,7 @@ The Honcho session name determines which conversation bucket memory lands in. Re
 | Priority | Source | Example session name |
 |----------|--------|---------------------|
 | 1 | Gateway session key (Telegram, Discord, etc.) | `"agent-main-telegram-dm-8439114563"` |
-| 2 | `per-session` strategy | Pulse session ID (`20260415_a3f2b1`) |
+| 2 | `per-session` strategy | PULSE session ID (`20260415_a3f2b1`) |
 | 3 | Manual map (`sessions` config) | `"myproject-main"` |
 | 4 | Explicit `/title` command (non-automatic title) | `"refactor-auth"` |
 | 5 | `per-repo` strategy | Git root directory name (`pulse-agent`) |
@@ -285,7 +285,7 @@ Messaging gateway platforms always resolve via priority 1 (per-chat isolation) r
 
 Directory strategies and manual mappings use the logical session workspace, not the backend process's launch directory. Desktop/TUI and ACP pass the workspace during agent construction; deferred Desktop/TUI builds use the same session cwd. With no non-empty construction cwd, Honcho uses the runtime resolver: session cwd context, scoped `terminal.cwd`, then the launch directory. No process-wide `chdir` is needed.
 
-Automatically generated Pulse titles (`derived` or `llm`) are display metadata and do not override `sessionStrategy`. An explicit user title remains an intentional session-name override for non-gateway, non-`per-session` sessions.
+Automatically generated PULSE titles (`derived` or `llm`) are display metadata and do not override `sessionStrategy`. An explicit user title remains an intentional session-name override for non-gateway, non-`per-session` sessions.
 
 Sessions created before title provenance was recorded retain legacy behavior: because an old automatic title cannot be distinguished from an old user title, a title with no source is treated as an explicit override.
 
@@ -295,18 +295,18 @@ If `sessionAiPeerPrefix` is `true`, the AI peer (`aiPeer`) is prepended to the f
 
 #### Bot DMs (`a2aSessions`)
 
-In bot mode another Pulse profile can DM this agent. The relay marks that turn with author `bot:<profile>`. A gateway platform marks a bot sender with its platform user id and a bot flag. Either way the turn never reaches the human's session. With `a2aSessions: true` (default) the turn is written into `<session>:a2a:<this agent's aiPeer>:<sanitized sender id>-<8-char digest>`: the sender's message under the sender's peer, the reply under this agent's `aiPeer`. The `aiPeer` segment keeps two profiles that share a `workspace` and a session key from writing one sender's DMs into one session. A `bot:` sender is identified by its full id, `bot:<profile>` for a profile on this machine or `bot:<connection>/<profile>` for one relayed through a Desktop connection. Its peer is the `userPeerAliases` entry for that full id if one exists, else the id after `bot:` sanitized, with no `runtimePeerPrefix`. When sanitizing changed the id, or the result equals `peerName` or an alias target, a digest suffix is added the same way `runtimePeerPrefix` users get one, so a bot never lands on the operator's peer and two connections' `coder` stay apart. A platform bot resolves like any other runtime user: alias, then prefix. `pinUserPeer` never collapses a bot onto `peerName`. A bot whose peer would equal this agent's `aiPeer` is skipped, and so is every bot turn when `a2aSessions: false`. During a bot-authored turn `honcho_conclude` and `honcho_profile` refuse writes, because conclusions and cards describe the human. Recall still reads the human's session only.
+In bot mode another PULSE profile can DM this agent. The relay marks that turn with author `bot:<profile>`. A gateway platform marks a bot sender with its platform user id and a bot flag. Either way the turn never reaches the human's session. With `a2aSessions: true` (default) the turn is written into `<session>:a2a:<this agent's aiPeer>:<sanitized sender id>-<8-char digest>`: the sender's message under the sender's peer, the reply under this agent's `aiPeer`. The `aiPeer` segment keeps two profiles that share a `workspace` and a session key from writing one sender's DMs into one session. A `bot:` sender is identified by its full id, `bot:<profile>` for a profile on this machine or `bot:<connection>/<profile>` for one relayed through a Desktop connection. Its peer is the `userPeerAliases` entry for that full id if one exists, else the id after `bot:` sanitized, with no `runtimePeerPrefix`. When sanitizing changed the id, or the result equals `peerName` or an alias target, a digest suffix is added the same way `runtimePeerPrefix` users get one, so a bot never lands on the operator's peer and two connections' `coder` stay apart. A platform bot resolves like any other runtime user: alias, then prefix. `pinUserPeer` never collapses a bot onto `peerName`. A bot whose peer would equal this agent's `aiPeer` is skipped, and so is every bot turn when `a2aSessions: false`. During a bot-authored turn `honcho_conclude` and `honcho_profile` refuse writes, because conclusions and cards describe the human. Recall still reads the human's session only.
 
 #### What each strategy produces
 
-- **`per-directory`** — basename of the logical session working directory. Opening Pulse in `~/code/myapp` and `~/code/other` gives two separate sessions. Same directory = same session across runs.
+- **`per-directory`** — basename of the logical session working directory. Opening PULSE in `~/code/myapp` and `~/code/other` gives two separate sessions. Same directory = same session across runs.
 - **`per-repo`** — git root directory name. All subdirectories within a repo share one session. Falls back to `per-directory` if not inside a git repo.
-- **`per-session`** — Pulse session ID (timestamp + hex). Every `pulse` invocation starts a fresh Honcho session. Falls back to `per-directory` if no session ID is available.
+- **`per-session`** — PULSE session ID (timestamp + hex). Every `pulse` invocation starts a fresh Honcho session. Falls back to `per-directory` if no session ID is available.
 - **`global`** — workspace name. One session for everything. Memory accumulates across all directories and runs.
 
 ### Multi-Profile Pattern
 
-Multiple Pulse profiles can share one workspace while maintaining separate AI identities. Config resolution is **host block > root > env var > default** — host blocks inherit from root, so shared settings only need to be declared once:
+Multiple PULSE profiles can share one workspace while maintaining separate AI identities. Config resolution is **host block > root > env var > default** — host blocks inherit from root, so shared settings only need to be declared once:
 
 ```json
 {
@@ -330,7 +330,7 @@ Multiple Pulse profiles can share one workspace while maintaining separate AI id
 
 Both profiles see the same user (`yourname`) in the same shared environment (`pulse`), but each AI peer builds its own observations, conclusions, and behavior patterns. The coder's memory stays code-oriented; the main agent's stays broad.
 
-Host key is derived from the active Pulse profile: `pulse` (default) or `pulse_<profile>` (e.g. `pulse -p coder` -> host key `pulse_coder`). Older `pulse.<profile>` host blocks are still read for compatibility and are migrated when the CLI writes profile-scoped Honcho config.
+Host key is derived from the active PULSE profile: `pulse` (default) or `pulse_<profile>` (e.g. `pulse -p coder` -> host key `pulse_coder`). Older `pulse.<profile>` host blocks are still read for compatibility and are migrated when the CLI writes profile-scoped Honcho config.
 
 ### Dialectic & Reasoning
 
@@ -423,7 +423,7 @@ Presets:
 | `pulse honcho tokens --context <N>` | Set context token budget |
 | `pulse honcho tokens --dialectic <N>` | Set dialectic max chars |
 | `pulse honcho map <name>` | Map current directory to a session name |
-| `pulse honcho sync` | Create host blocks for all Pulse profiles |
+| `pulse honcho sync` | Create host blocks for all PULSE profiles |
 
 ## Example Config
 

@@ -58,8 +58,8 @@ def _has_path_separator(value: str) -> bool:
     return os.sep in value or (os.altsep is not None and os.altsep in value)
 
 def _wsl_windows_path_to_posix(path: str) -> str:
-    """Translate a Windows absolute manifest command to its DrvFS ``/mnt/<drive>/...`` form when Pulse runs in WSL
-    (a Windows cua-driver manifest can report ``C:\\...`` while Pulse spawns via POSIX). Non-Windows paths and
+    """Translate a Windows absolute manifest command to its DrvFS ``/mnt/<drive>/...`` form when PULSE runs in WSL
+    (a Windows cua-driver manifest can report ``C:\\...`` while PULSE spawns via POSIX). Non-Windows paths and
     non-WSL hosts are returned unchanged."""
     if not re.match(r"^[A-Za-z]:[\\/]", path):
         return path
@@ -116,7 +116,7 @@ def _resolve_mcp_invocation(driver_cmd: str, *, timeout: float = 6.0) -> Tuple[s
     Surface 8 of Anxious-Research/PULSE#47072: instead of hardcoding ``["mcp"]`` we ask the driver itself
     via ``cua-driver manifest`` (trycua/cua#1961). The manifest carries a stable ``mcp_invocation`` pointer
     with both ``command`` and ``args``, so a future cua-driver that renames or relocates the subcommand
-    keeps working without a Pulse patch.
+    keeps working without a PULSE patch.
     When ``computer_use.no_overlay`` is enabled (or auto-detected — macOS, headless/WSL2/X11 Linux),
     ``--no-overlay`` is appended to suppress the cursor overlay rendering loop that can consume CPU
     indefinitely when idle (#28152, #47032). Older drivers that don't recognise the flag will reject it;
@@ -144,7 +144,7 @@ def _manifest_contract_reason(manifest: Optional[Dict[str, Any]]) -> str:
     if not match:
         return "driver manifest does not report a semantic version"
     if tuple(int(part) for part in match.groups()) < _CUA_DRIVER_RUNTIME_CONTRACT_MIN:
-        return "Pulse computer use requires cua-driver 0.20.0 or newer"
+        return "PULSE computer use requires cua-driver 0.20.0 or newer"
     if not _valid_mcp_args(manifest.get("mcp_invocation")):
         return "driver manifest does not provide an MCP launch command"
     advertised: Dict[str, set[str]] = {
@@ -158,7 +158,7 @@ def _manifest_contract_reason(manifest: Optional[Dict[str, Any]]) -> str:
     return "driver manifest is missing: " + ", ".join(missing) if missing else ""
 
 def cua_driver_runtime_contract_status(binary: Optional[str] = None) -> Dict[str, Any]:
-    """Report whether a local driver can host Pulse' 0.20 integration."""
+    """Report whether a local driver can host PULSE' 0.20 integration."""
     resolved = binary or resolve_cua_driver_cmd()
     version: Optional[str] = None
     reason = "cua-driver is not installed"

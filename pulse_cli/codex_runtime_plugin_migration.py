@@ -1,4 +1,4 @@
-"""Migrate Pulse MCP server config and Codex's installed curated plugins into ~/.codex/config.toml.
+"""Migrate PULSE MCP server config and Codex's installed curated plugins into ~/.codex/config.toml.
 """
 
 from __future__ import annotations
@@ -50,7 +50,7 @@ class MigrationReport:
                 note = f" (skipped: {', '.join(skipped)})" if skipped else ""
                 lines.append(f"  - {name}{note}")
         else:
-            lines.append("No MCP servers found in Pulse config.")
+            lines.append("No MCP servers found in PULSE config.")
         if self.migrated_plugins:
             lines.append(f"Migrated {len(self.migrated_plugins)} native Codex plugin(s):")
             lines.extend(f"  - {name}" for name in self.migrated_plugins)
@@ -61,13 +61,13 @@ class MigrationReport:
         if self.preserved_user_servers:
             lines.append(
                 f"Kept {len(self.preserved_user_servers)} user-owned MCP server(s) already in "
-                f"config.toml (Pulse projection skipped): {', '.join(self.preserved_user_servers)}")
+                f"config.toml (PULSE projection skipped): {', '.join(self.preserved_user_servers)}")
         lines.extend(f"⚠ {err}" for err in self.errors)
         return "\n".join(lines)
 
 
-# Pulse MCP keys codex understands (transport stdio/http, timeouts, general). Any other key is
-# dropped with a warning: ``sampling`` has no codex equivalent; the rest are unknown Pulse keys.
+# PULSE MCP keys codex understands (transport stdio/http, timeouts, general). Any other key is
+# dropped with a warning: ``sampling`` has no codex equivalent; the rest are unknown PULSE keys.
 _KNOWN_PULSE_KEYS = {
     "command", "args", "env", "cwd",
     "url", "headers", "transport",
@@ -87,10 +87,10 @@ def _str_map(d: dict) -> dict[str, str]:
 
 
 def _translate_one_server(name: str, pulse_cfg: dict) -> tuple[Optional[dict], list[str]]:
-    """Translate one Pulse MCP server config to codex's inline-table dict.
+    """Translate one PULSE MCP server config to codex's inline-table dict.
 
     Returns ``(codex_entry, skipped_keys)``; ``codex_entry`` is None when the config is unusable.
-    stdio (``command``) wins over ``url`` when both are set. Pulse' ``transport: sse`` hint is
+    stdio (``command``) wins over ``url`` when both are set. PULSE' ``transport: sse`` hint is
     informational only — codex auto-negotiates. ``enabled`` is emitted only when explicitly false
     (codex defaults to true).
     """
@@ -128,7 +128,7 @@ def _translate_one_server(name: str, pulse_cfg: dict) -> tuple[Optional[dict], l
         if key in _KEYS_DROPPED_WITH_WARNING:
             skipped.append(f"{key} (no codex equivalent)")
         elif key not in _KNOWN_PULSE_KEYS:
-            skipped.append(f"{key} (unknown Pulse key)")
+            skipped.append(f"{key} (unknown PULSE key)")
     return out, skipped
 
 
@@ -182,7 +182,7 @@ def render_codex_toml_section(
     """
     out = [MIGRATION_MARKER]
     if not servers and not plugins and not default_permission_profile:
-        out += ["# (no MCP servers, plugins, or permissions configured by Pulse)", MIGRATION_END_MARKER]
+        out += ["# (no MCP servers, plugins, or permissions configured by PULSE)", MIGRATION_END_MARKER]
         return "\n".join(out) + "\n"
     if default_permission_profile:
         profile = default_permission_profile
@@ -247,7 +247,7 @@ def _unmanaged_mcp_server_names(toml_text: str) -> set[str]:
 
     Unlike ``[plugins.*]`` — where ``plugin/list`` is the source of truth and we own the
     namespace — ``mcp_servers`` is shared: the docs promise that anything outside the managed
-    block is the user's. A Pulse server whose name is already declared by the user is therefore
+    block is the user's. A PULSE server whose name is already declared by the user is therefore
     NOT re-emitted (the user's table wins and is preserved verbatim); emitting both would be a
     duplicate table header, which is invalid TOML that codex refuses to load (issue #79023).
     """
@@ -378,7 +378,7 @@ def _looks_like_test_tempdir(path: str) -> bool:
 
 
 def _build_pulse_tools_mcp_entry() -> dict:
-    """Codex stdio entry launching Pulse' own tool surface as an MCP server (browser/web/
+    """Codex stdio entry launching PULSE' own tool surface as an MCP server (browser/web/
     delegate_task/vision/memory/skills call-backs).
 
     PULSE_HOME passes through only IF SET, read from os.environ (not get_pulse_home()): when
@@ -424,12 +424,12 @@ def migrate(
     pulse_config: dict, *, codex_home: Optional[Path] = None, dry_run: bool = False,
     discover_plugins: bool = True, default_permission_profile: Optional[str] = ":workspace",
     expose_pulse_tools: bool = True) -> MigrationReport:
-    """Translate Pulse mcp_servers config + Codex curated plugins into ~/.codex/config.toml.
+    """Translate PULSE mcp_servers config + Codex curated plugins into ~/.codex/config.toml.
 
     ``discover_plugins`` spawns the live codex CLI (set False in tests); discovery is best-effort
     and never blocks the migration. ``default_permission_profile`` (default ":workspace"; built-ins
     carry a leading ":", user profiles do not; None leaves codex's read-only default) avoids an
-    approval prompt on every write. ``expose_pulse_tools`` registers Pulse' own tool surface
+    approval prompt on every write. ``expose_pulse_tools`` registers PULSE' own tool surface
     (agent/transports/pulse_tools_mcp_server.py, launched on demand by codex over stdio) as an MCP
     server so the codex subprocess can call back for tools it lacks.
     """
@@ -440,7 +440,7 @@ def migrate(
     report.target_path = target
     pulse_servers = (pulse_config or {}).get("mcp_servers") or {}
     if not isinstance(pulse_servers, dict):
-        report.errors.append("mcp_servers in Pulse config is not a dict; cannot migrate.")
+        report.errors.append("mcp_servers in PULSE config is not a dict; cannot migrate.")
         return report
     translated: dict[str, dict] = {}
     for raw_name, cfg in pulse_servers.items():

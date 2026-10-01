@@ -1,8 +1,8 @@
 ---
 name: inspecting-pulse-desktop-dom
-description: "Read the live Pulse desktop DOM/CSS over CDP."
+description: "Read the live PULSE desktop DOM/CSS over CDP."
 version: 1.0.0
-author: Pulse Agent
+author: PULSE Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
@@ -11,7 +11,7 @@ metadata:
     related_skills: [node-inspect-debugger, systematic-debugging, dogfood]
 ---
 
-# Inspecting the live Pulse desktop DOM
+# Inspecting the live PULSE desktop DOM
 
 ## Overview
 

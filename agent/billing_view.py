@@ -256,7 +256,7 @@ def fetch_portal_state(
     ``portal_fallback(portal_base_url)``.
     """
     try:
-        import pulse_cli.anxious_billing as nb
+        import pulse_cli.nous_billing as nb
     except Exception:
         return failed(error="billing client unavailable")
     try:
@@ -317,7 +317,7 @@ def _dev_fixture_billing_state() -> Optional[BillingState]:
     common: dict[str, Any] = dict(
         logged_in=True, org_id="org_acme", org_slug="acme", org_name="Acme Inc", role="OWNER",
         balance_usd=Decimal("3.40"), cli_billing_enabled=True, min_usd=Decimal("5"), max_usd=Decimal("500"),
-        charge_presets=(Decimal("10"), Decimal("25"), Decimal("50")), portal_url="https://portal.anxiousresearchlab.com/billing?topup=open",
+        charge_presets=(Decimal("10"), Decimal("25"), Decimal("50")), portal_url="https://portal.anxious-research.com/billing?topup=open",
     )
     card = CardInfo(brand="Visa", last4="4242")
     overrides: dict[str, dict[str, Any]] = {

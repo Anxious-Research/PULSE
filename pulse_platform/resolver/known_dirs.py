@@ -1,6 +1,6 @@
 """Directories where tools install outside PATH, grouped by the ecosystem that owns them.
 
-Every table in Pulse lives here. A directory literal outside this module fails the ratchet in
+Every table in PULSE lives here. A directory literal outside this module fails the ratchet in
 `tests/test_managed_runtime_resolution.py`. Each table is empty on an OS where the ecosystem
 does not install there, so callers compose tables without OS branches.
 """

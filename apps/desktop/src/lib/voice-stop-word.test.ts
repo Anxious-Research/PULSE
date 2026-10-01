@@ -29,7 +29,7 @@ describe('isVoiceStopCommand', () => {
     }
   })
 
-  it('matches stop commands addressed to Pulse', () => {
+  it('matches stop commands addressed to PULSE', () => {
     for (const phrase of ['pulse stop', 'hey pulse stop', 'hey pulse, stop', 'ok stop', 'okay stop']) {
       expect(isVoiceStopCommand(phrase, { mode: 'default' })).toBe(true)
     }

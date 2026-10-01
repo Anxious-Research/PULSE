@@ -255,7 +255,7 @@ def _policy_auth_error(exc, reasons):
     if exc.code == "forbidden":
         return 4030, reasons.forbidden_scope, "Connector policy cannot be changed for this member."
     if exc.status == 401 or exc.code in {"invalid_token", "INVALID_TOKEN", "NO_TOKEN"}:
-        return 4032, reasons.needs_anxious_auth, "Sign in to use connectors."
+        return 4032, reasons.needs_nous_auth, "Sign in to use connectors."
     return 5034, reasons.policy_unavailable, "Connector policy is unavailable."
 
 

@@ -2,7 +2,7 @@ name: rtk-rewrite
 repo: https://github.com/kerrz2020/pulse-rtk-rewrite
 sha: 4c5f8a5abdfd7980cba5ef02df86b8efe52c00d6
 description: >-
-  Community (non-official) plugin that rewrites Pulse terminal commands through
+  Community (non-official) plugin that rewrites PULSE terminal commands through
   RTK (rtk-ai/rtk, Apache-2.0) before execution, so the model sees compact output
   instead of raw command spam — cutting tokens on common dev commands. Adds a
   fail-open pre_tool_call hook (2s timeout, unexpected exits leave the command

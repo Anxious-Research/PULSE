@@ -1,8 +1,8 @@
 ---
 name: pulse-agent
-description: "Use, configure, theme, extend, and orchestrate Pulse Agent."
+description: "Use, configure, theme, extend, and orchestrate PULSE Agent."
 version: 3.2.0
-author: Pulse Agent + Teknium
+author: PULSE Agent + Teknium
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
@@ -12,41 +12,41 @@ metadata:
     related_skills: [claude-code, codex, opencode]
 ---
 
-# Pulse Agent
+# PULSE Agent
 
-Pulse Agent is an open-source AI agent framework by Anxious Research Lab that runs in your terminal, a native desktop app, messaging platforms, and IDEs. It's in the same category as Claude Code (Anthropic), Codex (OpenAI), and OpenClaw — autonomous coding and task-execution agents that use tool calling to interact with your system. Pulse works with any LLM provider (OpenRouter, Anthropic, OpenAI, Google, DeepSeek, xAI, local models, and 20+ others) and runs on Linux, macOS, Windows, and WSL.
+PULSE Agent is an open-source AI agent framework by Nous Research that runs in your terminal, a native desktop app, messaging platforms, and IDEs. It's in the same category as Claude Code (Anthropic), Codex (OpenAI), and OpenClaw — autonomous coding and task-execution agents that use tool calling to interact with your system. PULSE works with any LLM provider (OpenRouter, Anthropic, OpenAI, Google, DeepSeek, xAI, local models, and 20+ others) and runs on Linux, macOS, Windows, and WSL.
 
-What makes Pulse different:
+What makes PULSE different:
 
-- **Self-improving through skills** — Pulse learns from experience by saving reusable procedures as skills that load into future sessions.
+- **Self-improving through skills** — PULSE learns from experience by saving reusable procedures as skills that load into future sessions.
 - **Persistent memory across sessions** — remembers who you are, your preferences, environment details, and lessons learned. Pluggable memory backends.
 - **Multi-platform gateway** — the same agent runs on Telegram, Discord, Slack, WhatsApp, iMessage, Signal, Matrix, Teams, Email, and a dozen more platforms with full tool access, not just chat.
 - **Many surfaces** — the same agent core drives the CLI, the Ink TUI, a native Electron desktop app, a web dashboard, and an ACP server for IDEs (VS Code / Zed / JetBrains).
 - **Provider-agnostic** — swap models and providers mid-workflow; credential pools rotate across multiple API keys automatically.
-- **Profiles** — run multiple independent Pulse instances with isolated configs, sessions, skills, and memory.
+- **Profiles** — run multiple independent PULSE instances with isolated configs, sessions, skills, and memory.
 - **Extensible & themeable** — plugins, MCP servers, custom tools, webhook triggers, cron scheduling, skins that theme every surface, desktop UI plugins, TUI widgets, and pet mascots.
 
 **This skill is a hub.** The body covers identity, quick start, spawning/orchestration, and hard invariants. Everything else lives in reference files — **load the matching reference (below) before answering**; do not answer detail questions from the body alone.
 
-**Docs:** https://github.com/Anxious-Research/PULSE/
+**Docs:** https://pulse-agent.anxious-research.com/docs/
 
 ## Scope & Verification
 
-This skill is a concise operating guide, not the complete source of truth for every Pulse feature. If a Pulse feature, command, or setting is not mentioned here or in a reference, do not treat that absence as evidence that it does not exist. Check the live repository and official docs before giving a negative answer.
+This skill is a concise operating guide, not the complete source of truth for every PULSE feature. If a PULSE feature, command, or setting is not mentioned here or in a reference, do not treat that absence as evidence that it does not exist. Check the live repository and official docs before giving a negative answer.
 
 Good verification targets, cheapest first:
 
-- **Every shipped feature, one line each: https://github.com/Anxious-Research/PULSE.** Start here for any "can Pulse do X?" or "how do I do X?" — it indexes the entire documentation set with a link to the page that answers. It is generated from the docs tree on every build, so it is never behind the product. Fetch it with `web_extract`, or `curl -s https://github.com/Anxious-Research/PULSE` when web tools are off. The whole documentation set in one file is at `/docs/llms-full.txt`.
+- **Every shipped feature, one line each: https://pulse-agent.anxious-research.com/docs/llms.txt.** Start here for any "can PULSE do X?" or "how do I do X?" — it indexes the entire documentation set with a link to the page that answers. It is generated from the docs tree on every build, so it is never behind the product. Fetch it with `web_extract`, or `curl -s https://pulse-agent.anxious-research.com/docs/llms.txt` when web tools are off. The whole documentation set in one file is at `/docs/llms-full.txt`.
 - CLI commands: `pulse --help`, `pulse <command> --help`, and `pulse_cli/main.py`
 - Source tree: https://github.com/Anxious-Research/PULSE
 
-Never answer "Pulse can't do that" from memory. Pulse ships far more than this skill body describes, and the index exists so a negative answer is always checkable.
+Never answer "PULSE can't do that" from memory. PULSE ships far more than this skill body describes, and the index exists so a negative answer is always checkable.
 
 ## Quick Start
 
 ```bash
 # Install (shell installer — bootstraps PM, Python, dependencies, and the launcher)
-curl -fsSL https://raw.githubusercontent.com/Anxious-Research/PULSE/main/scripts/install.sh | bash
+curl -fsSL https://pulse-agent.anxious-research.com/install.sh | bash
 
 # Interactive chat (default surface; set display.interface: tui to launch the Ink TUI instead)
 pulse
@@ -88,7 +88,7 @@ Profiles use `~/.pulse/profiles/<name>/` with the same layout. When a profile is
 
 | User wants... | Load |
 |---|---|
-| **Anything not listed below — "can Pulse do X?", "how do I set up X?"** | **https://github.com/Anxious-Research/PULSE** |
+| **Anything not listed below — "can PULSE do X?", "how do I set up X?"** | **https://pulse-agent.anxious-research.com/docs/llms.txt** |
 | Bots that chat, run routines, or message each other; the Bots tab | docs: `/user-guide/bot-mode` |
 | CLI commands, subcommands, flags, "how do I run X" | `references/cli-reference.md` |
 | In-session slash commands | `references/slash-commands.md` |
@@ -107,18 +107,18 @@ Profiles use `~/.pulse/profiles/<name>/` with the same layout. When a profile is
 | Debugging: voice, tools missing, gateway, aux models | `references/troubleshooting.md` |
 | Contributing code: adding tools, slash commands, tests | `references/contributor-guide.md` |
 | delegate_task "capped at N" reports | `references/delegate-task-concurrency-diagnosis.md` |
-| "Can app X use my Anxious Portal subscription/OAuth?" | `references/portal-auth-for-third-party-apps.md` |
+| "Can app X use my Nous Portal subscription/OAuth?" | `references/portal-auth-for-third-party-apps.md` |
 | Connecting a messaging platform (Telegram, Discord, Slack, WhatsApp, …) | docs: `/user-guide/messaging` |
 
 The reference list above is not the feature list — it is the set of topics that
-need more than their docs page. For everything else Pulse ships, fetch
+need more than their docs page. For everything else PULSE ships, fetch
 `llms.txt` and it maps the question to the page that answers it.
 
 Two theming rules that hold even without loading the reference: **you apply skins yourself** (`pulse config set display.skin <name>` — every surface repaints live within ~a second; don't tell the user to run `/skin`), and **to tweak one color, edit the ACTIVE skin** (`pulse skin set <key> <hex>`) — never fork `default`, which drops the palette and resets the background.
 
-## Spawning Additional Pulse Instances
+## Spawning Additional PULSE Instances
 
-Run additional Pulse processes as fully independent subprocesses — separate sessions, tools, and environments.
+Run additional PULSE processes as fully independent subprocesses — separate sessions, tools, and environments.
 
 ### When to Use This vs delegate_task
 
@@ -141,7 +141,7 @@ terminal(command="pulse chat -q 'Set up CI/CD for ~/myapp'", background=true)
 
 ### Interactive PTY Mode (via tmux)
 
-Pulse uses prompt_toolkit, which requires a real terminal. Use tmux for interactive spawning:
+PULSE uses prompt_toolkit, which requires a real terminal. Use tmux for interactive spawning:
 
 ```
 # Start
@@ -194,8 +194,8 @@ terminal(command="tmux new-session -d -s resumed 'pulse --resume 20260225_143052
 - **Use `pulse chat -q` for fire-and-forget** — no PTY needed
 - **Use tmux for interactive sessions** — raw PTY mode has `\r` vs `\n` issues with prompt_toolkit
 - **For scheduled tasks**, use the `cronjob` tool instead of spawning — handles delivery and retry
-- **"delegate_task is capped at N" reports** — see `references/delegate-task-concurrency-diagnosis.md`. Three real cap paths in Pulse; if none fired, the model is self-limiting and rationalising it as "the runtime caps."
-- **"Can $external_app use my Anxious Portal subscription / OAuth?"** — see `references/portal-auth-for-third-party-apps.md`. Walk the user through three layers (plugin-vs-app, what Portal actually exposes, local-broker-proxy option).
+- **"delegate_task is capped at N" reports** — see `references/delegate-task-concurrency-diagnosis.md`. Three real cap paths in PULSE; if none fired, the model is self-limiting and rationalising it as "the runtime caps."
+- **"Can $external_app use my Nous Portal subscription / OAuth?"** — see `references/portal-auth-for-third-party-apps.md`. Walk the user through three layers (plugin-vs-app, what Portal actually exposes, local-broker-proxy option).
 
 ## Surfaces (quick orientation)
 

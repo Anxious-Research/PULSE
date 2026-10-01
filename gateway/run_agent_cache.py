@@ -247,14 +247,14 @@ class GatewayAgentCacheMixin:
 
     def _is_intentional_model_switch(self, session_key: str, agent: Any, config_model: str) -> bool:
         """True when *agent* running a model other than *config_model* is deliberate: a /model session
-        override names that model, or the Anxious gateway moved the session off the ``anxious/welcome``
+        override names that model, or the Nous gateway moved the session off the ``nous/welcome``
         alias that *config_model* still carries (``anon_auth.apply_model_switch``)."""
         override = self._session_model_override(session_key)
         if override is not None and override.get("model") == agent.model:
             return True
         # Exactly the recorded move (alias -> backing): a later fallback onto some other model is
         # ordinary drift and still evicts.
-        return getattr(agent, "_anxious_model_switch", None) == (config_model, agent.model)
+        return getattr(agent, "_nous_model_switch", None) == (config_model, agent.model)
 
     def _release_running_agent_state(
         self, session_key: str, *, run_generation: Optional[int] = None
@@ -827,7 +827,7 @@ class GatewayAgentCacheMixin:
         And the LRU-cap eviction runs inside the REQUESTING turn, whose agent may belong to another
         profile — so "some scope is present" is not enough either. The owner comes from the session
         key: a named profile's home, else the DEFAULT profile (``agent:main:`` keys), which is the
-        root Pulse dir even when the gateway was launched under a named profile. Its scope is
+        root PULSE dir even when the gateway was launched under a named profile. Its scope is
         entered unless the current one already is the owner's."""
         from agent.secret_scope import current_secret_scope, is_multiplex_active
         scope = nullcontext()

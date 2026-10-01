@@ -147,7 +147,7 @@ def _queue_token_counts(agent, fail_msg: str, *fail_extra: Any, counts: Callable
 
 
 def _record_codex_app_server_usage(agent, turn, messages=None) -> dict[str, Any]:
-    """Translate Codex app-server token usage into Pulse accounting. Prompt bucket = uncached + cached
+    """Translate Codex app-server token usage into PULSE accounting. Prompt bucket = uncached + cached
     input (the protocol exposes no cache-write tokens); a turn with no usage still counts as one API call.
     ``messages`` (the transcript mirror) lets real usage anchor the next preflight: this runtime bypasses
     the main loop's capture, and the mirror is never compacted natively, so without an anchor the rough
@@ -232,7 +232,7 @@ def _record_codex_app_server_compaction(agent, turn, *, approx_tokens: int | Non
     if compressor is not None:
         compressor.compression_count = getattr(compressor, "compression_count", 0) + 1
         compressor.last_compression_rough_tokens = approx_tokens or 0
-        # Codex owns this summary: a prior Pulse deterministic-fallback flag must not leak into it.
+        # Codex owns this summary: a prior PULSE deterministic-fallback flag must not leak into it.
         record_boundary = getattr(type(compressor), "record_completed_compaction", None)
         if callable(record_boundary):
             record_boundary(compressor, used_fallback=False)
@@ -254,11 +254,11 @@ def _record_codex_app_server_compaction(agent, turn, *, approx_tokens: int | Non
     return True
 
 
-# --- Codex app-server → Pulse UI bridge -------------------------------------
-# The app-server bypasses the Pulse tool loop, so the bridge translates JSON-RPC notifications
+# --- Codex app-server → PULSE UI bridge -------------------------------------
+# The app-server bypasses the PULSE tool loop, so the bridge translates JSON-RPC notifications
 # into the callbacks the standard runtime fires (tool_progress_callback, _fire_stream_delta, ...).
 
-# Item types that project to a Pulse tool_call (keep in sync with agent/transports/codex_event_projector.py
+# Item types that project to a PULSE tool_call (keep in sync with agent/transports/codex_event_projector.py
 # so UI names match recorded names). webSearch is codex's built-in tool; the projector records it under the same id.
 _CODEX_TOOL_ITEM_TYPES = frozenset({"commandExecution", "fileChange", "mcpToolCall", "dynamicToolCall", "webSearch"})
 # Text-delta notifications → the agent stream hook each one feeds. Single source for both the display
@@ -275,8 +275,8 @@ _CODEX_PROGRESS_DELTA_METHODS = frozenset(m for m, _ in _CODEX_TEXT_DELTA_METHOD
     "item/commandExecution/outputDelta", "item/fileChange/outputDelta",
 }
 _CODEX_PROGRESS_ITEM_TYPES = _CODEX_TOOL_ITEM_TYPES | {"agentMessage", "reasoning"}
-# Internal MCP server wrapping Pulse' native tools: its inner dispatch has no tool_progress_callback, so the
-# codex-level mcpToolCall IS the display event and the mcp.pulse-tools.* prefix is stripped (users see Pulse tools).
+# Internal MCP server wrapping PULSE' native tools: its inner dispatch has no tool_progress_callback, so the
+# codex-level mcpToolCall IS the display event and the mcp.pulse-tools.* prefix is stripped (users see PULSE tools).
 _STATIC_TOOL_NAMES = {"commandExecution": "exec_command", "fileChange": "apply_patch", "webSearch": "web_search"}
 _STABLE_ID_PREFIXES = {"commandExecution": "exec", "fileChange": "apply_patch"}
 _MCP_LIKE_ITEM_TYPES = {"mcpToolCall", "dynamicToolCall"}
@@ -295,7 +295,7 @@ def _item_changes(item: dict) -> list[dict]:
 
 
 def _codex_item_to_tool_name(item: dict) -> str:
-    """Synthetic Pulse tool name for a codex item (mirrors CodexEventProjector)."""
+    """Synthetic PULSE tool name for a codex item (mirrors CodexEventProjector)."""
     item_type = item.get("type") or ""
     if item_type == "mcpToolCall":
         server, tool = item.get("server") or "mcp", item.get("tool") or "unknown"
@@ -496,9 +496,9 @@ def _codex_developer_instructions(agent) -> str:
 
 
 # Durable codex thread binding: ``sessions.model_config.codex_thread_id`` (pulse_state), written after the
-# turn's projected rows were committed, read by the next AIAgent built for the same Pulse session so an
+# turn's projected rows were committed, read by the next AIAgent built for the same PULSE session so an
 # API-server restart (or the per-request agents of /api/sessions/{id}/chat) resumes the model-side thread
-# instead of starting an empty one while Pulse' own transcript continues (#100531).
+# instead of starting an empty one while PULSE' own transcript continues (#100531).
 _CODEX_THREAD_ID_KEY = "codex_thread_id"
 _CODEX_THREAD_RESUME_NOTICE = "Codex thread could not be resumed; starting a new one."
 
@@ -553,7 +553,7 @@ def _ensure_codex_session(agent, messages: List[Dict[str, Any]] | None = None) -
     from agent.transports.codex_app_server_session import CodexAppServerSession, _ServerRequestRouting
     from pulse_cli.codex_runtime_switch import get_configured_codex_binary
     from pulse_cli.config import load_config
-    # Approval callback: Pulse' standard prompt flow when a CLI thread installed one.
+    # Approval callback: PULSE' standard prompt flow when a CLI thread installed one.
     approval_callback = None
     with suppress(Exception):
         from tools.terminal_tool import _get_approval_callback
@@ -567,11 +567,11 @@ def _ensure_codex_session(agent, messages: List[Dict[str, Any]] | None = None) -
     except Exception:
         logger.debug("codex app-server: approval-bypass lookup failed; keeping fail-closed default", exc_info=True)
     # Bridge codex JSON-RPC notifications (item/started, item/completed, item/agentMessage/delta, ...) into
-    # Pulse' gateway UI callbacks (tool_progress_callback, _fire_stream_delta,
+    # PULSE' gateway UI callbacks (tool_progress_callback, _fire_stream_delta,
     # _emit_interim_assistant_message). Without this, Discord/Telegram users see no live tool-progress or
     # interim commentary while codex_app_server is running — only the final answer (#33200). Supersedes the
     # narrower item/started-only bridge from #38835.
-    # Pulse owns the prompt: the same composition the standard loop sends as its system message
+    # PULSE owns the prompt: the same composition the standard loop sends as its system message
     # (cached per-session prompt + ephemeral additions such as channel overrides) rides along ONCE per
     # thread as developerInstructions. A retired/recreated session re-sends the current composition.
     # A thread started from scratch (no resumable codex thread) also receives the session's prior turns
@@ -582,7 +582,7 @@ def _ensure_codex_session(agent, messages: List[Dict[str, Any]] | None = None) -
     history_seed = render_history_seed(messages) or None
     # A named custom provider (``providers.<name>``) maps onto codex's own ``[model_providers.<name>]``
     # table: send the stable id plus the active model and let codex resolve base_url/env_key itself, so
-    # Pulse' credential never enters the JSON-RPC payload (#75186). openai/openai-codex keep codex's defaults.
+    # PULSE' credential never enters the JSON-RPC payload (#75186). openai/openai-codex keep codex's defaults.
     model_provider = None
     if str(getattr(agent, "provider", "") or "").strip().lower() == "custom":
         from pulse_cli.runtime_provider_custom import codex_model_provider_id
@@ -779,7 +779,7 @@ def _output_text_of(item: Any) -> str:
 class _CodexResponseAssembler:
     """Assemble a Response-shaped ``SimpleNamespace`` from raw Responses SSE events.
 
-    Only ``usage`` / ``status`` / ``id`` are read from the terminal frame — never ``response.output``. Output
+    Only ``usage`` / ``status`` / ``id`` / ``service_tier`` are read from the terminal frame — never ``response.output``. Output
     items come from ``output_item.done``, or are synthesized from text deltas, or settled from function calls
     announced via ``output_item.added`` but never confirmed (some backends omit per-item done events on success)."""
 
@@ -790,6 +790,7 @@ class _CodexResponseAssembler:
     active_summary_index: Any = None
     terminal_status: str = "completed"
     terminal_usage = terminal_response_id = terminal_incomplete_details = terminal_error = None
+    terminal_service_tier = None  # the tier the backend SERVED (may differ from the one requested)
     # terminal_status defaults to "completed", so settlement needs an explicitly observed response.completed frame.
     saw_response_completed = False
 
@@ -911,6 +912,7 @@ class _CodexResponseAssembler:
         resp_obj = _event_field(event, "response")
         if resp_obj is not None:
             self.terminal_usage, self.terminal_response_id = _event_field(resp_obj, "usage"), _event_field(resp_obj, "id")
+            self.terminal_service_tier = _event_field(resp_obj, "service_tier")
             rstatus = _event_field(resp_obj, "status")
             if isinstance(rstatus, str):
                 self.terminal_status = rstatus
@@ -978,7 +980,7 @@ class _CodexResponseAssembler:
         return SimpleNamespace(
             output=output, output_text="".join(self.text_deltas), usage=self.terminal_usage, status=self.terminal_status,
             id=self.terminal_response_id, model=self.model, incomplete_details=self.terminal_incomplete_details,
-            error=self.terminal_error)
+            error=self.terminal_error, service_tier=self.terminal_service_tier)
 
 
 def _consume_codex_event_stream(
@@ -1289,21 +1291,3 @@ __all__ = [
     "run_codex_app_server_turn", "run_codex_stream",
     "_consume_codex_event_stream", "make_codex_app_server_event_bridge",
 ]
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-def run_codex_create_stream_fallback(agent, api_kwargs: dict, client: Any = None):
-    """Backward-compatible alias for the unified event-driven path.
-
-    Historically this was the fallback when the SDK's high-level
-    ``responses.stream(...)`` helper raised on shape drift.  The primary
-    path now does exactly what the fallback did, so this just forwards.
-    Kept as a public symbol because tests and a small number of call sites
-    still reference it by name.
-    """
-    return run_codex_stream(agent, api_kwargs, client=client)
-# ---- END PLUGIN-COMPAT ----

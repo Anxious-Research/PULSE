@@ -342,7 +342,7 @@ def _validate_ollama_native(req: _Request) -> Optional[dict[str, Any]]:
     if models is None:
         return _soft_accept(
             f"Note: could not reach this Ollama endpoint's `/api/tags` model listing to validate `{req.requested}`. "
-            "Pulse will save the model name, but local Ollama model discovery could not verify it."
+            "PULSE will save the model name, but local Ollama model discovery could not verify it."
         )
     match = _match_in_catalog(req.lookup, models, suggest_label="Similar local Ollama models")
     if match.exact:
@@ -458,7 +458,7 @@ def _validate_static_catalog(req: _Request) -> Optional[dict[str, Any]]:
         from agent.model_metadata import CODEX_CONTEXT_VARIANT_SUFFIX, is_codex_context_variant
 
         # Ineligible ``-900k`` aliases must be rejected BEFORE the hidden-slug soft-accept:
-        # the suffix is a Pulse picker convention, so an unknown `*-900k` can never be a real
+        # the suffix is a PULSE picker convention, so an unknown `*-900k` can never be a real
         # hidden provider slug — soft-accepting one silently runs at 272K on a different model.
         if req.lookup.strip().lower().endswith(CODEX_CONTEXT_VARIANT_SUFFIX) and req.lookup not in set(catalog):
             if is_codex_context_variant(req.lookup):
@@ -506,7 +506,7 @@ def _validate_minimax(req: _Request) -> Optional[dict[str, Any]]:
     return match.verdict(req) or _soft_accept(
         f"Note: `{req.requested}` was not found in the MiniMax catalog."
         f"{match.suggestion_text}"
-        "\n  MiniMax does not expose a /models endpoint, so Pulse cannot verify the model name."
+        "\n  MiniMax does not expose a /models endpoint, so PULSE cannot verify the model name."
         "\n  The model may still work if it exists on the server."
     )
 
@@ -553,12 +553,12 @@ def _validate_anthropic_messages(req: _Request) -> dict[str, Any]:
     )
 
 
-def _anxious_portal_recommended_names() -> set[str]:
+def _nous_portal_recommended_names() -> set[str]:
     """Lower-cased ids from the Portal's live recommended-models feed (empty on any failure)."""
     from pulse_cli import models as _m
 
     try:
-        payload = _m.fetch_anxious_recommended_models(_m._resolve_anxious_portal_url())
+        payload = _m.fetch_nous_recommended_models(_m._resolve_nous_portal_url())
         return {
             name.lower()
             for tier in ("freeRecommendedModels", "paidRecommendedModels")
@@ -665,12 +665,12 @@ def _validate_live_listing(req: _Request) -> Optional[dict[str, Any]]:
     ):
         return _accept_with_note(f"Note: `{req.requested}` was not found in the live /v1/models listing "
                                  "but exists in the curated catalog — accepted.")
-    # Anxious: the Portal's recommended-models feed can list a model before the curated list or the
+    # Nous: the Portal's recommended-models feed can list a model before the curated list or the
     # docs-hosted manifest catches up; `pulse chat` already accepts those at model-list build
     # time, so mirror that source of truth for per-message /model validation.
-    if req.normalized == "anxious" and req.lookup.lower() in _anxious_portal_recommended_names():
+    if req.normalized == "nous" and req.lookup.lower() in _nous_portal_recommended_names():
         return _accept_with_note(f"Note: `{req.requested}` was not found in the live /v1/models listing "
-                                 "but is a current Anxious Portal recommendation — accepted.")
+                                 "but is a current Nous Portal recommendation — accepted.")
     return _reject(f"Model `{req.requested}` was not found in this provider's model listing.{match.suggestion_text}")
 
 

@@ -1,7 +1,7 @@
 import { JsonRpcGatewayClient } from '@pulse/shared'
 import { map, type MapStore } from 'nanostores'
 
-import type { PulseApiRequest } from '@/global'
+import type { PULSEApiRequest } from '@/global'
 
 // Desktop startup fires a burst of read-only data calls (config, profiles,
 // model info/options, cron) the moment the backend passes readiness. On a
@@ -9,7 +9,7 @@ import type { PulseApiRequest } from '@/global'
 // /api/profiles runs list_profiles(), which does a recursive skill-tree walk
 // per profile — so the 15s default (DEFAULT_FETCH_TIMEOUT_MS in hardening.ts)
 // times out a backend that is alive-but-busy, surfacing as a spurious
-// "Timed out connecting to Pulse backend" that hangs the UI (#48504).
+// "Timed out connecting to PULSE backend" that hangs the UI (#48504).
 //
 // Give the boot burst a generous per-call timeout instead of raising the
 // global default: interactive/runtime calls and the liveness poll (/api/status)
@@ -26,13 +26,13 @@ const DEFAULT_GATEWAY_REQUEST_TIMEOUT_MS = 30_000
 // ever fires when the turn itself would have been abandoned server-side.
 export const PROMPT_SUBMIT_REQUEST_TIMEOUT_MS = 1_800_000
 
-export const GATEWAY_NOT_CONNECTED_MESSAGE = 'Pulse gateway is not connected'
+export const GATEWAY_NOT_CONNECTED_MESSAGE = 'PULSE gateway is not connected'
 
 export class PulseGateway extends JsonRpcGatewayClient {
   constructor() {
     super({
-      closedErrorMessage: 'Pulse gateway connection closed',
-      connectErrorMessage: 'Could not connect to Pulse gateway',
+      closedErrorMessage: 'PULSE gateway connection closed',
+      connectErrorMessage: 'Could not connect to PULSE gateway',
       createRequestId: nextId => nextId,
       notConnectedErrorMessage: GATEWAY_NOT_CONNECTED_MESSAGE,
       // The channel already answered -32603; surface the crash in devtools like the dial-failure sink.
@@ -40,7 +40,7 @@ export class PulseGateway extends JsonRpcGatewayClient {
         console.error(`[gateway] server request handler crashed for ${request.method} (${request.id}):`, error),
       // The channel already answered -32601; note the missing registry in devtools.
       onUnhandledRequest: request =>
-        console.warn(`[gateway] Pulse Desktop has no server-request registry for ${request.method} (${request.id})`),
+        console.warn(`[gateway] PULSE Desktop has no server-request registry for ${request.method} (${request.id})`),
       requestTimeoutMs: DEFAULT_GATEWAY_REQUEST_TIMEOUT_MS
     })
   }
@@ -96,6 +96,38 @@ export function ownerScoped(owner?: OwnerScope): { connectionId?: string; priori
     ...profileScoped(owner?.profile || undefined),
     ...(owner?.connectionId ? { connectionId: owner.connectionId } : {})
   }
+}
+
+/** An owner resolved ONCE for one operation (a recording, a voice conversation).
+ *  `null` halves mean "untagged": the primary profile / the connection an
+ *  untagged request lands on. They are never re-read from the ambient scope
+ *  later, so a gateway/profile switch mid-operation cannot move its tail
+ *  (release, transcription) to another backend. */
+export interface ResolvedOwner {
+  connectionId: null | string
+  profile: null | string
+}
+
+/** Fill an owner's missing halves from the ambient scope, now. */
+export function resolveOwnerNow(owner?: OwnerScope): ResolvedOwner {
+  const ambient = $apiRequestScope.get()
+
+  return {
+    connectionId: owner?.connectionId || ambient.connectionId || null,
+    profile: owner?.profile || ambient.profile || null
+  }
+}
+
+/** `pulseApi` for a resolved owner: its tags are sent verbatim, with no
+ *  ambient connection spread underneath. An untagged half stays untagged. A
+ *  named profile is always explicit here, so it carries the foreground
+ *  priority `profileScoped` gives explicit profiles (voice is user-driven). */
+export function pulseApiAs<T>(owner: ResolvedOwner, request: PULSEApiRequest): Promise<T> {
+  return window.pulseDesktop.api<T>({
+    ...(owner.connectionId ? { connectionId: owner.connectionId } : {}),
+    ...(owner.profile ? { priority: 'foreground' as const, profile: owner.profile } : {}),
+    ...request
+  })
 }
 
 /** Profile that profile-scoped REST/WS calls should target (null → primary).
@@ -157,7 +189,7 @@ export function ambientOwnerConnectionId(): string | undefined {
  *  pin — `'local'` included — so a pin always overrides the ambient tag spread
  *  underneath it. (It used to omit the key for 'local', which made the pin
  *  unable to beat the ambient tag; helpers then had to bypass this wrapper.) */
-export function pulseApi<T>(request: PulseApiRequest): Promise<T> {
+export function pulseApi<T>(request: PULSEApiRequest): Promise<T> {
   return window.pulseDesktop.api<T>({ ...connectionScoped(), ...request })
 }
 

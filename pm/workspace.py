@@ -143,7 +143,7 @@ def _generate_pyproject(plugin_dirs: list[Path] | Mapping[Path, Path], root: Pat
 def _core_release_quarantine(document: dict, core_lock: Path) -> None:
     """Scope core's ``exclude-newer`` to the packages in core's own lock.
 
-    The quarantine covers Pulse's own dependencies only; a plugin's dependencies
+    The quarantine covers PULSE's own dependencies only; a plugin's dependencies
     follow the plugin's own policy, so a catalog pin floored on a fresh release still
     installs. A global cutoff would filter plugin-only packages too, so it moves onto
     every registry package core locks. A plugin still cannot drag one of those past

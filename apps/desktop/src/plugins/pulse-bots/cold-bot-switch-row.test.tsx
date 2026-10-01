@@ -1,9 +1,9 @@
 /**
  * The pending cold-open mark is a spinner on the clicked row, not a new owner.
- * Highlight still follows the chat on screen .
+ * Highlight still follows the chat on screen (pulse-agent#120277).
  */
 
-import type * as PulseSdk from '@pulse/plugin-sdk'
+import type * as PULSESdk from '@pulse/plugin-sdk'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
@@ -14,7 +14,7 @@ import { translateBotsIn } from './i18n-test-helper'
 import type { RosterRow } from './types'
 
 vi.mock('@pulse/plugin-sdk', async importOriginal => {
-  const sdk = await importOriginal<typeof PulseSdk>()
+  const sdk = await importOriginal<typeof PULSESdk>()
 
   return {
     ...sdk,

@@ -473,10 +473,10 @@ def _wal_reset_repair_hint() -> str:
         method = detect_install_method(get_project_root())
         cmd = recommended_update_command_for_method(method)
         if method in {"git", "unknown"}:
-            return f"Pulse-managed installs can repair the embedded runtime with `{cmd}`"
+            return f"PULSE-managed installs can repair the embedded runtime with `{cmd}`"
         return f"update the container image with `{cmd}`" if method == "docker" else cmd  # else nix/nixos
     except Exception:
-        return "install a Python build bundled with SQLite 3.51.3+ (or backports 3.50.7 / 3.44.6) and restart Pulse"
+        return "install a Python build bundled with SQLite 3.51.3+ (or backports 3.50.7 / 3.44.6) and restart PULSE"
 
 
 # Once-per-(process, db_label) log table. Levels are deliberate: falling back to DELETE and an ignored
@@ -519,7 +519,7 @@ _ONCE_LOGS = {
     "delete_overridden": (_delete_overridden_warned_lock, "_delete_overridden_warned_paths", logging.ERROR,
         # Never-live-downgrade keeps WAL; without this the operator never learns their delete had no effect.
         "%s: database.journal_mode=delete is configured but the on-disk database is already WAL; keeping WAL (a live "
-        "downgrade under open connections can corrupt the DB). To apply journal_mode=DELETE, stop every Pulse "
+        "downgrade under open connections can corrupt the DB). To apply journal_mode=DELETE, stop every PULSE "
         "process using this database and run `pulse sessions set-journal-mode delete` (add `--db PATH` for a "
         "store other than state.db). This message fires once per process per database."),
     "wal_probe_unknown": (_wal_probe_unknown_lock, "_wal_probe_unknown_paths", logging.WARNING,
@@ -540,8 +540,8 @@ _ONCE_LOGS = {
         # operator can fix it (a live downgrade under other openers would destroy their uncheckpointed commits).
         "%s: existing WAL-mode database is on a cross-VM filesystem (virtiofs/9p — typical for Docker Desktop / "
         "OrbStack / Podman host bind mounts). SQLite WAL shared-memory is not coherent across the VM boundary and "
-        "concurrent writers can silently corrupt the database. Pulse does not live-downgrade an on-disk WAL database. "
-        "Fix one of two ways: stop every Pulse process using this database and run `pulse sessions "
+        "concurrent writers can silently corrupt the database. PULSE does not live-downgrade an on-disk WAL database. "
+        "Fix one of two ways: stop every PULSE process using this database and run `pulse sessions "
         "set-journal-mode delete` (set `database.journal_mode: delete` in config.yaml to keep it), "
         "or move the database onto a native volume (e.g. a named Docker volume). This message fires once per process "
         "per database."),

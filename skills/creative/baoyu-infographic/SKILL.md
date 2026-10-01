@@ -13,7 +13,7 @@ metadata:
 
 # Infographic Generator
 
-Adapted from [baoyu-infographic](https://github.com/JimLiu/baoyu-skills) for Pulse Agent's tool ecosystem.
+Adapted from [baoyu-infographic](https://github.com/JimLiu/baoyu-skills) for PULSE Agent's tool ecosystem.
 
 Two dimensions: **layout** (information structure) × **style** (visual aesthetics). Freely combine any layout with any style.
 
@@ -180,7 +180,7 @@ See `references/structured-content-template.md` for detailed format.
 
 ### Step 4: Confirm Options
 
-Use the `clarify` tool to confirm options with the user. Since `clarify` handles one question at a time, ask the most important question first:
+Use the `clarify` tool to confirm options with the user. Put the independent questions below in one `questions` array (up to 5); ask separately any question whose options depend on an earlier answer:
 
 **Q1 — Combination**: Present 3+ layout×style combos with rationale. Ask user to pick one.
 

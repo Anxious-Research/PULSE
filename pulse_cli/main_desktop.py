@@ -46,7 +46,7 @@ def _renderer_bundle_dir(desktop_dir: Path, *, source_mode: bool) -> Optional[Pa
     if executable is None:
         return None
 
-    # macOS: …/Pulse.app/Contents/MacOS/Pulse → …/Contents/Resources
+    # macOS: …/PULSE.app/Contents/MacOS/PULSE → …/Contents/Resources
     resources = (
         executable.parent.parent / "Resources" if sys.platform == "darwin" else executable.parent / "resources"
     )
@@ -137,14 +137,14 @@ def _desktop_packaged_executable_in(release_dir: Path) -> Optional[Path]:
     stage-and-swap staging dir (#86443).
     """
     if sys.platform == "darwin":
-        candidates = list(release_dir.glob("mac*/Pulse.app/Contents/MacOS/Pulse"))
+        candidates = list(release_dir.glob("mac*/PULSE.app/Contents/MacOS/PULSE"))
     elif sys.platform == "win32":
         candidates = [
-            release_dir / d / "Pulse.exe" for d in ("win-unpacked", "win-ia32-unpacked", "win-arm64-unpacked")
+            release_dir / d / "PULSE.exe" for d in ("win-unpacked", "win-ia32-unpacked", "win-arm64-unpacked")
         ]
     else:
         candidates = [
-            release_dir / d / n for d in ("linux-unpacked", "linux-arm64-unpacked") for n in ("pulse", "Pulse")
+            release_dir / d / n for d in ("linux-unpacked", "linux-arm64-unpacked") for n in ("pulse", "PULSE")
         ]
 
     existing = [p for p in candidates if p.exists()]
@@ -152,11 +152,11 @@ def _desktop_packaged_executable_in(release_dir: Path) -> Optional[Path]:
         return None
     if sys.platform == "win32" and len(existing) > 1:
         # A stale win-arm64-unpacked next to the real win-unpacked: picking by
-        # mtime can hand a wrong-architecture Pulse.exe to the launcher. Prefer
+        # mtime can hand a wrong-architecture PULSE.exe to the launcher. Prefer
         # candidates whose PE machine matches the host; mtime when none parse.
         # Multiple unpacked trees can coexist (e.g. a stale win-arm64-unpacked left behind by a cross-arch
         # experiment next to the real win-unpacked). Picking purely by mtime can then hand a
-        # wrong-architecture Pulse.exe to the launcher, which Windows rejects with "This app can't run on
+        # wrong-architecture PULSE.exe to the launcher, which Windows rejects with "This app can't run on
         # your computer" (#69179).
         expected = _expected_windows_pe_machines()
         matching = [p for p in existing if _pe_machine_or_none(p) in expected]
@@ -166,7 +166,7 @@ def _desktop_packaged_executable_in(release_dir: Path) -> Optional[Path]:
 
 
 # ─── Desktop stage-and-swap pack (#86443) ─────────────────────────────────── electron-builder packs IN
-# PLACE: before-pack.mjs wipes ``release/<platform>- unpacked`` (or the mac ``Pulse.app``) and the Electron
+# PLACE: before-pack.mjs wipes ``release/<platform>- unpacked`` (or the mac ``PULSE.app``) and the Electron
 # unpack + asar + rename then rebuild it. Any failure after that wipe — corrupt cached zip, blocked
 # download, missing dep, disk full — leaves the user with NO app, and ``pulse update`` used to report
 # "partially complete" over an empty release/. Fix the class, not the predicate: build into a STAGING output
@@ -263,12 +263,12 @@ def _discard_desktop_staging(staging_dir: Path) -> None:
 
 # ─── Desktop exe integrity gate (#69179) ──────────────────────────────────── The desktop self-update chain
 # (Desktop → pulse-setup --update → `pulse update` → `pulse desktop --build-only` → relaunch) rebuilds
-# Pulse.exe on the end user's machine and used to verify only that the file EXISTS before declaring
+# PULSE.exe on the end user's machine and used to verify only that the file EXISTS before declaring
 # success. A corrupt cached Electron zip whose extraction produced a truncated electron.exe, an interrupted
 # rcedit resource rewrite, a disk-full pack, or a wrong-arch unpacked tree therefore shipped a broken binary
 # that Windows refuses to load ("This app can't run on your computer" / 此应用无法在你的电脑上运行). These helpers parse
 # the PE header — no signature infrastructure required — so a structurally broken or wrong-architecture
-# Pulse.exe is caught BEFORE the updater replaces the working app, and the previous build can be restored
+# PULSE.exe is caught BEFORE the updater replaces the working app, and the previous build can be restored
 # from the .bak tree that apps/desktop/scripts/before-pack.mjs now preserves.
 _PE_MACHINE_I386 = 0x014C
 _PE_MACHINE_AMD64 = 0x8664
@@ -573,6 +573,70 @@ def _codesign_verify(codesign: str, app: Path, **kwargs) -> subprocess.Completed
         [codesign, "--verify", "--deep", "--strict", str(app)], capture_output=True, **kwargs)
 
 
+def _macos_signature_summary(codesign: str, app: Path) -> Optional[dict]:
+    """Best-effort signing identity of a ``.app`` bundle: ``{team, identifier, verified}``.
+
+    ``None`` when the bundle has no readable signature (``codesign -dv`` fails — e.g. an
+    unsigned bundle). ``team``/``identifier`` are ``None`` when the signature lacks them
+    (ad-hoc signatures report ``TeamIdentifier=not set``); ``verified`` is the strict
+    ``--verify --deep --strict`` result. Never raises.
+    """
+    try:
+        info = subprocess.run(
+            [codesign, "-dv", str(app)], check=False, capture_output=True,
+            text=True, encoding="utf-8", errors="replace")
+    except Exception:
+        return None
+    output = f"{info.stdout}\n{info.stderr}"
+    if info.returncode != 0:
+        return None
+
+    def field(key: str) -> Optional[str]:
+        for line in output.splitlines():
+            if line.startswith(f"{key}="):
+                return line[len(key) + 1:].strip() or None
+        return None
+
+    team = field("TeamIdentifier")
+    return {
+        "team": None if team in (None, "not set") else team,
+        "identifier": field("Identifier"),
+        "verified": _codesign_verify(codesign, app, check=False).returncode == 0,
+    }
+
+
+def _macos_signing_downgrade_error(installed: dict, rebuilt: Optional[dict]) -> Optional[str]:
+    """Reason to refuse swapping a publisher-signed installed app for ``rebuilt``, or None.
+
+    #123748: replacing a Developer ID (Team ID) installation with a locally signed or
+    ad-hoc rebuild — or any bundle whose signing identity or bundle identifier differs —
+    invalidates the code-hash-bound keychain ACLs the app's safeStorage credentials are
+    encrypted under and resets TCC grants. Ad-hoc-to-ad-hoc replacement (the local
+    development flow) is untouched. ``installed`` is a ``_macos_signature_summary`` dict;
+    ``rebuilt`` is None when the rebuilt bundle has no readable signature.
+    """
+    if not installed["team"]:
+        return None
+    if rebuilt is None or not rebuilt["team"]:
+        return (f"publisher-signed app (Team ID {installed['team']}) would be replaced by a "
+                "locally signed or unreadable build; kept the existing app. To update it, "
+                "sign the rebuild with the publisher identity (CSC_LINK / "
+                "APPLE_SIGNING_IDENTITY) and update again.")
+    if rebuilt["team"] != installed["team"]:
+        return (f"publisher Team ID {installed['team']} does not match rebuilt "
+                f"{rebuilt['team']}; kept the existing app. Check the signing identity "
+                f"in desktop.macos_signing_identity and update again.")
+    if (installed["identifier"] and rebuilt["identifier"]
+            and installed["identifier"] != rebuilt["identifier"]):
+        return (f"bundle identifier {installed['identifier']!r} does not match rebuilt "
+                f"{rebuilt['identifier']!r}; kept the existing app. Align the build's "
+                f"bundle identifier and update again.")
+    if not rebuilt["verified"]:
+        return ("rebuilt bundle failed strict signature verification; kept the existing "
+                "app. Re-run the build; if it persists, inspect with `codesign -vvv`.")
+    return None
+
+
 def _desktop_macos_has_valid_real_signature(app: Path) -> bool:
     """True when the bundle has an intact Team-ID signature, so the fixup never clobbers a notarized
     build with ad-hoc (resets TCC). A STALE real signature fails --verify → False → repairable."""
@@ -624,7 +688,7 @@ def _desktop_macos_local_codesign(app: Path, *, desktop_dir: Path, identity: str
 
     # 1) Standalone Mach-O files (native modules, dylibs, crashpad handler),
     #    compared relative to the app root — the absolute path always contains
-    #    the outer Pulse.app component.
+    #    the outer PULSE.app component.
     contents = app / "Contents"
     standalone: list[Path] = []
     for root, _dirs, files in os.walk(contents):
@@ -647,8 +711,10 @@ def _desktop_macos_local_codesign(app: Path, *, desktop_dir: Path, identity: str
             if p.suffix in {".framework", ".app"}:
                 bundles.add(p)
     for bundle in sorted(bundles, key=lambda p: len(p.parts), reverse=True):
-        ent = ent_inherit if bundle.suffix == ".app" and "Helper" in bundle.name else None
-        sign_path(bundle, entitlements=ent, identifier=_desktop_macos_bundle_id(bundle))
+        # Every nested bundle takes the inherit plist, frameworks included: under the hardened
+        # runtime Electron Framework needs allow-jit in its own signature, and signing it with
+        # no entitlements strips what electron-builder's afterSign step applies in a real build.
+        sign_path(bundle, entitlements=ent_inherit, identifier=_desktop_macos_bundle_id(bundle))
 
     # 3) The main bundle, with the app's own entitlements.
     sign_path(app, entitlements=ent_main, identifier=_desktop_macos_bundle_id(app))
@@ -689,12 +755,16 @@ def _desktop_macos_relaunchable_fixup(
     """Re-sign a locally-built macOS app so in-place self-update doesn't reset TCC grants.
 
     A rebuilt ad-hoc bundle (new cdhash, no stable Designated Requirement) reports
-    "Pulse is damaged" and loses every grant. Clear quarantine xattrs, then sign
+    "PULSE is damaged" and loses every grant. Clear quarantine xattrs, then sign
     with ``desktop.macos_signing_identity`` or identifier-pinned ad-hoc, keeping
-    entitlements; legacy deep ad-hoc as fallback. No-op with a publisher identity
-    (CSC_LINK / APPLE_SIGNING_IDENTITY; callers may pass the decision so a later
-    dotenv load can't reverse it) or an intact Developer ID signature.
-    ``release_dir`` signs the STAGED bundle before promotion. Never raises.
+    entitlements. When a configured identity fails (#121857): over a locally-signed
+    install, retry identifier-pinned ad-hoc before the cdhash-only legacy sign;
+    over a publisher-signed (Team ID) install, refuse — the weaker signature would
+    orphan the keychain ACLs and TCC grants the update was asked to preserve
+    (#123748). No-op with a publisher identity (CSC_LINK / APPLE_SIGNING_IDENTITY;
+    callers may pass the decision so a later dotenv load can't reverse it) or an
+    intact Developer ID signature. ``release_dir`` signs the STAGED bundle before
+    promotion. Never raises.
     """
     if sys.platform != "darwin":
         return True
@@ -708,7 +778,7 @@ def _desktop_macos_relaunchable_fixup(
     exe = _desktop_packaged_executable_in(release_dir or (desktop_dir / "release"))
     if exe is None:
         return True
-    # exe = .../Pulse.app/Contents/MacOS/Pulse  ->  app bundle = .../Pulse.app
+    # exe = .../PULSE.app/Contents/MacOS/PULSE  ->  app bundle = .../PULSE.app
     app = exe.parents[2]
     if not str(app).endswith(".app") or not app.is_dir():
         return True
@@ -718,18 +788,62 @@ def _desktop_macos_relaunchable_fixup(
     if _desktop_macos_has_valid_real_signature(app):
         return True
     subprocess.run(["xattr", "-cr", str(app)], check=False)
-    identity = _desktop_macos_local_signing_identity() or "-"
+    configured = _desktop_macos_local_signing_identity()
+    identity = configured or "-"
+    # The existing bundle this build's new signature replaces: the live release bundle the
+    # staged pack is promoted over (``_swap_staged_desktop_app`` swaps by the same root
+    # name), or the bundle being re-signed in place when no staging is involved. Its signing
+    # class decides the fallback policy below; None when this is the first build.
+    if release_dir is None:
+        replaces = app
+    else:
+        try:
+            replaces = desktop_dir / "release" / exe.relative_to(release_dir)
+        except ValueError:
+            replaces = None
+        if not str(replaces).endswith(".app") or not replaces.is_dir():
+            replaces = None
     try:
         if _desktop_macos_local_codesign(app, desktop_dir=desktop_dir, identity=identity):
-            label = "keychain identity" if identity != "-" else "stable ad-hoc identity"
+            label = "keychain identity" if configured else "stable ad-hoc identity"
             print(f"  → macOS desktop signed with {label}; TCC grants persist across rebuilds")
             return True
     except Exception as exc:
-        if identity != "-":
+        if configured:
+            target_sig = _macos_signature_summary(codesign, replaces) if replaces else None
+            if target_sig and target_sig["team"]:
+                # #123748: a publisher-signed (Team ID) install must never be degraded to a
+                # locally signed or ad-hoc build — the weaker signature changes the anchor
+                # the keychain ACLs and TCC grants are bound against, orphaning safeStorage
+                # credentials. Keep the existing bundle and name the remedy.
+                print(
+                    f"  ✗ macOS signing identity {configured!r} did not produce a verified "
+                    f"signature, and the installed app is publisher-signed (Team ID "
+                    f"{target_sig['team']}); keeping it (no ad-hoc fallback). Fix the identity "
+                    "(e.g. `pulse desktop --setup-tcc-identity` or edit "
+                    "desktop.macos_signing_identity in config.yaml) and update again."
+                )
+                return False
+            # A configured cert can fail while the login keychain is locked (an SSH
+            # update, #121857). For a locally-signed install, identifier-pinned ad-hoc
+            # still keeps the designated requirement and entitlements — TCC re-prompts
+            # once — where the cdhash-only ``--deep --sign -`` would reset every grant
+            # on each rebuild.
             print(
-                f"  (warning: configured macOS signing identity failed: {identity!r}; "
-                "falling back to ad-hoc — TCC grants may need to be re-granted)"
+                f"  (warning: configured macOS signing identity failed: {identity!r} ({exc}); "
+                "falling back to identifier-pinned ad-hoc — TCC grants may need one "
+                "re-prompt; run the update from the logged-in session to keep the "
+                "certificate anchor)"
             )
+            try:
+                if _desktop_macos_local_codesign(app, desktop_dir=desktop_dir, identity="-"):
+                    print(
+                        "  → macOS desktop signed with stable ad-hoc identity; "
+                        "TCC grants persist across rebuilds"
+                    )
+                    return True
+            except Exception as adhoc_exc:
+                exc = adhoc_exc
         print(f"  (warning: stable macOS signing failed ({exc}); using legacy ad-hoc sign)")
     return _macos_legacy_adhoc_resign(codesign, app)
 
@@ -823,7 +937,7 @@ def _macos_create_signing_identity(
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
-def _desktop_macos_setup_tcc_identity(identity: str = "Pulse Local Signing") -> bool:
+def _desktop_macos_setup_tcc_identity(identity: str = "PULSE Local Signing") -> bool:
     """``--setup-tcc-identity``: create/import a self-signed code-signing cert, point
     ``desktop.macos_signing_identity`` at it and re-sign the packaged app. TCC grants follow the
     signing identity, so a certificate-anchored one is stable across rebuilds (the yabai/skhd
@@ -884,7 +998,7 @@ def _desktop_macos_setup_tcc_identity(identity: str = "Pulse Local Signing") -> 
     print(
         "\n  Note: macOS will re-prompt for permissions ONE final time (the identity "
         "changed). Grant them and they persist from then on. If a permission gets "
-        "stuck, reset it with:  tccutil reset All com.anxiousresearchlab.pulse"
+        "stuck, reset it with:  tccutil reset All com.nousresearch.pulse"
     )
     return True
 
@@ -936,14 +1050,14 @@ def _swap_in_new_macos_bundle(tmp: Path, target: Path, old: Path) -> None:
 
 
 def _running_macos_app_bundles() -> set[Path]:
-    """``.app`` bundles of every live Pulse Desktop process. A running bundle is never swapped
+    """``.app`` bundles of every live PULSE Desktop process. A running bundle is never swapped
     under: Electron loads ``app.asar`` chunks and helper apps lazily, so renaming its bundle away
     and deleting the old tree crashes the live app (the detached updater waits for it to exit)."""
     import psutil  # noqa: PLC0415
     bundles: set[Path] = set()
     for proc in psutil.process_iter(["exe"]):
         exe = proc.info.get("exe") or ""
-        if exe.endswith("/Contents/MacOS/Pulse"):
+        if exe.endswith("/Contents/MacOS/PULSE"):
             bundles.add(Path(exe).resolve().parents[2])
     return bundles
 
@@ -954,8 +1068,9 @@ def _stage_macos_bundle_copy(src: Path, dst: Path) -> None:
     subprocess.run(["/usr/bin/ditto", str(src), str(dst)], check=True, capture_output=True)
 
 
-def _install_rebuilt_desktop_app(desktop_dir: Path) -> tuple[list[Path], list[str]]:
-    """Copy the rebuilt macOS bundle over every stale installed ``Pulse.app`` (#52339).
+def _install_rebuilt_desktop_app(desktop_dir: Path, candidates: list[Path]) -> tuple[list[Path], list[str]]:
+    """Copy the rebuilt macOS bundle into every stale or missing installed ``PULSE.app`` in
+    *candidates* (``_installed_desktop_apps()``) (#52339).
 
     ``pulse desktop --build-only`` (what ``pulse update`` runs) packages into
     ``apps/desktop/release/`` only. Finder, the Dock and Spotlight launch the copy in
@@ -964,7 +1079,7 @@ def _install_rebuilt_desktop_app(desktop_dir: Path) -> tuple[list[Path], list[st
     only the bundle it was launched from, so an app running from ``release/`` never refreshed
     the installed copy either.
 
-    Returns ``(installed, problems)``: bundles that were replaced, and one user-facing line per
+    Returns ``(installed, problems)``: bundles that were (re)installed, and one user-facing line per
     bundle that could not be (running, copy or swap failure). Both empty means every installed
     copy was already current.
     """
@@ -973,18 +1088,38 @@ def _install_rebuilt_desktop_app(desktop_dir: Path) -> tuple[list[Path], list[st
     rebuilt_exe = _desktop_packaged_executable(desktop_dir)
     if rebuilt_exe is None:
         return [], []
-    # .../Pulse.app/Contents/MacOS/Pulse -> .../Pulse.app
+    # .../PULSE.app/Contents/MacOS/PULSE -> .../PULSE.app
     return _install_rebuilt_macos_bundles(
-        rebuilt_exe.parents[2], _installed_desktop_apps(), running=_running_macos_app_bundles())
+        rebuilt_exe.parents[2], candidates, running=_running_macos_app_bundles())
 
 
 def _refresh_installed_desktop_apps(desktop_dir: Path) -> None:
-    """Install the rebuilt bundle over stale installed copies and report each outcome."""
-    installed, problems = _install_rebuilt_desktop_app(desktop_dir)
+    """Install the rebuilt bundle over stale or missing installed copies, report each outcome, and
+    record which copies this update keeps current."""
+    if not _owns_installed_desktop_apps():
+        return
+    owned = _installed_desktop_apps()
+    missing = {app for app in owned if not app.exists()}
+    installed, problems = _install_rebuilt_desktop_app(desktop_dir, owned)
     for app in installed:
-        print(f"  ✓ Installed the rebuilt Desktop app at {app}")
+        if app in missing:
+            print(f"  ✓ Reinstalled the Desktop app at {app}: it had been removed, so Finder, "
+                  "the Dock and Spotlight could not find PULSE")
+        else:
+            print(f"  ✓ Installed the rebuilt Desktop app at {app}")
     for problem in problems:
         print(f"  ⚠ {problem}")
+    from pulse_cli.gui_uninstall import desktop_install_record  # noqa: PLC0415
+    from utils import atomic_json_write, read_json_or_empty  # noqa: PLC0415
+    # A copy that failed to reinstall stays recorded, so the next update retries it. Every
+    # `pulse desktop` launch lands here: write only when the set changed.
+    apps = [str(app) for app in owned]
+    if read_json_or_empty(desktop_install_record()).get("apps", []) == apps:
+        return
+    try:
+        atomic_json_write(desktop_install_record(), {"apps": apps})
+    except OSError as exc:
+        print(f"  ⚠ Could not record the installed Desktop app ({exc})")
 
 
 def _update_owned_macos_bundles(candidates: list[Path]) -> list[Path]:
@@ -1006,26 +1141,42 @@ def _update_owned_macos_bundles(candidates: list[Path]) -> list[Path]:
     return owned
 
 
-def _installed_desktop_apps() -> list[Path]:
-    """Installed macOS ``Pulse.app`` bundles this checkout's update owns (none off macOS).
-
-    A packaged app runs the checkout under the default Pulse home, so only that checkout may
-    build for it: a bundle from any other tree (a dev worktree) would split shell from backend.
-    """
+def _owns_installed_desktop_apps() -> bool:
+    """A packaged app runs the checkout under the default PULSE home, so only that checkout (on
+    macOS) may build for it: a bundle from any other tree (a dev worktree) would split shell from
+    backend."""
     if sys.platform != "darwin":
-        return []
-    from pulse_cli.gui_uninstall import packaged_gui_app_paths  # noqa: PLC0415
+        return False
     from pulse_cli.main import PROJECT_ROOT  # noqa: PLC0415
     from pulse_constants import get_default_pulse_root  # noqa: PLC0415
-    if Path(PROJECT_ROOT).resolve() != (get_default_pulse_root() / "pulse-agent").resolve():
+    return Path(PROJECT_ROOT).resolve() == (get_default_pulse_root() / "pulse-agent").resolve()
+
+
+def _installed_desktop_apps() -> list[Path]:
+    """Installed macOS ``PULSE.app`` bundles this checkout's update owns.
+
+    When no owned copy is left, a recorded one that has gone missing still counts: its ownership
+    stamp left with the bundle, and without the record nothing would ever put it back (Finder, the
+    Dock and Spotlight lose PULSE for good). A copy moved to the other Applications folder keeps
+    its stamp, so it is found instead of doubled. PULSE' GUI uninstall deletes the record.
+    """
+    if not _owns_installed_desktop_apps():
         return []
-    return _update_owned_macos_bundles(packaged_gui_app_paths())
+    from pulse_cli.gui_uninstall import desktop_install_record, packaged_gui_app_paths  # noqa: PLC0415
+    from utils import read_json_or_empty  # noqa: PLC0415
+    candidates = packaged_gui_app_paths()
+    if owned := _update_owned_macos_bundles(candidates):
+        return owned
+    recorded = read_json_or_empty(desktop_install_record()).get("apps")
+    if not isinstance(recorded, list):
+        return []
+    return [app for app in candidates if str(app) in recorded and not app.exists()]
 
 
 def _installed_desktop_launch_target(desktop_dir: Path, packaged_executable: Path) -> Path:
     """The executable ``pulse desktop`` launches: the installed app once it IS the checkout build.
 
-    Finder, the Dock and Spotlight open the installed ``Pulse.app``; launching the ``release/``
+    Finder, the Dock and Spotlight open the installed ``PULSE.app``; launching the ``release/``
     bundle beside it ran the same app from a second path while the installed copy went stale
     (#52339). Refresh the installed copies, then launch the first one that matches the checkout
     build. The checkout bundle stays the fallback: nothing installed, or a copy that is running
@@ -1037,29 +1188,40 @@ def _installed_desktop_launch_target(desktop_dir: Path, packaged_executable: Pat
     rebuilt_hash = _app_asar_hash(packaged_executable.parents[2])
     for app in _installed_desktop_apps():
         if rebuilt_hash is not None and _app_asar_hash(app) == rebuilt_hash:
-            return app / "Contents" / "MacOS" / "Pulse"
+            return app / "Contents" / "MacOS" / "PULSE"
     return packaged_executable
 
 
 def _install_rebuilt_macos_bundles(
         rebuilt_app: Path, candidates: list[Path], *, running: set[Path]) -> tuple[list[Path], list[str]]:
-    """Stage-and-swap ``rebuilt_app`` over each existing bundle in ``candidates`` whose ``app.asar``
-    differs. The rebuilt bundle already carries the stable local signing identity and no
+    """Stage-and-swap ``rebuilt_app`` into each bundle path in ``candidates`` that is missing or
+    whose ``app.asar`` differs. The rebuilt bundle already carries the stable local signing identity and no
     quarantine xattr (``_desktop_macos_relaunchable_fixup``); ``ditto`` preserves both, so nothing
-    is re-signed here and TCC grants survive."""
+    is re-signed here and TCC grants survive. A publisher-signed (Team ID) installation is never
+    replaced by a locally signed build or a different signing/bundle identity — the swap is
+    refused and reported instead (#123748)."""
     rebuilt_hash = _app_asar_hash(rebuilt_app)
     if rebuilt_hash is None:
         return [], []
+    codesign = shutil.which("codesign")
+    rebuilt_sig = _macos_signature_summary(codesign, rebuilt_app) if codesign else None
     installed: list[Path] = []
     problems: list[str] = []
     for app in candidates:
-        if not app.is_dir() or _app_asar_hash(app) == rebuilt_hash:
+        if app.is_dir() and _app_asar_hash(app) == rebuilt_hash:
             continue
         if app.resolve() in running:
             problems.append(
-                f"{app} is running and was not refreshed; quit Pulse Desktop and run "
+                f"{app} is running and was not refreshed; quit PULSE Desktop and run "
                 "`pulse update` again (or update from inside the app)")
             continue
+        if codesign:
+            installed_sig = _macos_signature_summary(codesign, app)
+            if installed_sig is not None:
+                downgrade = _macos_signing_downgrade_error(installed_sig, rebuilt_sig)
+                if downgrade:
+                    problems.append(f"{app} not refreshed: {downgrade}")
+                    continue
         tmp = app.parent / f"{app.name}.pulse-update-new"
         old = app.parent / f"{app.name}.pulse-update-old"
         shutil.rmtree(tmp, ignore_errors=True)
@@ -1069,7 +1231,8 @@ def _install_rebuilt_macos_bundles(
             _swap_in_new_macos_bundle(tmp, app, old)
         except (OSError, subprocess.CalledProcessError) as exc:
             shutil.rmtree(tmp, ignore_errors=True)
-            problems.append(f"{app} could not be replaced ({exc}); the previous app was kept")
+            kept = "; the previous app was kept" if app.exists() else ""
+            problems.append(f"{app} could not be installed ({exc}){kept}")
             continue
         installed.append(app)
     return installed, problems
@@ -1152,7 +1315,7 @@ def _desktop_linux_sandbox_fixup(packaged_executable: Path) -> bool:
 
     sandbox, st = _sandbox_helper_lstat(packaged_executable)
     if not sandbox.exists():
-        print(f"✗ Pulse Desktop is missing Electron's Linux sandbox helper: {sandbox}")
+        print(f"✗ PULSE Desktop is missing Electron's Linux sandbox helper: {sandbox}")
         return False
     # Reject symlinks — chown/chmod must not follow an attacker-controlled link.
     if st is None:
@@ -1171,12 +1334,35 @@ def _desktop_linux_sandbox_fixup(packaged_executable: Path) -> bool:
 
     sudo = shutil.which("sudo")
     if not sudo:
-        print("✗ Pulse Desktop requires sudo to configure Electron's Linux sandbox helper.")
+        print("✗ PULSE Desktop requires sudo to configure Electron's Linux sandbox helper.")
         return False
 
     print("→ Configuring Electron Linux sandbox helper (sudo required)...")
+    # A .desktop/autostart/detached launch has no TTY, so a sudo password prompt could never be
+    # answered — without -n the launch hangs indefinitely instead of failing (#123927). Terminal
+    # launches keep the interactive prompt.
+    # ponytail: fail-fast only, no GUI askpass fallback; add one if TTY-less hosts need password sudo.
+    # ``sys.stdin`` is None when the process has no stdin at all (detached launch, GUI spawn that
+    # closed it) and a closed stream raises on ``isatty()``; both are no-TTY cases and neither may
+    # escape as a traceback that skips the ``--no-sandbox`` fallback (#123927 review).
+    try:
+        non_interactive = sys.stdin is None or not sys.stdin.isatty()
+    except ValueError:  # stdin closed under us
+        non_interactive = True
     for command in ([sudo, "chown", "root:root", str(sandbox)], [sudo, "chmod", "4755", str(sandbox)]):
-        if subprocess.run(command, check=False).returncode != 0:
+        if non_interactive:
+            command.insert(1, "-n")
+        try:
+            completed = subprocess.run(
+                command,
+                stdin=subprocess.DEVNULL if non_interactive else None,
+                timeout=60 if non_interactive else None,
+                check=False,
+            )
+            ok = completed.returncode == 0
+        except (OSError, subprocess.SubprocessError):
+            ok = False
+        if not ok:
             print(f"✗ Failed to configure Electron's Linux sandbox helper: {sandbox}")
             return False
     return True
@@ -1270,7 +1456,7 @@ def _desktop_launch_options() -> tuple[list[str], str, str, str, bool]:
 
 
 def _register_linux_desktop_entry(defer: bool = False):
-    """Install the XDG desktop entry for Pulse Desktop (Linux only, best-effort).
+    """Install the XDG desktop entry for PULSE Desktop (Linux only, best-effort).
 
     ``Exec`` and ``Icon`` are absolute so the entry works outside a login shell.
     ``pulse uninstall --gui`` removes it.
@@ -1305,7 +1491,15 @@ def _promote_staged_desktop_app(
     # Locally-built apps are ad-hoc signed; make them relaunchable after an
     # in-place self-update. Signs the STAGED bundle so the live app is never
     # half-signed. No-op on non-macOS and on real-identity builds.
-    _desktop_macos_relaunchable_fixup(desktop_dir, release_dir=staging_dir)
+    if not _desktop_macos_relaunchable_fixup(desktop_dir, release_dir=staging_dir):
+        # #123748: the fixup refused to sign (configured identity failed, codesign
+        # missing). Promoting would replace the live app with a bundle whose
+        # signature was never established — fold the refusal into the same
+        # previous-app-kept error path the integrity check uses.
+        _discard_desktop_staging(staging_dir)
+        print("✗ The rebuilt desktop app could not be signed with a stable identity; "
+              "not promoting it.")
+        raise RuntimeError(f"Desktop signing refused the staged build. {_PREVIOUS_APP_KEPT}")
 
     # Validate only staging. The swap owns live-app rollback; raw in-place
     # pack backups are not part of this transaction.
@@ -1358,7 +1552,7 @@ def build_prepared_desktop(desktop_dir: Path, *, source_mode: bool, npm: str, en
         # stamp stays stale, so `pulse desktop` run outside the app rebuilds it
         # (_desktop_build_needed), and the in-app update completes with desktop=True.
         print(f"  ⚠ Skipped rebuilding the desktop app: this update is running inside it (pid {ancestor}),")
-        print("    and Windows locks a running app's files. Quit Pulse Desktop and run `pulse desktop`")
+        print("    and Windows locks a running app's files. Quit PULSE Desktop and run `pulse desktop`")
         print("    from a terminal, or use Update now in Settings → About, to rebuild and reopen it.")
         return None
     build_label = "source build" if source_mode else "packaged app"
@@ -1530,20 +1724,20 @@ def _site_packages_install_kind(project_root: Path) -> Optional[str]:
 
 
 def _launch_installed_macos_desktop_app() -> bool:
-    """Launch a separately installed ``/Applications/Pulse.app``, if present.
+    """Launch a separately installed ``/Applications/PULSE.app``, if present.
 
     Returns True only when the app bundle exists and a detached launch was
     started — the caller then exits without touching the build ladder.
     """
     if sys.platform != "darwin":
         return False
-    executable = Path("/Applications/Pulse.app/Contents/MacOS/Pulse")
+    executable = Path("/Applications/PULSE.app/Contents/MacOS/PULSE")
     if not executable.is_file():
         return False
     from pulse_cli.bundled_app import launch_detached
 
     pid = launch_detached([str(executable)], cwd=executable.parent)
-    print(f"→ Launched the installed Pulse Desktop app: {executable} (pid {pid})")
+    print(f"→ Launched the installed PULSE Desktop app: {executable} (pid {pid})")
     return True
 
 
@@ -1570,9 +1764,9 @@ def cmd_gui(args: argparse.Namespace):
         print(f"Desktop GUI source not found at: {desktop_dir}")
         if install_kind == "homebrew":
             print(
-                "  This Pulse came from Homebrew, which does not ship the desktop app's\n"
+                "  This PULSE came from Homebrew, which does not ship the desktop app's\n"
                 "  source tree, so it cannot be built from this install.\n"
-                "  Install the desktop app from https://pulse-agent.anxiousresearchlab.com,\n"
+                "  Install the desktop app from https://pulse-agent.anxious-research.com,\n"
                 "  or run `pulse desktop` from a source checkout."
             )
         sys.exit(1)
@@ -1590,13 +1784,34 @@ def cmd_gui(args: argparse.Namespace):
     # macOS-only one-shot: create a self-signed code-signing identity so TCC
     # grants survive rebuilds, then exit without building/launching.
     if getattr(args, "setup_tcc_identity", False):
-        identity = getattr(args, "identity", None) or "Pulse Local Signing"
+        identity = getattr(args, "identity", None) or "PULSE Local Signing"
         sys.exit(0 if _desktop_macos_setup_tcc_identity(identity) else 1)
 
     if bundled:
         _launch_bundled_desktop(args, env, config_electron_flags)
 
     packaged_executable = _desktop_packaged_executable(desktop_dir)
+
+    # The mutable preflight (freshness check → npm install → pack) mutates
+    # checkout-scoped node_modules and apps/desktop/release. Serialize it
+    # across processes so a manual `pulse desktop` racing `pulse update`'s
+    # rebuild cannot corrupt either (#93940). The lock lives outside the
+    # checkout, keyed by the resolved checkout path.
+    from pulse_cli.desktop_build_lock import DesktopBuildLock
+
+    build_lock: DesktopBuildLock | None = None
+    if not bundled and not skip_build:
+        build_lock = DesktopBuildLock(PROJECT_ROOT)
+        try:
+            acquired = build_lock.acquire()
+        except OSError as exc:
+            print(f"✗ Could not create the desktop build lock: {exc}")
+            print("  Refusing to run npm without serialization; check the checkout permissions and retry.")
+            sys.exit(1)
+        if not acquired:
+            print("✗ Another PULSE desktop dependency install or build is already running.")
+            print("  Wait for it to finish, then retry.")
+            sys.exit(2)
 
     needs_build = not skip_build and (
         force_build or _desktop_build_needed(desktop_dir, PROJECT_ROOT, source_mode=source_mode)
@@ -1623,6 +1838,8 @@ def cmd_gui(args: argparse.Namespace):
             desktop_launch_notice(f"✓ Desktop {build_label} is up to date (content stamp matches)", source_mode=source_mode)
     except (OSError, subprocess.SubprocessError, RuntimeError) as exc:
         print(f"✗ Desktop GUI build failed: {exc}")
+        if build_lock is not None:
+            build_lock.release()
         raise SystemExit(1) from exc
 
     # Best-effort and idempotent; a failure must never stop the app from launching.
@@ -1650,10 +1867,12 @@ def cmd_gui(args: argparse.Namespace):
             sys.exit(1)
         else:
             print(f"✓ Desktop packaged app ready: {packaged_executable} (not launching; --build-only)")
+        if build_lock is not None:
+            build_lock.release()
         return
 
     if source_mode:
-        print("→ Launching Pulse Desktop from source build...")
+        print("→ Launching PULSE Desktop from source build...")
         # Launch only the prepared runtime. npm exec can provision a missing
         # Electron package, including when --skip-build was requested.
         electron = _electron_dir(PROJECT_ROOT)
@@ -1675,9 +1894,20 @@ def cmd_gui(args: argparse.Namespace):
         launch_command.extend(config_electron_flags)
     if getattr(args, "local", False):
         launch_command.append("--local")
+    # Out-of-band preview escape hatch (#97213): a fullscreened preview pane
+    # owns all input, and Wayland has no xdotool/wmctrl to break out from a
+    # terminal. `pulse desktop --close-preview` rides the single-instance
+    # argv so a second CLI invocation unlocks the running app.
+    if getattr(args, "close_preview", False):
+        launch_command.append("--close-preview")
     launch_command.extend(_explicit_profile_args())
     if not source_mode:
-        desktop_launch_notice(f"→ Launching packaged Pulse Desktop: {' '.join(launch_command)}")
+        desktop_launch_notice(f"→ Launching packaged PULSE Desktop: {' '.join(launch_command)}")
+    # The launch target is ready; the fixups above finished mutating the
+    # packaged tree. Electron is the long-lived handoff, so release the build
+    # lock now — an open Desktop window must never block a future rebuild.
+    if build_lock is not None:
+        build_lock.release()
     pass_fds: tuple[int, ...] = ()
     if deferred_entry is not None:
         env = deferred_entry.child_env(env)
@@ -1722,7 +1952,7 @@ def cmd_gui(args: argparse.Namespace):
             )
         if deferred_entry is not None:
             deferred_entry.finish()
-        desktop_launch_notice("✓ Pulse Desktop launched in a detached window; you can close this shell.")
+        desktop_launch_notice("✓ PULSE Desktop launched in a detached window; you can close this shell.")
         sys.exit(0)
     with desktop_console_output(source_mode=source_mode) as streams:
         try:
@@ -1734,7 +1964,7 @@ def cmd_gui(args: argparse.Namespace):
             # closing the Desktop, not a launcher crash. Exit cleanly instead
             # of dumping a KeyboardInterrupt traceback from subprocess.run
             # (#59848).
-            print("\n✓ Pulse Desktop closed.")
+            print("\n✓ PULSE Desktop closed.")
             sys.exit(0)
     if deferred_entry is not None:
         deferred_entry.finish()
@@ -1780,7 +2010,7 @@ def _launch_bundled_desktop(
         if getattr(args, name, False)
     ]
     if refused:
-        print(f"✗ {', '.join(refused)} cannot apply to a bundled Pulse install.")
+        print(f"✗ {', '.join(refused)} cannot apply to a bundled PULSE install.")
         print("  This app ships prebuilt and has no desktop source tree to build.")
         sys.exit(2)
 
@@ -1790,13 +2020,13 @@ def _launch_bundled_desktop(
         # The stamp says bundled, so a tree that is not one is a damaged or
         # mispackaged install. Report it — degrading to the build ladder
         # would run npm inside the app's own resources.
-        print(f"✗ This Pulse is stamped as a bundled desktop install, but {exc}.")
-        print("  The install is damaged — reinstall Pulse from the website.")
+        print(f"✗ This PULSE is stamped as a bundled desktop install, but {exc}.")
+        print("  The install is damaged — reinstall PULSE from the website.")
         sys.exit(1)
 
     if layout.launcher is None:
-        print(f"✗ Found no Pulse Desktop launcher in {layout.app_root}.")
-        print("  The install is damaged — reinstall Pulse from the website.")
+        print(f"✗ Found no PULSE Desktop launcher in {layout.app_root}.")
+        print("  The install is damaged — reinstall PULSE from the website.")
         sys.exit(1)
 
     launch_command = [str(layout.launcher)]
@@ -1810,7 +2040,7 @@ def _launch_bundled_desktop(
     launch_command.extend(electron_flags)
     launch_command.extend(_explicit_profile_args())
     pid = launch_detached(launch_command, env=env, cwd=layout.app_root)
-    print(f"→ Launched Pulse Desktop: {' '.join(launch_command)} (pid {pid})")
+    print(f"→ Launched PULSE Desktop: {' '.join(launch_command)} (pid {pid})")
     sys.exit(0)
 
 

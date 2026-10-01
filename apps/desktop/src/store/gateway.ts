@@ -10,7 +10,7 @@ import {
 } from '@pulse/shared'
 import { atom } from 'nanostores'
 
-import type { PulseConnection } from '@/global'
+import type { PULSEConnection } from '@/global'
 import { PulseGateway, setApiRequestConnection } from '@/pulse'
 import { translateNow } from '@/i18n'
 import {
@@ -56,7 +56,7 @@ function dialProfile(
   desktop: NonNullable<typeof window.pulseDesktop>,
   profile: string,
   spawnPriority: SpawnPriority
-): Promise<PulseConnection> {
+): Promise<PULSEConnection> {
   return spawnPriority === 'foreground'
     ? desktop.getConnection(profile, { priority: 'foreground' })
     : desktop.getConnection(profile)
@@ -77,7 +77,7 @@ interface RegistryConfig {
    *  `connectionId` tag the source the same way events are tagged. */
   onServerRequest?: (request: ScopedServerRequest) => void
   onActiveConnectionInvalidated?: (fallbackProfile: string, activationEpoch: number) => void
-  onActiveConnectionChanged?: (connection: PulseConnection) => void
+  onActiveConnectionChanged?: (connection: PULSEConnection) => void
   /**
    * Fires whenever applyActive() moves the active route to a (possibly
    * different) profile — including registry-internal eviction fallbacks
@@ -121,7 +121,7 @@ interface Secondary {
   profile: string
   /** Registry connection serving this socket; null = the local/legacy path. */
   connectionId: null | string
-  connection: PulseConnection | null
+  connection: PULSEConnection | null
   gateway: PulseGateway
   /**
    * Date.now() of the most recent socket 'open'. The live-work pruner's
@@ -449,7 +449,7 @@ export function dialedGatewayModeFor(connectionId: null | string, profile: strin
 }
 
 /** Publish the registry source owned by the window primary socket. */
-export function setPrimaryGatewayConnection(connection: Pick<PulseConnection, 'connectionId' | 'mode'> | null): void {
+export function setPrimaryGatewayConnection(connection: Pick<PULSEConnection, 'connectionId' | 'mode'> | null): void {
   setPrimaryGatewayConnectionId(connection?.connectionId, connection?.mode)
 }
 
@@ -540,7 +540,7 @@ async function requestOnPrimaryGateway<T>(
   const gateway = g.primaryGateway
 
   if (!gateway || !isOpen(gateway)) {
-    throw new Error('Pulse gateway unavailable')
+    throw new Error('PULSE gateway unavailable')
   }
 
   return timeoutMs === undefined && signal === undefined
@@ -696,7 +696,7 @@ function applyActive(profile: string, activationEpoch: number): boolean {
   return true
 }
 
-function publishActiveConnection(connection: PulseConnection): void {
+function publishActiveConnection(connection: PULSEConnection): void {
   if (g.config?.onActiveConnectionChanged) {
     g.config.onActiveConnectionChanged(connection)
   } else {
@@ -1300,7 +1300,7 @@ export async function requestGatewayForProfile<T>(
 
   try {
     if (!route.gateway) {
-      throw new Error(`Pulse gateway unavailable for profile "${route.key}"`)
+      throw new Error(`PULSE gateway unavailable for profile "${route.key}"`)
     }
 
     const routedParams = route.scopeProfile ? { ...params, profile: route.key } : params
@@ -1367,7 +1367,7 @@ export async function requestGatewayForAgent<T>(
   }
 
   if (!window.pulseDesktop?.getConnectionFor) {
-    throw new Error('This Desktop build cannot dial registry connections. Update Pulse Desktop.')
+    throw new Error('This Desktop build cannot dial registry connections. Update PULSE Desktop.')
   }
 
   const entry = g.secondaries.get(scope) ?? createSecondary(key, connectionId)
@@ -1864,14 +1864,14 @@ export async function openGatewayForAgent(
 
   if (await ridesPrimaryBackend(connectionId, profile, spawnPriority)) {
     if (!isOpen(g.primaryGateway)) {
-      throw new Error('Pulse gateway unavailable')
+      throw new Error('PULSE gateway unavailable')
     }
 
     return
   }
 
   if (!window.pulseDesktop?.getConnectionFor) {
-    throw new Error('This Desktop build cannot dial registry connections. Update Pulse Desktop.')
+    throw new Error('This Desktop build cannot dial registry connections. Update PULSE Desktop.')
   }
 
   const entry = g.secondaries.get(scope) ?? createSecondary(profile, connectionId)
@@ -1925,7 +1925,7 @@ export async function ensureGatewayForAgent(
   }
 
   if (!window.pulseDesktop?.getConnectionFor) {
-    throw new Error('This Desktop build cannot dial registry connections. Update Pulse Desktop.')
+    throw new Error('This Desktop build cannot dial registry connections. Update PULSE Desktop.')
   }
 
   let entry = g.secondaries.get(scope)
@@ -2084,7 +2084,7 @@ export async function ensureActiveGatewayOpen({
   if (!isOpen(entry.gateway)) {
     // A remote/registry secondary can still be ACTIVATING (backend waking,
     // socket dialing). Failing instantly turned a routine cold start into
-    // "Pulse gateway is not connected" on the Sessions `+` action (#88880).
+    // "PULSE gateway is not connected" on the Sessions `+` action (#88880).
     // Wait a bounded beat for the in-flight activation instead of erroring;
     // a genuinely dead gateway still returns null when the window closes.
     const deadline = Date.now() + ACTIVE_GATEWAY_OPEN_WAIT_MS

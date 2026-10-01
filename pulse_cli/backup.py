@@ -87,7 +87,7 @@ _EXCLUDED_DIRS = {
     ".cache", ".tox", ".nox", ".pytest_cache", ".mypy_cache", ".ruff_cache",
 }
 
-# Pulse-managed runtime downloads are regenerable. Match only profile roots:
+# PULSE-managed runtime downloads are regenerable. Match only profile roots:
 # a deeper directory of the same name (such as a skill's models/) is user data.
 _EXCLUDED_ROOT_DIRS = LOCAL_RUNTIME_ROOT_DIRS | (PM_RUNTIME_ROOT_DIRS - {"cache"})
 
@@ -138,7 +138,7 @@ _EXCLUDED_PREFIXES = (
 # Files ``pulse import`` must never overwrite, matched by basename so root and named profiles are
 # both covered. They hold runtime state namespaced to the SOURCE machine: ``gateway_state.json``
 # drives the container-boot reconciler (a foreign value leaves the gateway stuck "starting" and
-# disconnected from the Anxious portal); PID/lock/registry files reference source PIDs. Mirrors
+# disconnected from the Nous portal); PID/lock/registry files reference source PIDs. Mirrors
 # ``container_boot._STALE_RUNTIME_FILES``; import filters too because older backups predate the
 # backup-side exclusions.
 _IMPORT_SKIP_NAMES = {"gateway_state.json", "gateway.pid", "cron.pid", "gateway.lock", "processes.json"}
@@ -167,7 +167,7 @@ _EXTERNAL_PREFIX = "_external/"
 
 
 class BackupInProgressError(RuntimeError):
-    """Raised when another process already owns the Pulse backup slot."""
+    """Raised when another process already owns the PULSE backup slot."""
 
 
 class _SQLiteSnapshotError(RuntimeError):
@@ -203,7 +203,7 @@ def _backup_operation_lock(pulse_home: Path, timeout_seconds: float = 0.25):
                 acquired = True
             except OSError:
                 if time.monotonic() >= deadline:
-                    raise BackupInProgressError("another Pulse backup is already running")
+                    raise BackupInProgressError("another PULSE backup is already running")
                 time.sleep(0.05)
         yield
     finally:
@@ -584,7 +584,7 @@ def _collect_external_entries() -> tuple[list[tuple[Path, str]], list[str]]:
 
 
 def run_backup(args) -> bool:
-    """Create a zip backup of the Pulse home directory.
+    """Create a zip backup of the PULSE home directory.
 
     True when every selected file landed in the archive (or there was nothing to back up); False
     when the zip was written but is incomplete — it is kept so the rest can still be restored, and
@@ -594,7 +594,7 @@ def run_backup(args) -> bool:
     pulse_root = get_default_pulse_root()
 
     if not pulse_root.is_dir():
-        print(f"Error: Pulse home directory not found at {pulse_root}")
+        print(f"Error: PULSE home directory not found at {pulse_root}")
         sys.exit(1)
 
     try:
@@ -726,7 +726,7 @@ def _import_member_rel(member: str, prefix: str) -> tuple[str, bool]:
 
 
 def run_import(args) -> Optional[int]:
-    """Restore a Pulse backup; return 1 on damaged archives or incomplete restores."""
+    """Restore a PULSE backup; return 1 on damaged archives or incomplete restores."""
     zip_path = Path(args.zipfile).expanduser().resolve()
 
     if not zip_path.is_file():
@@ -767,7 +767,7 @@ def run_import(args) -> Optional[int]:
 
         if (has_config or has_env) and not args.force:
             print()
-            print("Warning: Target directory already has Pulse configuration.")
+            print("Warning: Target directory already has PULSE configuration.")
             print("Importing will overwrite existing files with backup contents.")
             print()
             try:
@@ -857,7 +857,7 @@ def run_import(args) -> Optional[int]:
             # namespaced to the machine/container the backup was taken on;
             # clobbering them (especially gateway_state.json) breaks the gateway
             # reconciler on the target and disconnects hosted instances from the
-            # Anxious portal. Matched by basename so both the root profile and
+            # Nous portal. Matched by basename so both the root profile and
             # named profiles (profiles/<name>/gateway_state.json) are covered.
             if parts[-1] in _IMPORT_SKIP_NAMES:
                 skipped_runtime.append(rel)
@@ -1045,7 +1045,7 @@ def run_import(args) -> Optional[int]:
             print(f"Import incomplete: {len(errors)} file(s) were not restored (see Warnings above). "
                   "Fix the cause and re-run the import.")
             return 1
-        print("Done. Your Pulse configuration has been restored.")
+        print("Done. Your PULSE configuration has been restored.")
 
 
 
@@ -1185,36 +1185,6 @@ def create_pre_migration_backup(
     raises."""
     return _create_prefixed_full_backup(
         pulse_home, _PRE_MIGRATION_PREFIX, max(keep, 0), "pre-migration", "pre-migration backup")
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-
-def copy_db_and_verify(src: Path, dst: Path) -> bool:
-    """Like :func:`_safe_copy_db` but verifies the destination after copy.
-
-    Returns True only when the copy succeeded AND the destination is valid
-    SQLite (header + integrity check). Verification honours the default
-    size ceiling — a multi-GB destination gets the header + schema probe
-    rather than a full ``PRAGMA integrity_check`` that would page through
-    the whole file.
-    """
-    if not _safe_copy_db(src, dst):
-        return False
-    integrity = verify_sqlite_integrity(dst, run_pragma=True)
-    if not integrity.get("valid"):
-        try:
-            dst.unlink(missing_ok=True)
-        except OSError:
-            pass
-        logger.warning("Backup of %s failed integrity verification: %s", src, integrity.get("message"))
-        return False
-    return True
-
-
-# ---- END PLUGIN-COMPAT ----
 
 
 # ---------------------------------------------------------------------------
@@ -1643,7 +1613,7 @@ def restore_cron_jobs_if_emptied(
     Args:
         snapshot_id: The pre-update quick-snapshot id (from
             :func:`create_quick_snapshot`).
-        pulse_home: Override for the Pulse home directory (tests).
+        pulse_home: Override for the PULSE home directory (tests).
 
     Returns:
         ``None`` when no action was taken (the common, healthy path). On a
@@ -1692,6 +1662,189 @@ def restore_cron_jobs_if_emptied(
         snap_count,
     )
     return {"restored": True, "job_count": snap_count, "snapshot_id": snapshot_id}
+
+
+def _load_cron_jobs_doc(path: Path) -> Optional[Any]:
+    """Parse ``path`` as the canonical ``{"jobs": [...]}`` doc (legacy bare list honoured).
+
+    ``None`` = missing/unreadable/non-dict-with-list — same dialect rules as
+    :func:`_count_cron_jobs` (utf-8-sig for Windows BOMs). Never raises.
+    """
+    if not path.is_file():
+        return None
+    try:
+        with open(path, "r", encoding="utf-8-sig") as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return None
+    if isinstance(data, dict):
+        jobs = data.get("jobs", [])
+        return data if isinstance(jobs, list) else None
+    if isinstance(data, list):
+        return data
+    return None
+
+
+def _cron_jobs_list(doc: Any) -> list[Any]:
+    """The job list out of either document shape. Empty when malformed."""
+    if isinstance(doc, list):
+        return doc
+    if isinstance(doc, dict):
+        jobs = doc.get("jobs", [])
+        return jobs if isinstance(jobs, list) else []
+    return []
+
+
+def _prompt_degraded(job: Dict[str, Any]) -> bool:
+    """True when an agent job's prompt field is unusable: blank, missing, or
+    collapsed to the job's own name (a name is not a prompt)."""
+    if job.get("no_agent"):
+        return False
+    prompt = job.get("prompt")
+    if not isinstance(prompt, str) or not prompt.strip():
+        return True
+    return prompt.strip() == str(job.get("name", "")).strip()
+
+
+def restore_cron_prompt_fields_if_degraded(
+    snapshot_id: str,
+    pulse_home: Optional[Path] = None,
+) -> Optional[Dict[str, Any]]:
+    """Safety net for field-level cron-job degradation across ``pulse update``.
+
+    A writer active during the update's mutation window replaced every
+    agent-job ``prompt`` with the job's own ``name`` while the job COUNT
+    stayed identical, so the count-based net
+    (:func:`restore_cron_jobs_if_emptied`) passed the loss undetected
+    (issue #82990): 6 jobs before, 6 jobs after, every one of them with an
+    empty prompt wearing its name.
+
+    Mirrors the field-level pattern of
+    :func:`restore_config_model_settings_if_rewritten`: compare the live
+    file against the pre-update snapshot taken minutes earlier by this same
+    update run, and restore ONLY the ``prompt`` field of a live agent job
+    whose id matches a snapshot job — never the whole record, never jobs the
+    snapshot does not know. Conservative on purpose:
+
+    - a live prompt is only restored when it is blank/missing or exactly
+      equal to the job's own name — a legitimate user edit that merely
+      differs from the snapshot is never stomped;
+    - ``no_agent`` script jobs are never touched (they have no prompt);
+    - a blank snapshot prompt restores nothing (there is nothing better to
+      put back).
+
+    Args:
+        snapshot_id: The pre-update quick-snapshot id (from
+            :func:`create_quick_snapshot`).
+        pulse_home: Override for the PULSE home directory (tests/siblings).
+
+    Returns:
+        ``None`` when no action was taken (the common, healthy path). On a
+        successful restore, ``{"restored": True, "prompts": N,
+        "snapshot_id": ...}`` so the caller can warn the user.
+    """
+    if not snapshot_id:
+        return None
+
+    home = pulse_home or get_pulse_home()
+    live_path = home / _CRON_JOBS_REL
+    snap_path = _quick_snapshot_root(home) / snapshot_id / _CRON_JOBS_REL
+
+    live_doc = _load_cron_jobs_doc(live_path)
+    if live_doc is None:
+        return None
+    snap_doc = _load_cron_jobs_doc(snap_path)
+    if snap_doc is None:
+        return None
+
+    snap_by_id: Dict[str, Dict[str, Any]] = {}
+    for job in _cron_jobs_list(snap_doc):
+        if isinstance(job, dict):
+            snap_by_id[str(job.get("id", ""))] = job
+
+    restored_ids: list[str] = []
+    live_jobs = _cron_jobs_list(live_doc)
+    for job in live_jobs:
+        if not isinstance(job, dict):
+            continue
+        snap_job = snap_by_id.get(str(job.get("id", "")))
+        if snap_job is None:
+            continue
+        if not _prompt_degraded(job):
+            continue
+        snap_prompt = snap_job.get("prompt")
+        if not isinstance(snap_prompt, str) or not snap_prompt.strip():
+            continue
+        job["prompt"] = snap_prompt
+        restored_ids.append(str(job.get("id", "")))
+
+    if not restored_ids:
+        return None
+
+    try:
+        live_path.parent.mkdir(parents=True, exist_ok=True)
+        with _atomic_output_path(live_path) as tmp_path:
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                json.dump(live_doc, f, indent=2)
+                f.write("\n")
+    except (OSError, PermissionError) as exc:
+        logger.error(
+            "Cron job prompts were degraded during update but auto-restore "
+            "failed: %s",
+            exc,
+        )
+        return None
+
+    logger.warning(
+        "Restored %d cron job prompt(s) from pre-update snapshot %s — job(s) "
+        "%s had their prompt replaced by the job name (#82990)",
+        len(restored_ids),
+        snapshot_id,
+        ", ".join(restored_ids),
+    )
+    return {
+        "restored": True,
+        "prompts": len(restored_ids),
+        "job_ids": restored_ids,
+        "snapshot_id": snapshot_id,
+    }
+
+
+def restore_cron_prompt_fields_all_profiles(
+    profile_snapshots: Dict[str, str],
+    invoking_home: Optional[Path] = None,
+) -> list[Dict[str, Any]]:
+    """Run the cron prompt-field safety net for every sibling profile.
+
+    Same contract as :func:`restore_cron_jobs_all_profiles`: each profile's
+    live ``cron/jobs.json`` is compared against ITS OWN same-generation
+    pre-update snapshot. Returns one result dict per restored profile, each
+    with a ``profile`` key added. Never raises.
+    """
+    restored: list[Dict[str, Any]] = []
+    if not profile_snapshots:
+        return restored
+    home = invoking_home or get_pulse_home()
+    by_name = dict(_sibling_profile_homes(home))
+    for name, snap_id in profile_snapshots.items():
+        profile_home = by_name.get(name)
+        if profile_home is None:
+            continue
+        try:
+            result = restore_cron_prompt_fields_if_degraded(
+                snap_id, pulse_home=profile_home
+            )
+        except Exception as exc:
+            logger.debug(
+                "Cron prompt-field restore check for profile %s failed: %s",
+                name,
+                exc,
+            )
+            continue
+        if result:
+            result["profile"] = name
+            restored.append(result)
+    return restored
 
 
 def _sibling_profile_homes(invoking_home: Path) -> list[tuple[str, Path]]:
@@ -1830,7 +1983,7 @@ def restore_config_model_settings_if_rewritten(
     Args:
         snapshot_id: The pre-update quick-snapshot id (from
             :func:`create_quick_snapshot`).
-        pulse_home: Override for the Pulse home directory (tests/siblings).
+        pulse_home: Override for the PULSE home directory (tests/siblings).
 
     Returns:
         ``None`` when no action was taken (the common, healthy path). On a

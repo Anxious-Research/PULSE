@@ -1,4 +1,4 @@
-"""Default configuration data for Pulse Agent: DEFAULT_CONFIG and OPTIONAL_ENV_VARS.
+"""Default configuration data for PULSE Agent: DEFAULT_CONFIG and OPTIONAL_ENV_VARS.
 
 Pure-data leaf module — must not import from pulse_cli.config. Comments are the user-facing
 docs of config.yaml.
@@ -9,9 +9,12 @@ docs of config.yaml.
 #: user pins one. LEGACY_SANDBOX_IMAGES are the plain defaults that preceded the desktop stack
 #: (the 3.14 pin shipped between the two without a migration); a saved config still holding one
 #: is the template copied, and the config migration unsets it, never a user's own pin.
-DEFAULT_SANDBOX_IMAGE = "anxiousresearchlab/pulse-sandbox:desktop"
+DEFAULT_SANDBOX_IMAGE = "nousresearch/pulse-sandbox:desktop"
 LEGACY_SANDBOX_IMAGES = ("nikolaik/python-nodejs:python3.11-nodejs20", "nikolaik/python-nodejs:python3.14-nodejs22")
 LEGACY_SANDBOX_IMAGE = LEGACY_SANDBOX_IMAGES[0]
+# Vercel Sandbox managed image (Vercel deprecated its `runtime` presets in Aug 2026).
+DEFAULT_VERCEL_IMAGE = "vercel/sandbox/universal:latest"
+LEGACY_VERCEL_RUNTIME = "node24"  # the seeded pre-49 default, never a user choice
 
 
 def _aux(timeout, *, reasoning_effort=True, **extra):
@@ -37,7 +40,7 @@ DEFAULT_CONFIG = {
     "fallback": {"min_switch_reset_seconds": 0},
     "credential_pool_strategies": {},
     "toolsets": ["pulse-cli"],
-    # journal_mode: SQLite journal mode for every Pulse DB. "wal" default; use "delete" on
+    # journal_mode: SQLite journal mode for every PULSE DB. "wal" default; use "delete" on
     # weak-fsync/shared filesystems where WAL is not crash-safe (macOS virtiofs, NFS, SMB).
     "database": {
         "journal_mode": "wal",
@@ -126,7 +129,7 @@ DEFAULT_CONFIG = {
         # many slow/unreachable MCP servers.
         # See #63078.
         "build_wait_timeout": 600,
-        # Pulse-level retry attempts for API errors (connection drops, timeouts, 5xx) wrapping the
+        # PULSE-level retry attempts for API errors (connection drops, timeouts, 5xx) wrapping the
         # whole call; the OpenAI SDK also retries transient errors (max_retries=2). Set 1 for fast
         # failover to fallback providers; raise to tolerate longer provider hiccups.
         "api_max_retries": 3,
@@ -192,7 +195,7 @@ DEFAULT_CONFIG = {
         # Bot Mode teammate-messaging protocol section (silent unless desktop Bot Mode manages it).
         "bot_mode_protocol": True,
         # Embedder-supplied text appended to the system prompt's environment-hints block, so a host
-        # wrapping Pulse (sandbox runner, managed platform) can describe proxy/credential/ mount
+        # wrapping PULSE (sandbox runner, managed platform) can describe proxy/credential/ mount
         # layout without editing SOUL.md. Env PULSE_ENVIRONMENT_HINT overrides it.
         "environment_hint": "",
         # Coding posture: on interactive coding surfaces (CLI, TUI, desktop, ACP) in a code
@@ -220,10 +223,10 @@ DEFAULT_CONFIG = {
         "verify_on_stop": False,
         # Inactivity warning (seconds), once per run before gateway_timeout; no interrupt. 0 = off.
         "gateway_timeout_warning": 900,
-        # Max seconds any surface (CLI, TUI/Desktop, messaging gateway) blocks an agent awaiting a
-        # clarify-tool reply; then it unblocks with "[user did not respond within Xm]". 0 or less =
-        # unlimited. Resolved by tools/clarify_gateway.py::resolve_clarify_timeout (a legacy
-        # top-level ``clarify.timeout`` still wins when explicitly set).
+        # Max seconds a messaging platform blocks an agent awaiting a clarify-tool reply; then it
+        # unblocks with "[user did not respond within Xm]". 0 or less = unlimited. CLI, TUI and
+        # Desktop wait until answered. Resolved by tools/clarify_gateway.py::resolve_clarify_timeout
+        # (a legacy top-level ``clarify.timeout`` still wins when explicitly set).
         # 1h because users step away and a shorter value evicted the entry mid-think so a later
         # button tap hit a dead entry. Tradeoff: a higher value holds the gateway's running-agent
         # guard longer for a genuinely abandoned prompt — lower it to free the guard sooner. See #32762.
@@ -356,7 +359,8 @@ DEFAULT_CONFIG = {
         "singularity_image": f"docker://{DEFAULT_SANDBOX_IMAGE}",
         "modal_image": DEFAULT_SANDBOX_IMAGE,
         "daytona_image": DEFAULT_SANDBOX_IMAGE,
-        "vercel_runtime": "node24",  # vercel_sandbox backend only: node24 | node22 | python3.13
+        "vercel_image": DEFAULT_VERCEL_IMAGE,  # vercel_sandbox backend only: a Vercel-managed or VCR image
+        "vercel_runtime": "",  # deprecated by Vercel; a legacy runtime pin (node24 | node22 | python3.13) overrides vercel_image
         # Container limits (docker, singularity, modal, daytona, vercel_sandbox; not local/ssh).
         "container_cpu": 1,
         "container_memory": 5120,       # MB (default 5GB)
@@ -375,7 +379,7 @@ DEFAULT_CONFIG = {
         "docker_shm_size": "1g",
         # Run the container as the host uid:gid (`--user`) so files written to bind mounts
         # (docker_volumes, persistent workspace, mounted cwd) are owned by you, not root. Off by
-        # default for images whose entrypoints must start as root (e.g. the bundled Pulse image,
+        # default for images whose entrypoints must start as root (e.g. the bundled PULSE image,
         # which drops to `pulse` via s6-setuidgid). When on, SETUID/SETGID caps are omitted.
         "docker_run_as_host_user": False,
         # Snap-packaged Docker under AppArmor (Ubuntu cloud images; LP#1908448) refuses to exec
@@ -442,9 +446,9 @@ DEFAULT_CONFIG = {
         # With a cloud provider, auto-spawn local Chromium for LAN/localhost URLs instead
         "auto_local_for_private_urls": True,
         "cdp_url": "",  # persistent CDP endpoint for attaching to an existing Chromium/Chrome
-        # Consent to browse with the user's REAL logins locally: runs on a Pulse-managed SNAPSHOT
+        # Consent to browse with the user's REAL logins locally: runs on a PULSE-managed SNAPSHOT
         # of the ACTIVE default-Chromium profile (Local State -> profile.last_used; cookies, logins,
-        # prefs copied and re-synced per fresh session) driven by Pulse' packaged Chromium. The
+        # prefs copied and re-synced per fresh session) driven by PULSE' packaged Chromium. The
         # snapshot dir sidesteps Chrome 136+'s default-profile debugging block and never contends
         # with the running browser. Turning off deletes ~/.pulse/browser-profile/ so credentials
         # don't outlive consent. Chromium-family only (Chrome, Edge, Brave, Brave Origin, Chromium);
@@ -667,7 +671,7 @@ DEFAULT_CONFIG = {
         # Show the one-time autoraise banner; False keeps the autoraise, hides the notice.
         "codex_gpt55_autoraise_notice": True,
         # Codex app-server thread compaction mode. The codex agent owns the thread context, so
-        # Pulse' summarizer cannot shrink it. native = codex decides; pulse = Pulse' threshold
+        # PULSE' summarizer cannot shrink it. native = codex decides; pulse = PULSE' threshold
         # triggers thread/compact/start; off = never auto-trigger.
         "codex_app_server_auto": "native",
         # Opt in to OpenAI server-side compaction on the Responses API. Only gpt-5.6-family on
@@ -684,7 +688,7 @@ DEFAULT_CONFIG = {
         "in_place": True,
         # Per-model threshold overrides: keys substring-match the model name (longest wins), values
         # replace the global `threshold`, e.g. {"glm-5.2": 0.40}. Prefix a key with "<provider>:" to
-        # scope it to one route ({"openai-codex:astra": 0.85} leaves Astra on OpenRouter/Anxious at the
+        # scope it to one route ({"openai-codex:astra": 0.85} leaves Astra on OpenRouter/Nous at the
         # global value). The <512K floor (0.75) still applies raise-only on top.
         "model_thresholds": {},
         # Opt-in idle compaction (0 = off): a session resuming after this many idle seconds compacts
@@ -881,7 +885,7 @@ DEFAULT_CONFIG = {
         # and was never superseded by a successful write to the same path (catches "half the
         # parallel patches failed, model claims success").
         "file_mutation_verifier": True,
-        # Anxious credits status-bar notices (usage bands, grant-spent, depleted/restored). False mutes
+        # Nous credits status-bar notices (usage bands, grant-spent, depleted/restored). False mutes
         # them; balance data and /usage keep working.
         "credits_notices": True,
         # Append a one-line explanation when a turn ends with no usable reply (empty after retries,
@@ -967,7 +971,7 @@ DEFAULT_CONFIG = {
         "runtime_footer": {
             "enabled": False,
             # order shown; drop any to hide. Opt-in extras: latency, served_model (alias → the
-            # deployment a routing proxy reported / Pulse' fallback route).
+            # deployment a routing proxy reported / PULSE' fallback route).
             "fields": ["model", "context_pct", "cwd"],
         },
         # CLI/TUI status bar fields. Non-empty = only listed fields show (built-in order kept,
@@ -1032,7 +1036,7 @@ DEFAULT_CONFIG = {
         # leaves disconnected sessions ``ended_at IS NULL`` forever — phantom "active" rows in /resume and
         # dashboards. See #65194.
         "startup_orphan_sweep": True,
-        # OAuth gate (engaged when --host is set and --insecure is not), read by the Anxious Portal
+        # OAuth gate (engaged when --host is set and --insecure is not), read by the Nous Portal
         # plugin. Env PULSE_DASHBOARD_OAUTH_CLIENT_ID / PULSE_DASHBOARD_PORTAL_URL win when
         # non-empty. Empty client_id = no provider; empty portal_url = production.
         "oauth": {
@@ -1212,9 +1216,9 @@ DEFAULT_CONFIG = {
 
     "voice": {
         # How the Desktop voice conversation is wired:
-        #   chained  — STT → Pulse turn → TTS (the stt.* / tts.* providers below)
+        #   chained  — STT → PULSE turn → TTS (the stt.* / tts.* providers below)
         #   gpt-live — one full-duplex voice model (OpenAI GPT-Live) owns the mic and speaker and
-        #              DELEGATES every real request to Pulse (any model / provider you have
+        #              DELEGATES every real request to PULSE (any model / provider you have
         #              selected); needs an OpenAI API key. $0.05/min voice layer billing.
         "voice_chat_mode": "chained",
         "gpt_live": {
@@ -1256,7 +1260,7 @@ DEFAULT_CONFIG = {
         # an explicit number applies everywhere; 0 = unlimited.
         "max_calls_per_image": None,
     },
-    # "Hey Pulse" hands-free wake word: always-on, on-device hotword detection that starts a fresh
+    # "Hey PULSE" hands-free wake word: always-on, on-device hotword detection that starts a fresh
     # voice session. Off by default; toggle with /wake.
     "wake_word": {
         "enabled": False,
@@ -1618,7 +1622,7 @@ DEFAULT_CONFIG = {
     },
 
     "whatsapp": {
-        # reply_prefix: None = built-in "☤ *Pulse Agent*" header; "" disables; \n allowed.
+        # reply_prefix: None = built-in "☤ *PULSE Agent*" header; "" disables; \n allowed.
     },
 
     "telegram": {
@@ -1658,8 +1662,9 @@ DEFAULT_CONFIG = {
     #   platform (webhook, msgraph_webhook, api_server; no /approve channel) hits one.
     #   deny blocks instantly so the agent finds another way instead of waiting out the
     #   timeout and failing closed.
-    # timeout: seconds before an unanswered prompt fails closed (CLI and gateway). 60s
-    #   proved too tight for Telegram/Discord push notifications, hence 300.
+    # timeout: seconds before an unanswered prompt fails closed on messaging platforms, ACP and
+    #   approval transport plugins; CLI, TUI and Desktop wait until answered. 60s proved too
+    #   tight for Telegram/Discord push notifications, hence 300.
     "approvals": {
         # single_query_mode — what to do when a single-query (-q) session hits a dangerous command. -q runs
         # export PULSE_INTERACTIVE=1 (for interactive sudo prompts) but have NO user waiting to answer
@@ -1719,10 +1724,6 @@ DEFAULT_CONFIG = {
         # skipped with the reason "load timed out" and the rest keep loading; the stuck worker thread is
         # abandoned. 0 = no deadline (load inline). Max 600.
         "load_timeout_seconds": 10,
-        # Keep loading external plugins that still import pre-decomposition module paths after the
-        # 2026-09-14 removal date (see COMPAT_MANIFEST.md, `pulse plugins compat`). Stopgap only: the
-        # old paths raise ImportError once the compat layer is actually removed.
-        "allow_deprecated_imports": False,
         # Read-only plugin update-check cadence, hours (gateway tick; 0 disables). Applying stays
         # explicit: `pulse plugins update <name>`, or auto_apply below (git-class plugins only,
         # scan-gated by that same pipeline).
@@ -1745,8 +1746,8 @@ DEFAULT_CONFIG = {
     "personalities": {},
     "auth": {  # Login policy (credentials themselves live in auth.json / .env).
         # Borrow and refresh the Codex CLI (~/.codex/auth.json) and Claude Code (~/.claude/.credentials.json)
-        # logins automatically when Pulse has no usable login of its own. Their refresh tokens are single-use
-        # and rotate, so two programs on one login can log each other out; set false to make Pulse use only
+        # logins automatically when PULSE has no usable login of its own. Their refresh tokens are single-use
+        # and rotate, so two programs on one login can log each other out; set false to make PULSE use only
         # its own logins (`pulse auth add <provider>`). `pulse auth add openai-codex` still offers the import
         # interactively.
         "adopt_external_logins": True,
@@ -1818,11 +1819,11 @@ DEFAULT_CONFIG = {
         # provider falls back to the built-in so cron never loses its trigger.
         "provider": "",
         # Chronos settings; consulted only when provider == "chronos". All non-secret — the agent
-        # holds NO scheduler credentials (provision reuses the Anxious Portal token).
+        # holds NO scheduler credentials (provision reuses the Nous Portal token).
         "chronos": {
             # NAS/portal base URL that arms/cancels one-shots and mints the inbound fire JWT (used
             # as the expected issuer).
-            "portal_url": "https://portal.anxiousresearchlab.com",
+            "portal_url": "https://portal.anxious-research.com",
             # This agent's publicly reachable base URL; NAS POSTs {callback_url}/api/cron/fire. ""
             # -> Chronos unavailable, resolver falls back to the built-in ticker.
             "callback_url": "",
@@ -1926,7 +1927,7 @@ DEFAULT_CONFIG = {
         # fan-out workflows that would otherwise saturate one profile's local model / API quota / browser
         # pool while leaving other profiles idle. See #21582.
         "max_in_progress_per_profile": None,
-        # Per-home claim allowlist for boards shared across Pulse homes (#110995): profile names
+        # Per-home claim allowlist for boards shared across PULSE homes (#110995): profile names
         # this home's dispatcher may claim (list or comma-separated string). None = any existing
         # profile is claimable. Set = fail-closed (an empty list claims nothing). Every home has a
         # root profile named "default", so on a shared kanban.db every home can otherwise claim
@@ -2020,7 +2021,7 @@ DEFAULT_CONFIG = {
                 "apply_layout", "read_terminal", "read_window_below", "focus_pane",
             ],
         },
-        # Remote connector discovery/lifecycle through the Anxious tool gateway.
+        # Remote connector discovery/lifecycle through the Nous tool gateway.
         # The flag is the user's off switch; availability additionally requires
         # the portal sign-in every managed tool gates on.
         "connectors": {"enabled": True},
@@ -2030,12 +2031,12 @@ DEFAULT_CONFIG = {
         "max_size_mb": 5,      # max size per log file before rotation
         "backup_count": 3,     # rotated backups to keep
     },
-    # Remote model-catalog manifest: curated OpenRouter / Anxious Portal model lists fetched from this
+    # Remote model-catalog manifest: curated OpenRouter / Nous Portal model lists fetched from this
     # URL (falls back to the in-repo snapshot on network failure), so picker lists update without a
     # release. Default URL is served by the docs-site GitHub Pages deploy.
     "model_catalog": {
         "enabled": True,
-        "url": "https://pulse-agent.anxiousresearchlab.com/docs/api/model-catalog.json",
+        "url": "https://pulse-agent.anxious-research.com/docs/api/model-catalog.json",
         # Disk cache TTL in minutes. The gateway refreshes in the background on this cadence; the
         # CLI refetches on the next /model or `pulse model` once the cache is older. Network
         # failures silently use the stale cache. Legacy `ttl_hours` is honoured if set.
@@ -2051,7 +2052,7 @@ DEFAULT_CONFIG = {
     # the catalog does not know, so they never clamp known models. Unknown ids start from safe
     # defaults (200K context, tools on) and get patched; supports_vision / supports_reasoning stay
     # UNKNOWN (fail-open) unless the override sets them — a context_window-only entry must not turn
-    # into "text-only" and hide vision_analyze / reasoning controls (#112649). Provider keys: Pulse
+    # into "text-only" and hide vision_analyze / reasoning controls (#112649). Provider keys: PULSE
     # or models.dev id; model ids match case-insensitively. Example: {"custom:my-local-vllm":
     # {"my-llava-model": {"context_window": 8192}}}
     # Semantics: 1. NOTE: an explicit model.context_length (global) and a custom_providers per-model
@@ -2208,12 +2209,12 @@ DEFAULT_CONFIG = {
         "trust_env": True,
         # Media delivery. False: any emitted file path is delivered natively unless under the
         # credential/system denylist (/etc, /proc, ~/.ssh, ~/.aws, ~/.pulse/.env, auth.json). True:
-        # files must be under the Pulse cache, media_delivery_allow_dirs, or fresher than
+        # files must be under the PULSE cache, media_delivery_allow_dirs, or fresher than
         # trust_recent_files_seconds — recommended for public-facing gateways so prompt injection
         # can't exfiltrate host secrets. Bridged to PULSE_MEDIA_DELIVERY_STRICT.
         "strict": False,
         # Extra roots (project/scratch dirs, mounted shares) from which bare file paths may be
-        # uploaded; the Pulse cache is always trusted. List of absolute paths or one
+        # uploaded; the PULSE cache is always trusted. List of absolute paths or one
         # os.pathsep-separated string; tildes expanded. Bridged to PULSE_MEDIA_ALLOW_DIRS. Honored
         # in both modes.
         "media_delivery_allow_dirs": [],
@@ -2324,7 +2325,7 @@ DEFAULT_CONFIG = {
         "profile_build": "ask",
     },
     # Privacy-safe aggregate metrics in this profile's local telemetry dir. Collection (`enabled`)
-    # and transmission to Anxious (`send`) are SEPARATE opt-ins; see
+    # and transmission to Nous (`send`) are SEPARATE opt-ins; see
     # website/docs/developer-guide/relay-shared-metrics.md Appendix A for consent/retention.
     "telemetry": {
         "shared_metrics": {
@@ -2334,7 +2335,7 @@ DEFAULT_CONFIG = {
             "send": False,
             # Ingest endpoint (override for staging/local). Deliberately NOT env- overridable.
             # Non-HTTPS refused unless the host is localhost.
-            "endpoint": "https://telemetry.anxiousresearchlab.com/v1/telemetry",
+            "endpoint": "https://telemetry.anxious-research.com/v1/telemetry",
         },
     },
 
@@ -2400,6 +2401,14 @@ DEFAULT_CONFIG = {
         # finish in budget, while every other workspace keeps its diagnostics. Must be a list —
         # any other shape logs a warning and skips LSP for every workspace until fixed.
         "exclude_roots": [],
+        # Directories (~ expanded; everything under an entry counts) whose projects a language
+        # server may load code from: the project's own .venv/venv interpreter, node_modules
+        # TypeScript SDK, svelte.config.js, build files (cargo, Gradle, mix, ...). The worktree of
+        # the launch dir or the session's workspace (pulse -w, a Desktop project, terminal.cwd) is
+        # always trusted; in any other checkout (a clone the agent made) only servers that run no
+        # project code start, pinned to PULSE-side tools, and the npx tsc / rustfmt lint fallbacks
+        # are skipped.
+        "trusted_workspaces": [],
         # Missing server binaries: auto = install via npm/go/pip into <PULSE_HOME>/lsp/bin/ on
         # first use; manual = only binaries on PATH; off = alias for manual.
         "install_strategy": "auto",
@@ -2501,13 +2510,13 @@ DEFAULT_CONFIG = {
     "paste_collapse_threshold_fallback": 5,
     "paste_collapse_char_threshold": 2000,
 
-    # Bot Desktop: a headless Xfce screen per profile on the gateway host (Linux), streamed to Pulse
+    # Bot Desktop: a headless Xfce screen per profile on the gateway host (Linux), streamed to PULSE
     # Desktop where a human can watch, take over (logins, 2FA, CAPTCHAs) and hand back. `pulse computer-use screen`.
     "bot_desktop": {
         "geometry": "1440x900",
         # Opt-in: start the screen automatically the first time computer_use needs a display on a headless
         # host. Off by default so installing TigerVNC for other reasons never yields a screen nobody asked
-        # for; Pulse Desktop's Screen pane offers Start and this toggle.
+        # for; PULSE Desktop's Screen pane offers Start and this toggle.
         "auto_start": False,
         # Refuse to start below this much free memory (MB), measured on the host or its container cgroup,
         # whichever is tighter. Xvnc + Xfce idle at ~220 MB and a takeover's browser adds 0.5-1 GB, so a
@@ -2527,11 +2536,11 @@ DEFAULT_CONFIG = {
         #   terminal  always inside the terminal backend (error when it cannot host one).
         #   gateway   always on the gateway host, even with a sandbox terminal: the agent's screen, browser
         #             and computer_use then act OUTSIDE the terminal sandbox. Explicit opt-in.
-        # The sandbox image needs the desktop stack: anxiousresearchlab/pulse-sandbox:desktop.
+        # The sandbox image needs the desktop stack: nousresearch/pulse-sandbox:desktop.
         "placement": "auto",
     },
     "computer_use": {
-        # cua-driver's upstream PostHog telemetry defaults ON; Pulse sets
+        # cua-driver's upstream PostHog telemetry defaults ON; PULSE sets
         # CUA_DRIVER_RS_TELEMETRY_ENABLED=0 in every child env unless this is true.
         "cua_telemetry": False,
         # Windows only: opt IN to the per-boot cua-driver-serve logon task. False (default)
@@ -2562,7 +2571,7 @@ DEFAULT_CONFIG = {
         # Linux/WSL2 idle spin). None = auto (off on macOS + headless/ WSL2 Linux, on elsewhere);
         # True = always disable; False = always enable.
         # The overlay shows where agent actions land but can peg a core when idle (macOS vImage redraw loop
-        # #47032; Linux/WSL2 idle spin #28152). cua-driver ≥ 0.6.x supports --no-overlay; Pulse also calls
+        # #47032; Linux/WSL2 idle spin #28152). cua-driver ≥ 0.6.x supports --no-overlay; PULSE also calls
         # set_agent_cursor_enabled(false) after start_session when this is on.
         "no_overlay": None,
         # standard = cua-driver's own approval boundary; bounded = no runtime prompts, anything
@@ -2604,7 +2613,7 @@ DEFAULT_CONFIG = {
         # (`*.foo.com`) supported.
         "extra_allowed_hosts": [],
     },
-    "desktop": {  # Pulse Desktop (Electron) launch options; only affect `pulse desktop`.
+    "desktop": {  # PULSE Desktop (Electron) launch options; only affect `pulse desktop`.
         # CSS font-family for the app's chat and UI text (e.g. "OpenDyslexic"). Layered in front
         # of the active theme's own sans stack so missing glyphs still fall through. Empty = the
         # theme's face. The terminal pane is terminal.font_family.
@@ -2648,6 +2657,11 @@ DEFAULT_CONFIG = {
         # locally rebuilt apps so the Designated Requirement — and thus TCC grants — survives
         # updates. Empty = default ad-hoc identifier-pinned signing.
         "macos_signing_identity": "",
+        # Windows only: explicit ssh client for SSH connections, the -G config probe and SSH
+        # terminals, e.g. "C:\\Program Files\\Git\\usr\\bin\\ssh.exe" when the in-box OpenSSH is
+        # missing or broken. Empty = System32 OpenSSH, then Git for Windows' ssh.exe, then PATH.
+        # Read by the app before its first window; restart to apply. Ignored off-Windows.
+        "ssh_path": "",
         # Auto-continue a turn killed by a crash: resuming re-submits the interrupted prompt if
         # fresh; a stale one just shows the recovered partial transcript.
         "auto_continue": {
@@ -2658,8 +2672,8 @@ DEFAULT_CONFIG = {
         },
     },
 
-    "anxious": {
-        # Upper bound (seconds) on the Anxious auth keepalive tick, which derives from the
+    "nous": {
+        # Upper bound (seconds) on the Nous auth keepalive tick, which derives from the
         # server-issued credential lifetime (raising above it has no effect). 0 disables the
         # keepalive thread.
         "keepalive_interval_seconds": 900,
@@ -2670,10 +2684,10 @@ DEFAULT_CONFIG = {
         # Portal upstream serving the model is one where native is known clean. Native is the
         # better wire but on the OpenRouter-served path it re-writes the previous turn's cache on
         # 14-20% of consecutive calls in concurrent tool loops (measured 2026-09-06;
-        # AnxiousResearchLab/api#227), so chat is the default until that is fixed.
+        # NousResearch/api#227), so chat is the default until that is fixed.
         "anthropic_wire": "chat",
-        # Anxious free tier: with no other provider configured, Pulse sets up a free Anxious identity on
-        # first use (inference on anxious/welcome + connectors) and offers `/login` (terminal:
+        # Nous free tier: with no other provider configured, PULSE sets up a free Nous identity on
+        # first use (inference on nous/welcome + connectors) and offers `/login` (terminal:
         # `pulse auth upgrade`) to sign in. false turns the free tier off entirely: nothing is set
         # up and nothing is used.
         "guest": True,
@@ -2691,7 +2705,7 @@ DEFAULT_CONFIG = {
     # Managed llama.cpp runtime (docs: user-guide/local-models): official binaries, one supervised
     # llama-server in router mode. No context/VRAM knobs by design.
     "local_runtime": {
-        # Off = detection-only (Pulse still finds an external llama-server you run).
+        # Off = detection-only (PULSE still finds an external llama-server you run).
         "enabled": False,
         # Engine versions and every dependent library are pinned by pm/lock.json.
         # auto = CUDA on NVIDIA, Metal on macOS, Vulkan on other GPUs, else CPU. Explicit:
@@ -2702,7 +2716,7 @@ DEFAULT_CONFIG = {
         # Extra ports detection probes for an external llama-server (besides 8080).
         "detect_ports": [],
     },
-    "_config_version": 48,  # Config schema version - bump this when adding new required fields
+    "_config_version": 49,  # Config schema version - bump this when adding new required fields
 }
 
 
@@ -2751,11 +2765,11 @@ def _base_url(name, prompt_name=None):
 # tools=[...] lists the model tools the key unlocks.
 OPTIONAL_ENV_VARS = {
     # ── Provider (handled in provider selection, not shown in checklists) ──
-    "ANXIOUS_BASE_URL": _base_url("Anxious Portal"),
+    "NOUS_BASE_URL": _base_url("Nous Portal"),
     "PULSE_ANON_API_SECRET": _env(
-        "Shared secret for the Anxious free-tier sign-up endpoints while they are in their gated "
+        "Shared secret for the Nous free-tier sign-up endpoints while they are in their gated "
         "integration phase (not needed once the gate is removed)",
-        "Anxious free-tier shared secret (leave empty unless given one)", password=True,
+        "Nous free-tier shared secret (leave empty unless given one)", password=True,
         category="provider", advanced=True),
     "OPENROUTER_API_KEY": _env("OpenRouter API key (for vision, web scraping helpers, and MoA)",
         "OpenRouter API key", url="https://openrouter.ai/keys", password=True, tools=["vision_analyze"],
@@ -2767,7 +2781,7 @@ OPTIONAL_ENV_VARS = {
     "GEMINI_BASE_URL": _base_url("Google AI Studio", "Gemini"),
     "VERTEX_CREDENTIALS_PATH": _prov(
         "Path to a Google Cloud service account JSON for Vertex AI (Gemini). Vertex uses "
-        "OAuth2, not a static API key — this points at the credentials Pulse mints short-lived "
+        "OAuth2, not a static API key — this points at the credentials PULSE mints short-lived "
         "tokens from. Falls back to GOOGLE_APPLICATION_CREDENTIALS, then to ADC (gcloud auth "
         "application-default login). Set project/region under vertex: in config.yaml.",
         "Vertex service account JSON path (leave empty to use ADC / "
@@ -2870,7 +2884,7 @@ OPTIONAL_ENV_VARS = {
     "FIRECRAWL_API_URL": _tool("Firecrawl API URL for self-hosted instances (optional)",
         "Firecrawl API URL (leave empty for cloud)", None, password=False, advanced=True),
     "FIRECRAWL_GATEWAY_URL": _tool(
-        "Exact Firecrawl tool-gateway origin override for Anxious Subscribers only (optional)",
+        "Exact Firecrawl tool-gateway origin override for Nous Subscribers only (optional)",
         "Firecrawl gateway URL (leave empty to derive from domain)", None, password=False,
         advanced=True),
     "TOOL_GATEWAY_URL": _tool(
@@ -2882,16 +2896,16 @@ OPTIONAL_ENV_VARS = {
         "Connector-gateway URL (leave empty to derive from domain)", None,
         password=False, advanced=True),
     "TOOL_GATEWAY_DOMAIN": _tool(
-        "Shared tool-gateway domain suffix for Anxious Subscribers only, used to derive vendor "
-        "hosts, e.g. anxiousresearchlab.com -> firecrawl-gateway.anxiousresearchlab.com",
+        "Shared tool-gateway domain suffix for Nous Subscribers only, used to derive vendor "
+        "hosts, e.g. anxious-research.com -> firecrawl-gateway.anxious-research.com",
         "Tool-gateway domain suffix", None, password=False, advanced=True),
     "TOOL_GATEWAY_SCHEME": _tool(
-        "Shared tool-gateway URL scheme for Anxious Subscribers only, used to derive vendor hosts "
+        "Shared tool-gateway URL scheme for Nous Subscribers only, used to derive vendor hosts "
         "(`https` by default, set `http` for local gateway testing)", "Tool-gateway URL scheme",
         None, password=False, advanced=True),
     "TOOL_GATEWAY_USER_TOKEN": _tool(
-        "Explicit Anxious Subscriber access token for tool-gateway requests (optional; otherwise "
-        "read from the Pulse auth store)", "Tool-gateway user token", None, advanced=True),
+        "Explicit Nous Subscriber access token for tool-gateway requests (optional; otherwise "
+        "read from the PULSE auth store)", "Tool-gateway user token", None, advanced=True),
     "TAVILY_API_KEY": _tool(
         "Tavily API key for AI-native web search and extract (optional — keyless works when "
         "Tavily is selected)", "Tavily API key", "https://app.tavily.com/home",
@@ -2955,7 +2969,7 @@ OPTIONAL_ENV_VARS = {
     "MISTRAL_API_KEY": _tool("Mistral API key for Voxtral TTS and transcription (STT)",
         "Mistral API key", "https://console.mistral.ai/"),
     "PORCUPINE_ACCESS_KEY": _tool(
-        "Picovoice access key for the Porcupine 'Hey Pulse' wake word engine (optional; "
+        "Picovoice access key for the Porcupine 'Hey PULSE' wake word engine (optional; "
         "openWakeWord is the free default)", "Picovoice access key",
         "https://console.picovoice.ai/"),
     "GITHUB_TOKEN": _tool("GitHub token for Skills Hub (higher API rate limits, skill publish)",
@@ -3044,7 +3058,7 @@ OPTIONAL_ENV_VARS = {
         help=("In your Slack app, enable Socket Mode, then create Basic Information > App-Level "
         "Tokens with the connections:write scope."), password=True),
     "SLACK_ALLOWED_USERS": _msg(
-        "Comma-separated Slack member IDs allowed to use Pulse, e.g. U01ABC2DEF3. Without "
+        "Comma-separated Slack member IDs allowed to use PULSE, e.g. U01ABC2DEF3. Without "
         "this, Slack may connect but deny messages by default.", "Allowed Slack member IDs",
         "https://api.slack.com/apps",
         help=("In Slack, open your profile, choose More or the three-dot menu, then Copy member "
@@ -3141,13 +3155,13 @@ OPTIONAL_ENV_VARS = {
         "for the default profile). Useful for multi-user setups with OpenWebUI.",
         "API server model name", None, advanced=True),
     "GATEWAY_PROXY_URL": _msg(
-        "URL of a remote Pulse API server to forward messages to (proxy mode). When set, the "
+        "URL of a remote PULSE API server to forward messages to (proxy mode). When set, the "
         "gateway handles platform I/O only — all agent work is delegated to the remote server. "
         "Use for Docker E2EE containers that relay to a host agent. Also configurable via "
         "gateway.proxy_url in config.yaml.",
-        "Remote Pulse API server URL (e.g. http://192.168.1.100:8642)", None, advanced=True),
+        "Remote PULSE API server URL (e.g. http://192.168.1.100:8642)", None, advanced=True),
     "GATEWAY_PROXY_KEY": _msg(
-        "Bearer token for authenticating with the remote Pulse API server (proxy mode). Must "
+        "Bearer token for authenticating with the remote PULSE API server (proxy mode). Must "
         "match the API_SERVER_KEY on the remote host.", "Remote API server auth key", None,
         password=True, advanced=True),
     "WEBHOOK_ENABLED": _msg(

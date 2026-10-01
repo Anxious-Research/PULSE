@@ -1,4 +1,4 @@
-"""IRC Platform Adapter for Pulse Agent — stdlib asyncio only, zero external dependencies.
+"""IRC Platform Adapter for PULSE Agent — stdlib asyncio only, zero external dependencies.
 
 config.yaml ``gateway.platforms.irc.extra`` keys: server, port (6697), nickname (pulse-bot), channel,
 use_tls (true), server_password, nickserv_password, allowed_users ([] = allow all), max_message_length (450).
@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional
 from gateway.platforms._shared import (
     coerce_port, get_scoped_secret as _get_scoped_secret, seed_extra_from_env as _seed_extra_from_env, send_error
 )
+from agent.i18n import t
 from gateway.platforms.base import BasePlatformAdapter, SendResult
 from gateway.platforms.helpers import cancel_task
 from gateway.platforms.event import MessageEvent, MessageType
@@ -172,7 +173,7 @@ class IRCAdapter(BasePlatformAdapter):
         if self.server_password:
             await self._send_raw(f"PASS {self.server_password}")
         await self._send_raw(f"NICK {self.nickname}")
-        await self._send_raw(f"USER {self.nickname} 0 * :Pulse Agent")
+        await self._send_raw(f"USER {self.nickname} 0 * :PULSE Agent")
         self._recv_task = asyncio.create_task(self._receive_loop())
         try:  # wait for registration (001 RPL_WELCOME)
             await asyncio.wait_for(self._registration_event.wait(), timeout=30.0)
@@ -196,7 +197,7 @@ class IRCAdapter(BasePlatformAdapter):
         self._mark_disconnected()
         if self._writer and not self._writer.is_closing():
             with contextlib.suppress(Exception):
-                await self._send_raw("QUIT :Pulse Agent shutting down")
+                await self._send_raw("QUIT :" + t("platform.irc.quit_message"))
                 await asyncio.sleep(0.5)
             with contextlib.suppress(Exception):
                 self._writer.close()
@@ -357,7 +358,7 @@ def interactive_setup() -> None:
     existing_server = get_env_value("IRC_SERVER")
     if declines_reconfigure("IRC", "Reconfigure IRC?", "IRC_SERVER"):
         return
-    info("Connect Pulse to an IRC network. Uses Python stdlib — no extra packages needed.",
+    info("Connect PULSE to an IRC network. Uses Python stdlib — no extra packages needed.",
          "   Works with Libera.Chat, OFTC, your own ZNC/InspIRCd, etc.")
     print()
     if not _required("IRC server hostname (e.g. irc.libera.chat)", "IRC_SERVER", existing_server or "", "Server"):
@@ -498,7 +499,7 @@ async def _sa_register(conn: _StandaloneConn, nick_base: str, server_password: s
     if server_password:
         await conn.raw(f"PASS {_strip_irc_control_chars(server_password)}")
     await conn.raw(f"NICK {standalone_nick}")
-    await conn.raw(f"USER {standalone_nick} 0 * :Pulse Agent (cron)")
+    await conn.raw(f"USER {standalone_nick} 0 * :PULSE Agent (cron)")
     registered = await conn.pump(15.0, _on_registration)
     if registered is None:
         return _sa_error("registration timeout (no RPL_WELCOME)")
@@ -568,7 +569,7 @@ async def _standalone_send(pconfig, chat_id: str, message: str, *, thread_id: Op
             await asyncio.sleep(0.3)
         if not lines:
             return _sa_error("empty message after stripping")
-        await conn.raw("QUIT :delivered")
+        await conn.raw("QUIT :" + t("platform.irc.standalone_quit"))
         with contextlib.suppress(asyncio.TimeoutError):
             await asyncio.wait_for(reader.read(1024), timeout=2.0)
         return {"success": True, "message_id": _ms_id()}
@@ -582,7 +583,7 @@ async def _standalone_send(pconfig, chat_id: str, message: str, *, thread_id: Op
 
 
 def register(ctx):
-    """Plugin entry point: called by the Pulse plugin system."""
+    """Plugin entry point: called by the PULSE plugin system."""
     ctx.register_platform(
         name="irc",
         label="IRC",
@@ -610,11 +611,3 @@ def register(ctx):
             "line (long messages are automatically split). In channels, users "
             "address you by prefixing your nick. Keep responses concise and "
             "conversational."))
-
-
-# ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----
-# Names external plugins imported from this module before the Sep 2026 decomposition.
-# Internal code MUST NOT use these (scripts/check_compat_pointers.py fails CI if it does).
-# The whole block is removed by reverting the commit that added it.
-import os  # noqa: F401,E402
-# ---- END PLUGIN-COMPAT ----

@@ -2,7 +2,7 @@
  * Plugin discovery — both delivery modes:
  *
  *  - BUNDLED: every `src/plugins/<name>/plugin.{js,ts,tsx}` default-exporting
- *    a `PulsePlugin` registers automatically (vite glob — drop a folder in).
+ *    a `PULSEPlugin` registers automatically (vite glob — drop a folder in).
  *    `pulse-bots` (Bot Mode) ships in-tree and is ON by default; other
  *    reference/demo plugins live in the companion `pulse-example-plugins`
  *    repo. `.js` entries are SDK-consumer plugins adopted from standalone
@@ -14,11 +14,11 @@
  */
 
 import { trackGatewayEventDisposers } from './events'
-import { createPluginContext, type PulsePlugin } from './plugin'
+import { createPluginContext, type PULSEPlugin } from './plugin'
 import { pluginActive, publishPlugin } from './plugins-store'
 import { watchRuntimePlugins } from './runtime-loader'
 
-const modules = import.meta.glob<{ default: PulsePlugin }>('../plugins/*/plugin.{js,ts,tsx}', { eager: true })
+const modules = import.meta.glob<{ default: PULSEPlugin }>('../plugins/*/plugin.{js,ts,tsx}', { eager: true })
 
 // One-shot init guard. Contributions themselves register by id (re-registering
 // is idempotent), but the disk-door watcher setup below (watchRuntimePlugins)
@@ -37,7 +37,7 @@ export function discoverBundledPlugins(): void {
     const plugin = mod.default
 
     if (!plugin?.id || typeof plugin.register !== 'function') {
-      console.warn(`[plugins] ${path} has no valid default PulsePlugin export — skipped`)
+      console.warn(`[plugins] ${path} has no valid default PULSEPlugin export — skipped`)
 
       continue
     }

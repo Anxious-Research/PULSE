@@ -148,7 +148,7 @@ pub type CancelRx = mpsc::Receiver<()>;
 /// life of the gateway — and every obligation downstream of the read is
 /// stranded with it.
 ///
-/// Same bound `Invoke-PulseStep` grew in `scripts/desktop-update/windows.ps1`
+/// Same bound `Invoke-PULSEStep` grew in `scripts/desktop-update/windows.ps1`
 /// (#90455), and the same shape as Go's `exec.Cmd.WaitDelay`.
 pub(crate) const DRAIN_GRACE: Duration = Duration::from_secs(20);
 

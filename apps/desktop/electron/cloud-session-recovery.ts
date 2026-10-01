@@ -1,4 +1,4 @@
-import { isPulseCloudAgentUrl } from './backend-health'
+import { isNousCloudAgentUrl } from './backend-health'
 
 interface CloudRecoveryDeps {
   hasNativeSession: (baseUrl: string) => boolean
@@ -20,7 +20,7 @@ export function createCloudSessionRecovery(deps: CloudRecoveryDeps) {
       return await mint()
     } catch (error) {
       if (
-        !isPulseCloudAgentUrl(baseUrl) ||
+        !isNousCloudAgentUrl(baseUrl) ||
         hadNativeSession ||
         deps.hasNativeSession(baseUrl) ||
         (error as { statusCode?: number })?.statusCode !== 401

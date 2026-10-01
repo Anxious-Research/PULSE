@@ -67,7 +67,7 @@ def generate_bash(parser: argparse.ArgumentParser) -> str:
                 f"            return\n"
                 f"            ;;")
     cases_str = "\n".join(cases)
-    return f"""# Pulse Agent bash completion
+    return f"""# PULSE Agent bash completion
 # Add to ~/.bashrc:
 #   eval "$(pulse completion bash)"
 
@@ -153,7 +153,7 @@ def generate_zsh(parser: argparse.ArgumentParser) -> str:
                 f"                    ;;")
     sub_cases_str = "\n".join(sub_cases)
     return f"""#compdef pulse
-# Pulse Agent zsh completion
+# PULSE Agent zsh completion
 # Add to ~/.zshrc:
 #   eval "$(pulse completion zsh)"
 
@@ -201,7 +201,7 @@ def generate_fish(parser: argparse.ArgumentParser) -> str:
     subcommands = _sorted_subcommands(parser)
     top_cmds_str = " ".join(cmd for cmd, _ in subcommands)
     lines: list[str] = [
-        "# Pulse Agent fish completion",
+        "# PULSE Agent fish completion",
         "# Add to your config:",
         "#   pulse completion fish | source",
         "",

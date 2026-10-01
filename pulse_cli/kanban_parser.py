@@ -459,10 +459,10 @@ def build_parser(parent_subparsers: argparse._SubParsersAction) -> argparse.Argu
     kanban_parser = parent_subparsers.add_parser(
         "kanban",
         help="Multi-profile collaboration board (tasks, links, comments)",
-        description="Durable SQLite-backed task board shared across Pulse profiles. "
+        description="Durable SQLite-backed task board shared across PULSE profiles. "
                     "Tasks are claimed atomically, can depend on other tasks, and "
                     "are executed by a named profile in an isolated workspace. "
-                    "See https://pulse-agent.anxiousresearchlab.com/docs/user-guide/features/kanban.",
+                    "See https://pulse-agent.anxious-research.com/docs/user-guide/features/kanban.",
     )
     # --board scopes every subcommand to one board's DB; when omitted the
     # resolution is PULSE_KANBAN_BOARD, then the persisted current-board

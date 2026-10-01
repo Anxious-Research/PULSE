@@ -595,7 +595,7 @@ def refresh_launchd_plist_if_needed() -> bool:
             target, int(_reload_budget), _launchd_reload_log_path(),
         )
         return False
-    print("↻ Updated gateway launchd service definition to match the current Pulse install")
+    print("↻ Updated gateway launchd service definition to match the current PULSE install")
     return True
 
 
@@ -901,7 +901,7 @@ def launchd_status(deep: bool = False):
     # `launchctl list` exits 0 for any registered definition (even `state = not running`); only a PID proves a process.
     launchd_pid = _gw()._parse_launchd_pid_from_list_output(list_output) if service_listed else None
 
-    # Pulse PID may be a detached fallback process; when launchd IS supervising both PIDs match — don't double-count.
+    # PULSE PID may be a detached fallback process; when launchd IS supervising both PIDs match — don't double-count.
     from gateway.status import get_running_pid
     fallback_pid = get_running_pid(cleanup_stale=False)
     if launchd_pid is not None and fallback_pid == launchd_pid:
@@ -912,9 +912,9 @@ def launchd_status(deep: bool = False):
 
     print(f"Launchd plist: {plist_path}")
     if _gw().launchd_plist_is_current():
-        print("✓ Service definition matches the current Pulse install")
+        print("✓ Service definition matches the current PULSE install")
     else:
-        print("⚠ Service definition is stale relative to the current Pulse install")
+        print("⚠ Service definition is stale relative to the current PULSE install")
         print("  Run: pulse gateway start")
 
     if not service_listed:

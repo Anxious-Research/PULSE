@@ -4,7 +4,7 @@
 // that go. The decision + copy live here (pure, testable) so main.ts only owns
 // the IPC and the dialog call.
 //
-// That's only true for a backend the app owns. A remote URL or Pulse Cloud
+// That's only true for a backend the app owns. A remote URL or PULSE Cloud
 // backend is supervised elsewhere and finishes the turn after the app quits,
 // so its prompt says so instead of warning about lost work (#79579).
 
@@ -118,11 +118,39 @@ export function quitPromptFor(
       lines.length > 0 ? '' : null,
       backendOwned
         ? 'Quitting stops the agent mid-turn. Any work it has not finished writing is lost.'
-        : 'The agent keeps running on the remote backend. Quitting only closes Pulse on this computer; reconnect later to see the results.'
+        : 'The agent keeps running on the remote backend. Quitting only closes PULSE on this computer; reconnect later to see the results.'
     ]
       .filter(line => line !== null)
       .join('\n')
       .trim(),
-    message: work.count === 1 ? 'Pulse is still working on 1 chat.' : `Pulse is still working on ${work.count} chats.`
+    message: work.count === 1 ? 'PULSE is still working on 1 chat.' : `PULSE is still working on ${work.count} chats.`
   }
+}
+
+/**
+ * Whether a window's 'close' event should be intercepted to show the
+ * active-work confirmation.
+ *
+ * On Windows and Linux, closing the last window triggers app.quit() →
+ * before-quit, but by then the renderer's webContents is already destroyed
+ * and its entry has been removed from the active-work map — so the existing
+ * before-quit guard finds nothing and the app exits silently. Intercepting
+ * 'close' instead catches the guard while the work data is still live.
+ *
+ * macOS is excluded: closing the primary window there is the standard
+ * "window stays in Dock" gesture, not a quit, and prompting on it would
+ * block a normal workflow. Chat windows other than the final one are also
+ * excluded because closing them does not stop the application or its work.
+ */
+export function shouldGuardWindowClose(
+  work: ActiveWork,
+  quittingForHandoff: boolean,
+  isMac: boolean,
+  hasOtherChatWindows: boolean
+): boolean {
+  if (isMac || quittingForHandoff || hasOtherChatWindows || work.count < 1) {
+    return false
+  }
+
+  return true
 }

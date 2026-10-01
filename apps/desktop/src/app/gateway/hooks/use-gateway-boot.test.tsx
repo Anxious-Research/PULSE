@@ -268,11 +268,11 @@ function fakeDesktop() {
 
 function Harness({
   beforeConnectionSwitch = () => undefined,
-  refreshPulseConfig = async () => undefined,
+  refreshPULSEConfig = async () => undefined,
   refreshSessions
 }: {
   beforeConnectionSwitch?: () => void
-  refreshPulseConfig?: (force?: boolean, shouldPublish?: () => boolean) => Promise<void>
+  refreshPULSEConfig?: (force?: boolean, shouldPublish?: () => boolean) => Promise<void>
   refreshSessions?: (shouldPublish?: () => boolean) => Promise<void>
 } = {}) {
   useGatewayBoot({
@@ -281,7 +281,7 @@ function Harness({
     handleServerRequest: () => false,
     onConnectionReady: () => undefined,
     onGatewayReady: () => undefined,
-    refreshPulseConfig,
+    refreshPULSEConfig,
     refreshSessions: refreshSessions ?? (async () => undefined)
   })
 
@@ -892,9 +892,9 @@ describe('useGatewayBoot remote reconnect loop (real hook, fake socket)', () => 
     expect($desktopBoot.get().error).toBeNull()
   })
 
-  it('INITIAL boot against a dead VPS: getConnection hangs (waitForPulse) → app sits in the connecting combo, then fails', async () => {
+  it('INITIAL boot against a dead VPS: getConnection hangs (waitForPULSE) → app sits in the connecting combo, then fails', async () => {
     // The report's actual path: a fresh launch pointed at an unreachable VPS.
-    // startPulse()'s remote branch awaits waitForPulse() for 45s before it
+    // startPULSE()'s remote branch awaits waitForPULSE() for 45s before it
     // throws, so the renderer's `await desktop.getConnection()` stays pending
     // that whole window. During it: gatewayState is still 'idle' (connect was
     // never reached) and boot.error is null → connecting=true → the fullscreen
@@ -919,10 +919,10 @@ describe('useGatewayBoot remote reconnect loop (real hook, fake socket)', () => 
     expect($desktopBoot.get().error).toBeNull()
     // ^ connecting === true here → fullscreen CONNECTING, no Settings.
 
-    // After ~45s waitForPulse gives up and getConnection rejects → boot()
+    // After ~45s waitForPULSE gives up and getConnection rejects → boot()
     // catch → failDesktopBoot → the BootFailureOverlay recovery surface.
     await act(async () => {
-      rejectConn(new Error('Pulse backend did not become ready: timeout'))
+      rejectConn(new Error('PULSE backend did not become ready: timeout'))
       await vi.advanceTimersByTimeAsync(0)
     })
 
@@ -1377,7 +1377,7 @@ describe('useGatewayBoot remote reconnect loop (real hook, fake socket)', () => 
 
     ;(window as { pulseDesktop?: unknown }).pulseDesktop = desktop
 
-    const refreshPulseConfig = async (_force = false, shouldPublish?: () => boolean) => {
+    const refreshPULSEConfig = async (_force = false, shouldPublish?: () => boolean) => {
       if (!shouldPublish) {
         return
       }
@@ -1394,7 +1394,7 @@ describe('useGatewayBoot remote reconnect loop (real hook, fake socket)', () => 
       }
     }
 
-    render(<Harness refreshPulseConfig={refreshPulseConfig} />)
+    render(<Harness refreshPULSEConfig={refreshPULSEConfig} />)
     await flushAsync()
     expect($gatewayState.get()).toBe('open')
 
@@ -1772,9 +1772,9 @@ describe('useGatewayBoot remote reconnect loop (real hook, fake socket)', () => 
 
   it('a getConnection() that hangs on INITIAL boot rejects on its own after the reconnect-attempt timeout, not only when main eventually gives up (#93454)', async () => {
     // boot()'s getConnection() had no bound of its own — only main's own
-    // eventual timeout (e.g. waitForPulse, ~45s) ever settled it. A wedge
+    // eventual timeout (e.g. waitForPULSE, ~45s) ever settled it. A wedge
     // that main never resolves (not even a rejection) must not hang
-    // "Starting Pulse…" forever; the renderer needs to own its own bound
+    // "Starting PULSE…" forever; the renderer needs to own its own bound
     // here too, same as attemptReconnect() and softSwitch().
     const desktop = fakeDesktop()
     desktop.getConnection = vi.fn(() => new Promise(() => undefined))
@@ -2026,7 +2026,7 @@ describe('useGatewayBoot remote reconnect loop (real hook, fake socket)', () => 
     // That used to promote into BootFailureOverlay and lock reading/drafting.
     act(() => {
       desktop.emitBootProgress({
-        error: 'Could not reach the remote Pulse gateway while refreshing its WebSocket ticket. Try reconnecting.',
+        error: 'Could not reach the remote PULSE gateway while refreshing its WebSocket ticket. Try reconnecting.',
         message: 'Desktop boot failed',
         phase: 'backend.error',
         progress: 94,
@@ -2043,7 +2043,7 @@ describe('useGatewayBoot remote reconnect loop (real hook, fake socket)', () => 
     // The version-skew report: gateway WS connects fine, but refreshSessions()
     // rejects (e.g. older backend 404s an endpoint the fallback didn't cover,
     // or a transient read error). That must NOT reject boot() into
-    // failDesktopBoot's "Pulse couldn't start" overlay — the socket is open
+    // failDesktopBoot's "PULSE couldn't start" overlay — the socket is open
     // and the app is fully usable with an empty sidebar.
     const refreshSessions = vi.fn(async () => {
       throw new Error('404: {"detail":"No such API endpoint: /api/profiles/sessions/sidebar"}')
@@ -2070,7 +2070,7 @@ describe('useGatewayBoot remote reconnect loop (real hook, fake socket)', () => 
 
   it('a backend exit while the boot overlay is up fails the overlay and does not add a dead-button toast', async () => {
     // reconnectGateway() is a no-op before boot completes, so a "Restart
-    // Pulse" toast here would do nothing when clicked; the overlay's own
+    // PULSE" toast here would do nothing when clicked; the overlay's own
     // Retry is the recovery.
     const desktop = fakeDesktop()
     desktop.getConnection = vi.fn(() => new Promise<never>(() => undefined))
@@ -2113,8 +2113,8 @@ describe('useGatewayBoot remote reconnect loop (real hook, fake socket)', () => 
     desktop.settings = {
       getDefaultProjectDir: vi.fn(async () => ({
         defaultLabel: 'C:\\Users\\sonny',
-        dir: 'C:\\Pulse',
-        resolvedCwd: 'C:\\Pulse'
+        dir: 'C:\\PULSE',
+        resolvedCwd: 'C:\\PULSE'
       })),
       pickDefaultProjectDir: vi.fn(async () => undefined),
       setDefaultProjectDir: vi.fn(async () => undefined)
@@ -2140,8 +2140,8 @@ describe('useGatewayBoot remote reconnect loop (real hook, fake socket)', () => 
     render(<Harness />)
     await flushAsync()
 
-    expect(cwdAtConnect).toBe('C:\\Pulse')
-    expect($currentCwd.get()).toBe('C:\\Pulse')
+    expect(cwdAtConnect).toBe('C:\\PULSE')
+    expect($currentCwd.get()).toBe('C:\\PULSE')
   })
 
   it('FIX: primary sleep/wake reconnect dials the window backend, not the active secondary profile', async () => {
@@ -2189,7 +2189,7 @@ describe('useGatewayBoot remote reconnect loop (real hook, fake socket)', () => 
 
   it('FIX #82679: a transient remote boot failure self-heals — the next attempt rebuilds the dropped connection', async () => {
     // The reported class: the app relaunches (or wakes) against a registered
-    // SSH/HTTP remote whose transport dropped. startPulse() rejects with a
+    // SSH/HTTP remote whose transport dropped. startPULSE() rejects with a
     // transient transport error ("Could not verify the existing SSH backend"),
     // main tags the boot progress `retryable`, and — before the fix — the app
     // parked on "Desktop boot failed" until the user re-entered the exact same
@@ -2238,7 +2238,7 @@ describe('useGatewayBoot remote reconnect loop (real hook, fake socket)', () => 
     desktop.getBootProgress = vi.fn(async () => ({
       error: null,
       fakeMode: false,
-      message: 'Pulse is ready',
+      message: 'PULSE is ready',
       phase: 'backend.ready',
       progress: 100,
       retryable: false,
@@ -2273,7 +2273,7 @@ describe('useGatewayBoot remote reconnect loop (real hook, fake socket)', () => 
     desktop.getBootProgress = vi.fn(async () => ({
       error: null,
       fakeMode: false,
-      message: 'Pulse is ready',
+      message: 'PULSE is ready',
       phase: 'backend.ready',
       progress: 100,
       retryable: false,
@@ -2298,7 +2298,7 @@ describe('useGatewayBoot remote reconnect loop (real hook, fake socket)', () => 
     desktop.getBootProgress = vi.fn(async () => ({
       error: null,
       fakeMode: false,
-      message: 'Pulse is ready',
+      message: 'PULSE is ready',
       phase: 'backend.ready',
       progress: 100,
       retryable: false,
@@ -2307,15 +2307,15 @@ describe('useGatewayBoot remote reconnect loop (real hook, fake socket)', () => 
     }))
     ;(window as { pulseDesktop?: unknown }).pulseDesktop = desktop
 
-    const refreshPulseConfig = vi.fn(async () => {
+    const refreshPULSEConfig = vi.fn(async () => {
       FakeWebSocket.instances[0]?.drop()
       throw new Error('post-connect initialization failed')
     })
 
-    render(<Harness refreshPulseConfig={refreshPulseConfig} />)
+    render(<Harness refreshPULSEConfig={refreshPULSEConfig} />)
     await flushAsync()
 
-    expect(refreshPulseConfig).toHaveBeenCalledTimes(1)
+    expect(refreshPULSEConfig).toHaveBeenCalledTimes(1)
     expect($desktopBoot.get().error).toBeTruthy()
     expect(desktop.getConnection).toHaveBeenCalledTimes(1)
     await advanceBackoff()
@@ -2358,7 +2358,7 @@ describe('useGatewayBoot remote reconnect loop (real hook, fake socket)', () => 
   })
 
   it('a failed cold boot keeps its recovery surface while main replays cold-boot progress behind it (#112899)', async () => {
-    // Main keeps startPulse() available after the renderer's boot concluded
+    // Main keeps startPULSE() available after the renderer's boot concluded
     // in failure; any later getConnection() caller re-enters it and replays
     // `backend.resolve` (running:true — hides BootFailureOverlay) then
     // `backend.remote` (error:null — the store's late-progress guard only
@@ -2367,10 +2367,10 @@ describe('useGatewayBoot remote reconnect loop (real hook, fake socket)', () => 
     // ~45s readiness wait, indefinitely.
     const desktop = fakeDesktop()
     desktop.getConnection = vi.fn(async () => {
-      throw new Error('Pulse backend did not become ready: getaddrinfo ENOTFOUND gateway.tailnet.example')
+      throw new Error('PULSE backend did not become ready: getaddrinfo ENOTFOUND gateway.tailnet.example')
     })
     desktop.getBootProgress = vi.fn(async () => ({
-      error: 'Pulse backend did not become ready: getaddrinfo ENOTFOUND gateway.tailnet.example',
+      error: 'PULSE backend did not become ready: getaddrinfo ENOTFOUND gateway.tailnet.example',
       fakeMode: false,
       message: 'Desktop boot failed',
       phase: 'backend.error',
@@ -2392,7 +2392,7 @@ describe('useGatewayBoot remote reconnect loop (real hook, fake socket)', () => 
         desktop.emitBootProgress({
           error: null,
           fakeMode: false,
-          message: 'Resolving Pulse backend',
+          message: 'Resolving PULSE backend',
           phase: 'backend.resolve',
           progress: 8,
           running: true,
@@ -2401,7 +2401,7 @@ describe('useGatewayBoot remote reconnect loop (real hook, fake socket)', () => 
         desktop.emitBootProgress({
           error: null,
           fakeMode: false,
-          message: 'Connecting to remote Pulse backend at https://gateway.tailnet.example:8443',
+          message: 'Connecting to remote PULSE backend at https://gateway.tailnet.example:8443',
           phase: 'backend.remote',
           progress: 24,
           running: true,
@@ -2463,7 +2463,7 @@ describe('useGatewayBoot remote reconnect loop (real hook, fake socket)', () => 
       desktop.emitBootProgress({
         error: null,
         fakeMode: false,
-        message: 'Resolving Pulse backend',
+        message: 'Resolving PULSE backend',
         phase: 'backend.resolve',
         progress: 8,
         running: true,

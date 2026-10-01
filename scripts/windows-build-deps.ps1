@@ -1,22 +1,22 @@
 # Native build dependencies are separate from PM's application environment.
 
 # An interactive console sees one status line per build command, with the
-# full output in $script:PulseBuildLog; CI and a redirected stdout (pm under
+# full output in $script:PULSEBuildLog; CI and a redirected stdout (pm under
 # the installer, which logs that itself) keep the full stream. install.ps1
 # has its own copy: this file is dot-sourced by the build entry point and
 # setup-pulse.ps1, which never load the installer.
-function Test-PulseBuildQuiet {
-    if ($env:CI -or $env:GITHUB_ACTIONS -or $env:PULSE_INSTALL_VERBOSE -or -not $script:PulseBuildLog) { return $false }
+function Test-PULSEBuildQuiet {
+    if ($env:CI -or $env:GITHUB_ACTIONS -or $env:PULSE_INSTALL_VERBOSE -or -not $script:PULSEBuildLog) { return $false }
     try { return -not [Console]::IsOutputRedirected } catch { return $false }
 }
 
-function Write-PulseBuildNote {
+function Write-PULSEBuildNote {
     # Discovery details belong in CI transcripts, not on a user's console.
     param([string]$Message)
-    if (-not (Test-PulseBuildQuiet)) { Write-Host "-> $Message" }
+    if (-not (Test-PULSEBuildQuiet)) { Write-Host "-> $Message" }
 }
 
-function Invoke-PulseBuildCommand {
+function Invoke-PULSEBuildCommand {
     param([string]$Command, [string[]]$Arguments, [string]$Label)
     # Windows PowerShell 5.1 returns every match from Get-Command even without
     # -All. .Source on that array is every path joined by a space, and the call
@@ -30,11 +30,11 @@ function Invoke-PulseBuildCommand {
     $previousPreference = $ErrorActionPreference
     try {
         $ErrorActionPreference = 'Continue'
-        if (Test-PulseBuildQuiet) {
+        if (Test-PULSEBuildQuiet) {
             $recent = New-Object 'System.Collections.Generic.Queue[string]'
             $width = 80
             try { $width = [Math]::Max(20, $Host.UI.RawUI.WindowSize.Width) } catch { $width = 80 }
-            $writer = New-Object System.IO.StreamWriter($script:PulseBuildLog, $true, (New-Object System.Text.UTF8Encoding($false)))
+            $writer = New-Object System.IO.StreamWriter($script:PULSEBuildLog, $true, (New-Object System.Text.UTF8Encoding($false)))
             try {
                 $writer.WriteLine("==> $Label ($((Get-Date).ToUniversalTime().ToString('s'))Z)")
                 & $executable @Arguments 2>&1 | ForEach-Object {
@@ -55,7 +55,7 @@ function Invoke-PulseBuildCommand {
             if ($code -ne 0) {
                 Write-Host "[X] $Label failed (exit $code). Last output:" -ForegroundColor Red
                 foreach ($line in $recent) { Write-Host "    $line" }
-                Write-Host "    full log: $script:PulseBuildLog"
+                Write-Host "    full log: $script:PULSEBuildLog"
             }
         } else {
             Write-Host "-> $Label"
@@ -66,15 +66,15 @@ function Invoke-PulseBuildCommand {
     if ($code -ne 0) { throw "$Command failed with exit code $code" }
 }
 
-function Install-PulseArm64OpenSSL {
+function Install-PULSEArm64OpenSSL {
     param([string]$Vcpkg, [string]$Root)
     $prefix = Join-Path $Root 'installed\arm64-windows-static-md'
     $required = @('include\openssl\ssl.h', 'lib\libcrypto.lib', 'lib\libssl.lib')
     $missing = @($required | Where-Object { -not (Test-Path -LiteralPath (Join-Path $prefix $_) -PathType Leaf) })
     if ($missing.Count) {
-        Invoke-PulseBuildCommand $Vcpkg @('install', 'openssl:arm64-windows-static-md', '--classic', '--disable-metrics', "--x-install-root=$(Join-Path $Root 'installed')") 'Building static ARM64 OpenSSL via vcpkg (several minutes)'
+        Invoke-PULSEBuildCommand $Vcpkg @('install', 'openssl:arm64-windows-static-md', '--classic', '--disable-metrics', "--x-install-root=$(Join-Path $Root 'installed')") 'Building static ARM64 OpenSSL via vcpkg (several minutes)'
     } else {
-        Write-PulseBuildNote "ARM64 OpenSSL development libraries found: $prefix"
+        Write-PULSEBuildNote "ARM64 OpenSSL development libraries found: $prefix"
     }
     foreach ($relative in $required) {
         if (-not (Test-Path -LiteralPath (Join-Path $prefix $relative) -PathType Leaf)) {
@@ -84,7 +84,7 @@ function Install-PulseArm64OpenSSL {
     return $prefix
 }
 
-function Get-PulseArm64VisualStudio {
+function Get-PULSEArm64VisualStudio {
     $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
     if (-not (Test-Path -LiteralPath $vswhere)) { return $null }
     $found = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.ARM64 -property installationPath
@@ -92,7 +92,7 @@ function Get-PulseArm64VisualStudio {
     return ($found | Select-Object -First 1)
 }
 
-function Get-PulseClang {
+function Get-PULSEClang {
     param([string]$VisualStudio)
     $command = Get-Command clang.exe -ErrorAction SilentlyContinue
     if ($command) { return $command.Source }
@@ -106,16 +106,16 @@ function Get-PulseClang {
     return ($candidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1)
 }
 
-function Initialize-PulseArm64BuildTools {
+function Initialize-PULSEArm64BuildTools {
     param([string]$StateRoot, [string]$OpenSSLRoot)
     if ([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT) {
         throw 'ARM64 build dependencies require Windows.'
     }
     $buildRoot = Join-Path $StateRoot 'build-tools'
     New-Item -ItemType Directory -Force -Path $buildRoot | Out-Null
-    $script:PulseBuildLog = Join-Path $buildRoot 'build.log'
-    $vs = Get-PulseArm64VisualStudio
-    $clangPath = Get-PulseClang -VisualStudio $vs
+    $script:PULSEBuildLog = Join-Path $buildRoot 'build.log'
+    $vs = Get-PULSEArm64VisualStudio
+    $clangPath = Get-PULSEClang -VisualStudio $vs
     if (-not $vs -or -not $clangPath) {
         $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
         $principal = New-Object Security.Principal.WindowsPrincipal($identity)
@@ -154,12 +154,12 @@ function Initialize-PulseArm64BuildTools {
             }
         }
         if ($install.ExitCode -notin @(0, 3010)) { throw "Visual Studio installation failed: $($install.ExitCode)" }
-        $vs = Get-PulseArm64VisualStudio
+        $vs = Get-PULSEArm64VisualStudio
         if (-not $vs) { throw 'ARM64 C++ build tools remain unavailable. Restart Windows if the installer requested it.' }
-        $clangPath = Get-PulseClang -VisualStudio $vs
+        $clangPath = Get-PULSEClang -VisualStudio $vs
         if (-not $clangPath) { throw 'The Clang compiler is still missing after Visual Studio setup.' }
     }
-    Write-PulseBuildNote "ARM64 C++ build tools found: $vs"
+    Write-PULSEBuildNote "ARM64 C++ build tools found: $vs"
     # CI, desktop builds and native staging can inherit the same developer
     # environment. VsDevCmd prepends its paths again on every call, eventually
     # overflowing cmd.exe's line limit. Reuse only a matching, usable environment.
@@ -212,19 +212,19 @@ function Initialize-PulseArm64BuildTools {
         if ((Get-FileHash -Algorithm SHA256 $installer).Hash.ToLowerInvariant() -ne 'de9f7d29ccd39efa59a3dda3ec363b396e09b92681229b9b8f6aaa4c84285e9c') {
             throw 'rustup installer SHA256 mismatch'
         }
-        Invoke-PulseBuildCommand $installer @('-y', '--no-modify-path', '--profile', 'minimal', '--default-toolchain', '1.98.0-aarch64-pc-windows-msvc') 'Installing the Rust toolchain (1.98.0, ARM64) for those source builds'
+        Invoke-PULSEBuildCommand $installer @('-y', '--no-modify-path', '--profile', 'minimal', '--default-toolchain', '1.98.0-aarch64-pc-windows-msvc') 'Installing the Rust toolchain (1.98.0, ARM64) for those source builds'
         $rustup = Get-Command rustup.exe -ErrorAction Stop
     }
     $rustc = Get-Command rustc.exe -ErrorAction SilentlyContinue
     $rustInfo = if ($rustc) { (& $rustc.Source -vV) -join "`n" } else { '' }
     if ($rustInfo -notmatch 'host: aarch64-pc-windows-msvc') {
-        Invoke-PulseBuildCommand $rustup.Source @('toolchain', 'install', '1.98.0-aarch64-pc-windows-msvc', '--profile', 'minimal') 'Installing Rust 1.98.0 for ARM64'
+        Invoke-PULSEBuildCommand $rustup.Source @('toolchain', 'install', '1.98.0-aarch64-pc-windows-msvc', '--profile', 'minimal') 'Installing Rust 1.98.0 for ARM64'
         $env:RUSTUP_TOOLCHAIN = '1.98.0-aarch64-pc-windows-msvc'
     }
-    Write-PulseBuildNote 'ARM64 Rust toolchain ready'
+    Write-PULSEBuildNote 'ARM64 Rust toolchain ready'
 
     $env:CC_aarch64_pc_windows_msvc = $clangPath
-    Write-PulseBuildNote "ARM64 Rust C compiler: $clangPath"
+    Write-PULSEBuildNote "ARM64 Rust C compiler: $clangPath"
 
     $vcpkgRoot = $null
     $vcpkgCommand = Get-Command vcpkg.exe -ErrorAction SilentlyContinue
@@ -245,15 +245,15 @@ function Initialize-PulseArm64BuildTools {
             # Phase lines ("Receiving objects: 42%") feed the status line;
             # git prints none to a pipe unless asked.
             $progress = @()
-            if (Test-PulseBuildQuiet) { $progress = @('--progress') }
-            Invoke-PulseBuildCommand 'git' (@('clone') + $progress + @('https://github.com/microsoft/vcpkg.git', $vcpkgRoot)) 'Downloading vcpkg to build OpenSSL for ARM64'
-            Invoke-PulseBuildCommand 'git' @('-C', $vcpkgRoot, 'checkout', '--detach', '00c5775211f45cd08b37fce0484b4cb940e422ab') 'Pinning vcpkg'
+            if (Test-PULSEBuildQuiet) { $progress = @('--progress') }
+            Invoke-PULSEBuildCommand 'git' (@('clone') + $progress + @('https://github.com/microsoft/vcpkg.git', $vcpkgRoot)) 'Downloading vcpkg to build OpenSSL for ARM64'
+            Invoke-PULSEBuildCommand 'git' @('-C', $vcpkgRoot, 'checkout', '--detach', '00c5775211f45cd08b37fce0484b4cb940e422ab') 'Pinning vcpkg'
         }
-        Invoke-PulseBuildCommand (Join-Path $vcpkgRoot 'bootstrap-vcpkg.bat') @('-disableMetrics') 'Building vcpkg'
+        Invoke-PULSEBuildCommand (Join-Path $vcpkgRoot 'bootstrap-vcpkg.bat') @('-disableMetrics') 'Building vcpkg'
     }
     $env:VCPKG_ROOT = $vcpkgRoot
     # The install tree can be cached independently of the discovered checkout.
     if (-not $OpenSSLRoot) { $OpenSSLRoot = $vcpkgRoot }
-    $env:OPENSSL_DIR = Install-PulseArm64OpenSSL -Vcpkg (Join-Path $vcpkgRoot 'vcpkg.exe') -Root $OpenSSLRoot
+    $env:OPENSSL_DIR = Install-PULSEArm64OpenSSL -Vcpkg (Join-Path $vcpkgRoot 'vcpkg.exe') -Root $OpenSSLRoot
     $env:OPENSSL_STATIC = '1'
 }

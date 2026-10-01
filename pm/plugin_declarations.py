@@ -80,7 +80,7 @@ class PythonDeclaration:
             return None
         if SpecifierSet(self.requires_python).contains(version, prereleases=True):
             return None
-        return f"requires Python {self.requires_python}, but Pulse runs on Python {version}"
+        return f"requires Python {self.requires_python}, but PULSE runs on Python {version}"
 
     def __post_init__(self) -> None:
         if not self.external:
@@ -90,7 +90,7 @@ class PythonDeclaration:
 def applicable_requirements(specs: tuple[str, ...] | list[str]) -> tuple[str, ...]:
     """Index requirements only; let uv evaluate markers for the target interpreter.
 
-    The application checkout supplies Pulse itself. Installing it from an index
+    The application checkout supplies PULSE itself. Installing it from an index
     would replace that checkout; direct URLs bypass the reviewed package source.
     Markers must survive snapshots built for a different Python or platform.
     """

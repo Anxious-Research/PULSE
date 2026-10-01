@@ -2,7 +2,7 @@
 name: grill-me
 description: "Adversarial plan interview before implementation."
 version: 2.0.0
-author: "Rafael Zendron (rafaumeu) + Matt Pocock (mattpocock/skills, grilling) + Pulse Agent"
+author: "Rafael Zendron (rafaumeu) + Matt Pocock (mattpocock/skills, grilling) + PULSE Agent"
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
@@ -96,7 +96,7 @@ Do not act on the plan until the user confirms shared understanding.
 1. **Asking questions out of dependency order.** A question that depends on
    an unanswered question is a guess wearing a question mark. Keep it for a
    later round.
-2. **Skipping the codebase.** Find facts in code with Pulse tools instead of
+2. **Skipping the codebase.** Find facts in code with PULSE tools instead of
    asking the user.
 3. **Accepting "I don't know" as final.** Suggest options, explain
    trade-offs, make a recommendation.

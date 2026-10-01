@@ -1,11 +1,11 @@
 import type { GatewayWsUrlResult } from '@pulse/shared'
-import type { PulseSkin } from '@pulse/shared/skin'
+import type { PULSESkin } from '@pulse/shared/skin'
 import type { TranslucencyState } from '@pulse/shared/translucency'
 
 import type { ScreenshotApi } from '../electron/command-screenshot-types'
 import type { HudModifierApi } from '../electron/hud-modifier-types'
 import type { MachineProfile } from '../electron/machine-profile'
-import type { PulseNotification } from '../electron/notification-types'
+import type { PULSENotification } from '../electron/notification-types'
 import type { PoolLimits } from '../electron/pool-limits'
 import type { UpdateRunReport } from '../electron/updater/update-metrics'
 import type { GrowRequest } from '../electron/window-growth'
@@ -17,7 +17,12 @@ import type {
   PetOverlayOpenRequest,
   PetOverlayStatePayload
 } from './store/pet-overlay'
-import type { QuickEntryStatePush, QuickEntryStatus, QuickEntrySubmitPayload } from './store/quick-entry'
+import type {
+  QuickEntryStatePush,
+  QuickEntryStatus,
+  QuickEntrySubmitPayload,
+  QuickEntrySubmitResult
+} from './store/quick-entry'
 
 export {}
 
@@ -32,14 +37,14 @@ declare global {
       getConnection: (
         profile?: string | null,
         opts?: { priority?: 'foreground' | 'background' }
-      ) => Promise<PulseConnection>
+      ) => Promise<PULSEConnection>
       // Registry-scoped backend resolution: dial (connectionId, profile). An
       // empty/local connectionId delegates to the legacy getConnection path.
       getConnectionFor?: (payload: {
         connectionId?: null | string
         profile?: null | string
         priority?: 'foreground' | 'background'
-      }) => Promise<PulseConnection>
+      }) => Promise<PULSEConnection>
       // Registry-scoped fresh WS URL (same result contract as getGatewayWsUrl).
       getGatewayWsUrlFor?: (payload: {
         connectionId?: null | string
@@ -95,6 +100,14 @@ declare global {
       // `tabId` is the `$previewTabs` id; closing the window fires
       // `onBrowserPopoutClosed` so the caller can dock the tab again.
       openBrowserWindow: (tabId: string) => Promise<{ ok: boolean; error?: string }>
+      // Cross-window renderer relay (pop-out Browser ↔ chat windows). Electron
+      // main relays opaque payloads to the other PULSE renderer windows;
+      // renderer code keeps the destination exact and rejects anything not
+      // addressed to its window.
+      windowRelay?: {
+        send: (payload: unknown) => void
+        onMessage: (callback: (payload: unknown) => void) => () => void
+      }
       onBrowserPopoutClosed: (callback: (tabId: string) => void) => () => void
       // Claim a one-shot cross-window ambient cue (turn-end sound / spoken
       // reply). Resolves true for the first window to claim a key, false for
@@ -176,7 +189,8 @@ declare global {
         // Quick window → main: send this payload (main forwards it to the
         // primary renderer, which routes it to the target session and submits
         // through the normal prompt path) and hide.
-        submit: (payload: QuickEntrySubmitPayload) => void
+        submit: (payload: QuickEntrySubmitPayload) => Promise<QuickEntrySubmitResult>
+        ackSubmit: (correlationId: string, result: QuickEntrySubmitResult) => void
         // Quick window → main: hide without sending (Escape / blur).
         dismiss: () => void
         // Primary renderer → main → quick window: gateway connection state +
@@ -186,10 +200,17 @@ declare global {
         // Quick window subscribes to those pushes.
         onState: (callback: (payload: QuickEntryStatePush) => void) => () => void
         // Primary renderer subscribes to submits captured by the quick window.
-        onSubmit: (callback: (payload: QuickEntrySubmitPayload | string) => void) => () => void
+        onSubmit: (
+          callback: (payload: (QuickEntrySubmitPayload & { correlationId: string }) | string) => void
+        ) => () => void
         // Quick window subscribes to "you were just summoned" so it can reset
         // its draft and re-focus the input on every open.
         onShown: (callback: () => void) => () => void
+        // Quick window subscribes to the outcome of a submit whose relay timed
+        // out (delivery is unknown until this arrives).
+        onLateResult: (
+          callback: (payload: { correlationId: string; result: QuickEntrySubmitResult }) => void
+        ) => () => void
       }
       getBootProgress: () => Promise<DesktopBootProgress>
       getConnectionConfig: (profile?: null | string) => Promise<DesktopConnectionConfig>
@@ -241,7 +262,7 @@ declare global {
         options?: DesktopOauthLoginOptions
       ) => Promise<DesktopOauthLoginResult>
       oauthLogoutConnectionConfig: (remoteUrl: string) => Promise<DesktopOauthLogoutResult>
-      // Pulse Cloud: one portal login powers discovery + silent per-agent
+      // PULSE Cloud: one portal login powers discovery + silent per-agent
       // sign-in (cloud-auto-discovery Phase 3).
       cloud: {
         status: () => Promise<DesktopCloudStatus>
@@ -263,8 +284,8 @@ declare global {
         // clear the preference.
         set: (name: string | null) => Promise<DesktopActiveProfile>
       }
-      api: <T>(request: PulseApiRequest) => Promise<T>
-      notify: (payload: PulseNotification) => Promise<boolean>
+      api: <T>(request: PULSEApiRequest) => Promise<T>
+      notify: (payload: PULSENotification) => Promise<boolean>
       /** Launch -> ready ms for the first caller per app launch, null afterwards. Absent on older shells. */
       claimStartupLatency?: () => Promise<null | number>
       requestMicrophoneAccess: () => Promise<boolean>
@@ -280,20 +301,20 @@ declare global {
           title: string
         } | null
       } | null>
-      readFileDataUrl: (filePath: string) => Promise<string>
+      readFileDataUrl: (filePath: string) => Promise<string | PULSEReadFileErrorResult>
       /** Remote non-image attach: higher dedicated cap than preview/Settings default. */
-      readFileDataUrlForAttach?: (filePath: string) => Promise<string>
+      readFileDataUrlForAttach?: (filePath: string) => Promise<string | PULSEReadFileErrorResult>
       /** Settings → Chat: max size for local files loaded as data URLs (attach/preview). */
       dataUrlReadMax?: {
         get: () => Promise<{ defaultMaxMb: number; maxBytes: number; maxMb: number }>
         set: (maxMb: number) => Promise<{ defaultMaxMb: number; maxBytes: number; maxMb: number }>
       }
-      readFileText: (filePath: string) => Promise<PulseReadFileTextResult>
+      readFileText: (filePath: string) => Promise<PULSEReadFileTextResult | PULSEReadFileErrorResult>
       /** Full-source read for runtime desktop plugins (readFileText truncates
        *  at the 512 KiB preview cap). Absent on older shells — callers fall
        *  back to readFileText and must reject a `truncated` result. */
-      readPluginSource?: (filePath: string) => Promise<PulseReadFileTextResult>
-      selectPaths: (options?: PulseSelectPathsOptions) => Promise<string[]>
+      readPluginSource?: (filePath: string) => Promise<PULSEReadFileTextResult>
+      selectPaths: (options?: PULSESelectPathsOptions) => Promise<string[]>
       /** Native save dialog; returns the chosen path or null on cancel. */
       selectSavePath?: (options?: {
         defaultPath?: string
@@ -340,15 +361,18 @@ declare global {
       savePastedText: (text: string) => Promise<string>
       saveClipboardImage: () => Promise<string>
       getPathForFile: (file: File) => string
-      normalizePreviewTarget: (target: string, baseDir?: string) => Promise<PulsePreviewTarget | null>
-      watchPreviewFile: (url: string) => Promise<PulsePreviewWatch>
+      normalizePreviewTarget: (target: string, baseDir?: string) => Promise<PULSEPreviewTarget | null>
+      /** Resolves to `PULSEReadFileErrorResult` when the watched file was
+       *  already gone at call time (a restored tab probing a deleted path) —
+       *  structured data instead of a rejection, matching the read handlers. */
+      watchPreviewFile: (url: string) => Promise<PULSEPreviewWatch | PULSEReadFileErrorResult>
       /** Watch a directory for entry churn (disk-plugin door); same watcher
        *  registry + onPreviewFileChanged channel as watchPreviewFile. Optional:
        *  older Electron shells predate it and fall back to the readdir poll. */
-      watchDirectory?: (dir: string) => Promise<PulsePreviewWatch>
+      watchDirectory?: (dir: string) => Promise<PULSEPreviewWatch>
       stopPreviewFileWatch: (id: string) => Promise<boolean>
-      setActiveWork?: (payload: PulseActiveWork) => void
-      setTitleBarTheme?: (payload: PulseTitleBarTheme) => void
+      setActiveWork?: (payload: PULSEActiveWork) => void
+      setTitleBarTheme?: (payload: PULSETitleBarTheme) => void
       setNativeTheme?: (mode: 'dark' | 'light' | 'system') => void
       /** Main-process fact: this OS can back glass with a native material. */
       glassSupported?: boolean
@@ -359,7 +383,7 @@ declare global {
       /** Launch flag shared with every backend the app starts. */
       guestOnboardingEnabled?: boolean
       /** Sanitized local `display.skin`, available before any gateway connects. */
-      localSkin?: { profile: string; skin: PulseSkin } | null
+      localSkin?: { profile: string; skin: PULSESkin } | null
       setTranslucency?: (payload: TranslucencyState) => void
       setKeepAwake?: (on: boolean) => void
       minimizeToTray?: {
@@ -424,7 +448,7 @@ declare global {
       }) => void
       /** Append one raw line to desktop.log (fire-and-forget, notifyError path). */
       logLine?: (line: string) => void
-      readDir: (path: string) => Promise<PulseReadDirResult>
+      readDir: (path: string) => Promise<PULSEReadDirResult>
       gitRoot?: (path: string) => Promise<string | null>
       // Reveal a path in the OS file manager (Finder / Explorer).
       revealPath?: (path: string) => Promise<boolean>
@@ -452,7 +476,7 @@ declare global {
       trashPath?: (path: string) => Promise<boolean>
       // Git-driven worktree management for the "Start work" flow.
       git?: {
-        worktreeList: (repoPath: string) => Promise<PulseGitWorktree[]>
+        worktreeList: (repoPath: string) => Promise<PULSEGitWorktree[]>
         worktreeAdd: (
           repoPath: string,
           options?: { name?: string; branch?: string; base?: string; existingBranch?: string }
@@ -465,25 +489,25 @@ declare global {
         branchSwitch: (repoPath: string, branch: string) => Promise<{ branch: string }>
         // The local branches, plus the remote-tracking refs that have no local
         // branch, for the "convert a branch into a worktree" picker.
-        branchList: (repoPath: string) => Promise<PulseGitBranch[]>
+        branchList: (repoPath: string) => Promise<PULSEGitBranch[]>
         // Local + remote-tracking branches for the "base branch" picker in the
         // new-worktree dialog. The remote default (origin/HEAD) is flagged so
         // the UI can preselect it.
-        baseBranchList: (repoPath: string) => Promise<PulseGitBaseBranch[]>
+        baseBranchList: (repoPath: string) => Promise<PULSEGitBaseBranch[]>
         // Compact working-tree status for the composer coding rail. Null on a
         // non-repo / remote backend (where the Electron probe can't run).
-        repoStatus: (repoPath: string) => Promise<PulseRepoStatus | null>
+        repoStatus: (repoPath: string) => Promise<PULSERepoStatus | null>
         // Working-tree-vs-HEAD unified diff for one file (the preview's diff
         // view). Empty string when the file is unchanged or not in a repo.
         fileDiff: (repoPath: string, filePath: string) => Promise<string>
         // Codex-style review pane: changed files per scope, per-file diff, and
         // stage / unstage / revert.
         review: {
-          list: (repoPath: string, scope: PulseReviewScope, baseRef?: null | string) => Promise<PulseReviewList>
+          list: (repoPath: string, scope: PULSEReviewScope, baseRef?: null | string) => Promise<PULSEReviewList>
           diff: (
             repoPath: string,
             filePath: string,
-            scope: PulseReviewScope,
+            scope: PULSEReviewScope,
             baseRef?: null | string,
             staged?: boolean
           ) => Promise<string>
@@ -496,11 +520,11 @@ declare global {
           // commit message. Reads only; empty strings off-repo.
           commitContext: (repoPath: string) => Promise<{ diff: string; recent: string }>
           push: (repoPath: string) => Promise<{ ok: boolean }>
-          shipInfo: (repoPath: string) => Promise<PulseReviewShipInfo>
+          shipInfo: (repoPath: string) => Promise<PULSEReviewShipInfo>
           // The PR on each of the given branches — plus any known only by
           // number — for badging a list of sessions in one request instead of
           // one `pr view` per checkout.
-          prList: (repoPath: string, branches: string[], numbers?: number[]) => Promise<PulseRepoPullRequests>
+          prList: (repoPath: string, branches: string[], numbers?: number[]) => Promise<PULSERepoPullRequests>
           createPr: (repoPath: string) => Promise<{ url: string }>
         }
         // Repo-first discovery: scan bounded roots for git repos (depth-capped).
@@ -517,9 +541,9 @@ declare global {
         cwd: (id: string) => Promise<string | null>
         dispose: (id: string) => Promise<boolean>
         onData: (id: string, callback: (payload: string) => void) => () => void
-        onExit: (id: string, callback: (payload: PulseTerminalExit) => void) => () => void
+        onExit: (id: string, callback: (payload: PULSETerminalExit) => void) => () => void
         resize: (id: string, size: { cols: number; rows: number }) => Promise<boolean>
-        start: (options?: { cols?: number; cwd?: string; rows?: number }) => Promise<PulseTerminalSession>
+        start: (options?: { cols?: number; cwd?: string; rows?: number }) => Promise<PULSETerminalSession>
         write: (id: string, data: string) => Promise<boolean>
       }
       reachPreviewUrl?: (url: string) => Promise<string>
@@ -556,14 +580,14 @@ declare global {
       /** Delete a STANDALONE desktop plugin folder (`<desktop-plugins root>/<name>`);
        *  Electron re-checks containment and refuses unified-package halves. */
       removeDesktopPlugin?: (payload: { name: string }) => Promise<{ ok: boolean; path?: string; error?: string }>
-      onWindowStateChanged?: (callback: (payload: PulseWindowState) => void) => () => void
+      onWindowStateChanged?: (callback: (payload: PULSEWindowState) => void) => () => void
       onFocusSession?: (callback: (sessionId: string) => void) => () => void
       onNotificationAction?: (callback: (payload: { actionId: string; sessionId?: string }) => void) => () => void
       /** Plugin (and other session-less) notification body/action activation. */
       onNotificationActivate?: (
         callback: (payload: { actionId?: string; activate?: string; notifyId?: string; tag?: string }) => void
       ) => () => void
-      onPreviewFileChanged: (callback: (payload: PulsePreviewFileChanged) => void) => () => void
+      onPreviewFileChanged: (callback: (payload: PULSEPreviewFileChanged) => void) => () => void
       onBackendExit: (callback: (payload: BackendExit) => void) => () => void
       // Cooperative pool retirement: main is stopping the pooled backend under
       // `poolKey` for a foreground open. The renderer parks that scope.
@@ -663,13 +687,13 @@ export interface DesktopMarketplaceThemeResult {
   themes: DesktopMarketplaceThemeFile[]
 }
 
-export interface PulseTerminalSession {
+export interface PULSETerminalSession {
   cwd: string
   id: string
   shell: string
 }
 
-export interface PulseTerminalExit {
+export interface PULSETerminalExit {
   code: number | null
   signal: string | null
 }
@@ -752,7 +776,7 @@ export interface DesktopVersionInfo {
 }
 
 /** Where an external build's backend came from. Mirrors the resolution ladder
- *  in `resolvePulseBackend()`: `git` / `source` / sealed stewards are the
+ *  in `resolvePULSEBackend()`: `git` / `source` / sealed stewards are the
  *  Python install methods from `installation.tree.install_method()`; the
  *  Electron-only rungs (`pulse-root`, `path`, `system-python`, `bootstrap`)
  *  are resolution facts the backend cannot see. Each variant carries the
@@ -911,11 +935,13 @@ export interface DesktopPluginProfileRoute {
   // across sources.
   connectionId: string
   mode: 'local' | 'remote'
+  // Electron's authoritative registry primary. Absent on older shells.
+  primary?: true
   profile: string
   targetProfile: string
 }
 
-export interface PulseConnection {
+export interface PULSEConnection {
   baseUrl: string
   customWindowControls?: boolean
   darwinMajor?: number
@@ -929,7 +955,7 @@ export interface PulseConnection {
   remoteHost?: string
   remoteIdentity?: string
   remoteKind?: 'cloud' | 'ssh' | 'url'
-  remotePulseVersion?: string
+  remotePULSEVersion?: string
   nativeOverlayWidth: number
   source?: 'env' | 'local' | 'settings'
   token: string
@@ -956,18 +982,18 @@ export interface PulseConnection {
   windowButtonPosition: { x: number; y: number } | null
 }
 
-export interface PulseTitleBarTheme {
+export interface PULSETitleBarTheme {
   background: string
   foreground: string
 }
 
 /** Turns in flight, so the main process can confirm before a quit kills them. */
-export interface PulseActiveWork {
+export interface PULSEActiveWork {
   count: number
   titles: string[]
 }
 
-export interface PulseWindowState {
+export interface PULSEWindowState {
   customWindowControls?: boolean
   darwinMajor?: number
   isFullscreen: boolean
@@ -991,7 +1017,7 @@ export interface DesktopActiveProfile {
 
 export interface DesktopConnectionConfig {
   envOverride: boolean
-  // The saved connection mode. 'cloud' is a Pulse Cloud connection: it carries
+  // The saved connection mode. 'cloud' is a PULSE Cloud connection: it carries
   // a remote-shaped block (remoteUrl = the selected agent's dashboardUrl,
   // remoteAuthMode 'oauth') but is remembered as cloud so settings reopens into
   // the cloud picker. Resolution treats cloud exactly as remote
@@ -1014,7 +1040,7 @@ export interface DesktopConnectionConfig {
   // encryption is opted out — plain text is the chosen mode there.
   remoteTokenPlainText: boolean
   remoteUrl: string
-  // For a 'cloud' connection: the persisted Pulse Cloud org (slug or id) the
+  // For a 'cloud' connection: the persisted PULSE Cloud org (slug or id) the
   // connected instance was discovered under, so Settings → Gateway can reopen
   // into that org. Empty string for remote/local.
   cloudOrg: string
@@ -1022,7 +1048,7 @@ export interface DesktopConnectionConfig {
   sshUser: string
   sshPort: number | null
   sshKeyPath: string
-  sshRemotePulsePath: string
+  sshRemotePULSEPath: string
   sshRemoteProfile: string
 }
 
@@ -1038,7 +1064,7 @@ export interface DesktopConnectionConfigInput {
   // user opt-in from the renderer.
   allowPlainTextToken?: boolean
   remoteUrl?: string
-  // For a 'cloud' connection: the selected Pulse Cloud org (slug or id) to
+  // For a 'cloud' connection: the selected PULSE Cloud org (slug or id) to
   // persist so Settings can reopen into it. Ignored for remote/local modes.
   cloudOrg?: string
   cloudName?: string
@@ -1046,7 +1072,7 @@ export interface DesktopConnectionConfigInput {
   sshUser?: string
   sshPort?: number | null
   sshKeyPath?: string
-  sshRemotePulsePath?: string
+  sshRemotePULSEPath?: string
   sshRemoteProfile?: string
   // For a URL-remote/cloud per-profile override: the profile name on the remote
   // host when it differs from this Desktop routing label.
@@ -1070,8 +1096,8 @@ export interface DesktopConnectionTestResult {
     | null
   error?: string | null
   host?: string
-  remotePulsePath?: string
-  remotePulseVersion?: string
+  remotePULSEPath?: string
+  remotePULSEVersion?: string
   remotePlatform?: string
 }
 
@@ -1093,7 +1119,7 @@ export interface DesktopRegistryConnection {
   user?: string
   port?: number
   keyPath?: string
-  remotePulsePath?: string
+  remotePULSEPath?: string
   remoteProfile?: string
   tokenSet: boolean
   tokenPreview: null | string
@@ -1144,7 +1170,7 @@ export interface DesktopRegistryConnectionInput {
   user?: string
   port?: null | number
   keyPath?: string
-  remotePulsePath?: string
+  remotePULSEPath?: string
   remoteProfile?: string
 }
 
@@ -1291,7 +1317,7 @@ export interface DesktopOauthLogoutResult {
   connected: boolean
 }
 
-// --- Pulse Cloud (cloud-auto-discovery Phase 3) ---
+// --- PULSE Cloud (cloud-auto-discovery Phase 3) ---
 
 export interface DesktopCloudStatus {
   // The portal base URL the desktop talks to (default or env-overridden).
@@ -1301,7 +1327,7 @@ export interface DesktopCloudStatus {
   signedIn: boolean
 }
 
-// A discovered Pulse Cloud agent — the trimmed DTO from NAS GET /api/agents.
+// A discovered PULSE Cloud agent — the trimmed DTO from NAS GET /api/agents.
 export interface DesktopCloudAgent {
   id: string
   name: string
@@ -1342,7 +1368,7 @@ export interface DesktopCloudAgentSignInResult {
 export interface DesktopBootProgress {
   error: string | null
   fakeMode: boolean
-  /** True when the boot failure is a Pulse Cloud agent that is down (HTTP 502/503/504). */
+  /** True when the boot failure is a Nous Cloud agent that is down (HTTP 502/503/504). */
   isCloudBackendDown?: boolean
   message: string
   phase: string
@@ -1441,7 +1467,7 @@ export type DesktopBootstrapEvent =
       docsUrl: string
     }
 
-export interface PulseApiRequest {
+export interface PULSEApiRequest {
   path: string
   method?: string
   body?: unknown
@@ -1471,7 +1497,7 @@ export interface PulseApiRequest {
   priority?: 'foreground'
 }
 
-export interface PulsePreviewTarget {
+export interface PULSEPreviewTarget {
   binary?: boolean
   byteSize?: number
   kind: 'file' | 'url'
@@ -1480,13 +1506,13 @@ export interface PulsePreviewTarget {
   language?: string
   mimeType?: string
   path?: string
-  previewKind?: 'binary' | 'html' | 'image' | 'pdf' | 'text'
+  previewKind?: 'binary' | 'directory' | 'html' | 'image' | 'missing' | 'pdf' | 'text'
   renderMode?: 'preview' | 'source'
   source: string
   url: string
 }
 
-export interface PulseReadFileTextResult {
+export interface PULSEReadFileTextResult {
   binary?: boolean
   byteSize?: number
   language?: string
@@ -1496,14 +1522,27 @@ export interface PulseReadFileTextResult {
   truncated?: boolean
 }
 
-export interface PulsePreviewWatch {
+/** Structured failure for a preview read. The main process returns this (it
+ *  does NOT reject the IPC call) when the file is simply not on disk — a
+ *  restored preview tab or transcript reference pointing at a deleted/moved
+ *  file, or a path under a cleared /tmp, is an expected outcome that the
+ *  renderer already displays as "preview unavailable". Other errors still
+ *  reject as before. */
+export interface PULSEReadFileErrorResult {
+  ok: false
+  error: string
+  message: string
+  path?: string
+}
+
+export interface PULSEPreviewWatch {
   id: string
   path: string
 }
 
 // A real git worktree as reported by `git worktree list` (source of truth for
 // the "Start work" flow), as opposed to the session-cwd-derived grouping above.
-export interface PulseGitWorktree {
+export interface PULSEGitWorktree {
   path: string
   branch: null | string
   isMain: boolean
@@ -1517,7 +1556,7 @@ export interface PulseGitWorktree {
 // that a selection switches the main checkout, and does not make
 // `.worktrees/main`. `isRemote` means that a selection first makes a local
 // branch that tracks the remote one.
-export interface PulseGitBranch {
+export interface PULSEGitBranch {
   name: string
   checkedOut: boolean
   isDefault: boolean
@@ -1529,7 +1568,7 @@ export interface PulseGitBranch {
 // refs. `isRemote` distinguishes `origin/main` from a local `main` (the UI
 // may show a remote glyph); `isDefault` flags origin/HEAD so the dialog can
 // preselect it.
-export interface PulseGitBaseBranch {
+export interface PULSEGitBaseBranch {
   name: string
   isRemote: boolean
   isDefault: boolean
@@ -1537,7 +1576,7 @@ export interface PulseGitBaseBranch {
 
 // A single changed path from `git status --porcelain=v2`, classified by state
 // so the coding rail / switcher can group + open the right diff.
-export interface PulseRepoStatusFile {
+export interface PULSERepoStatusFile {
   path: string
   staged: boolean
   unstaged: boolean
@@ -1547,7 +1586,7 @@ export interface PulseRepoStatusFile {
 
 // Compact working-tree status for the composer coding rail (parsed from
 // `git status --porcelain=v2 --branch`).
-export interface PulseRepoStatus {
+export interface PULSERepoStatus {
   branch: null | string
   // The repo's trunk ("main" / "master" / …), so the UI can offer "branch off
   // the default" from anywhere. Null when no trunk is detected.
@@ -1566,16 +1605,16 @@ export interface PulseRepoStatus {
   added: number
   removed: number
   // Capped changed-file list (REPO_STATUS_FILE_CAP) for the diff/open actions.
-  files: PulseRepoStatusFile[]
+  files: PULSERepoStatusFile[]
 }
 
 // Diff scope for the review pane, mirroring Codex: uncommitted working-tree
 // changes, all changes vs the branch base, or everything since the current
 // turn began.
-export type PulseReviewScope = 'branch' | 'lastTurn' | 'uncommitted'
+export type PULSEReviewScope = 'branch' | 'lastTurn' | 'uncommitted'
 
 // One changed file in the review pane (status letter, +/- lines, staged flag).
-export interface PulseReviewFile {
+export interface PULSEReviewFile {
   path: string
   added: number
   removed: number
@@ -1584,15 +1623,15 @@ export interface PulseReviewFile {
   staged: boolean
 }
 
-export interface PulseReviewList {
-  files: PulseReviewFile[]
+export interface PULSEReviewList {
+  files: PULSEReviewFile[]
   // The resolved base ref the scope diffed against (branch merge-base / turn
   // baseline), or null for the uncommitted scope.
   base: null | string
 }
 
 // The branch's PR (if any) as reported by `gh pr view`.
-export interface PulseReviewPr {
+export interface PULSEReviewPr {
   url: string
   state: string
   number: number
@@ -1600,7 +1639,7 @@ export interface PulseReviewPr {
 
 // One repo's PRs as reported by `gh pr list`, each tied to the branch it was
 // opened from — how a session row finds its own PR.
-export interface PulseBranchPullRequest {
+export interface PULSEBranchPullRequest {
   branch: string
   draft: boolean
   number: number
@@ -1610,36 +1649,36 @@ export interface PulseBranchPullRequest {
   url: string
 }
 
-export interface PulseRepoPullRequests {
+export interface PULSERepoPullRequests {
   ghReady: boolean
-  prs: PulseBranchPullRequest[]
+  prs: PULSEBranchPullRequest[]
 }
 
 // gh availability/auth + the current branch's PR — drives the review pane's PR
 // button (disabled when gh isn't ready, "Open PR" vs "Create PR" otherwise).
-export interface PulseReviewShipInfo {
+export interface PULSEReviewShipInfo {
   ghReady: boolean
-  pr: PulseReviewPr | null
+  pr: PULSEReviewPr | null
 }
 
-export interface PulseReadDirEntry {
+export interface PULSEReadDirEntry {
   name: string
   path: string
   isDirectory: boolean
 }
 
-export interface PulseReadDirResult {
-  entries: PulseReadDirEntry[]
+export interface PULSEReadDirResult {
+  entries: PULSEReadDirEntry[]
   error?: string
 }
 
-export interface PulsePreviewFileChanged {
+export interface PULSEPreviewFileChanged {
   id: string
   path: string
   url: string
 }
 
-export interface PulseSelectPathsOptions {
+export interface PULSESelectPathsOptions {
   title?: string
   defaultPath?: string
   directories?: boolean

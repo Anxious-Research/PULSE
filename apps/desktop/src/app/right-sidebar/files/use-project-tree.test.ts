@@ -1,7 +1,7 @@
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { PulseReadDirResult } from '@/global'
+import type { PULSEReadDirResult } from '@/global'
 import { $connection } from '@/store/session'
 import { notifyWorkspaceChanged } from '@/store/workspace-events'
 
@@ -9,7 +9,7 @@ import { clearProjectDirCache, readProjectDir } from './ipc'
 import { $showIgnoredRoots } from './prefs'
 import { resetProjectTreeState, useProjectTree } from './use-project-tree'
 
-const readDir = vi.fn<(path: string) => Promise<PulseReadDirResult>>()
+const readDir = vi.fn<(path: string) => Promise<PULSEReadDirResult>>()
 
 beforeEach(() => {
   $connection.set(null)
@@ -27,7 +27,7 @@ afterEach(() => {
   delete (window as unknown as { pulseDesktop?: unknown }).pulseDesktop
 })
 
-function ok(entries: { name: string; path: string; isDirectory: boolean }[]): PulseReadDirResult {
+function ok(entries: { name: string; path: string; isDirectory: boolean }[]): PULSEReadDirResult {
   return { entries }
 }
 
@@ -73,11 +73,11 @@ describe('useProjectTree', () => {
   })
 
   it('does not fall back after a failed root read from a superseded connection', async () => {
-    let resolveRootFromA: ((result: PulseReadDirResult) => void) | undefined
+    let resolveRootFromA: ((result: PULSEReadDirResult) => void) | undefined
     const sanitizeWorkspaceCwd = vi.fn(async () => ({ cwd: '/fallback', sanitized: true }))
     readDir.mockImplementationOnce(
       () =>
-        new Promise<PulseReadDirResult>(resolve => {
+        new Promise<PULSEReadDirResult>(resolve => {
           resolveRootFromA = resolve
         })
     )
@@ -247,10 +247,10 @@ describe('useProjectTree', () => {
   it('dedupes concurrent loadChildren calls for the same id', async () => {
     readDir.mockResolvedValueOnce(ok([{ name: 'src', path: '/p/src', isDirectory: true }]))
 
-    let resolveChildren: ((value: PulseReadDirResult) => void) | undefined
+    let resolveChildren: ((value: PULSEReadDirResult) => void) | undefined
     readDir.mockImplementationOnce(
       () =>
-        new Promise<PulseReadDirResult>(resolve => {
+        new Promise<PULSEReadDirResult>(resolve => {
           resolveChildren = resolve
         })
     )
@@ -288,11 +288,11 @@ describe('useProjectTree', () => {
   })
 
   it('discards a stale live refresh after the active registered connection changes', async () => {
-    let resolveRefreshFromA: ((result: PulseReadDirResult) => void) | undefined
+    let resolveRefreshFromA: ((result: PULSEReadDirResult) => void) | undefined
     readDir.mockResolvedValueOnce(ok([{ name: 'from-a', path: '/shared/from-a', isDirectory: false }]))
     readDir.mockImplementationOnce(
       () =>
-        new Promise<PulseReadDirResult>(resolve => {
+        new Promise<PULSEReadDirResult>(resolve => {
           resolveRefreshFromA = resolve
         })
     )
@@ -331,11 +331,11 @@ describe('useProjectTree', () => {
   })
 
   it('discards a stale child read after the active registered connection changes', async () => {
-    let resolveChildFromA: ((result: PulseReadDirResult) => void) | undefined
+    let resolveChildFromA: ((result: PULSEReadDirResult) => void) | undefined
     readDir.mockResolvedValueOnce(ok([{ name: 'src', path: '/shared/src', isDirectory: true }]))
     readDir.mockImplementationOnce(
       () =>
-        new Promise<PulseReadDirResult>(resolve => {
+        new Promise<PULSEReadDirResult>(resolve => {
           resolveChildFromA = resolve
         })
     )
@@ -374,10 +374,10 @@ describe('useProjectTree', () => {
   })
 
   it('discards a stale root read after the active registered connection changes', async () => {
-    let resolveFirst: ((result: PulseReadDirResult) => void) | undefined
+    let resolveFirst: ((result: PULSEReadDirResult) => void) | undefined
     readDir.mockImplementationOnce(
       () =>
-        new Promise<PulseReadDirResult>(resolve => {
+        new Promise<PULSEReadDirResult>(resolve => {
           resolveFirst = resolve
         })
     )
@@ -476,11 +476,11 @@ describe('useProjectTree', () => {
 
     await waitFor(() => expect(result.current.rootError).toBe('ENOENT'))
 
-    let releaseProbe: ((value: PulseReadDirResult) => void) | undefined
+    let releaseProbe: ((value: PULSEReadDirResult) => void) | undefined
 
     readDir.mockImplementationOnce(
       () =>
-        new Promise<PulseReadDirResult>(resolve => {
+        new Promise<PULSEReadDirResult>(resolve => {
           releaseProbe = resolve
         })
     )
@@ -506,11 +506,11 @@ describe('useProjectTree', () => {
 
     await waitFor(() => expect(result.current.data.length).toBe(1))
 
-    let releaseRefresh: ((value: PulseReadDirResult) => void) | undefined
+    let releaseRefresh: ((value: PULSEReadDirResult) => void) | undefined
 
     readDir.mockImplementationOnce(
       () =>
-        new Promise<PulseReadDirResult>(resolve => {
+        new Promise<PULSEReadDirResult>(resolve => {
           releaseRefresh = resolve
         })
     )
@@ -535,11 +535,11 @@ describe('useProjectTree', () => {
 
     await waitFor(() => expect(result.current.data.map(node => node.name)).toEqual(['from-a']))
 
-    let releaseFromB: ((value: PulseReadDirResult) => void) | undefined
+    let releaseFromB: ((value: PULSEReadDirResult) => void) | undefined
 
     readDir.mockImplementationOnce(
       () =>
-        new Promise<PulseReadDirResult>(resolve => {
+        new Promise<PULSEReadDirResult>(resolve => {
           releaseFromB = resolve
         })
     )
@@ -632,7 +632,7 @@ describe('useProjectTree', () => {
   it('drops a child listing that was read before the preference flipped', async () => {
     const gitRoot = vi.fn(async () => '/p')
     const readFileDataUrl = vi.fn(async () => `data:text/plain;base64,${btoa('*.log\n')}`)
-    let releaseChild: ((value: PulseReadDirResult) => void) | undefined
+    let releaseChild: ((value: PULSEReadDirResult) => void) | undefined
 
     readDir.mockImplementation(async path => {
       if (path === '/p') {
@@ -643,7 +643,7 @@ describe('useProjectTree', () => {
       }
 
       if (path === '/p/src') {
-        return new Promise<PulseReadDirResult>(resolve => {
+        return new Promise<PULSEReadDirResult>(resolve => {
           releaseChild = resolve
         })
       }

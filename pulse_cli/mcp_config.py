@@ -521,8 +521,8 @@ def _probe_single_server(
 def _oauth_tokens_present(name: str) -> bool:
     """True if an OAuth token file exists for ``name`` (a clean probe alone is not proof of auth)."""
     try:
-        from tools.mcp_oauth import PulseTokenStorage
-        return PulseTokenStorage(name).has_cached_tokens()
+        from tools.mcp_oauth import PULSETokenStorage
+        return PULSETokenStorage(name).has_cached_tokens()
     except Exception as exc:  # pragma: no cover — defensive
         logger.debug("Could not check OAuth tokens for '%s': %s", name, exc)
         return True  # permissive: don't block a real success
@@ -641,11 +641,19 @@ def cmd_mcp_add(args):
         _info('  pulse mcp add myserver --preset mypreset')
         return
 
-    if name in _get_mcp_servers() and not _confirm(
+    # Overwriting an existing server is a re-add, not an install; cancels are not recorded either.
+    fresh = name not in _get_mcp_servers()
+    if not fresh and not _confirm(
         f"Server '{name}' already exists. Overwrite?", default=False
     ):
         _info("Cancelled.")
         return
+
+    def _record(saved: bool) -> None:
+        if fresh:
+            from pulse_cli.mcp_catalog import record_mcp_install
+
+            record_mcp_install("url" if url else "local", None, "success" if saved else "failed")
 
     if url:
         server_config["url"] = url
@@ -659,6 +667,7 @@ def cmd_mcp_add(args):
         server_config["connect_timeout"] = raw_connect_timeout
 
     if not _validate_or_warn(name, server_config):
+        _record(False)
         return
     if url and not _configure_http_auth(name, url, auth_type, server_config):
         return
@@ -670,24 +679,32 @@ def cmd_mcp_add(args):
     except Exception as exc:
         _error(f"Failed to connect: {_probe_failure_reason(exc)}")
         _info(_probe_failure_next_step(name, exc))
+        saved = False
         if _confirm("Save config anyway (you can test later)?", default=False):
             server_config["enabled"] = False
-            if _save_mcp_server(name, server_config):
+            saved = _save_mcp_server(name, server_config)
+            if saved:
                 _success(f"Saved '{name}' to config (disabled)")
                 _info("Fix the issue, then: pulse mcp test " + name)
+        _record(saved)
         return
 
     if not tools:
         _warning("Server connected but reported no tools.")
-        if _confirm("Save config anyway?", default=True) and _save_mcp_server(name, server_config):
-            _success(f"Saved '{name}' to config")
+        if _confirm("Save config anyway?", default=True):
+            saved = _save_mcp_server(name, server_config)
+            _record(saved)
+            if saved:
+                _success(f"Saved '{name}' to config")
         return
 
     tool_count = _choose_tools(name, tools, server_config)
     if tool_count is None:
         return
     server_config["enabled"] = True
-    if _save_mcp_server(name, server_config):
+    saved = _save_mcp_server(name, server_config)
+    _record(saved)
+    if saved:
         print()
         _success(
             f"Saved '{name}' to {display_pulse_home()}/config.yaml ({tool_count}/{len(tools)} tools enabled)"
@@ -776,7 +793,7 @@ def _probe_failure_next_step(name: str, exc: BaseException) -> str:
     if _is_auth_error(root) or getattr(getattr(root, "response", None), "status_code", None) in (401, 403):
         return f"The server rejected the sign-in. Run: pulse mcp login {name}"
     if isinstance(root, NodeAbiMismatchError):
-        return f"After rebuilding it under Pulse's Node as above, run: pulse mcp test {name}"
+        return f"After rebuilding it under PULSE's Node as above, run: pulse mcp test {name}"
     if "missing executable" in _format_connect_error(exc):
         return (f"Install that command, or set mcp_servers.{name}.command in {display_pulse_home()}/config.yaml "
                 "to its full path.")
@@ -857,9 +874,9 @@ def _reauth_oauth_server(name: str, server_config: dict, *, flow: str | None = N
             # metadata stays. A fresh discovery still overwrites it, but when the metadata document
             # cannot be re-fetched (WAF-fronted split-host servers) it is the only thing that keeps
             # the announced authorize URL off the SDK's `{mcp-origin}/authorize` guess (#115329).
-            from tools.mcp_oauth import PulseTokenStorage
+            from tools.mcp_oauth import PULSETokenStorage
             get_manager().evict(name)
-            PulseTokenStorage(name).remove(keep_metadata=True)
+            PULSETokenStorage(name).remove(keep_metadata=True)
     except Exception as exc:
         _warning(f"Could not clear existing OAuth state: {exc}")
 
@@ -1072,7 +1089,7 @@ def cmd_mcp_configure(args):
 
 _MCP_USAGE = (
     "pulse mcp                                    Open the catalog picker (default)",
-    "pulse mcp catalog                            List Anxious-approved MCPs",
+    "pulse mcp catalog                            List Nous-approved MCPs",
     "pulse mcp install <name>                     Install a catalog MCP",
     "pulse mcp serve                              Run as MCP server",
     "pulse mcp add <name> --url <endpoint>        Add a custom MCP server",

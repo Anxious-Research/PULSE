@@ -14,6 +14,7 @@ import sys
 
 from pathlib import Path
 from typing import Optional
+from agent.i18n import t
 
 # Log-record parity with the origin module.
 logger = logging.getLogger("pulse_cli.main")
@@ -63,7 +64,7 @@ def _print_tui_exit_summary(session_id: Optional[str], active_session_file: Opti
     from pulse_cli.profiles import get_active_profile_name
     active_profile = get_active_profile_name()
     profile_flag = "" if active_profile in ("default", "custom") else f" -p {active_profile}"
-    print(f"\nResume this session with:\n  pulse --tui --resume {target}{profile_flag}")
+    print(f"\n{t('cli.session.exit_resume_hint')}\n  pulse --tui --resume {target}{profile_flag}")
     if title:
         print(f'  pulse --tui -c "{title}"{profile_flag}')
     print(f"\nSession:        {target}")
@@ -132,11 +133,11 @@ def _ensure_tui_workspace(tui_dir: Path) -> None:
         return
 
     print(
-        "Error: the TUI workspace is missing from this Pulse checkout.\n"
+        "Error: the TUI workspace is missing from this PULSE checkout.\n"
         f"Expected directory: {tui_dir}\n"
         "This usually means `pulse update` left tracked ui-tui files deleted.\n"
         "Recovery:\n"
-        "  1. From the Pulse checkout, run `git restore -- ui-tui`\n"
+        "  1. From the PULSE checkout, run `git restore -- ui-tui`\n"
         "  2. Run `npm install --silent --no-fund --no-audit --progress=false`\n"
         "  3. Retry `pulse --tui`\n"
         "If the checkout is still inconsistent, run `pulse update --force`.",
@@ -362,6 +363,11 @@ def _launch_tui(
     # the single factory; keep secrets (the TUI/agent needs provider creds).
     from tools.environments.local import build_subprocess_env
     env = build_subprocess_env(scrub_secrets=False, inherit_profile_home=True)
+    # The directory this launch was invoked from is the source of truth. An inherited
+    # PULSE_CWD (exported by an outer `pulse --tui`, or by the user's own shell) merely
+    # names *a* real directory, so the is_dir() repair in _apply_tui_python_env keeps it
+    # and the gateway starts in last session's project. `--worktree` still wins below.
+    env["PULSE_CWD"] = _safe_tui_cwd(env)
     from pulse_cli.shared_session_attach import configure_tui_attachment
     try:
         configure_tui_attachment(env, resume_session_id)
@@ -393,6 +399,14 @@ def _launch_tui(
         wt_info = _setup_tui_worktree()
         env["PULSE_CWD"] = wt_info["path"]
         env["TERMINAL_CWD"] = wt_info["path"]
+
+    # A local interactive session starts where the user launched (or in the --worktree), the
+    # classic CLI's rule; terminal.cwd stays the default for gateway, cron and remote backends.
+    # PULSE_TUI_CWD is what the TUI sends on session.create, which beats the configured cwd (#84015).
+    if str(env.get("TERMINAL_ENV") or "local") == "local":
+        env["TERMINAL_CWD"] = env["PULSE_TUI_CWD"] = env["PULSE_CWD"]
+    else:
+        env.pop("PULSE_TUI_CWD", None)
 
     _apply_tui_python_env(env)
 

@@ -15,7 +15,7 @@ export interface BotScreenState {
   lease: DisplayLease | null
   /** This window's server-minted identity for the bot's current attach; null until the pane observes. */
   viewer: ScreenViewer | null
-  /** The bot's Pulse has no `display.*` methods (older backend): nothing to check, ever. */
+  /** The bot's PULSE has no `display.*` methods (older backend): nothing to check, ever. */
   unavailable?: boolean
 }
 
