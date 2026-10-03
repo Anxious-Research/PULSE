@@ -1,0 +1,225 @@
+#!/usr/bin/env bash
+# ============================================================================
+# venv-style activation for the PULSE dev environment (pm-managed tools).
+#
+#   source ./activate      (bash / zsh, repo root)
+#   .\activate.ps1         (PowerShell)
+#
+# Emits the composed pm env (PATH + tool vars) into the CURRENT shell, with
+# save/restore: `deactivate` undoes exactly what activation changed.
+#
+# `pulse` becomes a shell function for this checkout. It runs only while the
+# shell is inside this worktree and refuses outside it, so a sibling worktree
+# keeps its own command. A prompt prefix names the worktree.
+#
+# Sync through setup before selecting the environment. PM owns freshness;
+# activation does not maintain a second dependency stamp. It trusts the
+# recorded tool digest instead of re-hashing every entry. `pulse pm
+# install` and `pulse update` keep that check.
+# ============================================================================
+_PULSE_REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Options: `--test-extras a,b` selects the test environment's runtime extras
+# (default: [all]); `--` ends options.
+# A bare `source ./activate` inherits the caller's positional parameters.
+# Ignore unrelated words so scripts with their own arguments can source it.
+_pulse_test_env="--test-environment"
+_pulse_expect_extras=""
+for _pulse_arg in "$@"; do
+    if [ -n "$_pulse_expect_extras" ]; then
+        _pulse_test_env="--test-environment=$_pulse_arg"
+        _pulse_expect_extras=""
+        continue
+    fi
+    case "$_pulse_arg" in
+        --) break ;;
+        --test-extras) _pulse_expect_extras=1 ;;
+        --test-extras=*) _pulse_test_env="--test-environment=${_pulse_arg#--test-extras=}" ;;
+        *) : ;;
+    esac
+done
+if [ -n "$_pulse_expect_extras" ]; then
+    printf '%s\n' 'activate: --test-extras needs a comma-separated list' >&2
+    unset _pulse_arg _pulse_test_env _pulse_expect_extras
+    return 2 2>/dev/null || exit 2
+fi
+# Setup runs in a child: failures must not exit or partially activate the
+# caller's shell, and activation must not republish launchers or shell config.
+if ! (
+    unset PYTHONHOME PYTHONPATH VIRTUAL_ENV
+    bash "$_PULSE_REPO/setup-pulse.sh" --runtime-only "$_pulse_test_env"
+) >&2; then
+    printf '%s\n' 'activate: setup failed; shell environment unchanged' >&2
+    unset _pulse_arg _pulse_test_env _pulse_expect_extras
+    return 1 2>/dev/null || exit 1
+fi
+unset _pulse_arg _pulse_test_env _pulse_expect_extras
+
+# Guard against double-sourcing: venv activate precedent (re-activating is a
+# no-op re-save; we keep it idempotent by deactivating first). Key on the
+# function, not the sentinel: child shells inherit __PULSE_ACTIVATED from an
+# activated parent but never the function, and there is nothing to undo there.
+if [ "$(type -t deactivate 2>/dev/null)" = "function" ]; then
+    deactivate
+fi
+
+# Bootstrap Python only emits the environment; it does not install anything.
+_pulse_repo="$_PULSE_REPO"
+_pulse_py=""
+for _pulse_candidate in "$_pulse_repo/.venv/bin/python" "$_pulse_repo/.venv/Scripts/python.exe" \
+                         "$_pulse_repo/venv/bin/python" "$_pulse_repo/venv/Scripts/python.exe"; do
+    [ -x "$_pulse_candidate" ] && { _pulse_py="$_pulse_candidate"; break; }
+done
+if [ -z "$_pulse_py" ]; then
+    for _pulse_store in "${PULSE_RUNTIME_DIR:-}" "$_pulse_repo/../tools" "${PULSE_HOME:-$HOME/.pulse}/tools"; do
+        [ -n "$_pulse_store" ] || continue
+        for _pulse_candidate in "$_pulse_store"/python-*/bin/python3 "$_pulse_store"/python-*/python.exe "$_pulse_store"/python-*/bin/python "$_pulse_store"/python-*/bin/python.exe; do
+            [ -x "$_pulse_candidate" ] && { _pulse_py="$_pulse_candidate"; break; }
+        done
+        [ -n "$_pulse_py" ] && break
+    done
+fi
+if [ -z "$_pulse_py" ]; then
+    echo "activate: no bootstrap Python found; run setup-pulse.sh" >&2
+    return 1 2>/dev/null || exit 1
+fi
+
+# --- emit export lines from `pm env` ---
+_pulse_json="$(PYTHONHOME= PYTHONPATH="$_pulse_repo" "$_pulse_py" -m pm.environments)"
+if [ -z "$_pulse_json" ] || [ "${_pulse_json#*{}" = "$_pulse_json" ]; then
+    echo "activate: could not read pm env (run ./setup-pulse.sh first)" >&2
+    unset _pulse_repo _pulse_os _pulse_arch _pulse_target _pulse_store _pulse_py _pulse_json
+    return 1 2>/dev/null || exit 1
+fi
+
+_pulse_keys="$(printf '%s' "$_pulse_json" | "$_pulse_py" -c 'import json,sys; print(" ".join(json.load(sys.stdin)))' \
+    | tr ' ' '\n' | grep -E '^[A-Za-z_][A-Za-z0-9_]*$' | tr '\n' ' ')"
+[ -n "$_pulse_keys" ] || _pulse_keys="PATH"
+
+# --- snapshot what we are about to change (deactivate restores this) ---
+# __PULSE_ACTIVATED is part of the composed env below (it carries the
+# installed-state path this environment was built from), so it is snapshotted
+# and exported with every other key — no separate assignment here.
+__PULSE_SAVED_PATH="$PATH"
+for _pulse_k in $_pulse_keys; do
+    eval "__PULSE_SAVED_$_pulse_k=\"\${$_pulse_k+set}\""
+    eval "__PULSE_PRIOR_$_pulse_k=\${$_pulse_k-__PULSE_UNSET__}"
+done
+
+# Resolved before the export below replaces PATH.
+_pulse_cygpath="$(command -v cygpath 2>/dev/null || :)"
+
+eval "$(printf '%s' "$_pulse_json" | "$_pulse_py" -c '
+import json, sys, shlex, re
+for k, v in json.load(sys.stdin).items():
+    # Windows carries names like ProgramFiles(ARM) that are not valid
+    # bash identifiers — skip them (they pass through untouched).
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", k):
+        continue
+    print("export %s=%s" % (k, shlex.quote(str(v))))')"
+
+# The MSYS/Cygwin runtime hands a native Windows Python these variables in
+# Windows form (`C:\a;C:\b`) and converts them back only for its own children.
+# Exported verbatim, bash splits PATH on ':' and finds no commands.
+if [ -n "$_pulse_cygpath" ]; then
+    PATH="$("$_pulse_cygpath" -u -p "$PATH")"
+    for _pulse_k in HOME TMPDIR TMP TEMP; do
+        if [ -n "${!_pulse_k-}" ]; then
+            printf -v "$_pulse_k" '%s' "$("$_pulse_cygpath" -u "${!_pulse_k}")"
+        fi
+    done
+fi
+
+# This checkout, not whichever `pulse` PATH finds. A function beats PATH, an
+# alias, and a hashed command, including the MSIX execution alias.
+__PULSE_WORKTREE="$_pulse_repo"
+# The branch names the worktree. A checkout cannot share a branch with another.
+__PULSE_WORKTREE_NAME="$(git -C "$_pulse_repo" rev-parse --abbrev-ref HEAD 2>/dev/null || :)"
+if [ -z "$__PULSE_WORKTREE_NAME" ] || [ "$__PULSE_WORKTREE_NAME" = HEAD ]; then
+    __PULSE_WORKTREE_NAME="$(basename "$_pulse_repo")"
+fi
+__PULSE_SAVED_PS1="${PS1-__PULSE_UNSET__}"
+__PULSE_SAVED_PROMPT_COMMAND="${PROMPT_COMMAND-__PULSE_UNSET__}"
+
+_pulse_worktree_here() {
+    _pulse_top="$(git rev-parse --show-toplevel 2>/dev/null)" || return 1
+    [ "$(cd "$_pulse_top" && pwd -P)" = "$(cd "$__PULSE_WORKTREE" && pwd -P)" ]
+}
+
+pulse() {
+    _pulse_worktree_here || {
+        printf '%s\n' "pulse: $(pwd) is outside $__PULSE_WORKTREE; refusing (the installed command is hidden while this checkout is active)" >&2
+        return 1
+    }
+    (
+        cd "$__PULSE_WORKTREE" || exit 1
+        if [ -n "${PYTHON-}" ]; then
+            exec "$PYTHON" pulse "$@"
+        elif [ -x .venv/Scripts/python.exe ]; then
+            exec .venv/Scripts/python.exe pulse "$@"
+        elif [ -x .venv/bin/python ]; then
+            exec .venv/bin/python pulse "$@"
+        elif [ -x venv/Scripts/python.exe ]; then
+            exec venv/Scripts/python.exe pulse "$@"
+        elif [ -x venv/bin/python ]; then
+            exec venv/bin/python pulse "$@"
+        else
+            exec python pulse "$@"
+        fi
+    )
+}
+
+_pulse_prompt() {
+    if [ "$__PULSE_SAVED_PS1" = "__PULSE_UNSET__" ]; then
+        _pulse_base_ps1=""
+    else
+        _pulse_base_ps1="$__PULSE_SAVED_PS1"
+    fi
+    if _pulse_worktree_here; then
+        PS1="($__PULSE_WORKTREE_NAME) $_pulse_base_ps1"
+    else
+        PS1="$_pulse_base_ps1"
+    fi
+}
+
+if [ -n "${PROMPT_COMMAND-}" ]; then
+    PROMPT_COMMAND="_pulse_prompt; ${PROMPT_COMMAND}"
+else
+    PROMPT_COMMAND=_pulse_prompt
+fi
+_pulse_prompt
+
+deactivate() {
+    export PATH="$__PULSE_SAVED_PATH"
+    for _pulse_k in $__PULSE_KEY_LIST; do
+        eval "_pulse_was=\"\$__PULSE_SAVED_$_pulse_k\""
+        eval "_pulse_old=\"\$__PULSE_PRIOR_$_pulse_k\""
+        if [ "$_pulse_was" != "set" ]; then
+            unset "$_pulse_k"
+        else
+            export "$_pulse_k=$_pulse_old"
+        fi
+        unset "__PULSE_SAVED_$_pulse_k" "__PULSE_PRIOR_$_pulse_k"
+    done
+    if [ "$__PULSE_SAVED_PS1" = "__PULSE_UNSET__" ]; then
+        unset PS1
+    else
+        PS1="$__PULSE_SAVED_PS1"
+    fi
+    if [ "$__PULSE_SAVED_PROMPT_COMMAND" = "__PULSE_UNSET__" ]; then
+        unset PROMPT_COMMAND
+    else
+        PROMPT_COMMAND="$__PULSE_SAVED_PROMPT_COMMAND"
+    fi
+    unset __PULSE_SAVED_PATH __PULSE_KEY_LIST __PULSE_ACTIVATED \
+          __PULSE_WORKTREE __PULSE_WORKTREE_NAME \
+          __PULSE_SAVED_PS1 __PULSE_SAVED_PROMPT_COMMAND
+    unset -f deactivate pulse _pulse_worktree_here _pulse_prompt
+    unset _pulse_k _pulse_was _pulse_old _pulse_top
+}
+
+# remember the key list for deactivate (kept out of the loop vars above)
+__PULSE_KEY_LIST="$_pulse_keys"
+
+unset _pulse_repo _pulse_os _pulse_arch _pulse_target _pulse_store \
+      _pulse_py _pulse_json _pulse_keys _pulse_k _pulse_entry _pulse_venvpy \
+      _pulse_winarch _pulse_top _pulse_cygpath
