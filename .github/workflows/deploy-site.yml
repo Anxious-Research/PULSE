@@ -1,18 +1,10 @@
 name: Deploy Site
 
+# DISABLED: Vercel deploy hook and GitHub Pages/App not configured yet.
+# Re-enable when deployment infrastructure is set up.
+# Original triggers: release published, push to main on website/**/skills/**/plugin-catalog/**
+
 on:
-  release:
-    types: [published]
-  push:
-    branches: [main]
-    paths:
-      - 'website/**'
-      - 'skills/**'
-      - 'optional-skills/**'
-      # Catalog entry/removal merges must republish /docs/api/plugin-catalog.json —
-      # installed clients fetch it for live catalog refresh.
-      - 'plugin-catalog/**'
-      - '.github/workflows/deploy-site.yml'
   workflow_dispatch:
     inputs:
       skills_index_run_id:
