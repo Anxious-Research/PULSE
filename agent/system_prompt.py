@@ -539,6 +539,16 @@ def _memory_parts(agent: Any) -> List[str]:
                 _ext_mem_block = None
             if _ext_mem_block:
                 parts.append(_ext_mem_block)
+
+    # Native Cognitive Brain prompt (authoritative self-awareness, active beliefs, user models)
+    try:
+        from agent.brain.retrieval import build_static_brain_prompt
+        brain_block = build_static_brain_prompt()
+        if brain_block:
+            parts.append(brain_block)
+    except Exception as e:
+        logger.debug("Failed to inject native brain prompt: %s", e)
+
     return parts
 
 

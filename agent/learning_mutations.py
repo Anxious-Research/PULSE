@@ -14,14 +14,18 @@ deleting a memory rewrites its file under the memory tool's lock.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 _MEMORY_FILES = {"memory": "MEMORY.md", "profile": "USER.md"}
 _STORE_TARGETS = {"memory": "memory", "profile": "user"}  # journey source -> MemoryStore target
 
 
 def parse_node_kind(node_id: str) -> str:
-    return "memory" if node_id.startswith("memory:") else "skill"
+    if node_id.startswith("memory:"):
+        return "memory"
+    if "/" in node_id or any(node_id.startswith(f"{cat}/") for cat in ("self", "user", "concept", "belief", "project")):
+        return "brain"
+    return "skill"
 
 
 def _parse_memory_id(node_id: str) -> tuple[str, int, str]:
@@ -127,9 +131,15 @@ def _clear_skill_cache() -> None:
         pass
 
 
-def _dispatch(node_id: str, memory_fn: Callable, skill_fn: Callable, *args) -> dict[str, Any]:
+def _dispatch(node_id: str, memory_fn: Callable, skill_fn: Callable, brain_fn: Optional[Callable] = None, *args) -> dict[str, Any]:
     try:
-        return (memory_fn if parse_node_kind(node_id) == "memory" else skill_fn)(node_id, *args)
+        kind = parse_node_kind(node_id)
+        if kind == "brain" and brain_fn is not None:
+            return brain_fn(node_id, *args)
+        elif kind == "memory":
+            return memory_fn(node_id, *args)
+        else:
+            return skill_fn(node_id, *args)
     except (ValueError, IndexError) as exc:
         return {"ok": False, "message": str(exc)}
 
@@ -138,8 +148,29 @@ def _dispatch(node_id: str, memory_fn: Callable, skill_fn: Callable, *args) -> d
 
 def node_detail(node_id: str) -> dict[str, Any]:
     """Current content for an edit prefill. ``content`` is the full SKILL.md
-    (skills) or the raw memory chunk (memories)."""
-    return _dispatch(node_id, _memory_detail, _skill_detail)
+    (skills), raw memory chunk (memories), or full Markdown note (brain nodes)."""
+    return _dispatch(node_id, _memory_detail, _skill_detail, _brain_detail)
+
+
+def _brain_detail(node_id: str) -> dict[str, Any]:
+    from agent.brain.vault import BrainVault
+    vault = BrainVault()
+    node = vault.read_node(node_id)
+    if not node:
+        return {"ok": False, "message": f"brain node '{node_id}' not found"}
+    return {
+        "ok": True,
+        "kind": "brain",
+        "id": node.id,
+        "label": node.title,
+        "category": node.category,
+        "content": node.raw_markdown,
+        "confidence": node.frontmatter.confidence,
+        "status": node.frontmatter.status,
+        "tags": node.frontmatter.tags,
+        "wikilinks": [w.target for w in node.wikilinks],
+        "backlinks": node.backlinks,
+    }
 
 
 def _memory_detail(node_id: str) -> dict[str, Any]:
@@ -162,7 +193,14 @@ def _skill_detail(node_id: str) -> dict[str, Any]:
 # ── Delete ──────────────────────────────────────────────────────────────────
 
 def delete_node(node_id: str) -> dict[str, Any]:
-    return _dispatch(node_id, _delete_memory, _delete_skill)
+    return _dispatch(node_id, _delete_memory, _delete_skill, _delete_brain)
+
+
+def _delete_brain(node_id: str) -> dict[str, Any]:
+    from agent.brain.vault import BrainVault
+    vault = BrainVault()
+    ok = vault.delete_node(node_id)
+    return {"ok": ok, "message": f"deleted brain node '{node_id}'" if ok else "delete failed"}
 
 
 def _delete_skill(name: str) -> dict[str, Any]:
@@ -187,7 +225,27 @@ def _delete_memory(node_id: str) -> dict[str, Any]:
 # ── Edit ────────────────────────────────────────────────────────────────────
 
 def edit_node(node_id: str, content: str) -> dict[str, Any]:
-    return _dispatch(node_id, _edit_memory, _edit_skill, content)
+    return _dispatch(node_id, _edit_memory, _edit_skill, _edit_brain, content)
+
+
+def _edit_brain(node_id: str, content: str) -> dict[str, Any]:
+    from agent.brain.vault import BrainVault
+    from agent.brain.parser import parse_frontmatter_and_body
+    vault = BrainVault()
+    meta, body = parse_frontmatter_and_body(content)
+    updated = vault.write_node(
+        node_id=node_id,
+        content=body,
+        title=meta.title or None,
+        category=meta.category or None,
+        tags=meta.tags or None,
+        confidence=meta.confidence,
+        status=meta.status,
+        supersedes=meta.supersedes,
+        aliases=meta.aliases or None,
+        related=meta.related or None,
+    )
+    return {"ok": True, "message": f"updated brain node '{node_id}'", "node": updated.to_summary_dict()}
 
 
 def _edit_skill(name: str, content: str) -> dict[str, Any]:

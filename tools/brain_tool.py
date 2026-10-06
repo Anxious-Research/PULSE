@@ -39,7 +39,7 @@ BRAIN_SCHEMA = {
         "properties": {
             "action": {
                 "type": "string",
-                "enum": ["read", "write", "patch", "delete", "search", "explore", "evolve_belief", "graph_stats"],
+                "enum": ["read", "write", "patch", "delete", "search", "explore", "evolve_belief", "graph_stats", "unlinked_mentions"],
                 "description": "Brain action to execute.",
             },
             "node_id": {
@@ -223,8 +223,16 @@ def brain_tool(
         elif action == "graph_stats":
             return graph_inst.get_full_graph_payload()
 
+        elif action == "unlinked_mentions":
+            if not node_id:
+                return tool_error("Missing required parameter 'node_id' for action='unlinked_mentions'")
+            from agent.brain.cache import MetadataCache
+            cache = MetadataCache(vault_inst)
+            mentions = cache.find_unlinked_mentions(node_id, limit=kwargs.get("limit", 30))
+            return {"node_id": node_id, "total_unlinked": len(mentions), "mentions": mentions}
+
         else:
-            return tool_error(f"Unknown brain action: '{action}'. Supported actions: read, write, patch, delete, search, explore, evolve_belief, graph_stats")
+            return tool_error(f"Unknown brain action: '{action}'. Supported actions: read, write, patch, delete, search, explore, evolve_belief, graph_stats, unlinked_mentions")
 
     except Exception as e:
         logger.exception("Error executing brain tool action %s: %s", action, e)

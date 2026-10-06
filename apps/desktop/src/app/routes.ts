@@ -21,11 +21,13 @@ export const CRON_ROUTE = '/cron'
 export const PROFILES_ROUTE = '/profiles'
 export const AGENTS_ROUTE = '/agents'
 export const STARMAP_ROUTE = '/starmap'
+export const BRAIN_ROUTE = '/brain'
 
 export type AppView =
   | 'session-import'
   | 'agents'
   | 'artifacts'
+  | 'brain'
   | 'capabilities'
   | 'chat'
   | 'command-center'
@@ -45,6 +47,7 @@ export type AppRouteId =
   | 'session-import'
   | 'agents'
   | 'artifacts'
+  | 'brain'
   | 'capabilities'
   | 'command-center'
   | 'cron'
@@ -73,7 +76,8 @@ export const APP_ROUTES = [
   { id: 'cron', path: CRON_ROUTE, view: 'cron' },
   { id: 'profiles', path: PROFILES_ROUTE, view: 'profiles' },
   { id: 'agents', path: AGENTS_ROUTE, view: 'agents' },
-  { id: 'starmap', path: STARMAP_ROUTE, view: 'starmap' }
+  { id: 'starmap', path: STARMAP_ROUTE, view: 'starmap' },
+  { id: 'brain', path: BRAIN_ROUTE, view: 'brain' }
 ] as const satisfies readonly AppRoute[]
 
 const APP_VIEW_BY_PATH = new Map<string, AppView>(APP_ROUTES.map(route => [route.path, route.view]))
@@ -163,6 +167,7 @@ export interface ProfileGroupHeaderContribution {
 export const OVERLAY_VIEWS: ReadonlySet<AppView> = new Set([
   'session-import',
   'agents',
+  'brain',
   'command-center',
   'cron',
   'profiles',

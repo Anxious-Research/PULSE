@@ -24,6 +24,20 @@ FRONTMATTER_PATTERN = re.compile(r"^---\r?\n(.*?)\r?\n---\r?\n?", re.DOTALL)
 TAG_PATTERN = re.compile(r"(?:^|\s)#[a-zA-Z0-9_\-\/]+(?:\b|$)")
 
 
+def parse_linktext(linktext: str) -> Tuple[str, Optional[str]]:
+    """Split Obsidian linktext into path and subpath (#heading or #^block-id).
+    
+    Examples:
+        'My Note#Section 1' -> ('My Note', '#Section 1')
+        'My Note#^block123' -> ('My Note', '#^block123')
+        'My Note'           -> ('My Note', None)
+    """
+    if "#" in linktext:
+        path, subpath = linktext.split("#", 1)
+        return path.strip(), f"#{subpath.strip()}"
+    return linktext.strip(), None
+
+
 def parse_wikilinks(content: str) -> List[WikilinkTarget]:
     """Extract all [[wikilinks]] from markdown content with target, heading, and alias."""
     links: List[WikilinkTarget] = []

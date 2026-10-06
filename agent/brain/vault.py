@@ -122,31 +122,34 @@ I am an autonomous agentic pair programmer and cognitive thinking partner design
 """
             identity_path.write_text(content, encoding="utf-8")
 
-        anatomy_path = self.vault_dir / "self" / "anatomy.md"
-        if not anatomy_path.exists():
-            content = """---
-title: "PULSE Internal Anatomy & Systems Wiring"
+        wiring_path = self.vault_dir / "self" / "wiring.md"
+        if not wiring_path.exists():
+            wiring_content = """---
+title: "PULSE Architecture Wiring & Subsystems Map"
 category: "self"
-tags: ["architecture", "systems", "internals"]
+tags: ["self", "wiring", "architecture", "index"]
 confidence: 1.0
 status: "active"
 ---
 
-# PULSE System Architecture & Wiring
+# PULSE Complete Architecture & Systems Wiring
 
-PULSE is composed of several integrated subsystems:
+PULSE is composed of several interdependent cognitive and execution subsystems:
 
-1. **Agent Runtime (`agent/`)**:
-   - Manages reasoning loops, context construction, tool invocations, and memory synthesis.
-   - Integrates with [[agent/brain/vault|Brain Vault]] and [[agent/brain/graph|Brain Graph]].
-2. **Cognitive Brain (`agent/brain/`)**:
-   - Manages Markdown nodes, bi-directional [[wikilinks]], belief revisions, and semantic clustering.
-3. **Tools & Capabilities (`tools/`)**:
-   - Native capabilities including file management, terminal execution, and browser interaction.
-4. **Desktop UI (`apps/desktop/`)**:
-   - Visual chat, StarMap Knowledge Graph visualizer, settings, and workspace controls.
+- [[self/subsystems/agent-runtime|Agent Runtime]]: Central reasoning loop, context building, and turn orchestration.
+- [[self/subsystems/brain-engine|Brain Engine]]: Native local markdown knowledge vault with [[wikilinks]], backlinks, and belief evolution.
+- [[self/subsystems/tool-registry|Tool Registry]]: Tool schemas, permission policies, and system capabilities.
+- [[self/subsystems/state-engine|State Engine]]: Multi-session SQLite persistence, search, and message timelines.
+- [[self/subsystems/desktop-electron|Desktop Shell & StarMap]]: Electron application and force-directed knowledge visualization.
+- [[self/subsystems/gateway|Gateway IPC]]: WebSocket and IPC bridge for cross-process communication.
+- [[self/subsystems/curator|Curator & Cognitive Sleep]]: Background memory consolidation and contradiction resolution.
+
+## Architectural Principles
+1. **Self-Awareness**: Complete understanding of its own internal code and runtime status.
+2. **Local-First & Private**: Knowledge is stored in human-readable Markdown notes under `~/.pulse/brain/`.
+3. **Continuous Evolution**: Resolves misconceptions dynamically over time using [[agent/brain/belief|BeliefEngine]].
 """
-            anatomy_path.write_text(content, encoding="utf-8")
+            wiring_path.write_text(wiring_content, encoding="utf-8")
 
     def read_node(self, node_id: str) -> Optional[BrainNode]:
         """Read a node from disk and parse frontmatter, body, and wikilinks."""
