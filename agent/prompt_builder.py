@@ -240,6 +240,14 @@ SESSION_SEARCH_GUIDANCE = (
     "context exists, use session_search to recall it before asking them to repeat themselves."
 )
 
+BRAIN_GUIDANCE = (
+    "You have a native cognitive Brain & Knowledge Graph (Brain Vault). "
+    "Unlike flat memory files, the Brain maintains interconnected Markdown nodes with [[wikilinks]], backlinks, "
+    "frontmatter properties, confidence scores, and evolving belief states across Self (identity, anatomy, capabilities), "
+    "User (mental models, preferences), Concepts (domain knowledge), and Beliefs (hypotheses & resolved misconceptions). "
+    "Use the `brain` tool to read, write, explore graph neighborhoods, and evolve beliefs as you learn new facts."
+)
+
 # The opening sentence is worded deliberately: Anthropic's server-side filter rejected the previous phrasing
 # ("After completing a complex task (5+ tool calls)... save the approach as a skill...") on subscription OAuth
 # credentials, surfacing as a billing-shaped HTTP 400. If you rewrite it, re-verify with a subscription OAuth

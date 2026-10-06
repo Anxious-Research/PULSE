@@ -1,15 +1,17 @@
 """Assemble the "learning made visible" graph for desktop.
 
 Scoped to what a user actually learns over time: non-base, learned/profile
-skills (agent-created or used) plus ``MEMORY.md`` / ``USER.md`` chunks as
-first-class nodes. Skill links come from declared ``related_skills``;
-memory→skill links are derived from lexical overlap.
+skills (agent-created or used) plus ``MEMORY.md`` / ``USER.md`` chunks and
+native Brain Vault nodes as first-class nodes. Skill links come from declared
+``related_skills``; memory→skill links are derived from lexical overlap;
+brain links come from [[wikilinks]] and frontmatter relations.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import re
 from collections import Counter
 from dataclasses import dataclass, field
@@ -18,6 +20,8 @@ from pathlib import Path
 from typing import Any, Optional
 
 from pulse_constants import get_pulse_home
+
+logger = logging.getLogger(__name__)
 
 _SKIP_PARTS = {".archive", ".hub", ".locks", "node_modules", ".git"}
 _USAGE_TS_KEYS = ("last_activity_at", "last_used_at", "last_viewed_at", "last_patched_at", "created_at")
@@ -82,10 +86,6 @@ def _to_int_ts(value: Any) -> Optional[int]:
 def build_skill_nodes(skill_roots: list[tuple[str, Path]]) -> dict[str, SkillNode]:
     usage = _load_usage()
     nodes: dict[str, SkillNode] = {}
-    # Tag skills mounted from skills.external_dirs so the journey graph can keep them out of
-    # learning milestones (#108032): a mount is configured, not learned. Path-based (the common
-    # symlink into the profile tree resolves to the external root), so a local copy of the same
-    # name still classifies as its own source.
     try:
         from agent.skill_utils import is_external_skill_path
     except Exception:
@@ -106,12 +106,8 @@ def build_skill_nodes(skill_roots: list[tuple[str, Path]]) -> dict[str, SkillNod
             name = str(fm.get("name") or skill_md.parent.name).strip()
             if not name or name in nodes:
                 continue
-            rec, cat, parts = usage.get(name, {}), _fm_field(fm, "category"), skill_md.parts  # …/skills/<category>/<skill>/SKILL.md
+            rec, cat, parts = usage.get(name, {}), _fm_field(fm, "category"), skill_md.parts
             usage_ts = next((ts for ts in (_to_int_ts(rec.get(k)) for k in _USAGE_TS_KEYS) if ts is not None), None)
-            # Local variable: never overwrite `source` — the loop variable must keep its
-            # per-root value for the NEXT skill in the same root, or every skill yielded
-            # after the first external mount inherits "external" (ext4 hash order can
-            # interleave a symlinked mount before a local skill in one root).
             node_source = "external" if (is_external_skill_path is not None and is_external_skill_path(skill_md)) else source
             nodes[name] = SkillNode(
                 name=name, category=str(cat) if cat else parts[-3] if len(parts) >= 3 else "general", source=node_source,
@@ -141,15 +137,7 @@ def density_stats(nodes: dict[str, SkillNode], edges: list[tuple[str, str]]) -> 
 
 
 def memory_fingerprint(entry: str) -> str:
-    """Short stable digest of a memory entry's TEXT, carried in the node id.
-
-    A journey card is identified by what it says, not by where it sat: an earlier entry can be
-    removed (an agent ``memory_tool`` remove mid-turn, a Journey delete without a refetch)
-    between the graph being drawn and the user submitting an edit, and a bare index then names
-    somebody else's card (#119668).
-    Cards and the mutation path both read entries through ``MemoryStore._read_file``, so the
-    same entry digests the same on both sides (a BOM'd file included).
-    """
+    """Short stable digest of a memory entry's TEXT, carried in the node id."""
     return hashlib.sha256(entry.strip().encode("utf-8")).hexdigest()[:12]
 
 
@@ -159,8 +147,7 @@ def memory_node_id(card: dict[str, Any], index: int) -> str:
 
 
 def _memory_cards() -> list[dict[str, Any]]:
-    """``MEMORY.md`` / ``USER.md`` entries as the memory tool parses them; every
-    entry becomes one card (MEMORY.md cards first, then USER.md)."""
+    """``MEMORY.md`` / ``USER.md`` entries as the memory tool parses them."""
     from tools.memory_tool import MemoryStore
 
     base = get_pulse_home() / "memories"
@@ -171,15 +158,11 @@ def _memory_cards() -> list[dict[str, Any]]:
             file_ts = _to_int_ts(path.stat().st_mtime)
         except OSError:
             continue
-        # The store's own parser (utf-8-sig, same delimiter): a hand-rolled split kept a Notepad
-        # BOM glued to the first entry, so its fingerprint never matched the store's and the card
-        # was "stale" forever.
         for chunk_idx, chunk in enumerate(MemoryStore._read_file(path)):
             first = chunk.splitlines()[0].strip().lstrip("# ").strip()
             cards.append({
                 "source": source, "timestamp": file_ts + chunk_idx if file_ts is not None else None,
                 "title": (first[:80] + "…") if len(first) > 80 else first, "body": chunk[:1200],
-                # Digest the WHOLE chunk, not the truncated ``body`` a long memory renders with.
                 "fingerprint": memory_fingerprint(chunk),
             })
     return cards
@@ -205,19 +188,13 @@ def _memory_skill_edges(memory_cards: list[dict[str, Any]], skills: list[SkillNo
 
 
 def _has_learning_signal(node: SkillNode) -> bool:
-    """Graph-worthy: agent-created, user-taught (/learn), or actually used.
-
-    ``created_by="learn"`` is a learning-signal marker only — curator management stays keyed
-    strictly on ``"agent"`` (see ``tools.skill_usage._is_curator_managed_record``). External
-    mounts are never a learning milestone: they were configured by the user, not learned, so
-    even a used external skill stays out of the journey graph (#108032).
-    """
+    """Graph-worthy: agent-created, user-taught (/learn), or actually used."""
     return node.source != "external" and (node.created_by in {"agent", "learn"} or node.use_count > 0)
 
 
 def build_learning_graph() -> dict[str, Any]:
     """Full payload for the desktop learning panel: non-base skills with real
-    learning signal (agent-created or used) plus memory chunks as graph nodes."""
+    learning signal, memory chunks, and native brain vault knowledge nodes."""
     roots = [("base", Path(__file__).resolve().parent.parent / "skills"), ("profile", get_pulse_home() / "skills")]
     learned_skills = {
         name: node for name, node in build_skill_nodes(roots).items()
@@ -228,6 +205,48 @@ def build_learning_graph() -> dict[str, Any]:
     clusters = Counter(node.category for node in learned_skills.values())
     if memory_cards:
         clusters["memory"] = len(memory_cards)
+
+    brain_nodes: list[dict[str, Any]] = []
+    brain_edges: list[tuple[str, str]] = []
+
+    try:
+        from agent.brain.vault import BrainVault
+        from agent.brain.graph import BrainGraph
+        vault = BrainVault()
+        vault.ensure_vault_structure()
+        bg = BrainGraph(vault)
+        bg.rebuild_index()
+
+        for b_node in bg._nodes.values():
+            clusters[b_node.category] += 1
+            brain_nodes.append({
+                "id": b_node.id,
+                "label": b_node.title,
+                "kind": "brain",
+                "category": b_node.category,
+                "path": b_node.path,
+                "timestamp": b_node.timestamp,
+                "useCount": 0,
+                "state": b_node.frontmatter.status,
+                "createdBy": "brain",
+                "pinned": b_node.category == "self",
+                "confidence": b_node.frontmatter.confidence,
+                "tags": b_node.frontmatter.tags,
+                "wikilinksCount": len(b_node.wikilinks),
+                "backlinksCount": len(b_node.backlinks),
+            })
+
+        for edge in bg._edges:
+            brain_edges.append((edge.source, edge.target))
+
+        skill_names = set(learned_skills.keys())
+        for b_node in bg._nodes.values():
+            for s_name in skill_names:
+                if s_name.lower() in b_node.content.lower() or s_name.lower() in b_node.title.lower():
+                    brain_edges.append((b_node.id, s_name))
+
+    except Exception as e:
+        logger.debug("Could not load brain nodes for learning graph: %s", e)
 
     graph_nodes = [
         {
@@ -242,14 +261,24 @@ def build_learning_graph() -> dict[str, Any]:
             "useCount": 0, "state": "active", "createdBy": "memory", "pinned": False,
         }
         for i, card in enumerate(memory_cards)
-    ]
+    ] + brain_nodes
+
+    all_edges_raw = skill_edges + memory_edges + brain_edges
+    deduped_edges = list(dict.fromkeys(
+        (min(str(a), str(b)), max(str(a), str(b))) for a, b in all_edges_raw if a != b
+    ))
+
     return {
         "nodes": graph_nodes,
-        "edges": [{"source": a, "target": b} for a, b in skill_edges + memory_edges],
+        "edges": [{"source": a, "target": b} for a, b in deduped_edges],
         "clusters": [{"category": c, "count": n} for c, n in sorted(clusters.items(), key=lambda kv: -kv[1])],
         "memory": memory_cards,
         "stats": {
             **density_stats(learned_skills, skill_edges),
-            "memory_nodes": len(memory_cards), "memory_skill_edges": len(memory_edges), "learned_skills": len(learned_skills),
+            "memory_nodes": len(memory_cards),
+            "brain_nodes": len(brain_nodes),
+            "memory_skill_edges": len(memory_edges),
+            "brain_edges": len(brain_edges),
+            "learned_skills": len(learned_skills),
         },
     }

@@ -866,11 +866,11 @@ export interface UsageStats {
   total: number
 }
 
-/** One graph node in the star map (learned skill or memory chunk). */
+/** One graph node in the star map (learned skill, memory chunk, or brain knowledge node). */
 export interface StarmapNode {
   id: string
   label: string
-  kind: 'memory' | 'skill'
+  kind: 'memory' | 'skill' | 'brain'
   memorySource?: 'memory' | 'profile'
   timestamp?: null | number
   category: string
@@ -878,6 +878,11 @@ export interface StarmapNode {
   state: string
   createdBy: null | string
   pinned: boolean
+  confidence?: number
+  tags?: string[]
+  path?: string
+  wikilinksCount?: number
+  backlinksCount?: number
 }
 
 /** A declared `related_skills` link; both endpoints are guaranteed to be nodes. */
