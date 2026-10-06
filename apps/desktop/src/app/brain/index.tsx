@@ -96,10 +96,10 @@ export function BrainView({
     }
   }, [activeNodeId, handleSelectNode])
 
-  // Extract brain nodes summaries from graph
-  const brainNodes: BrainNodeSummary[] = useMemo(() => {
-    if (!graph) return []
-    return graph.nodes
+  // Extract brain nodes summaries and edges from graph
+  const { brainNodes, brainEdges } = useMemo(() => {
+    if (!graph) return { brainNodes: [], brainEdges: [] }
+    const nodes = graph.nodes
       .filter((n: StarmapNode) => n.kind === 'brain' || n.id.includes('/'))
       .map((n: StarmapNode) => ({
         id: n.id,
@@ -113,6 +113,8 @@ export function BrainView({
         wikilinksCount: n.wikilinksCount,
         backlinksCount: n.backlinksCount,
       }))
+    const edges = (graph.edges || []).map((e: { source: string; target: string }) => [e.source, e.target] as [string, string])
+    return { brainNodes: nodes, brainEdges: edges }
   }, [graph])
 
   return (
@@ -124,6 +126,7 @@ export function BrainView({
       ) : (
         <BrainExplorer
           activeNode={activeNodeDetail}
+          edges={brainEdges}
           loading={nodeLoading}
           nodes={brainNodes}
           onOpenStarmap={onOpenStarmap}

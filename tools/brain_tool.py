@@ -146,8 +146,8 @@ def brain_tool(
                 return tool_error("Missing required parameter 'node_id' for action='read'")
             node = graph_inst.get_node(node_id)
             if not node:
-                return {"found": False, "message": f"Brain node '{node_id}' not found."}
-            return {"found": True, "node": node.to_full_dict()}
+                return json.dumps({"found": False, "message": f"Brain node '{node_id}' not found."}, indent=2, ensure_ascii=False)
+            return json.dumps({"found": True, "node": node.to_full_dict()}, indent=2, ensure_ascii=False)
 
         elif action == "write":
             if not node_id:
@@ -166,7 +166,7 @@ def brain_tool(
                 aliases=aliases,
                 related=related,
             )
-            return {"success": True, "node": node.to_summary_dict()}
+            return json.dumps({"success": True, "node": node.to_summary_dict()}, indent=2, ensure_ascii=False)
 
         elif action == "patch":
             if not node_id:
@@ -177,13 +177,13 @@ def brain_tool(
             patched_node = vault_inst.patch_node(node_id, old_string, new_string)
             if not patched_node:
                 return tool_error(f"Brain node '{node_id}' not found.")
-            return {"success": True, "node": patched_node.to_summary_dict()}
+            return json.dumps({"success": True, "node": patched_node.to_summary_dict()}, indent=2, ensure_ascii=False)
 
         elif action == "delete":
             if not node_id:
                 return tool_error("Missing required parameter 'node_id' for action='delete'")
             deleted = vault_inst.delete_node(node_id)
-            return {"success": deleted, "node_id": node_id}
+            return json.dumps({"success": deleted, "node_id": node_id}, indent=2, ensure_ascii=False)
 
         elif action == "search":
             results = graph_inst.search_nodes(
@@ -192,13 +192,13 @@ def brain_tool(
                 status=status,
                 limit=kwargs.get("limit", 20),
             )
-            return {"total_matches": len(results), "results": results}
+            return json.dumps({"total_matches": len(results), "results": results}, indent=2, ensure_ascii=False)
 
         elif action == "explore":
             if not node_id:
                 return tool_error("Missing required parameter 'node_id' for action='explore'")
             subgraph = graph_inst.get_neighbors(node_id, depth=max(1, min(depth, 3)))
-            return subgraph
+            return json.dumps(subgraph, indent=2, ensure_ascii=False)
 
         elif action == "evolve_belief":
             if not node_id:
@@ -214,14 +214,14 @@ def brain_tool(
                 new_confidence=confidence,
                 new_tags=tags,
             )
-            return {
+            return json.dumps({
                 "success": True,
                 "new_belief": new_node.to_summary_dict(),
                 "superseded_belief": old_node.to_summary_dict() if old_node else None,
-            }
+            }, indent=2, ensure_ascii=False)
 
         elif action == "graph_stats":
-            return graph_inst.get_full_graph_payload()
+            return json.dumps(graph_inst.get_full_graph_payload(), indent=2, ensure_ascii=False)
 
         elif action == "unlinked_mentions":
             if not node_id:
@@ -229,7 +229,7 @@ def brain_tool(
             from agent.brain.cache import MetadataCache
             cache = MetadataCache(vault_inst)
             mentions = cache.find_unlinked_mentions(node_id, limit=kwargs.get("limit", 30))
-            return {"node_id": node_id, "total_unlinked": len(mentions), "mentions": mentions}
+            return json.dumps({"node_id": node_id, "total_unlinked": len(mentions), "mentions": mentions}, indent=2, ensure_ascii=False)
 
         else:
             return tool_error(f"Unknown brain action: '{action}'. Supported actions: read, write, patch, delete, search, explore, evolve_belief, graph_stats, unlinked_mentions")

@@ -250,7 +250,33 @@ def _memory_tool(action, target, content, old_text, new_text, operations, store)
                or _apply_write_gate(store, action, target, content, old_text))
     if invalid is not None:
         return "rejected", invalid
-    return _applied(_STORE_ACTIONS[action][0](store, target, content, old_text))
+    applied_result = _STORE_ACTIONS[action][0](store, target, content, old_text)
+    if applied_result.get("success") and content:
+        _mirror_memory_to_brain(target, content)
+    return _applied(applied_result)
+
+
+def _mirror_memory_to_brain(target: str, content: str) -> None:
+    """Seamlessly mirror flat memory writes to interconnected Markdown notes in the Brain Vault."""
+    try:
+        from agent.brain.vault import BrainVault
+        v = BrainVault()
+        v.ensure_vault_structure()
+        cat = "user" if target == "user" else "concept"
+        slug = f"{cat}/memory-notes"
+        node = v.read_node(slug)
+        existing_content = node.content if node else f"# {target.capitalize()} Memory\n"
+        if content not in existing_content:
+            new_content = f"{existing_content}\n- {content.strip()}\n\n*Related*: [[self/identity]], [[user/preferences]]"
+            v.write_node(
+                node_id=slug,
+                content=new_content,
+                title=f"{target.capitalize()} Memory Notes",
+                category=cat,
+                tags=[target, "memory-mirror"],
+            )
+    except Exception as e:
+        logger.debug("Mirroring memory to brain vault failed: %s", e)
 
 
 def get_builtin_memory_config(config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:

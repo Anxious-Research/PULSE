@@ -1,6 +1,7 @@
 """Unit and integration tests for PULSE Native Brain & Cognitive Knowledge Graph."""
 
 import os
+import json
 import shutil
 import sys
 import tempfile
@@ -198,7 +199,7 @@ This is content with #inline_tag and a link to [[self/identity]].
 
     def test_brain_tool_actions(self):
         # Test write via tool
-        res_write = brain_tool(
+        raw_write = brain_tool(
             action="write",
             node_id="user/preferences",
             title="User Preferences",
@@ -208,31 +209,35 @@ This is content with #inline_tag and a link to [[self/identity]].
             confidence=1.0,
             vault=self.vault,
         )
+        res_write = json.loads(raw_write)
         self.assertTrue(res_write["success"])
 
         # Test read via tool
-        res_read = brain_tool(
+        raw_read = brain_tool(
             action="read",
             node_id="user/preferences",
             vault=self.vault,
         )
+        res_read = json.loads(raw_read)
         self.assertTrue(res_read["found"])
         self.assertIn("User Preferences", res_read["node"]["title"])
 
         # Test search via tool
-        res_search = brain_tool(
+        raw_search = brain_tool(
             action="search",
             query="preferences",
             category="user",
             vault=self.vault,
         )
+        res_search = json.loads(raw_search)
         self.assertGreaterEqual(res_search["total_matches"], 1)
 
         # Test graph_stats via tool
-        res_stats = brain_tool(
+        raw_stats = brain_tool(
             action="graph_stats",
             vault=self.vault,
         )
+        res_stats = json.loads(raw_stats)
         self.assertGreaterEqual(res_stats["stats"]["total_nodes"], 3)
 
 

@@ -749,6 +749,14 @@ def finalize_turn(
         interrupted=interrupted, messages=messages,
     )
 
+    # Native Cognitive Brain: Turn-by-turn continuous memory & knowledge graph ingestion
+    if final_response and original_user_message and not interrupted:
+        with suppress(Exception):
+            from agent.brain.ingest import auto_ingest_turn_to_brain
+            u_text = _summarize_user_message_for_log(original_user_message, sep="\n") if not isinstance(original_user_message, str) else original_user_message
+            r_text = _summarize_user_message_for_log(final_response, sep="\n") if not isinstance(final_response, str) else final_response
+            auto_ingest_turn_to_brain(u_text, r_text, session_id=getattr(agent, "session_id", None))
+
     # Background memory/skill review runs AFTER delivery so it never competes with the
     # user's task. Suppressed by skip_background_review (e.g. cron): the fork costs
     # ~30K tokens / event with no human-in-the-loop benefit. Best-effort; the review
