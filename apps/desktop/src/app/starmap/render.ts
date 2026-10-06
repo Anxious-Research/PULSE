@@ -508,7 +508,23 @@ export function drawScene(scene: Scene): DrawResult {
     const sy = projY(n.y * posScale)
 
     ctx.globalAlpha = vis
-    const nodeInk = nodeHigh ? base : n.kind === 'memory' ? memoryInk : skillInk
+    const nodeInk = nodeHigh
+      ? base
+      : n.kind === 'memory'
+        ? memoryInk
+        : n.kind === 'brain'
+          ? n.category === 'self'
+            ? palette.selfInk
+            : n.category === 'belief'
+              ? palette.beliefInk
+              : n.category === 'concept'
+                ? palette.conceptInk
+                : n.category === 'user'
+                  ? palette.userInk
+                  : n.category === 'project'
+                    ? palette.projectInk
+                    : skillInk
+          : skillInk
     const shape = NODE_SHAPE[n.kind]
 
     if (shape === 'circle') {

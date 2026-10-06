@@ -83,59 +83,14 @@ def retrieve_turn_subgraph(
     graph: Optional[BrainGraph] = None,
     top_k: int = 3,
 ) -> Optional[str]:
-    """Retrieve relevant brain nodes and connected 1-hop neighbors for the current conversation turn."""
+    """Retrieve relevant brain nodes, associative connections, and active beliefs for the current turn."""
     if not user_prompt or len(user_prompt.strip()) < 4:
         return None
 
     try:
-        v = vault or BrainVault()
-        g = graph or BrainGraph(v)
-        g.rebuild_index()
-
-        # Tokenize query words
-        tokens = {t.lower().strip() for t in re.split(r"[^\w-]+", user_prompt) if len(t.strip()) >= 3}
-        if not tokens:
-            return None
-
-        # Score matching nodes (excluding self/ which is already in system prompt)
-        scored: List[Tuple[float, BrainNode]] = []
-        for node in g._nodes.values():
-            if node.category == NodeCategory.SELF.value:
-                continue
-
-            score = 0.0
-            node_title_lower = node.title.lower()
-            node_body_lower = node.content.lower()
-
-            for t in tokens:
-                if t in node_title_lower:
-                    score += 6.0
-                if t in node.frontmatter.tags:
-                    score += 4.0
-                if t in node_body_lower:
-                    score += 1.5
-
-            if score >= 3.0:
-                scored.append((score, node))
-
-        scored.sort(key=lambda x: x[0], reverse=True)
-        top_nodes = [node for _, node in scored[:top_k]]
-        if not top_nodes:
-            return None
-
-        # Build turn context block with node content and 1-hop connections
-        lines = ["[Active Cognitive Brain Recall]"]
-        for node in top_nodes:
-            outgoing = [w.target for w in node.wikilinks]
-            incoming = node.backlinks
-            lines.append(
-                f"### [[{node.id}|{node.title}]] ({node.category}, confidence: {node.frontmatter.confidence})\n"
-                f"{node.content.strip()[:600]}\n"
-                f"*Connections*: Forward: {outgoing[:4]} | Backlinks: {incoming[:4]}"
-            )
-
-        return "\n\n".join(lines)
-
+        from agent.brain.consciousness import ConsciousnessEngine
+        engine = ConsciousnessEngine(vault, graph)
+        return engine.format_consciousness_stream(user_prompt)
     except Exception as e:
-        logger.debug("Error retrieving turn brain subgraph: %s", e)
+        logger.debug("Error generating cognitive consciousness stream: %s", e)
         return None

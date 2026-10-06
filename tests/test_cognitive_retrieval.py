@@ -51,7 +51,7 @@ class TestCognitiveRetrieval(unittest.TestCase):
         )
 
         self.assertIsNotNone(recall)
-        self.assertIn("Active Cognitive Brain Recall", recall)
+        self.assertIn("pulse_consciousness_stream", recall)
         self.assertIn("SQLite WAL Mode", recall)
 
 

@@ -105,6 +105,12 @@ export function memoryInkFor(primary: Rgb, bg: Rgb): Rgb {
   return mixRgb(complementaryInk(primary), bg, 0.45)
 }
 
+function categoryInkFor(primary: Rgb, hueShift: number, bg: Rgb, sat = 0.65, light = 0.6): Rgb {
+  const [h] = rgbToHsl(primary)
+  const colored = hslToRgb(h + hueShift, sat, light)
+  return mixRgb(colored, bg, 0.25)
+}
+
 // Resolve the theme-derived palette once per theme change — the resolveRgb probe
 // does a getImageData readback, so this stays out of the per-frame path. Node
 // groups borrow restrained tint from the theme; structure stays foreground ink.
@@ -133,6 +139,11 @@ export function computePalette(canvas: HTMLCanvasElement): Palette {
     inkInv: darkTheme ? 'rgba(0,0,0,1)' : 'rgba(255,255,255,1)',
     memoryInk: memoryInkFor(primary, bg),
     primary,
-    skillInk: mixRgb(primary, base, darkTheme ? 0.12 : 0.18)
+    skillInk: mixRgb(primary, base, darkTheme ? 0.12 : 0.18),
+    selfInk: categoryInkFor(primary, 195, bg, 0.75, 0.65),    // Azure/Cyan
+    beliefInk: categoryInkFor(primary, 120, bg, 0.7, 0.58),    // Emerald
+    conceptInk: categoryInkFor(primary, 45, bg, 0.75, 0.62),   // Amber/Gold
+    userInk: categoryInkFor(primary, 270, bg, 0.7, 0.65),      // Orchid/Violet
+    projectInk: categoryInkFor(primary, 15, bg, 0.75, 0.6),    // Coral
   }
 }
