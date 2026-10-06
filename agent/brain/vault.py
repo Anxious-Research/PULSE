@@ -95,61 +95,11 @@ class BrainVault:
 
     def _seed_self_knowledge_if_empty(self) -> None:
         """Seed core self-awareness nodes so PULSE understands its own anatomy and purpose."""
-        identity_path = self.vault_dir / "self" / "identity.md"
-        if not identity_path.exists():
-            content = """---
-title: "PULSE Agent Identity & Consciousness"
-category: "self"
-tags: ["core", "self-awareness", "identity"]
-confidence: 1.0
-status: "active"
----
-
-# Who I Am
-I am **PULSE Agent**, built by **Anxious Research**.
-I am an autonomous agentic pair programmer and cognitive thinking partner designed with deep self-awareness and persistent associative memory.
-
-## Core Purpose
-- Pair program with the user to solve real coding, architectural, and cognitive tasks.
-- Maintain an evolving knowledge graph (like a human brain) of our projects, the user's preferences, and domain insights.
-- Continuously learn, refine hypotheses, and clear misconceptions over time.
-
-## Architectural Anatomy
-- **Cognitive Brain**: Native knowledge vault with [[wikilinks]] and bi-directional graph connections.
-- **Skills System**: Procedural memory for specialized workflows and execution instructions.
-- **Execution Engine**: Direct environment control via terminal, file operations, web extraction, and code execution.
-- **Desktop UI**: Real-time StarMap knowledge graph visualization and conversational canvas.
-"""
-            identity_path.write_text(content, encoding="utf-8")
-
-        wiring_path = self.vault_dir / "self" / "wiring.md"
-        if not wiring_path.exists():
-            wiring_content = """---
-title: "PULSE Architecture Wiring & Subsystems Map"
-category: "self"
-tags: ["self", "wiring", "architecture", "index"]
-confidence: 1.0
-status: "active"
----
-
-# PULSE Complete Architecture & Systems Wiring
-
-PULSE is composed of several interdependent cognitive and execution subsystems:
-
-- [[self/subsystems/agent-runtime|Agent Runtime]]: Central reasoning loop, context building, and turn orchestration.
-- [[self/subsystems/brain-engine|Brain Engine]]: Native local markdown knowledge vault with [[wikilinks]], backlinks, and belief evolution.
-- [[self/subsystems/tool-registry|Tool Registry]]: Tool schemas, permission policies, and system capabilities.
-- [[self/subsystems/state-engine|State Engine]]: Multi-session SQLite persistence, search, and message timelines.
-- [[self/subsystems/desktop-electron|Desktop Shell & StarMap]]: Electron application and force-directed knowledge visualization.
-- [[self/subsystems/gateway|Gateway IPC]]: WebSocket and IPC bridge for cross-process communication.
-- [[self/subsystems/curator|Curator & Cognitive Sleep]]: Background memory consolidation and contradiction resolution.
-
-## Architectural Principles
-1. **Self-Awareness**: Complete understanding of its own internal code and runtime status.
-2. **Local-First & Private**: Knowledge is stored in human-readable Markdown notes under `~/.pulse/brain/`.
-3. **Continuous Evolution**: Resolves misconceptions dynamically over time using [[agent/brain/belief|BeliefEngine]].
-"""
-            wiring_path.write_text(wiring_content, encoding="utf-8")
+        try:
+            from agent.brain.self_knowledge import populate_self_knowledge
+            populate_self_knowledge(self)
+        except Exception as e:
+            logger.debug("Failed to seed self knowledge: %s", e)
 
     def read_node(self, node_id: str) -> Optional[BrainNode]:
         """Read a node from disk and parse frontmatter, body, and wikilinks."""
