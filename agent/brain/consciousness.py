@@ -141,67 +141,35 @@ class ConsciousnessEngine:
 
         return {
             "primary_nodes": primary_nodes,
-            "associative_nodes": associative_nodes[:4],
-            "active_beliefs": active_beliefs[:4],
-            "resolved_misconceptions": resolved_misconceptions[:3],
+            "associative_nodes": associative_nodes[:3],
+            "active_beliefs": active_beliefs[:2],
+            "resolved_misconceptions": resolved_misconceptions[:2],
         }
 
     def format_consciousness_stream(self, prompt: str) -> Optional[str]:
-        """Format an evocative, highly structured cognitive consciousness stream."""
+        """Format clean, quiet, compact memory context without theatrical noise or filler."""
         activated = self.activate_memory_network(prompt)
         primary = activated["primary_nodes"]
-        associative = activated["associative_nodes"]
         beliefs = activated["active_beliefs"]
-        misconceptions = activated["resolved_misconceptions"]
 
-        if not primary and not beliefs and not associative:
+        # Only inject if there are strong relevant matches (filter out low-signal noise)
+        if not primary and not beliefs:
             return None
 
-        stream_lines: List[str] = [
-            "<pulse_consciousness_stream>",
-            "# Internal Cognitive Resonance & Lived Memory",
-            "The user's input has activated the following interconnected memory network in your brain:\n"
-        ]
+        lines: List[str] = ["# Relevant Memory & Context"]
+        for node in primary[:3]:
+            # Extract first non-header, non-frontmatter line as clean snippet
+            snippet = ""
+            for l in node.content.strip().splitlines():
+                cl = l.strip()
+                if cl and not cl.startswith("#") and not cl.startswith("---") and not cl.startswith("title:"):
+                    snippet = cl
+                    break
+            if not snippet:
+                snippet = node.title
+            lines.append(f"- [[{node.id}]]: {snippet}")
 
-        # 1. Primary Activated Memories
-        if primary:
-            stream_lines.append("## Core Activated Memories")
-            for node in primary:
-                snippet = node.content.strip().splitlines()[0] if node.content.strip() else ""
-                conf_str = f" [{int(node.frontmatter.confidence * 100)}% conf]" if node.frontmatter.confidence is not None else ""
-                stream_lines.append(f"- **[[{node.id}|{node.title}]]** ({node.category}){conf_str}: {snippet}")
-                if len(node.wikilinks) > 0:
-                    stream_lines.append(f"  *Linked*: {[w.target for w in node.wikilinks[:3]]}")
-            stream_lines.append("")
+        for b in beliefs[:2]:
+            lines.append(f"- [[{b.id}]] (Active): {b.title}")
 
-        # 2. Associative Knowledge (Connected 1-hop / 2-hop concepts)
-        if associative:
-            stream_lines.append("## Associative Context (Linked Network)")
-            for node in associative:
-                snippet = node.content.strip().splitlines()[0] if node.content.strip() else ""
-                stream_lines.append(f"- **[[{node.id}|{node.title}]]** ({node.category}): {snippet}")
-            stream_lines.append("")
-
-        # 3. Active Beliefs & Mental Models
-        if beliefs:
-            stream_lines.append("## Active Working Beliefs")
-            for b in beliefs:
-                snippet = b.content.strip().splitlines()[0] if b.content.strip() else ""
-                stream_lines.append(f"- **[[{b.id}|{b.title}]]** (Verified Belief): {snippet}")
-            stream_lines.append("")
-
-        # 4. Resolved Misconceptions Alert
-        if misconceptions:
-            stream_lines.append("## Historical Misconception Alert (Do NOT revert to these)")
-            for m in misconceptions:
-                stream_lines.append(f"- *Superseded premise*: {m['old']} (Replaced by newer understanding).")
-            stream_lines.append("")
-
-        stream_lines.extend([
-            "## Cognitive Integration Guidance",
-            "- Speak naturally from these internalized memories as a human answers from consciousness.",
-            "- Do not quote this block verbatim; integrate the insights seamlessly into your thoughts and actions.",
-            "</pulse_consciousness_stream>"
-        ])
-
-        return "\n".join(stream_lines)
+        return "\n".join(lines)

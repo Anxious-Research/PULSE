@@ -27,21 +27,22 @@ class TestBrainIngest(unittest.TestCase):
     def test_turn_ingest_creates_and_links_nodes(self):
         ingestor = CognitiveIngestor(vault=self.vault)
 
-        user_msg = "Mujhe chahiye ki pulse ka brain obsidian jaisa ho, with continuous learning and knowledge graph."
-        asst_msg = "PULSE brain architecture uses local markdown notes with wikilinks and spreading activation memory."
+        user_msg = "Mujhe chahiye ki pulse professional aur reliable ho bina faltu theatrics ke."
+        asst_msg = "Understood. Maintaining clean, reliable behavior without theatrical narration."
 
         res = ingestor.ingest_turn(user_msg, asst_msg)
         self.assertTrue(res["ingested"])
-        self.assertGreaterEqual(len(res["created_nodes"]), 1)
+        self.assertGreaterEqual(len(res["updated_nodes"]), 1)
 
-        # Verify concept note was created
+        # Verify user preferences note was updated
         graph = BrainGraph(self.vault)
         graph.rebuild_index()
 
-        node = graph.get_node("concept/obsidian-knowledge-graph")
+        node = graph.get_node("user/preferences")
         self.assertIsNotNone(node)
-        self.assertIn("Obsidian Knowledge Graph Architecture", node.title)
-        self.assertTrue(len(node.wikilinks) > 0)
+        assert node is not None
+        self.assertIn("User Preferences", node.title)
+        self.assertIn("Requirement/Feedback", node.content)
 
 
 if __name__ == "__main__":

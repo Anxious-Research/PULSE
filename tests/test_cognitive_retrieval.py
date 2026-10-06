@@ -51,8 +51,9 @@ class TestCognitiveRetrieval(unittest.TestCase):
         )
 
         self.assertIsNotNone(recall)
-        self.assertIn("pulse_consciousness_stream", recall)
-        self.assertIn("SQLite WAL Mode", recall)
+        assert recall is not None
+        self.assertIn("Relevant Memory", recall)
+        self.assertIn("concept/sqlite-wal", recall)
 
 
 if __name__ == "__main__":
