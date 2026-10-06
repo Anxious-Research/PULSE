@@ -515,32 +515,10 @@ def _timestamp_line(agent: Any) -> str:
 
 
 def _memory_parts(agent: Any) -> List[str]:
-    """Built-in memory/USER.md blocks plus the external provider block (gated on
-    the same check ``inject_memory_provider_tools`` uses, so we never advertise
-    tools the toolset config gated off)."""
+    """Native Cognitive Brain prompt (authoritative self-awareness, active beliefs, user models)."""
     parts: List[str] = []
-    if agent._memory_store:
-        for enabled, kind in ((agent._memory_enabled, "memory"), (agent._user_profile_enabled, "user")):
-            block = agent._memory_store.format_for_system_prompt(kind) if enabled else None
-            if block:
-                parts.append(block)
-    # External memory provider system prompt block (additive to built-in). Gated on the same check
-    # ``inject_memory_provider_tools`` uses so we never advertise provider tools that the agent's toolset
-    # configuration has already gated off (#81014).
-    if agent._memory_manager:
-        try:
-            from agent.memory_manager import memory_provider_tools_exposed as _mem_exposed
-        except Exception:
-            _mem_exposed = None
-        if _mem_exposed is None or _mem_exposed(agent):
-            try:
-                _ext_mem_block = agent._memory_manager.build_system_prompt()
-            except Exception:
-                _ext_mem_block = None
-            if _ext_mem_block:
-                parts.append(_ext_mem_block)
 
-    # Native Cognitive Brain prompt (authoritative self-awareness, active beliefs, user models)
+    # Native Cognitive Brain prompt (single source of truth for living memory & knowledge)
     try:
         from agent.brain.retrieval import build_static_brain_prompt
         brain_block = build_static_brain_prompt()
