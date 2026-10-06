@@ -147,25 +147,25 @@ def memory_node_id(card: dict[str, Any], index: int) -> str:
 
 
 def _memory_cards() -> list[dict[str, Any]]:
-    """``MEMORY.md`` / ``USER.md`` entries as the memory tool parses them."""
-    from tools.memory_tool import MemoryStore
-
-    base = get_pulse_home() / "memories"
-    cards: list[dict[str, Any]] = []
-    for fname, source in (("MEMORY.md", "memory"), ("USER.md", "profile")):
-        path = base / fname
-        try:
-            file_ts = _to_int_ts(path.stat().st_mtime)
-        except OSError:
-            continue
-        for chunk_idx, chunk in enumerate(MemoryStore._read_file(path)):
-            first = chunk.splitlines()[0].strip().lstrip("# ").strip()
-            cards.append({
-                "source": source, "timestamp": file_ts + chunk_idx if file_ts is not None else None,
-                "title": (first[:80] + "…") if len(first) > 80 else first, "body": chunk[:1200],
-                "fingerprint": memory_fingerprint(chunk),
-            })
-    return cards
+    """Native Brain Vault memory nodes formatted as knowledge cards."""
+    try:
+        from agent.brain.vault import BrainVault
+        vault = BrainVault()
+        vault.ensure_vault_structure()
+        cards: list[dict[str, Any]] = []
+        for node in vault.list_all_nodes():
+            if node.category in ("user", "concept", "belief", "project", "daily"):
+                first = node.title or node.id
+                cards.append({
+                    "source": node.category,
+                    "timestamp": node.timestamp,
+                    "title": first[:80],
+                    "body": node.content[:1200],
+                    "fingerprint": memory_fingerprint(node.content),
+                })
+        return cards
+    except Exception:
+        return []
 
 
 def _tokenize(text: str) -> set[str]:
@@ -193,18 +193,14 @@ def _has_learning_signal(node: SkillNode) -> bool:
 
 
 def build_learning_graph() -> dict[str, Any]:
-    """Full payload for the desktop learning panel: non-base skills with real
-    learning signal, memory chunks, and native brain vault knowledge nodes."""
+    """Full payload for the desktop StarMap and Knowledge Graph canvas."""
     roots = [("base", Path(__file__).resolve().parent.parent / "skills"), ("profile", get_pulse_home() / "skills")]
     learned_skills = {
         name: node for name, node in build_skill_nodes(roots).items()
         if node.source != "base" and _has_learning_signal(node)
     }
-    skill_edges, memory_cards = build_edges(learned_skills), _memory_cards()
-    memory_edges = _memory_skill_edges(memory_cards, list(learned_skills.values()))
+    skill_edges = build_edges(learned_skills)
     clusters = Counter(node.category for node in learned_skills.values())
-    if memory_cards:
-        clusters["memory"] = len(memory_cards)
 
     brain_nodes: list[dict[str, Any]] = []
     brain_edges: list[tuple[str, str]] = []
@@ -254,16 +250,9 @@ def build_learning_graph() -> dict[str, Any]:
             "useCount": n.use_count, "state": n.state, "createdBy": n.created_by, "pinned": n.pinned,
         }
         for n in learned_skills.values()
-    ] + [
-        {
-            "id": memory_node_id(card, i), "label": card["title"], "kind": "memory",
-            "memorySource": card["source"], "timestamp": card.get("timestamp"), "category": "memory",
-            "useCount": 0, "state": "active", "createdBy": "memory", "pinned": False,
-        }
-        for i, card in enumerate(memory_cards)
     ] + brain_nodes
 
-    all_edges_raw = skill_edges + memory_edges + brain_edges
+    all_edges_raw = skill_edges + brain_edges
     deduped_edges = list(dict.fromkeys(
         (min(str(a), str(b)), max(str(a), str(b))) for a, b in all_edges_raw if a != b
     ))
@@ -272,12 +261,11 @@ def build_learning_graph() -> dict[str, Any]:
         "nodes": graph_nodes,
         "edges": [{"source": a, "target": b} for a, b in deduped_edges],
         "clusters": [{"category": c, "count": n} for c, n in sorted(clusters.items(), key=lambda kv: -kv[1])],
-        "memory": memory_cards,
+        "memory": [],
         "stats": {
             **density_stats(learned_skills, skill_edges),
-            "memory_nodes": len(memory_cards),
+            "memory_nodes": 0,
             "brain_nodes": len(brain_nodes),
-            "memory_skill_edges": len(memory_edges),
             "brain_edges": len(brain_edges),
             "learned_skills": len(learned_skills),
         },
