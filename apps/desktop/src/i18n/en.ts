@@ -3602,7 +3602,9 @@ export const en: Translations = {
       capabilities: 'Capabilities',
       messaging: 'Messaging',
       artifacts: 'Artifacts',
-      cron: 'Scheduled jobs'
+      cron: 'Scheduled jobs',
+      brain: 'Brain Vault',
+      starmap: 'StarMap'
     },
     searchAria: 'Search sessions',
     searchPlaceholder: 'Search sessions…',
