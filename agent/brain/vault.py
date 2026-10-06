@@ -10,6 +10,7 @@ Manages persistent notes organized into cognitive subfolders:
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import re
@@ -88,13 +89,69 @@ class BrainVault:
         self.vault_dir = vault_dir or get_brain_vault_dir()
 
     def ensure_vault_structure(self) -> None:
-        """Create standard cognitive folder hierarchy and seed self-knowledge if missing."""
+        """Create standard cognitive folder hierarchy, Obsidian configs, and seed self-knowledge if missing."""
         with _VAULT_LOCK:
             for cat in NodeCategory:
                 folder = self.vault_dir / cat.value
                 folder.mkdir(parents=True, exist_ok=True)
 
+            self._ensure_obsidian_compatibility()
             self._seed_self_knowledge_if_empty()
+
+    def _ensure_obsidian_compatibility(self) -> None:
+        """Seed .obsidian/ configuration so opening ~/.pulse/brain in Obsidian loads identical color groups and physics."""
+        obsidian_dir = self.vault_dir / ".obsidian"
+        obsidian_dir.mkdir(parents=True, exist_ok=True)
+
+        graph_json_path = obsidian_dir / "graph.json"
+        if not graph_json_path.exists():
+            graph_config = {
+                "collapse-filter": False,
+                "search": "",
+                "showTags": False,
+                "showAttachments": False,
+                "hideUnresolved": False,
+                "showOrphans": True,
+                "collapse-color-groups": False,
+                "colorGroups": [
+                    {"query": "path:self", "color": {"a": 1, "rgb": 11032055}},
+                    {"query": "path:user", "color": {"a": 1, "rgb": 440020}},
+                    {"query": "path:concept", "color": {"a": 1, "rgb": 16101131}},
+                    {"query": "path:belief", "color": {"a": 1, "rgb": 1096065}},
+                    {"query": "path:project", "color": {"a": 1, "rgb": 16007006}},
+                    {"query": "path:daily", "color": {"a": 1, "rgb": 3899894}},
+                ],
+                "collapse-display": False,
+                "showArrow": True,
+                "textFadeMultiplier": 0,
+                "nodeSizeMultiplier": 1.1,
+                "lineSizeMultiplier": 1,
+                "collapse-forces": False,
+                "centerStrength": 0.5,
+                "repelStrength": 10,
+                "linkStrength": 1,
+                "linkDistance": 80,
+                "scale": 1,
+                "close": True,
+            }
+            try:
+                graph_json_path.write_text(json.dumps(graph_config, indent=2), encoding="utf-8")
+            except Exception as e:
+                logger.debug("Failed to write .obsidian/graph.json: %s", e)
+
+        app_json_path = obsidian_dir / "app.json"
+        if not app_json_path.exists():
+            app_config = {
+                "useMarkdownLinks": False,
+                "newFileLocation": "folder",
+                "newFileFolderPath": "concept",
+                "attachmentFolderPath": "assets",
+                "alwaysUpdateLinks": True,
+            }
+            try:
+                app_json_path.write_text(json.dumps(app_config, indent=2), encoding="utf-8")
+            except Exception as e:
+                logger.debug("Failed to write .obsidian/app.json: %s", e)
 
     def _seed_self_knowledge_if_empty(self) -> None:
         """Seed core self-awareness nodes so PULSE understands its own anatomy and purpose."""
