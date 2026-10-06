@@ -249,16 +249,9 @@ const SIDEBAR_NAV: SidebarNavItem[] = [
   {
     id: 'brain',
     label: '',
-    icon: props => <Codicon name="book" {...props} />,
+    icon: props => <Codicon name="graph" {...props} />,
     route: BRAIN_ROUTE,
     keybindActionId: 'nav.brain'
-  },
-  {
-    id: 'starmap',
-    label: '',
-    icon: props => <Codicon name="graph" {...props} />,
-    route: STARMAP_ROUTE,
-    keybindActionId: 'nav.starmap'
   }
 ]
 

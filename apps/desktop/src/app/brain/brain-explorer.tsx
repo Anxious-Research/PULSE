@@ -13,6 +13,8 @@ interface BrainExplorerProps {
   activeNode: BrainNodeDetail | null
   loading: boolean
   onSelectNode: (nodeId: string) => void
+  onEditNode?: (nodeId: string, newContent: string) => Promise<boolean>
+  onDeleteNode?: (nodeId: string) => Promise<boolean>
   onOpenStarmap?: () => void
 }
 
@@ -31,11 +33,19 @@ export function BrainExplorer({
   activeNode,
   loading,
   onSelectNode,
+  onEditNode,
+  onDeleteNode,
   onOpenStarmap,
 }: BrainExplorerProps) {
   const [selectedCategory, setSelectedCategory] = useState<BrainCategory>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'split' | 'graph' | 'notes'>('split')
+
+  // Edit State
+  const [isEditing, setIsEditing] = useState(false)
+  const [editContent, setEditContent] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const filteredNodes = useMemo(() => {
     return nodes.filter(node => {
@@ -50,6 +60,45 @@ export function BrainExplorer({
       return matchesCategory && matchesQuery
     })
   }, [nodes, selectedCategory, searchQuery])
+
+  const handleStartEdit = () => {
+    if (activeNode) {
+      setEditContent(activeNode.content)
+      setIsEditing(true)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setIsEditing(false)
+    setEditContent('')
+  }
+
+  const handleSaveEdit = async () => {
+    if (!activeNode || !onEditNode) return
+    setIsSaving(true)
+    try {
+      const ok = await onEditNode(activeNode.id, editContent)
+      if (ok) {
+        setIsEditing(false)
+      }
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!activeNode || !onDeleteNode) return
+    if (!window.confirm(`Are you sure you want to delete note "${activeNode.label}" (${activeNode.id})?`)) {
+      return
+    }
+    setIsDeleting(true)
+    try {
+      await onDeleteNode(activeNode.id)
+      setIsEditing(false)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   // Parse markdown body and convert [[links]] to clickable spans
   const renderedContent = useMemo(() => {
@@ -84,10 +133,10 @@ export function BrainExplorer({
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-card/60 shrink-0 gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <span className="font-semibold text-sm flex items-center gap-1.5 whitespace-nowrap">
-            <span>🧠</span> PULSE Brain Vault
+            <span>🧠</span> PULSE Knowledge Graph
           </span>
           <span className="text-xs text-muted-foreground hidden sm:inline">
-            ({nodes.length} nodes, {edges.length} connections)
+            ({nodes.length} notes, {edges.length} connections)
           </span>
         </div>
 
@@ -174,7 +223,10 @@ export function BrainExplorer({
                       isSelected ? 'bg-primary/15 border-l-2 border-primary' : 'hover:bg-muted/40'
                     )}
                     type="button"
-                    onClick={() => onSelectNode(node.id)}
+                    onClick={() => {
+                      setIsEditing(false)
+                      onSelectNode(node.id)
+                    }}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium truncate">{node.label}</span>
@@ -226,12 +278,15 @@ export function BrainExplorer({
               nodes={nodes}
               searchQuery={searchQuery}
               selectedCategory={selectedCategory}
-              onSelectNode={onSelectNode}
+              onSelectNode={nodeId => {
+                setIsEditing(false)
+                onSelectNode(nodeId)
+              }}
             />
           </div>
         )}
 
-        {/* Right Column: Note Inspector & Backlinks Pane (Visible in 'split' or 'notes' view) */}
+        {/* Right Column: Note Inspector & Markdown Editor */}
         {viewMode !== 'graph' && (
           <div className="w-96 flex flex-col shrink-0 overflow-y-auto bg-background p-5 space-y-4">
             {loading ? (
@@ -241,38 +296,80 @@ export function BrainExplorer({
             ) : !activeNode ? (
               <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-6 text-center">
                 <span className="text-3xl mb-2">🧠</span>
-                <span className="font-medium text-sm">Select a node to inspect</span>
+                <span className="font-medium text-sm">Select a note to inspect</span>
                 <span className="text-xs text-muted-foreground/80 max-w-xs mt-1">
-                  Click any star in the interactive graph or choose a note from the left list.
+                  Click any star in the interactive graph or select a note from the list.
                 </span>
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Note Header */}
+                {/* Note Header & Action Buttons */}
                 <div className="border-b border-border pb-3 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded bg-muted uppercase tracking-wider">
-                      {activeNode.category}
-                    </span>
-                    {activeNode.status && (
-                      <span
-                        className={cn(
-                          'text-xs font-semibold px-2 py-0.5 rounded uppercase tracking-wider',
-                          activeNode.status === 'active'
-                            ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                            : activeNode.status === 'superseded'
-                              ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                              : 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
-                        )}
-                      >
-                        {activeNode.status}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded bg-muted uppercase tracking-wider">
+                        {activeNode.category}
                       </span>
-                    )}
-                    {activeNode.confidence !== undefined && (
-                      <span className="text-xs text-muted-foreground">
-                        {Math.round(activeNode.confidence * 100)}% Confidence
-                      </span>
-                    )}
+                      {activeNode.status && (
+                        <span
+                          className={cn(
+                            'text-xs font-semibold px-2 py-0.5 rounded uppercase tracking-wider',
+                            activeNode.status === 'active'
+                              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                              : activeNode.status === 'superseded'
+                                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                                : 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+                          )}
+                        >
+                          {activeNode.status}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Edit and Delete Actions */}
+                    <div className="flex items-center gap-1">
+                      {!isEditing ? (
+                        <>
+                          {onEditNode && (
+                            <Button size="sm" variant="outline" className="h-6 text-xs px-2" onClick={handleStartEdit}>
+                              ✏️ Edit
+                            </Button>
+                          )}
+                          {onDeleteNode && activeNode.category !== 'self' && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 text-xs px-2 text-destructive hover:text-destructive"
+                              disabled={isDeleting}
+                              onClick={handleDelete}
+                            >
+                              🗑️ Delete
+                            </Button>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="default"
+                            className="h-6 text-xs px-2.5"
+                            disabled={isSaving}
+                            onClick={handleSaveEdit}
+                          >
+                            {isSaving ? 'Saving...' : '💾 Save'}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 text-xs px-2"
+                            disabled={isSaving}
+                            onClick={handleCancelEdit}
+                          >
+                            Cancel
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
 
                   <h2 className="text-lg font-bold tracking-tight">{activeNode.label}</h2>
@@ -290,13 +387,28 @@ export function BrainExplorer({
                   )}
                 </div>
 
-                {/* Markdown Content */}
-                <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed whitespace-pre-wrap font-sans">
-                  {renderedContent}
-                </div>
+                {/* Markdown View vs Editor */}
+                {isEditing ? (
+                  <div className="space-y-2">
+                    <textarea
+                      value={editContent}
+                      onChange={e => setEditContent(e.target.value)}
+                      rows={14}
+                      className="w-full p-2.5 text-xs font-mono bg-card border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary leading-relaxed resize-y"
+                      placeholder="Write markdown with [[wikilinks]]..."
+                    />
+                    <div className="text-[11px] text-muted-foreground">
+                      Tip: Use <code>[[category/note-name]]</code> to link to other knowledge nodes.
+                    </div>
+                  </div>
+                ) : (
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed whitespace-pre-wrap font-sans">
+                    {renderedContent}
+                  </div>
+                )}
 
                 {/* Backlinks Pane */}
-                {activeNode.backlinks && activeNode.backlinks.length > 0 && (
+                {!isEditing && activeNode.backlinks && activeNode.backlinks.length > 0 && (
                   <div className="border-t border-border pt-3 space-y-2">
                     <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
                       <span>🔗</span> Incoming Backlinks ({activeNode.backlinks.length})
@@ -307,7 +419,10 @@ export function BrainExplorer({
                           key={b}
                           className="text-xs px-2 py-1 rounded bg-muted/60 hover:bg-primary/20 hover:text-primary transition-colors border border-border/60"
                           type="button"
-                          onClick={() => onSelectNode(b)}
+                          onClick={() => {
+                            setIsEditing(false)
+                            onSelectNode(b)
+                          }}
                         >
                           [[{b}]]
                         </button>
@@ -317,7 +432,7 @@ export function BrainExplorer({
                 )}
 
                 {/* Outgoing Wikilinks Pane */}
-                {activeNode.wikilinks && activeNode.wikilinks.length > 0 && (
+                {!isEditing && activeNode.wikilinks && activeNode.wikilinks.length > 0 && (
                   <div className="border-t border-border pt-3 space-y-2">
                     <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
                       <span>↗️</span> Outgoing Wikilinks ({activeNode.wikilinks.length})
@@ -328,7 +443,10 @@ export function BrainExplorer({
                           key={w}
                           className="text-xs px-2 py-1 rounded bg-muted/60 hover:bg-primary/20 hover:text-primary transition-colors border border-border/60"
                           type="button"
-                          onClick={() => onSelectNode(w)}
+                          onClick={() => {
+                            setIsEditing(false)
+                            onSelectNode(w)
+                          }}
                         >
                           [[{w}]]
                         </button>

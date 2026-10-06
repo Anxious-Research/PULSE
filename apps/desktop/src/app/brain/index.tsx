@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { getLearningNode } from '@/api/skills'
+import { deleteLearningNode, editLearningNode, getLearningNode } from '@/api/skills'
 import { PageLoader } from '@/components/page-loader'
 import { getStarmapGraph } from '@/pulse'
 import type { StarmapGraph, StarmapNode } from '@/types/pulse'
@@ -25,6 +25,15 @@ export function BrainView({
   const [activeNodeDetail, setActiveNodeDetail] = useState<BrainNodeDetail | null>(null)
   const [nodeLoading, setNodeLoading] = useState(false)
 
+  const refreshGraph = useCallback(async () => {
+    try {
+      const data = await getStarmapGraph()
+      setGraph(data)
+    } catch (err) {
+      console.error('Failed to refresh graph:', err)
+    }
+  }, [])
+
   // Load graph on mount
   useEffect(() => {
     let cancelled = false
@@ -35,7 +44,6 @@ export function BrainView({
       .then(data => {
         if (!cancelled) {
           setGraph(data)
-          // Default select self/identity if present, or first brain node
           const firstBrain = data.nodes.find(n => n.kind === 'brain')
           if (firstBrain) {
             setActiveNodeId(firstBrain.id)
@@ -77,7 +85,6 @@ export function BrainView({
         setActiveNodeDetail(payload)
       })
       .catch(() => {
-        // Fallback detail if node fetch fails
         setActiveNodeDetail({
           id: nodeId,
           label: nodeId.split('/').pop()?.replace(/-/g, ' ') || nodeId,
@@ -95,6 +102,37 @@ export function BrainView({
       handleSelectNode(activeNodeId)
     }
   }, [activeNodeId, handleSelectNode])
+
+  const handleEditNode = useCallback(async (nodeId: string, newContent: string) => {
+    try {
+      const res = await editLearningNode(nodeId, newContent)
+      if (res.ok) {
+        await refreshGraph()
+        handleSelectNode(nodeId)
+        return true
+      }
+      return false
+    } catch (e) {
+      console.error('Failed to edit node:', e)
+      return false
+    }
+  }, [refreshGraph, handleSelectNode])
+
+  const handleDeleteNode = useCallback(async (nodeId: string) => {
+    try {
+      const res = await deleteLearningNode(nodeId)
+      if (res.ok) {
+        setActiveNodeDetail(null)
+        setActiveNodeId(null)
+        await refreshGraph()
+        return true
+      }
+      return false
+    } catch (e) {
+      console.error('Failed to delete node:', e)
+      return false
+    }
+  }, [refreshGraph])
 
   // Extract brain nodes summaries and edges from graph
   const { brainNodes, brainEdges } = useMemo(() => {
@@ -118,17 +156,19 @@ export function BrainView({
   }, [graph])
 
   return (
-    <Panel closeLabel="Close Brain Explorer" onClose={onClose}>
+    <Panel closeLabel="Close Knowledge Graph" onClose={onClose}>
       {error ? (
-        <PanelEmpty description={error} icon="warning" title="Failed to load Brain Vault" />
+        <PanelEmpty description={error} icon="warning" title="Failed to load Knowledge Graph" />
       ) : loading && !graph ? (
-        <PageLoader aria-label="Loading Brain Vault..." className="min-h-0 flex-1" />
+        <PageLoader aria-label="Loading Knowledge Graph..." className="min-h-0 flex-1" />
       ) : (
         <BrainExplorer
           activeNode={activeNodeDetail}
           edges={brainEdges}
           loading={nodeLoading}
           nodes={brainNodes}
+          onDeleteNode={handleDeleteNode}
+          onEditNode={handleEditNode}
           onOpenStarmap={onOpenStarmap}
           onSelectNode={handleSelectNode}
         />

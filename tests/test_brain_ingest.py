@@ -27,8 +27,8 @@ class TestBrainIngest(unittest.TestCase):
     def test_turn_ingest_creates_and_links_nodes(self):
         ingestor = CognitiveIngestor(vault=self.vault)
 
-        user_msg = "Mujhe chahiye ki pulse professional aur reliable ho bina faltu theatrics ke."
-        asst_msg = "Understood. Maintaining clean, reliable behavior without theatrical narration."
+        user_msg = "Remember: Always write clean TypeScript code with strict types."
+        asst_msg = "Understood. Maintaining clean TypeScript with strict typing."
 
         res = ingestor.ingest_turn(user_msg, asst_msg)
         self.assertTrue(res["ingested"])
@@ -42,7 +42,7 @@ class TestBrainIngest(unittest.TestCase):
         self.assertIsNotNone(node)
         assert node is not None
         self.assertIn("User Preferences", node.title)
-        self.assertIn("Requirement/Feedback", node.content)
+        self.assertIn("Always write clean TypeScript", node.content)
 
 
 if __name__ == "__main__":

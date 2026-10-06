@@ -103,24 +103,31 @@ class CognitiveIngestor:
             )
 
     def _extract_user_preferences(self, user_msg: str) -> List[Tuple[str, str, str]]:
-        """Extract high-signal user rules, desires, and corrections."""
+        """Extract high-signal user rules, desires, and corrections (filtering out questions and conversational rants)."""
         updates = []
         u_lower = user_msg.lower()
 
-        triggers = [
-            "mujhe chahiye", "i want", "i prefer", "always do", "don't do", "never do",
-            "reliable pulse", "professional", "non-practical", "faltu ki", "simple or useful",
-            "keep it concise", "directly answer"
+        # Reject questions or meta queries
+        if "?" in user_msg or "kyun" in u_lower or "why" in u_lower:
+            return []
+
+        # Explicit preference markers
+        explicit_triggers = [
+            "remember:", "remember that", "always use", "never use", "my preference is",
+            "from now on", "rule:"
         ]
 
-        if any(t in u_lower for t in triggers):
-            first_line = user_msg.strip().split("\n")[0][:180]
-            if len(first_line) > 15:
-                updates.append((
-                    "user/preferences",
-                    "User Preferences & Expectations",
-                    f"Requirement/Feedback: {first_line}",
-                ))
+        for trig in explicit_triggers:
+            if trig in u_lower:
+                idx = u_lower.find(trig)
+                statement = user_msg[idx + len(trig):].strip().split("\n")[0].strip()
+                if len(statement) >= 5:
+                    updates.append((
+                        "user/preferences",
+                        "User Preferences & Expectations",
+                        statement,
+                    ))
+                break
 
         return updates
 
