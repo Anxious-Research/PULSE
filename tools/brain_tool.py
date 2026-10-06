@@ -39,7 +39,7 @@ BRAIN_SCHEMA = {
         "properties": {
             "action": {
                 "type": "string",
-                "enum": ["read", "write", "patch", "delete", "search", "explore", "evolve_belief", "graph_stats", "unlinked_mentions"],
+                "enum": ["read", "write", "patch", "delete", "search", "explore", "evolve_belief", "graph_stats", "unlinked_mentions", "rename", "create_daily", "link_mention"],
                 "description": "Brain action to execute.",
             },
             "node_id": {
@@ -231,8 +231,25 @@ def brain_tool(
             mentions = cache.find_unlinked_mentions(node_id, limit=kwargs.get("limit", 30))
             return json.dumps({"node_id": node_id, "total_unlinked": len(mentions), "mentions": mentions}, indent=2, ensure_ascii=False)
 
+        elif action == "rename":
+            if not node_id or not new_string:
+                return tool_error("Missing required parameter 'node_id' (old ID) and 'new_string' (new ID) for rename")
+            ok = vault_inst.rename_node(node_id, new_string)
+            return json.dumps({"success": ok, "old_id": node_id, "new_id": new_string}, indent=2, ensure_ascii=False)
+
+        elif action == "create_daily":
+            daily_node = vault_inst.get_or_create_daily_note(date_str=query)
+            return json.dumps({"success": True, "node": daily_node.to_summary_dict()}, indent=2, ensure_ascii=False)
+
+        elif action == "link_mention":
+            if not node_id or not title:
+                return tool_error("Missing required parameter 'node_id' (source note) and 'title' (target note ID or term) for link_mention")
+            term = kwargs.get("term", title.split("/")[-1])
+            ok = vault_inst.linkify_mention(node_id, title, term)
+            return json.dumps({"success": ok, "source_id": node_id, "target_id": title, "term": term}, indent=2, ensure_ascii=False)
+
         else:
-            return tool_error(f"Unknown brain action: '{action}'. Supported actions: read, write, patch, delete, search, explore, evolve_belief, graph_stats, unlinked_mentions")
+            return tool_error(f"Unknown brain action: '{action}'. Supported actions: read, write, patch, delete, search, explore, evolve_belief, graph_stats, unlinked_mentions, rename, create_daily, link_mention")
 
     except Exception as e:
         logger.exception("Error executing brain tool action %s: %s", action, e)

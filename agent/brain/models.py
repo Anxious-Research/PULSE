@@ -26,6 +26,7 @@ class NodeCategory(str, Enum):
     CONCEPT = "concept"     # Domain & world concepts, technical architectures
     BELIEF = "belief"       # Evolving beliefs, hypotheses, and resolved misconceptions
     PROJECT = "project"     # Active projects, codebase states, workflows
+    DAILY = "daily"         # Chronological daily notes and session journals
 
 
 @dataclass

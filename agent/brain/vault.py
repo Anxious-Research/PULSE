@@ -40,7 +40,9 @@ def normalize_node_id(raw_id: str) -> str:
         'User Preferences' -> 'user/user-preferences' (if no category prefix)
         'concepts/deep-learning.md' -> 'concept/deep-learning'
     """
-    cleaned = raw_id.strip().replace("\\", "/").rstrip(".md")
+    cleaned = raw_id.strip().replace("\\", "/")
+    if cleaned.endswith(".md"):
+        cleaned = cleaned[:-3]
     parts = [p.strip() for p in cleaned.split("/") if p.strip()]
     if not parts:
         return "concept/untitled"
@@ -56,6 +58,7 @@ def normalize_node_id(raw_id: str) -> str:
         "beliefs": "belief",
         "project": "project",
         "projects": "project",
+        "daily": "daily",
     }
 
     first_part = parts[0].lower()
@@ -216,6 +219,120 @@ class BrainVault:
                 path.unlink()
                 return True
             return False
+
+    def rename_node(self, old_node_id: str, new_node_id: str) -> bool:
+        """Rename a note and cascade [[wikilink]] updates across every note in the vault."""
+        with _VAULT_LOCK:
+            old_norm = normalize_node_id(old_node_id)
+            new_norm = normalize_node_id(new_node_id)
+            if old_norm == new_norm:
+                return True
+
+            old_file = self.vault_dir / f"{old_norm}.md"
+            new_file = self.vault_dir / f"{new_norm}.md"
+
+            if not old_file.exists():
+                return False
+
+            new_file.parent.mkdir(parents=True, exist_ok=True)
+            old_node = self.read_node(old_norm)
+            old_title = old_node.title if old_node else old_norm.split("/")[-1]
+            new_title = new_norm.split("/")[-1].replace("-", " ").title()
+
+            # Move the file
+            old_file.rename(new_file)
+
+            # Update the renamed note's internal title if matching old slug
+            renamed_node = self.read_node(new_norm)
+            if renamed_node:
+                self.write_node(
+                    node_id=new_norm,
+                    content=renamed_node.content,
+                    title=new_title,
+                    category=new_norm.split("/")[0],
+                    tags=renamed_node.frontmatter.tags,
+                    confidence=renamed_node.frontmatter.confidence,
+                    status=renamed_node.frontmatter.status,
+                )
+
+            # Cascade refactoring across all vault markdown notes
+            old_targets = [old_norm, old_title, old_norm.split("/")[-1]]
+            for md_path in self.vault_dir.rglob("*.md"):
+                try:
+                    text = md_path.read_text(encoding="utf-8")
+                    changed = False
+                    for tgt in old_targets:
+                        # Regex replacing [[tgt]] or [[tgt|alias]] or [[tgt#heading]]
+                        pat = re.compile(rf"\[\[{re.escape(tgt)}(\|[^\]\n]+|#[^\]\n]+)?\]\]", re.IGNORECASE)
+                        if pat.search(text):
+                            def _repl(m: re.Match) -> str:
+                                suffix = m.group(1) or ""
+                                return f"[[{new_norm}{suffix}]]"
+                            text = pat.sub(_repl, text)
+                            changed = True
+
+                    if changed:
+                        md_path.write_text(text, encoding="utf-8")
+                except Exception as e:
+                    logger.error("Failed to cascade rename into %s: %s", md_path, e)
+
+            return True
+
+    def linkify_mention(self, source_node_id: str, target_node_id: str, term: str) -> bool:
+        """Convert a plain-text unlinked mention into an active [[wikilink]]."""
+        with _VAULT_LOCK:
+            source_norm = normalize_node_id(source_node_id)
+            target_norm = normalize_node_id(target_node_id)
+
+            node = self.read_node(source_norm)
+            if not node or not term:
+                return False
+
+            # Replace first unlinked occurrence in body (outside of existing [[...]])
+            pattern = re.compile(rf"(?<!\[\[)\b{re.escape(term)}\b(?!\]\])", re.IGNORECASE)
+            if not pattern.search(node.content):
+                return False
+
+            replacement = f"[[{target_norm}|{term}]]" if target_norm.split("/")[-1] != term.lower() else f"[[{target_norm}]]"
+            new_content = pattern.sub(replacement, node.content, count=1)
+
+            self.write_node(
+                node_id=source_norm,
+                content=new_content,
+                title=node.title,
+                category=node.category,
+                tags=node.frontmatter.tags,
+                confidence=node.frontmatter.confidence,
+                status=node.frontmatter.status,
+            )
+            return True
+
+    def get_or_create_daily_note(self, date_str: Optional[str] = None) -> BrainNode:
+        """Create or retrieve today's chronological daily note (Obsidian Daily Notes)."""
+        if not date_str:
+            date_str = time.strftime("%Y-%m-%d")
+
+        daily_id = f"daily/{date_str}"
+        node = self.read_node(daily_id)
+        if node:
+            return node
+
+        initial_content = f"""# Daily Journal — {date_str}
+
+## Notes & Sessions
+- Daily journal and cognitive reflections for {date_str}.
+
+*Related*: [[self/identity]]
+"""
+        return self.write_node(
+            node_id=daily_id,
+            content=initial_content.strip(),
+            title=f"Daily Note {date_str}",
+            category="daily",
+            tags=["daily-note", "journal"],
+            confidence=1.0,
+            status="active",
+        )
 
     def list_all_nodes(self) -> List[BrainNode]:
         """List and parse every brain note in the vault."""

@@ -5,16 +5,21 @@ import { SearchField } from '@/components/ui/search-field'
 import { cn } from '@/lib/utils'
 
 import { BrainGraphView } from './brain-graph-view'
-import type { BrainCategory, BrainNodeDetail, BrainNodeSummary } from './types'
+import type { BrainCategory, BrainNodeDetail, BrainNodeSummary, BrainUnlinkedMention } from './types'
 
 interface BrainExplorerProps {
   nodes: BrainNodeSummary[]
   edges: Array<[string, string]>
   activeNode: BrainNodeDetail | null
+  unlinkedMentions?: BrainUnlinkedMention[]
   loading: boolean
   onSelectNode: (nodeId: string) => void
+  onCreateNode?: (id: string, title: string, category: string, content: string) => Promise<boolean>
   onEditNode?: (nodeId: string, newContent: string) => Promise<boolean>
+  onRenameNode?: (oldId: string, newId: string) => Promise<boolean>
   onDeleteNode?: (nodeId: string) => Promise<boolean>
+  onLinkifyMention?: (sourceId: string, targetId: string, term: string) => Promise<boolean>
+  onOpenDailyNote?: () => void
   onOpenStarmap?: () => void
 }
 
@@ -25,16 +30,22 @@ const CATEGORIES: Array<{ id: BrainCategory; label: string; icon: string }> = [
   { id: 'concept', label: 'Concepts', icon: '💡' },
   { id: 'belief', label: 'Beliefs & Hypotheses', icon: '⚖️' },
   { id: 'project', label: 'Projects', icon: '📁' },
+  { id: 'daily', label: 'Daily Notes', icon: '📅' },
 ]
 
 export function BrainExplorer({
   nodes,
   edges,
   activeNode,
+  unlinkedMentions = [],
   loading,
   onSelectNode,
+  onCreateNode,
   onEditNode,
+  onRenameNode,
   onDeleteNode,
+  onLinkifyMention,
+  onOpenDailyNote,
   onOpenStarmap,
 }: BrainExplorerProps) {
   const [selectedCategory, setSelectedCategory] = useState<BrainCategory>('all')
@@ -46,6 +57,15 @@ export function BrainExplorer({
   const [editContent, setEditContent] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // New Note Modal / Input State
+  const [isCreating, setIsCreating] = useState(false)
+  const [newTitle, setNewTitle] = useState('')
+  const [newCategory, setNewCategory] = useState<BrainCategory>('concept')
+
+  // Rename State
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [renameSlug, setRenameSlug] = useState('')
 
   const filteredNodes = useMemo(() => {
     return nodes.filter(node => {
@@ -83,6 +103,36 @@ export function BrainExplorer({
       }
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newTitle.trim() || !onCreateNode) return
+    const cat = newCategory === 'all' ? 'concept' : newCategory
+    const slug = `${cat}/${newTitle.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+    const initialContent = `# ${newTitle.trim()}\n\nWrite note content with [[wikilinks]]...\n\n*Related*: [[self/identity]]`
+    const ok = await onCreateNode(slug, newTitle.trim(), cat, initialContent)
+    if (ok) {
+      setIsCreating(false)
+      setNewTitle('')
+      onSelectNode(slug)
+    }
+  }
+
+  const handleStartRename = () => {
+    if (activeNode) {
+      setRenameSlug(activeNode.id)
+      setIsRenaming(true)
+    }
+  }
+
+  const handleSaveRename = async () => {
+    if (!activeNode || !onRenameNode || !renameSlug.trim()) return
+    const ok = await onRenameNode(activeNode.id, renameSlug.trim())
+    if (ok) {
+      setIsRenaming(false)
+      onSelectNode(renameSlug.trim())
     }
   }
 
@@ -129,15 +179,35 @@ export function BrainExplorer({
 
   return (
     <div className="flex flex-col h-full w-full overflow-hidden bg-background text-foreground">
-      {/* ── Top Bar: Title, Search, Category Pills & View Switcher ─────────── */}
+      {/* ── Top Bar: Title, Actions, Search & View Switcher ─────────── */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-card/60 shrink-0 gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <span className="font-semibold text-sm flex items-center gap-1.5 whitespace-nowrap">
             <span>🧠</span> PULSE Knowledge Graph
           </span>
           <span className="text-xs text-muted-foreground hidden sm:inline">
-            ({nodes.length} notes, {edges.length} connections)
+            ({nodes.length} notes, {edges.length} links)
           </span>
+
+          {/* New Note & Daily Note Quick Actions */}
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-xs h-7 px-2 ml-2"
+            onClick={() => setIsCreating(true)}
+          >
+            ➕ New Note
+          </Button>
+          {onOpenDailyNote && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs h-7 px-2"
+              onClick={onOpenDailyNote}
+            >
+              📅 Today
+            </Button>
+          )}
         </div>
 
         {/* Search Field */}
@@ -203,6 +273,68 @@ export function BrainExplorer({
         ))}
       </div>
 
+      {/* ── New Note Creator Modal ────────────────────────────────────────── */}
+      {isCreating && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <form
+            onSubmit={handleCreateSubmit}
+            className="bg-card border border-border rounded-xl shadow-2xl p-5 w-full max-w-md space-y-4"
+          >
+            <div className="flex items-center justify-between border-b border-border pb-2">
+              <h3 className="font-semibold text-sm flex items-center gap-1.5">
+                <span>➕</span> Create New Knowledge Note
+              </h3>
+              <button
+                type="button"
+                className="text-muted-foreground hover:text-foreground text-sm font-bold"
+                onClick={() => setIsCreating(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-muted-foreground mb-1">Note Title</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Distributed Consensus Algorithms"
+                  value={newTitle}
+                  onChange={e => setNewTitle(e.target.value)}
+                  className="w-full p-2 bg-muted/50 border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary text-xs"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-muted-foreground mb-1">Category / Vault Subfolder</label>
+                <select
+                  value={newCategory}
+                  onChange={e => setNewCategory(e.target.value as BrainCategory)}
+                  className="w-full p-2 bg-muted/50 border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary text-xs"
+                >
+                  <option value="concept">💡 Concept (Domain knowledge)</option>
+                  <option value="project">📁 Project (Workflows & codebases)</option>
+                  <option value="user">👤 User (Preferences & profiles)</option>
+                  <option value="belief">⚖️ Belief (Hypotheses)</option>
+                  <option value="daily">📅 Daily (Journal & logs)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-border">
+              <Button size="sm" variant="ghost" type="button" onClick={() => setIsCreating(false)}>
+                Cancel
+              </Button>
+              <Button size="sm" variant="default" type="submit">
+                Create Note
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* ── Main Work Area ───────────────────────────────────────────────── */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Left Column: Notes List (Visible in 'split' or 'notes' view) */}
@@ -225,6 +357,7 @@ export function BrainExplorer({
                     type="button"
                     onClick={() => {
                       setIsEditing(false)
+                      setIsRenaming(false)
                       onSelectNode(node.id)
                     }}
                   >
@@ -280,6 +413,7 @@ export function BrainExplorer({
               selectedCategory={selectedCategory}
               onSelectNode={nodeId => {
                 setIsEditing(false)
+                setIsRenaming(false)
                 onSelectNode(nodeId)
               }}
             />
@@ -298,7 +432,7 @@ export function BrainExplorer({
                 <span className="text-3xl mb-2">🧠</span>
                 <span className="font-medium text-sm">Select a note to inspect</span>
                 <span className="text-xs text-muted-foreground/80 max-w-xs mt-1">
-                  Click any star in the interactive graph or select a note from the list.
+                  Click any node in the interactive graph or select a note from the left list.
                 </span>
               </div>
             ) : (
@@ -326,13 +460,18 @@ export function BrainExplorer({
                       )}
                     </div>
 
-                    {/* Edit and Delete Actions */}
+                    {/* Edit, Rename and Delete Actions */}
                     <div className="flex items-center gap-1">
-                      {!isEditing ? (
+                      {!isEditing && !isRenaming ? (
                         <>
                           {onEditNode && (
                             <Button size="sm" variant="outline" className="h-6 text-xs px-2" onClick={handleStartEdit}>
                               ✏️ Edit
+                            </Button>
+                          )}
+                          {onRenameNode && activeNode.category !== 'self' && (
+                            <Button size="sm" variant="ghost" className="h-6 text-xs px-2" onClick={handleStartRename}>
+                              🔄 Rename
                             </Button>
                           )}
                           {onDeleteNode && activeNode.category !== 'self' && (
@@ -347,7 +486,7 @@ export function BrainExplorer({
                             </Button>
                           )}
                         </>
-                      ) : (
+                      ) : isEditing ? (
                         <>
                           <Button
                             size="sm"
@@ -368,12 +507,48 @@ export function BrainExplorer({
                             Cancel
                           </Button>
                         </>
+                      ) : (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="default"
+                            className="h-6 text-xs px-2.5"
+                            onClick={handleSaveRename}
+                          >
+                            Confirm Rename
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 text-xs px-2"
+                            onClick={() => setIsRenaming(false)}
+                          >
+                            Cancel
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
 
-                  <h2 className="text-lg font-bold tracking-tight">{activeNode.label}</h2>
-                  <div className="text-xs text-muted-foreground font-mono">{activeNode.id}</div>
+                  {isRenaming ? (
+                    <div className="space-y-1.5 pt-1">
+                      <label className="text-[11px] text-muted-foreground">New Canonical Node Path:</label>
+                      <input
+                        type="text"
+                        value={renameSlug}
+                        onChange={e => setRenameSlug(e.target.value)}
+                        className="w-full p-1.5 text-xs font-mono bg-card border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                      <span className="text-[10px] text-muted-foreground">
+                        Note: Renaming will automatically update all `[[links]]` pointing to this note across the entire vault.
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      <h2 className="text-lg font-bold tracking-tight">{activeNode.label}</h2>
+                      <div className="text-xs text-muted-foreground font-mono">{activeNode.id}</div>
+                    </>
+                  )}
 
                   {/* Tags */}
                   {activeNode.tags && activeNode.tags.length > 0 && (
@@ -450,6 +625,40 @@ export function BrainExplorer({
                         >
                           [[{w}]]
                         </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Unlinked Mentions 1-Click Linkifier (Obsidian Parity) */}
+                {!isEditing && unlinkedMentions && unlinkedMentions.length > 0 && (
+                  <div className="border-t border-border pt-3 space-y-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                      <span>⚡</span> Unlinked Mentions ({unlinkedMentions.length})
+                    </span>
+                    <div className="space-y-1.5">
+                      {unlinkedMentions.map((m, idx) => (
+                        <div
+                          key={idx}
+                          className="p-2 rounded bg-muted/40 border border-border/60 text-xs space-y-1"
+                        >
+                          <div className="flex items-center justify-between font-medium">
+                            <span>In [[{m.source_id}]]</span>
+                            {onLinkifyMention && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-5 text-[10px] px-1.5"
+                                onClick={() => onLinkifyMention(m.source_id, activeNode.id, m.matched_term)}
+                              >
+                                🔗 Link
+                              </Button>
+                            )}
+                          </div>
+                          <div className="text-muted-foreground text-[11px] italic">
+                            &ldquo;...{m.snippet}...&rdquo;
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>

@@ -240,6 +240,66 @@ This is content with #inline_tag and a link to [[self/identity]].
         res_stats = json.loads(raw_stats)
         self.assertGreaterEqual(res_stats["stats"]["total_nodes"], 3)
 
+    def test_rename_node_cascades_links(self):
+        # 1. Create target note and referencing note
+        self.vault.write_node(
+            node_id="concept/microservices",
+            content="Microservices architecture style.",
+            title="Microservices Architecture",
+            category="concept",
+        )
+        self.vault.write_node(
+            node_id="concept/backend",
+            content="Backend design using [[concept/microservices]] and [[concept/microservices|services]].",
+            title="Backend Design",
+            category="concept",
+        )
+
+        # 2. Rename target note
+        ok = self.vault.rename_node("concept/microservices", "concept/service-oriented")
+        self.assertTrue(ok)
+
+        # 3. Verify referencing note has updated [[wikilinks]]
+        referencing = self.vault.read_node("concept/backend")
+        self.assertIsNotNone(referencing)
+        assert referencing is not None
+        self.assertIn("[[concept/service-oriented]]", referencing.content)
+        self.assertIn("[[concept/service-oriented|services]]", referencing.content)
+        self.assertNotIn("[[concept/microservices]]", referencing.content)
+
+    def test_linkify_unlinked_mention(self):
+        self.vault.write_node(
+            node_id="concept/distributed-systems",
+            content="A system is a distributed system with multiple nodes.",
+            title="Distributed Systems",
+            category="concept",
+        )
+        self.vault.write_node(
+            node_id="concept/raft-consensus",
+            content="Raft is used in distributed systems for leader election.",
+            title="Raft Consensus",
+            category="concept",
+        )
+
+        ok = self.vault.linkify_mention(
+            source_node_id="concept/raft-consensus",
+            target_node_id="concept/distributed-systems",
+            term="distributed systems",
+        )
+        self.assertTrue(ok)
+
+        updated = self.vault.read_node("concept/raft-consensus")
+        self.assertIsNotNone(updated)
+        assert updated is not None
+        self.assertIn("[[concept/distributed-systems|distributed systems]]", updated.content)
+
+    def test_daily_notes(self):
+        daily = self.vault.get_or_create_daily_note("2026-10-06")
+        self.assertIsNotNone(daily)
+        self.assertEqual(daily.id, "daily/2026-10-06")
+        self.assertEqual(daily.category, "daily")
+        self.assertIn("Daily Journal — 2026-10-06", daily.content)
+
 
 if __name__ == "__main__":
     unittest.main()

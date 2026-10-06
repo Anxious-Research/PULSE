@@ -1,4 +1,4 @@
-export type BrainCategory = 'all' | 'self' | 'user' | 'concept' | 'belief' | 'project'
+export type BrainCategory = 'all' | 'self' | 'user' | 'concept' | 'belief' | 'project' | 'daily'
 
 export interface BrainNodeSummary {
   id: string

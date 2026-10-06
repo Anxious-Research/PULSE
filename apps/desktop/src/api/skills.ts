@@ -88,6 +88,33 @@ export function editLearningNode(
   })
 }
 
+export function renameLearningNode(
+  oldId: string,
+  newId: string,
+  profile?: ProfileScope
+): Promise<{ message: string; ok: boolean }> {
+  return window.pulseDesktop.api<{ message: string; ok: boolean }>({
+    ...capabilityScoped(profile),
+    path: '/api/learning/node/rename',
+    method: 'POST',
+    body: { old_id: oldId, new_id: newId }
+  })
+}
+
+export function linkifyLearningMention(
+  sourceId: string,
+  targetId: string,
+  term: string,
+  profile?: ProfileScope
+): Promise<{ message: string; ok: boolean }> {
+  return window.pulseDesktop.api<{ message: string; ok: boolean }>({
+    ...capabilityScoped(profile),
+    path: '/api/learning/node/linkify',
+    method: 'POST',
+    body: { source_id: sourceId, target_id: targetId, term }
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Skills hub — search / preview / scan / install (parity with `pulse skills`
 // and the dashboard's Browse-hub tab). Installs spawn background actions whose

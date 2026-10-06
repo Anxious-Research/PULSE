@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { deleteLearningNode, editLearningNode, getLearningNode } from '@/api/skills'
+import { deleteLearningNode, editLearningNode, getLearningNode, linkifyLearningMention, renameLearningNode } from '@/api/skills'
 import { PageLoader } from '@/components/page-loader'
 import { getStarmapGraph } from '@/pulse'
 import type { StarmapGraph, StarmapNode } from '@/types/pulse'
@@ -8,7 +8,7 @@ import type { StarmapGraph, StarmapNode } from '@/types/pulse'
 import { Panel, PanelEmpty } from '../overlays/panel'
 
 import { BrainExplorer } from './brain-explorer'
-import type { BrainNodeDetail, BrainNodeSummary } from './types'
+import type { BrainNodeDetail, BrainNodeSummary, BrainUnlinkedMention } from './types'
 
 export function BrainView({
   onClose,
@@ -23,6 +23,7 @@ export function BrainView({
 
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null)
   const [activeNodeDetail, setActiveNodeDetail] = useState<BrainNodeDetail | null>(null)
+  const [unlinkedMentions, setUnlinkedMentions] = useState<BrainUnlinkedMention[]>([])
   const [nodeLoading, setNodeLoading] = useState(false)
 
   const refreshGraph = useCallback(async () => {
@@ -103,6 +104,22 @@ export function BrainView({
     }
   }, [activeNodeId, handleSelectNode])
 
+  const handleCreateNode = useCallback(async (id: string, title: string, category: string, content: string) => {
+    try {
+      const fullDoc = `---\ntitle: ${title}\ncategory: ${category}\ntags:\n  - ${category}\nconfidence: 1.0\nstatus: active\n---\n\n${content}`
+      const res = await editLearningNode(id, fullDoc)
+      if (res.ok) {
+        await refreshGraph()
+        handleSelectNode(id)
+        return true
+      }
+      return false
+    } catch (e) {
+      console.error('Failed to create node:', e)
+      return false
+    }
+  }, [refreshGraph, handleSelectNode])
+
   const handleEditNode = useCallback(async (nodeId: string, newContent: string) => {
     try {
       const res = await editLearningNode(nodeId, newContent)
@@ -117,6 +134,47 @@ export function BrainView({
       return false
     }
   }, [refreshGraph, handleSelectNode])
+
+  const handleRenameNode = useCallback(async (oldId: string, newId: string) => {
+    try {
+      const res = await renameLearningNode(oldId, newId)
+      if (res.ok) {
+        await refreshGraph()
+        handleSelectNode(newId)
+        return true
+      }
+      return false
+    } catch (e) {
+      console.error('Failed to rename node:', e)
+      return false
+    }
+  }, [refreshGraph, handleSelectNode])
+
+  const handleLinkifyMention = useCallback(async (sourceId: string, targetId: string, term: string) => {
+    try {
+      const res = await linkifyLearningMention(sourceId, targetId, term)
+      if (res.ok) {
+        await refreshGraph()
+        if (activeNodeId) handleSelectNode(activeNodeId)
+        return true
+      }
+      return false
+    } catch (e) {
+      console.error('Failed to linkify mention:', e)
+      return false
+    }
+  }, [refreshGraph, activeNodeId, handleSelectNode])
+
+  const handleOpenDailyNote = useCallback(async () => {
+    const today = new Date().toISOString().slice(0, 10)
+    const dailyId = `daily/${today}`
+    const existing = graph?.nodes.find(n => n.id === dailyId)
+    if (!existing) {
+      await handleCreateNode(dailyId, `Daily Note ${today}`, 'daily', `# Daily Journal — ${today}\n\n## Sessions & Observations\n- `)
+    } else {
+      handleSelectNode(dailyId)
+    }
+  }, [graph, handleCreateNode, handleSelectNode])
 
   const handleDeleteNode = useCallback(async (nodeId: string) => {
     try {
@@ -167,9 +225,14 @@ export function BrainView({
           edges={brainEdges}
           loading={nodeLoading}
           nodes={brainNodes}
+          unlinkedMentions={unlinkedMentions}
+          onCreateNode={handleCreateNode}
           onDeleteNode={handleDeleteNode}
           onEditNode={handleEditNode}
+          onLinkifyMention={handleLinkifyMention}
+          onOpenDailyNote={handleOpenDailyNote}
           onOpenStarmap={onOpenStarmap}
+          onRenameNode={handleRenameNode}
           onSelectNode={handleSelectNode}
         />
       )}

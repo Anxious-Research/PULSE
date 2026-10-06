@@ -908,8 +908,8 @@ function CommandPaletteBody({ onExited }: { onExited: () => void }) {
           {
             icon: Starmap,
             id: 'nav-brain',
-            keywords: ['brain', 'knowledge', 'vault', 'notes', 'wikilinks', 'backlinks', 'obsidian', 'beliefs'],
-            label: 'Cognitive Brain Vault',
+            keywords: ['brain', 'knowledge', 'vault', 'notes', 'wikilinks', 'backlinks', 'obsidian', 'graph', 'daily'],
+            label: 'Knowledge Graph & Vault',
             run: go(BRAIN_ROUTE)
           }
         ]

@@ -55,6 +55,7 @@ class MetadataCache:
         self.tags: Dict[str, Set[str]] = defaultdict(set)  # tag -> set of node_ids
         self._nodes: Dict[str, BrainNode] = {}
         self._name_to_id: Dict[str, str] = {}
+        self.unresolved_links: Dict[str, Set[str]] = defaultdict(set) # source_id -> set of unresolved targets
 
     def build_cache(self) -> None:
         """Scan vault and populate all indices."""

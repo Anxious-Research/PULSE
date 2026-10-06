@@ -206,11 +206,12 @@ class BrainGraph:
         return [node.to_summary_dict() for _, node in results[:limit]]
 
     def get_full_graph_payload(self) -> Dict[str, Any]:
-        """Construct full serialized graph payload for PULSE Desktop UI / StarMap."""
+        """Construct full serialized graph payload for PULSE Desktop UI / StarMap with unresolved ghost nodes."""
         self.rebuild_index()
 
         nodes_payload = []
         clusters_counter = Counter()
+        unresolved_ghost_targets: Set[str] = set()
 
         for node in self._nodes.values():
             clusters_counter[node.category] += 1
@@ -226,19 +227,62 @@ class BrainGraph:
                 "tags": node.frontmatter.tags,
                 "wikilinks_count": len(node.wikilinks),
                 "backlinks_count": len(node.backlinks),
+                "resolved": True,
+            })
+
+            # Detect uncreated / ghost wikilink targets
+            for link in node.wikilinks:
+                t = self._resolve_target(link.target)
+                if not t:
+                    clean_ghost = normalize_node_id(link.target)
+                    unresolved_ghost_targets.add(clean_ghost)
+
+        # Append ghost / unresolved nodes (Obsidian Ghost Nodes)
+        for ghost_id in unresolved_ghost_targets:
+            leaf_title = ghost_id.split("/")[-1].replace("-", " ").title()
+            cat = ghost_id.split("/")[0]
+            clusters_counter["unresolved"] += 1
+            nodes_payload.append({
+                "id": ghost_id,
+                "label": leaf_title,
+                "kind": "ghost_node",
+                "category": cat,
+                "path": f"{ghost_id}.md",
+                "timestamp": 0,
+                "confidence": 0.0,
+                "status": "unresolved",
+                "tags": ["ghost"],
+                "wikilinks_count": 0,
+                "backlinks_count": 1,
+                "resolved": False,
             })
 
         edges_payload = [e.to_dict() for e in self._edges]
 
+        # Add edges connecting to ghost nodes
+        for node in self._nodes.values():
+            for link in node.wikilinks:
+                t = self._resolve_target(link.target)
+                if not t:
+                    clean_ghost = normalize_node_id(link.target)
+                    edges_payload.append({
+                        "source": node.id,
+                        "target": clean_ghost,
+                        "relation_type": "ghost_link",
+                    })
+
         stats = {
-            "total_nodes": len(self._nodes),
-            "total_edges": len(self._edges),
+            "total_nodes": len(nodes_payload),
+            "resolved_nodes": len(self._nodes),
+            "unresolved_nodes": len(unresolved_ghost_targets),
+            "total_edges": len(edges_payload),
             "categories": len(clusters_counter),
             "self_nodes": clusters_counter.get("self", 0),
             "user_nodes": clusters_counter.get("user", 0),
             "concepts_nodes": clusters_counter.get("concept", 0),
             "beliefs_nodes": clusters_counter.get("belief", 0),
             "projects_nodes": clusters_counter.get("project", 0),
+            "daily_nodes": clusters_counter.get("daily", 0),
         }
 
         return {
