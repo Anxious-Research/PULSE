@@ -259,14 +259,18 @@ nodes with category/confidence/tags — the same endpoint the desktop already ca
 ## 10. Rollout — staged, each independently verifiable and revertible
 
 | Stage | Deliverable | Verify | Touches prompt/UI? |
-|---|---|---|---|
-| **S1** | Vault store + frontmatter + derived index (no UI, no prompt) | store/parser/decay tests | no |
-| **S2** | Migration importer (`MEMORY.md`/`USER.md` → vault), idempotent, dry-run first | run on a copy, diff | no |
-| **S3** | Recall engine (cue → activation → bounded block), flag-gated | recall tests | no |
+| --- | --- | --- | --- |
+| **S1** ✅ | Vault store + frontmatter + derived index (no UI, no prompt) | store/parser/decay tests | no |
+| **S2** ✅ | Migration importer (`MEMORY.md`/`USER.md` → vault), idempotent, dry-run first | run on a copy, diff | no |
+| **S3** ✅ | Recall engine (cue → activation → bounded block), flag-gated | recall tests | no |
 | **S4** | Prompt integration (Layer 1/2), flag-gated | cache-prefix unchanged; inject/skip behaviour | yes |
 | **S5** | Write policy + consolidation background pass | encoding/consolidation tests | no |
 | **S6** | UI unification: vault into `starmap/`, delete `brain/`, sidebar entry | graph renders real nodes; JS tests | yes |
 | **S7** | Decay/forgetting + reconsolidation live | decay tests | no |
+
+**Progress:** S1–S3 done — `agent/brain/` (parser, models, vault, index, decay, similarity,
+migrate, recall) with 186 passing tests. Nothing consumes the brain yet, so the live agent's
+behaviour is unchanged; S4 is the first stage that can alter a turn, and it stays behind a flag.
 
 Each stage: commits in `~/pulse-evolution/pulse`, pushed to GitHub, with commands + real output
 in the report. The user installs; the agent does not touch `$PULSE_HOME`.
