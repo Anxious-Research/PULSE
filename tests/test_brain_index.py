@@ -133,6 +133,34 @@ class TestSpreadingActivation(IndexTestCase):
         act = index.activate({"concept/a": 1.0}, hops=2, decay=0.01, min_activation=0.5)
         self.assertEqual(set(act), {"concept/a"})
 
+    def test_total_activation_is_bounded(self):
+        """Hop-by-hop propagation must not inflate: sum <= seeds / (1 - decay)."""
+        # A small dense cluster is where an accumulate-in-place scheme blows up.
+        self.vault.write_node("concept/a", "[[concept/b]] [[concept/c]]", now=T0)
+        self.vault.write_node("concept/b", "[[concept/a]] [[concept/c]]", now=T0)
+        self.vault.write_node("concept/c", "[[concept/a]] [[concept/b]]", now=T0)
+        index = BrainIndex(self.vault).rebuild()
+        decay = 0.9
+        act = index.activate({"concept/a": 1.0}, hops=6, decay=decay, min_activation=0.0)
+        self.assertLessEqual(sum(act.values()), 1.0 / (1.0 - decay) + 1e-9)
+
+    def test_activation_never_exceeds_the_seed_for_a_neighbour(self):
+        self.vault.write_node("concept/a", "[[concept/b]] [[concept/c]]", now=T0)
+        self.vault.write_node("concept/b", "[[concept/a]] [[concept/c]]", now=T0)
+        self.vault.write_node("concept/c", "[[concept/a]] [[concept/b]]", now=T0)
+        index = BrainIndex(self.vault).rebuild()
+        act = index.activate({"concept/a": 1.0}, hops=5, decay=0.9, min_activation=0.0)
+        for node_id, value in act.items():
+            if node_id != "concept/a":
+                self.assertLess(value, act["concept/a"], node_id)
+
+    def test_more_hops_never_increases_a_two_hop_node(self):
+        index = self.build(concept__a="[[concept/b]]", concept__b="[[concept/c]]", concept__c="c")
+        one = index.activate({"concept/a": 1.0}, hops=1, decay=0.8, min_activation=0.0)
+        two = index.activate({"concept/a": 1.0}, hops=2, decay=0.8, min_activation=0.0)
+        self.assertEqual(one.get("concept/c"), None)
+        self.assertIn("concept/c", two)
+
 
 if __name__ == "__main__":
     unittest.main()

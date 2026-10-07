@@ -106,11 +106,15 @@ Per turn, no global scan:
 
 1. **Cue extraction** — entities, topics, intent from the current message + recent turns.
 2. **Spreading activation** — activation seeded on nodes matching cues, propagated over the
-   link graph 2 hops with decay per hop and a fan-out divisor (well-connected nodes don't
-   dominate — a real requirement of associative memory models):
+   link graph 2 hops with decay per hop, normalised by node degree so a well-connected hub
+   hands each neighbour a small share instead of dominating recall (a real requirement of
+   associative memory models):
    ```
-   a(v) = Σ_u  a(u) · w(u,v) / log(1 + degree(u))
+   a(v) = Σ_u  a(u) · w(u,v) / degree(u)
    ```
+   This is *conserving*: total activation never exceeds `seeds / (1 − decay)`, and activation
+   can never exceed the seed's own. (An earlier draft divided by `log(1 + degree)`; `n/log(1+n)`
+   grows with `n`, so that amplified hubs instead of dampening them.)
 3. **Ranking** — combine activation × retrievability (§3.3) × salience; take top-k.
 4. **Contextual gating** — if the best score is below threshold, inject **nothing**. (User
    requirement: don't inject irrelevant memory every turn.)

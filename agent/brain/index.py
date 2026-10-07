@@ -10,7 +10,6 @@ recall (specs/brain.md §3.4).
 
 from __future__ import annotations
 
-import math
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from .parser import normalize_node_id
@@ -151,14 +150,24 @@ class BrainIndex:
     ) -> Dict[str, float]:
         """Spread activation from ``{node_id: seed_weight}`` over the link graph.
 
-        Each hop multiplies by ``decay``, and a node's incoming share is divided by
-        ``log(1 + degree)`` so a heavily-linked hub cannot dominate every recall (the
-        fan-out normalisation associative-memory models require).
+        Proper hop-by-hop propagation (not accumulation): each round spreads only the
+        *previous* round's activation, so a node reached by many long paths cannot inflate
+        without bound. Each hop multiplies by ``decay``, and a node's activation is divided
+        by its **degree** before being passed on, so a heavily-linked hub hands each
+        neighbour a small share instead of dominating every recall.
 
-        Returns ``{node_id: activation}`` including the seeds themselves.
+        Consequences that hold by construction, and are asserted in the tests:
+            total activation <= sum(seeds) / (1 - decay)     (activation is conserved, not amplified)
+            activation at hop k+1 <= decay * activation at hop k
+        Seeds are retained in the result; ranking applies retrievability on top.
+
+        Note on the divisor: an earlier revision divided by ``log(1 + degree)``. That looks
+        like fan-out dampening but does the opposite — ``n / log(1+n)`` *grows* with n, so
+        hubs amplified the signal and total activation diverged from the bound. Degree is the
+        correct normaliser; a test pins the bound.
         """
         self.ensure_built()
-        activation: Dict[str, float] = {}
+        current: Dict[str, float] = {}
         for node_id, weight in seeds.items():
             resolved = self._resolve(node_id) or normalize_node_id(node_id)
             if not resolved:
@@ -168,27 +177,29 @@ class BrainIndex:
             except (TypeError, ValueError):
                 continue
             if w > 0:
-                activation[resolved] = activation.get(resolved, 0.0) + w
+                current[resolved] = current.get(resolved, 0.0) + w
 
-        if not activation:
+        if not current:
             return {}
 
+        activation: Dict[str, float] = dict(current)
+
         for _ in range(max(1, int(hops))):
-            spread: Dict[str, float] = {}
-            for node_id, value in activation.items():
+            nxt: Dict[str, float] = {}
+            for node_id, value in current.items():
                 neighbours = set(self.forward.get(node_id, [])) | set(self.backlinks.get(node_id, []))
                 if not neighbours:
                     continue
-                fan_out = math.log(1.0 + len(neighbours))
-                share = value * decay / fan_out
+                share = value * decay / len(neighbours)
                 if share < min_activation:
                     continue
                 for other in neighbours:
-                    spread[other] = spread.get(other, 0.0) + share
-            if not spread:
+                    nxt[other] = nxt.get(other, 0.0) + share
+            if not nxt:
                 break
-            for node_id, value in spread.items():
+            for node_id, value in nxt.items():
                 activation[node_id] = activation.get(node_id, 0.0) + value
+            current = nxt
 
         return {k: v for k, v in activation.items() if v >= min_activation}
 
