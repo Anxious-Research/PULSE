@@ -44,6 +44,7 @@ __all__ = [
     "parse_frontmatter_and_body",
     "rewrite_link_target",
     "slugify",
+    "strip_title_overlap",
     # graph
     "BrainIndex",
     # forgetting / consolidation
@@ -85,6 +86,7 @@ _LAZY: dict = {
     "parse_frontmatter_and_body": ("parser", "parse_frontmatter_and_body"),
     "rewrite_link_target": ("parser", "rewrite_link_target"),
     "slugify": ("parser", "slugify"),
+    "strip_title_overlap": ("parser", "strip_title_overlap"),
     "BrainIndex": ("index", "BrainIndex"),
     "clamp_stability": ("decay", "clamp_stability"),
     "is_dormant": ("decay", "is_dormant"),

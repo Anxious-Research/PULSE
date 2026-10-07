@@ -35,6 +35,8 @@ CONTRACT_MODULES = [
     "agent.brain.similarity",
     "agent.brain.migrate",
     "agent.brain.recall",
+    "agent.brain.prefix",
+    "agent.brain.session",
 ]
 
 # Names that MUST keep existing: removing them broke the live agent before.
@@ -49,6 +51,18 @@ REQUIRED_NAMES = {
         "apply_memory_pending",
     ],
     "tools.memory_tool_store": ["MemoryStore", "ENTRY_DELIMITER"],
+    # Imported by agent/turn_context.py and agent/system_prompt.py at runtime. A rename here
+    # would drop memory silently (the import sits in a try/except by design), so pin it.
+    "agent.brain.session": [
+        "BrainSettings",
+        "brain_stable_prefix",
+        "brain_turn_context",
+        "get_brain_config",
+        "get_agent_vault",
+        "resolve_settings",
+        "reset_agent_cache",
+    ],
+    "agent.brain.prefix": ["compile_stable_prefix", "has_stable_content"],
 }
 
 
@@ -161,9 +175,30 @@ class TestBrainPackageIsImportSafe(unittest.TestCase):
         import agent.brain.migrate  # noqa: F401
         import agent.brain.models  # noqa: F401
         import agent.brain.parser  # noqa: F401
+        import agent.brain.prefix  # noqa: F401
         import agent.brain.recall  # noqa: F401
+        import agent.brain.session  # noqa: F401
         import agent.brain.similarity  # noqa: F401
         import agent.brain.vault  # noqa: F401
+
+    def test_pure_layers_do_not_import_agent_modules_at_module_level(self):
+        """Only the bridge may touch ``agent.*``; the pure layers must stay testable alone."""
+        bridge = {"session.py"}
+        offenders = []
+        for path in sorted((REPO_ROOT / "agent" / "brain").glob("*.py")):
+            if path.name in bridge:
+                continue
+            tree = ast.parse(path.read_text(encoding="utf-8-sig"))
+            for node in tree.body:  # module level only
+                modules = []
+                if isinstance(node, ast.Import):
+                    modules = [a.name for a in node.names]
+                elif isinstance(node, ast.ImportFrom) and node.module:
+                    modules = [node.module]
+                for module in modules:
+                    if module.split(".")[0] == "agent" and not module.startswith("agent.brain"):
+                        offenders.append(f"{path.name}: {module}")
+        self.assertEqual(offenders, [], f"pure brain layers must not import agent.*: {offenders}")
 
     def test_no_heavy_import_at_module_level(self):
         offenders = []

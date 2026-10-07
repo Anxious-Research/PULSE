@@ -29,7 +29,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence
 from . import decay as decay_mod
 from .index import BrainIndex
 from .models import NodeStatus
-from .parser import normalize_node_id
+from .parser import normalize_node_id, strip_title_overlap, wikilinks_to_text
 from .similarity import bigrams, overlap_coefficient, similarity, tokenize
 from .vault import BrainVault
 
@@ -41,6 +41,14 @@ DEFAULT_MIN_SCORE = 0.10
 # A hit scoring below this fraction of the best hit is dropped: when one memory is clearly
 # what the cue is about, injecting five also-rans adds noise, not context.
 RELATIVE_FLOOR = 0.25
+# A standalone embedding match must clear this to seed a node with no lexical support.
+# Rationale: the default embedder is a zero-dependency lexical placeholder, and it scores
+# unrelated *short* strings well above zero — measured at 0.135 between a query and a two-word
+# unrelated title. That was enough to seed, and therefore inject, notes with no connection to
+# the cue. Lexical evidence (cue overlap) is what admits a node; an embedding may raise its
+# weight but not invent the hit. A genuine semantic embedder clears this floor on a real
+# synonym match, so the optional-backend seam keeps working.
+SEMANTIC_ONLY_FLOOR = 0.45
 MAX_CUES = 24
 SNIPPET_CHARS = 260
 # Rough characters-per-token. Deliberately conservative (real tokenizers average ~4);
@@ -212,10 +220,13 @@ def _prose(text: str) -> str:
     An aliased link keeps its alias, because an alias is authored prose
     (``[[concept/x|the forgetting curve]]`` does say something).
     """
-    return _WIKILINK_STRIP_RE.sub(
+    stripped = _WIKILINK_STRIP_RE.sub(
         lambda m: (" " + m.group(1).split("|", 1)[1] + " ") if "|" in m.group(1) else " ",
         text or "",
     )
+    # A removed link can leave dangling whitespace before punctuation ("lives in [[x]]." ->
+    # "lives in ."), which then shows up verbatim in the prompt block.
+    return re.sub(r"\s+([.,;:!?])", r"\1", stripped)
 
 
 def _prepare(nodes: Sequence[Any]) -> List[Dict[str, Any]]:
@@ -275,17 +286,44 @@ def _seed_scores(
     n_docs = len(entries)
 
     idf: Dict[str, float] = {}
+    df_counts: Dict[str, int] = {}
     for cue, cue_key in cue_keys:
         df = sum(
             1
             for e in entries
             if _matches(cue_key, e["title_uni"], e["title_bi"]) or _matches(cue_key, e["body_uni"], e["body_bi"])
         )
-        idf[cue] = max(0.0, math.log((n_docs + 1) / (df + 1)))
-    if not any(idf.values()):
-        # Every cue occurs in every note (tiny vault): IDF carries no information, so use
-        # uniform weights rather than zeroing out all retrieval.
-        idf = {cue: 1.0 for cue, _ in cue_keys}
+        df_counts[cue] = df
+
+    seen = [cue for cue, df in df_counts.items() if df]
+    if seen:
+        raw = {cue: math.log((n_docs + 1) / (df_counts[cue] + 1)) for cue in seen}
+        best = max(raw.values())
+        if best <= 0.0:
+            # Every matching cue appears in every note — which is always true in a one-note
+            # vault, and is where a fresh vault starts. IDF cannot discriminate here (every
+            # log is 0), and treating that as "no signal" would make the very first note the
+            # user writes permanently unrecallable. Weight the matching cues uniformly instead.
+            for cue in seen:
+                idf[cue] = 1.0
+            best = 1.0
+        else:
+            idf.update(raw)
+    else:
+        best = 1.0
+
+    # A cue that matches NOTHING in the vault is evidence of partial coverage, not the strongest
+    # signal in the query. Plain IDF peaks at df=0 — log((N+1)/1) is its maximum — which makes
+    # the noisiest terms (a typo, a word this vault simply does not use, an over-specific phrase)
+    # the most influential. Their weight then dominates the denominator and dilutes the cues
+    # that DO match, so a clearly relevant note scores below the injection gate and recall goes
+    # silent. Scaling unseen terms to a quarter of the best real match keeps partial coverage
+    # penalised without letting it swamp a genuine hit.
+    unseen = 0.25 * best
+    for cue, df in df_counts.items():
+        if not df:
+            idf[cue] = unseen
+
     total_weight = sum(idf.values()) or 1.0
 
     query_keys = _keyset(tokenize(query))
@@ -303,16 +341,22 @@ def _seed_scores(
                 matched += 0.85 * weight
 
         cue_score = matched / total_weight
-        doc_keys = e["title_uni"] | e["body_uni"]
-        coverage = len(query_keys & doc_keys) / min(len(query_keys), len(doc_keys)) if query_keys and doc_keys else 0.0
-        title_sim = similarity(query, e["title_text"], embedder=embedder) if e["title_text"] else 0.0
-        semantic = max(title_sim, 0.7 * coverage)
-
-        weight = max(cue_score, semantic)
+        coverage = overlap_coefficient(query_keys, e["title_uni"] | e["body_uni"])
+        # Lexical evidence is the admission ticket: no cue overlap and no coverage means this
+        # note is not a direct hit for the cue, whatever an embedding thinks.
+        weight = max(cue_score, 0.7 * coverage)
+        if e["title_text"]:
+            title_sim = similarity(query, e["title_text"], embedder=embedder)
+            if title_sim >= SEMANTIC_ONLY_FLOOR:
+                weight = max(weight, title_sim)
         if weight <= 0.0:
             continue
-        sal = max(0.0, min(1.0, e["node"].frontmatter.salience))
-        seeds[e["node"].id] = weight * (0.5 + 0.5 * sal)
+        # Salience deliberately does NOT scale the seed. It is applied once, in
+        # ``decay.rank_score``, exactly as specs/brain.md §3.4 specifies
+        # (activation x retrievability x salience). Applying it here as well squared its effect:
+        # a default-salience note was attenuated to 0.75 x 0.625 = 47% of its activation, which
+        # pushed genuinely relevant hits under the injection gate.
+        seeds[e["node"].id] = weight
 
     return seeds
 
@@ -376,7 +420,11 @@ def recall(
         retriev = decay_mod.retrievability(fm.stability, fm.last_accessed, now=now)
         if not include_dormant and decay_mod.is_dormant(fm.stability, fm.last_accessed, now=now):
             continue
-        snippet = " ".join((node.content or "").split())
+        # The snippet is injected into a prompt, so it must read as prose: ``[[a/b|c]]`` -> ``c``.
+        # Bracket syntax and path separators are vault plumbing, and the associations they encode
+        # are already surfaced by the ``related:`` line. Leaving them in spends tokens on
+        # punctuation and reads as noise (or worse, as a literal instruction to fetch a path).
+        snippet = strip_title_overlap(" ".join(wikilinks_to_text(node.content).split()), node.title)
         if len(snippet) > SNIPPET_CHARS:
             snippet = snippet[:SNIPPET_CHARS].rstrip() + "…"
         hits.append(

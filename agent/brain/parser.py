@@ -232,6 +232,62 @@ def slugify(text: str, *, fallback: str = "untitled") -> str:
     return slug or fallback
 
 
+def wikilinks_to_text(text: str) -> str:
+    """Render ``[[...]]`` as plain prose — the display form of a note's text.
+
+    ``[[a/b|c]]`` -> ``c`` and ``[[a/b]]`` -> ``b`` (path separators and hyphens become spaces).
+    Used when note text is shown to a model: bracket syntax and directory paths are vault
+    plumbing, and a dangling ``[[concept/x]]`` in a prompt spends tokens on punctuation while
+    reading as a literal path the model might try to act on.
+
+    This is deliberately *not* the term-extraction form. Matching strips links entirely (see
+    ``recall._prose``) so a note that merely references a topic does not rank as though it were
+    about it; display keeps the link's name so the sentence still reads as English.
+    """
+    def repl(match: re.Match) -> str:
+        inner = match.group(1)
+        if "|" in inner:
+            return inner.split("|", 1)[1].strip()
+        return inner.rsplit("/", 1)[-1].replace("-", " ").strip()
+
+    return _WIKILINK_RE.sub(repl, text or "")
+
+
+def strip_title_overlap(text: str, title: str, *, min_remaining: int = 12) -> str:
+    """Drop a leading repeat of ``title`` from ``text``.
+
+    Rendering a note as ``title: content`` is the readable form, but migration derives the title
+    from the note's opening words, so the pair otherwise reads
+    ``PULSE forgets exponentially: PULSE forgets exponentially: retrievability…``.
+
+    Applied at render time rather than at write time on purpose: the vault keeps the full entry
+    (lossless, and identical to what the user wrote), and only the prompt-facing rendering is
+    de-duplicated.
+
+    The comparison is word-by-word so whitespace and punctuation differences do not defeat the
+    match, and the text is returned unchanged when stripping would leave too little behind to be
+    worth showing — a note that is *only* its opening clause must not render as empty.
+    """
+    original = text or ""
+    body = " ".join(original.split())
+    title_words = " ".join((title or "").split()).split()
+    if not body or not title_words:
+        return original
+
+    tokens = list(re.finditer(r"\S+", body))
+    if len(tokens) < len(title_words):
+        return original
+
+    for index, word in enumerate(title_words):
+        if tokens[index].group(0).strip("-—:;,.").lower() != word.strip("-—:;,.").lower():
+            return original
+
+    remainder = body[tokens[len(title_words) - 1].end() :].lstrip(" \t-—:;,.")
+    if len(remainder) < min_remaining:
+        return original
+    return remainder
+
+
 def normalize_node_id(node_id: str) -> str:
     """Canonical node id: no ``.md``, forward slashes, no leading/trailing slash.
 

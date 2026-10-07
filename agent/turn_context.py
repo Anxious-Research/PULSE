@@ -890,6 +890,27 @@ def _memory_turn_start_and_prefetch(
     return ext_prefetch_cache
 
 
+def _brain_recall_block(agent: Any, original_user_message: Any) -> str:
+    """Layer-2 memory recall for this turn (specs/brain.md §6); ``""`` when nothing qualifies.
+
+    Rides the same per-turn channel as the external-memory prefetch: appended to the current
+    turn's user message and replayed through the ``api_content`` sidecar, never folded into the
+    system prompt, so the cached prefix is untouched.
+
+    This is a deliberate sibling of ``_memory_turn_start_and_prefetch`` rather than a branch
+    inside it: that function returns early when no external provider is configured, and the
+    native brain must work with no provider at all. Anything unexpected degrades to no recall —
+    memory must never be able to break a turn.
+    """
+    try:
+        from agent.brain.session import brain_turn_context
+
+        return brain_turn_context(agent, original_user_message) or ""
+    except Exception:
+        logger.debug("brain recall unavailable for this turn", exc_info=True)
+        return ""
+
+
 def _stamp_api_content_sidecar(
     agent: Any, messages: List[Any], current_turn_user_idx: int, ext_prefetch_cache: str,
     plugin_user_context: str, *, preflight_compressed: bool,
@@ -1140,6 +1161,13 @@ def build_turn_context(
 
     _bind_interrupt_scope(agent, ra)
     ext_prefetch_cache = _memory_turn_start_and_prefetch(agent, original_user_message, turn_author)
+    # Native brain recall shares this per-turn injection channel. Kept as one value on purpose:
+    # the wire bytes, the ``api_content`` sidecar and replay all read ``ext_prefetch_cache``, so
+    # a second channel could drift out of sync with them (and a drifting prefix is a cache miss
+    # plus a lie about what the model was shown).
+    _brain_block = _brain_recall_block(agent, original_user_message)
+    if _brain_block:
+        ext_prefetch_cache = f"{ext_prefetch_cache}\n\n{_brain_block}" if ext_prefetch_cache else _brain_block
 
     # Title the session now: titling depends only on the user's ask (before any injected
     # context lands on list content), so it runs concurrently with the turn. Daemon thread,

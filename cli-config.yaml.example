@@ -1016,6 +1016,35 @@ memory:
   nudge_interval: 10        # Nudge every 10 user turns (0 = disabled)
 
 # =============================================================================
+# Brain (native associative memory)
+# =============================================================================
+# PULSE's own memory: an Obsidian-style Markdown vault of one note per memory,
+# recalled by cue and faded by a forgetting curve. Notes live in
+# ~/.pulse/brain/ (per profile). Nothing is ever deleted — a corrected note is
+# superseded and stays as history.
+#
+# Recall is silent and selective: it rides the per-turn context, never the
+# system prompt, and an unrelated turn injects nothing at all. Set enabled:
+# false to turn the whole brain off.
+
+brain:
+  enabled: true             # master switch, including recall
+
+  # Per-turn recall (the memory block appended to the current turn's context).
+  recall_enabled: true
+  recall_max_tokens: 600    # hard cap on the injected block
+  recall_limit: 8           # at most N notes recalled for one cue
+  recall_hops: 2            # spreading-activation depth over wikilinks
+  recall_min_score: 0.10    # below this, inject nothing rather than filler
+  reconsolidate: true       # recalling a note strengthens it (spacing effect)
+
+  # Layer-1 prefix: identity + durable facts compiled into the SYSTEM PROMPT.
+  # Off by default because it edits the cached prompt prefix; turn it on once
+  # you have self/ and user/ notes you want always present.
+  prefix_enabled: false
+  prefix_max_chars: 6000    # ~1.5k tokens
+
+# =============================================================================
 # Session Continuity (Messaging Platforms)
 # =============================================================================
 # Conversations persist across inactivity and daily boundaries. Use /new or

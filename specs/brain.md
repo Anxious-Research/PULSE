@@ -205,6 +205,34 @@ Hard invariant from the PULSE skill: **never break prompt caching.** Two layers:
 Silence rule: PULSE never narrates memory activity, exactly as it never narrates reading its
 own system prompt. No "brain dekh raha hoon". If recall is used, it simply informs the answer.
 
+### 6.1 Where it is wired (S4)
+
+| Concern | Location | Notes |
+| --- | --- | --- |
+| Layer 2 — per-turn recall | `agent/turn_context.py::_brain_recall_block`, appended to `ext_prefetch_cache` | Reuses the existing per-turn injection channel, so the `api_content` sidecar, replay and multimodal handling are shared. No second channel, no drift. |
+| Layer 1 — stable prefix | `agent/system_prompt.py::_memory_parts` → `brain_stable_prefix` | Off unless `brain.prefix_enabled`. Memoized per session; cleared by `reset_agent_cache` on the same boundary the legacy store reloads. |
+| Config → behaviour | `agent/brain/session.py::BrainSettings.from_config` | Reads the `brain` section of `config.yaml` (documented in `cli-config.yaml.example`). |
+
+Both call sites assign a default **before** any risky call and use `except` with an explicit
+fallback — never `with suppress(Exception): x = ...` followed by a use of `x`. That exact shape
+is what turned a failed import into an `UnboundLocalError` and killed memory on every run; it is
+pinned by a test (`test_suppress_misuse_would_leave_a_local_unbound`).
+
+Config (all optional; defaults shown):
+
+```yaml
+brain:
+  enabled: true             # master switch
+  recall_enabled: true
+  recall_max_tokens: 600    # hard cap on the injected block
+  recall_limit: 8
+  recall_hops: 2
+  recall_min_score: 0.10    # below this, inject nothing rather than filler
+  reconsolidate: true       # recall strengthens the note (spacing effect)
+  prefix_enabled: false     # Layer 1 edits the cached prefix, so it is opt-in
+  prefix_max_chars: 6000
+```
+
 ---
 
 ## 7. UI — one graph, Obsidian-identical interaction
@@ -263,14 +291,18 @@ nodes with category/confidence/tags — the same endpoint the desktop already ca
 | **S1** ✅ | Vault store + frontmatter + derived index (no UI, no prompt) | store/parser/decay tests | no |
 | **S2** ✅ | Migration importer (`MEMORY.md`/`USER.md` → vault), idempotent, dry-run first | run on a copy, diff | no |
 | **S3** ✅ | Recall engine (cue → activation → bounded block), flag-gated | recall tests | no |
-| **S4** | Prompt integration (Layer 1/2), flag-gated | cache-prefix unchanged; inject/skip behaviour | yes |
+| **S4** ✅ | Prompt integration (Layer 1/2), flag-gated | cache-prefix unchanged; inject/skip behaviour | yes |
 | **S5** | Write policy + consolidation background pass | encoding/consolidation tests | no |
 | **S6** | UI unification: vault into `starmap/`, delete `brain/`, sidebar entry | graph renders real nodes; JS tests | yes |
 | **S7** | Decay/forgetting + reconsolidation live | decay tests | no |
 
-**Progress:** S1–S3 done — `agent/brain/` (parser, models, vault, index, decay, similarity,
-migrate, recall) with 186 passing tests. Nothing consumes the brain yet, so the live agent's
-behaviour is unchanged; S4 is the first stage that can alter a turn, and it stays behind a flag.
+**Progress:** S1–S4 done — `agent/brain/` (parser, models, vault, index, decay, similarity,
+migrate, recall, prefix, session) with 200+ passing tests, wired into `turn_context` and
+`system_prompt` behind `brain.*` config. Behaviour is unchanged on a fresh install: an empty
+vault yields no recall and no prefix, so nothing can regress until real notes exist. S4 is the
+first stage that can alter a turn, and both its layers are individually switchable.
+Remaining: S5 (write policy + consolidation — the `memory` tool still writes the legacy flat
+store), S6 (UI), S7 (live decay/reconsolidation).
 
 Each stage: commits in `~/pulse-evolution/pulse`, pushed to GitHub, with commands + real output
 in the report. The user installs; the agent does not touch `$PULSE_HOME`.

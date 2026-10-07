@@ -15,10 +15,12 @@ from pathlib import Path
 from agent.brain.index import BrainIndex
 from agent.brain.recall import (
     CHARS_PER_TOKEN,
+    SEMANTIC_ONLY_FLOOR,
     extract_cues,
     recall,
     recall_block,
 )
+from agent.brain.similarity import similarity
 from agent.brain.vault import BrainVault
 
 T0 = 1_800_000_000
@@ -287,6 +289,128 @@ class TestRetrievalQuality(RecallTestCase):
         hits = recall("forgetting curve", vault=self.vault).hits
         self.assertTrue(hits)
         self.assertEqual(hits[0].node_id, "concept/a")
+
+
+    def test_a_node_with_no_cue_overlap_is_not_seeded_by_embedding_noise(self):
+        """The default lexical embedder scores unrelated SHORT strings well above zero.
+
+        Left unguarded that noise seeded — and injected — notes with no connection to the cue.
+        Admission comes from cue overlap; an embedding may only raise the weight of a node
+        that already has lexical support.
+        """
+        self.vault.write_node(
+            "concept/forgetting-curve",
+            "Retrievability decays as exp(-delta over stability).",
+            title="Forgetting Curve",
+            now=T0,
+        )
+        self.vault.write_node(
+            "self/identity",
+            "PULSE is a single entity; the brain is an organ, not an app.",
+            title="Identity",
+            salience=1.0,
+            now=T0,
+        )
+        ids = recall("how does the forgetting curve work", vault=self.vault).node_ids()
+        self.assertIn("concept/forgetting-curve", ids)
+        self.assertNotIn("self/identity", ids, "an unrelated note must not ride in on embedder noise")
+
+    def test_a_high_confidence_semantic_match_can_still_seed(self):
+        """The optional semantic backend must still be able to recall a synonym."""
+
+        class SynonymEmbedder:
+            """Stands in for a real semantic embedder: equal vectors for a known pair."""
+
+            def vector(self, text: str):
+                lowered = text.lower()
+                if "forgetting" in lowered or "decay" in lowered:
+                    return [1.0, 0.0, 0.0]
+                return [0.0, 1.0, 0.0]
+
+        self.vault.write_node(
+            "concept/decay-note",
+            "unrelated prose that shares no words with the question",
+            title="Decay Note",
+            now=T0,
+        )
+        result = recall("how does the forgetting curve work", vault=self.vault, embedder=SynonymEmbedder())
+        self.assertIn("concept/decay-note", result.node_ids())
+
+    def test_low_confidence_semantic_match_does_not_seed(self):
+        class NoisyEmbedder:
+            """A plausible-looking but weak match: cosine ~0.2, below SEMANTIC_ONLY_FLOOR.
+
+            The similarity is engineered rather than asserted through a fake ``similarity()``
+            so the test exercises the real embedder protocol (``vector()``), which is what the
+            production code calls.
+            """
+
+            def vector(self, text: str):
+                return [1.0, 0.0] if "forgetting" in text.lower() else [0.2, 0.9797958971]
+
+        self.vault.write_node("concept/unrelated", "nothing to do with the question", title="Unrelated", now=T0)
+        self.assertLess(similarity("how does the forgetting curve work", "Unrelated", embedder=NoisyEmbedder()),
+                        SEMANTIC_ONLY_FLOOR)
+        self.assertTrue(recall("how does the forgetting curve work", vault=self.vault, embedder=NoisyEmbedder()).empty)
+
+
+class TestScoringRegressions(RecallTestCase):
+    """Pins for the two scoring defects found by running the pipeline, not by unit tests."""
+
+    def test_unseen_query_terms_do_not_outweigh_real_matches(self):
+        """A query term that matches nothing must not dominate the normaliser.
+
+        Plain IDF peaks at df=0, which made the noisiest terms the most influential: the one
+        genuine match in "how does the forgetting curve work" against a note reading "PULSE
+        forgets exponentially" was swamped by 'curve', 'actually' and 'work', and the note
+        scored below the injection gate.
+        """
+        self.vault.write_node(
+            "concept/forgetting",
+            "PULSE forgets exponentially: retrievability = exp(-delta/stability).",
+            title="PULSE forgets exponentially",
+            now=T0,
+        )
+        result = recall("how does the forgetting curve actually work?", vault=self.vault)
+        self.assertFalse(result.empty, "a note matching the cue's one real term must be recalled")
+        self.assertIn("concept/forgetting", result.node_ids())
+        self.assertGreater(result.top_score(), 0.10, "must clear the injection gate, not scrape it")
+
+    def test_unseen_terms_still_penalise_partial_coverage(self):
+        """Scaling unseen terms down must not remove the partial-coverage penalty entirely."""
+        self.vault.write_node("concept/a", "alpha beta gamma delta", title="Alpha Beta Gamma Delta", now=T0)
+        self.vault.write_node("concept/b", "alpha beta gamma zeta", title="Alpha Beta Gamma Zeta", now=T0)
+        partial = recall("alpha beta gamma zeta epsilon iota kappa", vault=self.vault)
+        if partial.empty:
+            return  # nothing cleared the gate; that is also an acceptable outcome
+        self.assertEqual(partial.hits[0].node_id, "concept/b", "best coverage must rank first")
+        for hit in partial.hits:
+            self.assertLessEqual(hit.score, 1.0)
+
+    def test_a_query_matching_nothing_is_still_silent(self):
+        self.vault.write_node("concept/forgetting", "retrievability decays over time", title="Forgetting", now=T0)
+        self.assertTrue(recall("kubernetes ingress tls termination", vault=self.vault).empty)
+
+    def test_salience_is_applied_exactly_once(self):
+        """Two notes identical but for salience differ by exactly the salience ratio.
+
+        Applying salience in the seed *and* in rank_score squared its effect, attenuating a
+        default-salience note to ~47% of its activation and hiding relevant hits under the gate.
+
+        Titles are identical on purpose: the lexical embedder is sensitive to every extra token,
+        so differing titles would move ``title_sim`` and the measured ratio would no longer be
+        a clean read of the salience factor.
+        """
+        body = "forgetting curve retrievability decays exponentially over time"
+        title = "Forgetting Curve"
+        self.vault.write_node("concept/high", body, title=title, salience=1.0, now=T0)
+        self.vault.write_node("concept/low", body, title=title, salience=0.25, now=T0)
+        hits = {h.node_id: h for h in recall("forgetting curve", vault=self.vault).hits}
+        self.assertIn("concept/high", hits)
+        self.assertIn("concept/low", hits)
+        # (0.25 + 0.75*1.0) / (0.25 + 0.75*0.25) = 2.2857. Applied twice it would be ~5.2.
+        ratio = hits["concept/high"].score / hits["concept/low"].score
+        self.assertAlmostEqual(ratio, 2.2857142857, delta=0.01, msg="salience must contribute exactly once")
 
 
 class TestRendering(RecallTestCase):

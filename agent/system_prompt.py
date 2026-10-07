@@ -523,6 +523,17 @@ def _memory_parts(agent: Any) -> List[str]:
             block = agent._memory_store.format_for_system_prompt(kind) if enabled else None
             if block:
                 parts.append(block)
+    # Native brain Layer-1 prefix (specs/brain.md §6): identity and durable facts only, compiled
+    # once per session and memoized on the agent. Inert until brain.prefix_enabled is set, so
+    # this cannot reword the cached prefix by accident.
+    try:
+        from agent.brain.session import brain_stable_prefix
+
+        _brain_prefix = brain_stable_prefix(agent)
+    except Exception:
+        _brain_prefix = ""
+    if _brain_prefix:
+        parts.append(_brain_prefix)
     # External memory provider system prompt block (additive to built-in). Gated on the same check
     # ``inject_memory_provider_tools`` uses so we never advertise provider tools that the agent's toolset
     # configuration has already gated off (#81014).
@@ -828,6 +839,14 @@ def invalidate_system_prompt(agent: Any) -> None:
         del agent._plugin_system_prompt_sections_snapshot
     if agent._memory_store:
         agent._memory_store.load_from_disk()
+    # Same boundary for the brain: drop the memoized vault, index and Layer-1 prefix so a write
+    # from this session is picked up and the rebuilt prompt reflects it.
+    try:
+        from agent.brain.session import reset_agent_cache
+
+        reset_agent_cache(agent)
+    except Exception:
+        pass
 
 
 def reconstruct_static_prefix(agent: Any, system_message: Optional[str] = None, *, log_label: str = "restore") -> None:
