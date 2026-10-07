@@ -226,17 +226,6 @@ class LearningNodeEdit(BaseModel):
     content: str
     profile: Optional[str] = None
 
-class LearningNodeRename(BaseModel):
-    old_id: str
-    new_id: str
-    profile: Optional[str] = None
-
-class LearningNodeLinkify(BaseModel):
-    source_id: str
-    target_id: str
-    term: str
-    profile: Optional[str] = None
-
 class DebugShareRequest(BaseModel):
     # Redaction scrubs credential-shaped tokens before logs leave the machine; opt-out only.
     redact: bool = True

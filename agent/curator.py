@@ -258,16 +258,6 @@ def apply_automatic_transitions(now: Optional[datetime] = None) -> Dict[str, int
             _set(name, _u.STATE_STALE, "marked_stale")
         elif anchor > stale_cutoff and current == _u.STATE_STALE:
             _set(name, _u.STATE_ACTIVE, "reactivated")  # used again after going stale
-
-    # Background Cognitive Sleep & Brain Reflection
-    try:
-        from agent.brain.reflection import reflect_and_consolidate_brain
-        reflect_results = reflect_and_consolidate_brain()
-        counts["brain_nodes"] = reflect_results.get("total_nodes", 0)
-        counts["brain_edges"] = reflect_results.get("total_edges", 0)
-    except Exception as e:
-        logger.debug("Background brain reflection failed: %s", e)
-
     return counts
 
 

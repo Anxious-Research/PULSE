@@ -3,8 +3,6 @@
 Import-safe, stdlib-only — importable from anywhere without circular-import risk.
 """
 
-from __future__ import annotations
-
 import contextlib
 import os
 import re

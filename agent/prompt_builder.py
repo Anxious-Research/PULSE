@@ -193,13 +193,41 @@ PULSE_AGENT_HELP_GUIDANCE_NO_SKILLS = (
 def build_memory_guidance(
     memory_enabled: bool = True, profile_enabled: bool = True, *, skill_manage_available: bool = True,
 ) -> str:
-    """Guidance explaining the native cognitive Brain and persistent knowledge graph."""
-    return (
-        "You possess an evolving native Cognitive Brain & Knowledge Graph (Brain Vault) in `~/.pulse/brain/`. "
-        "Unlike flat memory files, your brain organizes memories as interconnected Markdown nodes with [[wikilinks]], "
-        "backlinks, structured frontmatter, and evolving belief states across Self (anatomy & tools), "
-        "User (mental models & preferences), Concepts (domain knowledge), Beliefs (hypotheses), and Projects. "
-        "Use the `brain` tool to read, write, explore neural thought pathways, and evolve beliefs as you learn new facts."
+    """Adapt store and skill-write guidance without widening what belongs in memory."""
+    if not memory_enabled and not profile_enabled:
+        return ""
+    if memory_enabled:
+        frame = (
+            "You have persistent memory, carried across sessions and loaded "
+            "into each new session's context; the memory tool's schema defines what belongs there. "
+        )
+    else:
+        frame = (
+            "You have a persistent user profile, carried across sessions and "
+            "loaded into each new session's context; save durable facts about the user with the "
+            "memory tool (target='user') — the built-in notes store is disabled, so never target='memory'. "
+        )
+    skill_routing = (
+        "Skills come first: when you learn something while doing a task — a "
+        "procedure, a pitfall, and the user's preferences and corrections "
+        "for that kind of work — record it in the skill you used or built "
+        "for the task (skill_manage), where it loads only when relevant. "
+        if skill_manage_available else
+        "Task-specific knowledge — procedures, pitfalls, and the user's preferences "
+        "and corrections for that kind of work — belongs in skills, not in memory, "
+        "even when skill writing is unavailable. "
+    )
+    return frame + skill_routing + (
+        "Memory is the narrow exception for facts that apply to EVERY "
+        "session regardless of task (who the user is, environment facts, "
+        "standing conventions with no task home); it has a hard character "
+        "budget, so when it fills, replace or consolidate stale entries "
+        "rather than skipping the save. Write entries as declarative facts, "
+        "not instructions to yourself: 'User prefers concise responses' ✓ — "
+        "'Always respond concisely' ✗ (imperative phrasing gets re-read as "
+        "a directive in later sessions and can override the user's current "
+        "request). A fact stale within a week belongs in session history; "
+        "procedures and workflows belong in skills."
     )
 
 
@@ -210,14 +238,6 @@ USER_PROFILE_GUIDANCE = build_memory_guidance(False, True)
 SESSION_SEARCH_GUIDANCE = (
     "When the user references something from a past conversation or you suspect relevant cross-session "
     "context exists, use session_search to recall it before asking them to repeat themselves."
-)
-
-BRAIN_GUIDANCE = (
-    "You have a native cognitive Brain & Knowledge Graph (Brain Vault). "
-    "Unlike flat memory files, the Brain maintains interconnected Markdown nodes with [[wikilinks]], backlinks, "
-    "frontmatter properties, confidence scores, and evolving belief states across Self (identity, anatomy, capabilities), "
-    "User (mental models, preferences), Concepts (domain knowledge), and Beliefs (hypotheses & resolved misconceptions). "
-    "Use the `brain` tool to read, write, explore graph neighborhoods, and evolve beliefs as you learn new facts."
 )
 
 # The opening sentence is worded deliberately: Anthropic's server-side filter rejected the previous phrasing

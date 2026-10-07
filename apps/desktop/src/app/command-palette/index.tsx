@@ -106,8 +106,7 @@ import {
   NEW_CHAT_ROUTE,
   PROFILES_ROUTE,
   SETTINGS_ROUTE,
-  STARMAP_ROUTE,
-  BRAIN_ROUTE
+  STARMAP_ROUTE
 } from '../routes'
 import { SECTIONS } from '../settings/constants'
 import { type SettingsSearchEntry, settingsSearchTargetQuery } from '../settings/settings-search'
@@ -904,13 +903,6 @@ function CommandPaletteBody({ onExited }: { onExited: () => void }) {
             keywords: ['star map', 'memory', 'memories', 'skills', 'graph', 'learning', 'constellation'],
             label: t.starmap.title,
             run: go(STARMAP_ROUTE)
-          },
-          {
-            icon: Starmap,
-            id: 'nav-brain',
-            keywords: ['brain', 'knowledge', 'vault', 'notes', 'wikilinks', 'backlinks', 'obsidian', 'graph', 'daily'],
-            label: 'Knowledge Graph & Vault',
-            run: go(BRAIN_ROUTE)
           }
         ]
       },

@@ -14,18 +14,14 @@ deleting a memory rewrites its file under the memory tool's lock.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 _MEMORY_FILES = {"memory": "MEMORY.md", "profile": "USER.md"}
 _STORE_TARGETS = {"memory": "memory", "profile": "user"}  # journey source -> MemoryStore target
 
 
 def parse_node_kind(node_id: str) -> str:
-    if node_id.startswith("memory:"):
-        return "memory"
-    if "/" in node_id or any(node_id.startswith(f"{cat}/") for cat in ("self", "user", "concept", "belief", "project")):
-        return "brain"
-    return "skill"
+    return "memory" if node_id.startswith("memory:") else "skill"
 
 
 def _parse_memory_id(node_id: str) -> tuple[str, int, str]:
@@ -55,33 +51,72 @@ def _resolve_fingerprint(chunks: list[str], fingerprint: str) -> int | None:
 
 
 def _locate_memory(node_id: str) -> tuple[Path, list[str], int]:
-    """Resolve a memory node id to (file, all entries, local index) backed by BrainVault."""
+    """Resolve a memory node id to (file, all §-delimited entries, local index).
+    Entries come from ``MemoryStore._read_file`` — the memory tool's own parser. A
+    fingerprinted id resolves by the entry's text; a legacy id by position (a profile
+    card's local index is its global index minus the MEMORY.md card count). Read-only
+    view: mutations resolve the id again INSIDE ``_mutate_memory``'s lock."""
     from pulse_constants import get_pulse_home
-    from agent.brain.vault import BrainVault
-    vault = BrainVault()
-    vault.ensure_vault_structure()
-    nodes = vault.list_all_nodes()
-    for idx, node in enumerate(nodes):
-        if node.id == node_id or f"memory:{node.id}" == node_id:
-            return vault.vault_dir / f"{node.id}.md", [node.content], 0
-    return vault.vault_dir / "user" / "preferences.md", ["# User Preferences"], 0
+    from tools.memory_tool import MemoryStore
+
+    source, gidx, fingerprint = _parse_memory_id(node_id)
+    path = get_pulse_home() / "memories" / _MEMORY_FILES[source]
+    if not path.exists():
+        raise ValueError(f"{path.name} not found")
+    chunks = MemoryStore._read_file(path)
+    if fingerprint:
+        local = _resolve_fingerprint(chunks, fingerprint)
+        if local is None:
+            raise ValueError("memory node id is stale — refresh the graph")
+        return path, chunks, local
+    from agent.learning_graph import _memory_cards
+
+    cards = _memory_cards()
+    if not 0 <= gidx < len(cards):
+        raise IndexError(f"memory index {gidx} out of range")
+    if cards[gidx].get("source") != source:
+        raise ValueError("memory node id is stale — refresh the graph")
+    local = gidx if source == "memory" else gidx - sum(1 for c in cards if c.get("source") == "memory")
+    if not 0 <= local < len(chunks):
+        raise ValueError("memory node id is stale — refresh the graph")
+    return path, chunks, local
 
 
 def _mutate_memory(node_id: str, replacement: str | None) -> dict[str, Any]:
-    """Replace (or, with ``replacement=None``, remove) a memory note in BrainVault."""
-    from agent.brain.vault import BrainVault
-    vault = BrainVault()
-    vault.ensure_vault_structure()
-    if replacement is None:
-        ok = vault.delete_node(node_id)
-        return {"ok": ok, "message": f"deleted memory '{node_id}'" if ok else "delete failed"}
-    else:
-        node = vault.write_node(
-            node_id=node_id,
-            content=replacement,
-            category=node_id.split("/")[0] if "/" in node_id else "user",
-        )
-        return {"ok": True, "message": f"updated memory '{node_id}'", "node": node.to_summary_dict()}
+    """Replace (or, with ``replacement=None``, remove) the entry *node_id* names, through
+    ``MemoryStore._mutate`` — the memory tool's cross-process lock, re-read under lock and
+    drift guard (``.bak`` snapshot + refusal when the file wouldn't round-trip). The file is
+    shared with the live agent, so a read-modify-write from an unlocked snapshot silently
+    dropped whatever the agent stored in between and reformatted hand-edited files
+    (#119668). The id is resolved to its entry text INSIDE the lock and matched by exact
+    text against the store's re-read entries; a target gone under the lock is refused."""
+    from tools.memory_tool import load_on_disk_store
+
+    source, _, _ = _parse_memory_id(node_id)
+    name = _MEMORY_FILES[source]
+    message = f"deleted memory from {name}" if replacement is None else f"updated memory in {name}"
+
+    def _apply(entries, limit):
+        from tools.memory_tool import ENTRY_DELIMITER
+
+        _, chunks, local = _locate_memory(node_id)
+        text = chunks[local].strip()
+        if text not in entries:
+            return {"success": False, "error": "memory node id is stale — refresh the graph"}
+        idx = entries.index(text)
+        new_entries = entries[:idx] + ([] if replacement is None else [replacement]) + entries[idx + 1:]
+        # Same cap the memory tool enforces on replace (never on remove: deleting is how a file
+        # already over its total gets back under it). An over-limit entry reads as external drift
+        # to every later mutation, so the tool's own remove/replace refuse until hand-fixed.
+        if replacement is not None and (total := len(ENTRY_DELIMITER.join(new_entries))) > limit:
+            return {"success": False,
+                    "error": f"Replacement would put memory at {total:,}/{limit:,} chars. Shorten the new content."}
+        return new_entries, message
+
+    result = load_on_disk_store()._mutate(_STORE_TARGETS[source], _apply)
+    if not result.get("success"):
+        return {"ok": False, "message": result.get("error", f"{name} write failed")}
+    return {"ok": True, "message": message}
 
 
 def _clear_skill_cache() -> None:
@@ -92,15 +127,9 @@ def _clear_skill_cache() -> None:
         pass
 
 
-def _dispatch(node_id: str, memory_fn: Callable, skill_fn: Callable, brain_fn: Optional[Callable] = None, *args) -> dict[str, Any]:
+def _dispatch(node_id: str, memory_fn: Callable, skill_fn: Callable, *args) -> dict[str, Any]:
     try:
-        kind = parse_node_kind(node_id)
-        if kind == "brain" and brain_fn is not None:
-            return brain_fn(node_id, *args)
-        elif kind == "memory":
-            return memory_fn(node_id, *args)
-        else:
-            return skill_fn(node_id, *args)
+        return (memory_fn if parse_node_kind(node_id) == "memory" else skill_fn)(node_id, *args)
     except (ValueError, IndexError) as exc:
         return {"ok": False, "message": str(exc)}
 
@@ -109,29 +138,8 @@ def _dispatch(node_id: str, memory_fn: Callable, skill_fn: Callable, brain_fn: O
 
 def node_detail(node_id: str) -> dict[str, Any]:
     """Current content for an edit prefill. ``content`` is the full SKILL.md
-    (skills), raw memory chunk (memories), or full Markdown note (brain nodes)."""
-    return _dispatch(node_id, _memory_detail, _skill_detail, _brain_detail)
-
-
-def _brain_detail(node_id: str) -> dict[str, Any]:
-    from agent.brain.vault import BrainVault
-    vault = BrainVault()
-    node = vault.read_node(node_id)
-    if not node:
-        return {"ok": False, "message": f"brain node '{node_id}' not found"}
-    return {
-        "ok": True,
-        "kind": "brain",
-        "id": node.id,
-        "label": node.title,
-        "category": node.category,
-        "content": node.raw_markdown,
-        "confidence": node.frontmatter.confidence,
-        "status": node.frontmatter.status,
-        "tags": node.frontmatter.tags,
-        "wikilinks": [w.target for w in node.wikilinks],
-        "backlinks": node.backlinks,
-    }
+    (skills) or the raw memory chunk (memories)."""
+    return _dispatch(node_id, _memory_detail, _skill_detail)
 
 
 def _memory_detail(node_id: str) -> dict[str, Any]:
@@ -154,14 +162,7 @@ def _skill_detail(node_id: str) -> dict[str, Any]:
 # ── Delete ──────────────────────────────────────────────────────────────────
 
 def delete_node(node_id: str) -> dict[str, Any]:
-    return _dispatch(node_id, _delete_memory, _delete_skill, _delete_brain)
-
-
-def _delete_brain(node_id: str) -> dict[str, Any]:
-    from agent.brain.vault import BrainVault
-    vault = BrainVault()
-    ok = vault.delete_node(node_id)
-    return {"ok": ok, "message": f"deleted brain node '{node_id}'" if ok else "delete failed"}
+    return _dispatch(node_id, _delete_memory, _delete_skill)
 
 
 def _delete_skill(name: str) -> dict[str, Any]:
@@ -186,27 +187,7 @@ def _delete_memory(node_id: str) -> dict[str, Any]:
 # ── Edit ────────────────────────────────────────────────────────────────────
 
 def edit_node(node_id: str, content: str) -> dict[str, Any]:
-    return _dispatch(node_id, _edit_memory, _edit_skill, _edit_brain, content)
-
-
-def _edit_brain(node_id: str, content: str) -> dict[str, Any]:
-    from agent.brain.vault import BrainVault
-    from agent.brain.parser import parse_frontmatter_and_body
-    vault = BrainVault()
-    meta, body = parse_frontmatter_and_body(content)
-    updated = vault.write_node(
-        node_id=node_id,
-        content=body,
-        title=meta.title or None,
-        category=meta.category or None,
-        tags=meta.tags or None,
-        confidence=meta.confidence,
-        status=meta.status,
-        supersedes=meta.supersedes,
-        aliases=meta.aliases or None,
-        related=meta.related or None,
-    )
-    return {"ok": True, "message": f"updated brain node '{node_id}'", "node": updated.to_summary_dict()}
+    return _dispatch(node_id, _edit_memory, _edit_skill, content)
 
 
 def _edit_skill(name: str, content: str) -> dict[str, Any]:

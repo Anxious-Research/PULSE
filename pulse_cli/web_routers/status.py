@@ -26,7 +26,7 @@ from pulse_cli import __release_date__
 from pulse_cli.config import get_config_path, get_env_path
 from pulse_cli.version_info import get_version_info
 from pulse_constants import get_process_pulse_home, profile_name_for_home
-from pulse_cli.web_models import CuratorPause, LearningNodeRef, LearningNodeEdit, LearningNodeRename, LearningNodeLinkify, DebugShareRequest
+from pulse_cli.web_models import CuratorPause, LearningNodeRef, LearningNodeEdit, DebugShareRequest
 from pulse_cli.web_routers._common import config_scoped_to_thread, destructive_profile, scoped_to_thread
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -716,30 +716,6 @@ async def update_learning_node(body: LearningNodeEdit):
     from agent.learning_mutations import edit_node
     return await _learning_mutation(
         body.profile, lambda: edit_node(body.id, body.content), 400, "edit failed")
-
-
-@router.post("/api/learning/node/rename")
-async def rename_learning_node(body: LearningNodeRename):
-    """Rename a brain node and refactor all incoming [[wikilinks]] across the vault."""
-    from agent.brain.vault import BrainVault
-    return await _learning_mutation(
-        body.profile,
-        lambda: {"ok": BrainVault().rename_node(body.old_id, body.new_id), "message": f"renamed {body.old_id} -> {body.new_id}"},
-        400,
-        "rename failed"
-    )
-
-
-@router.post("/api/learning/node/linkify")
-async def linkify_learning_mention(body: LearningNodeLinkify):
-    """Convert an unlinked text mention into an active [[wikilink]]."""
-    from agent.brain.vault import BrainVault
-    return await _learning_mutation(
-        body.profile,
-        lambda: {"ok": BrainVault().linkify_mention(body.source_id, body.target_id, body.term), "message": f"linked mention in {body.source_id}"},
-        400,
-        "linkify failed"
-    )
 
 
 # Portal — Pulse Portal auth + Tool Gateway routing status (read-only).

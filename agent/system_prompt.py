@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from agent.delegation_context import owned_kanban_task
 from agent.prompt_builder import (
-    ASYNC_HANDOFF_GUIDANCE, BRAIN_GUIDANCE, DEFAULT_AGENT_IDENTITY, EXECUTION_GUIDANCE_MODELS, GOOGLE_MODEL_OPERATIONAL_GUIDANCE,
+    ASYNC_HANDOFF_GUIDANCE, DEFAULT_AGENT_IDENTITY, EXECUTION_GUIDANCE_MODELS, GOOGLE_MODEL_OPERATIONAL_GUIDANCE,
     PULSE_AGENT_HELP_GUIDANCE, PULSE_AGENT_HELP_GUIDANCE_NO_SKILLS, KANBAN_GUIDANCE,
     PARALLEL_TOOL_CALL_GUIDANCE, PLATFORM_HINTS, SESSION_SEARCH_GUIDANCE,
     SKILLS_GUIDANCE, STEER_CHANNEL_NOTE, TASK_COMPLETION_GUIDANCE, TELEGRAM_RICH_MESSAGES_HINT,
@@ -291,7 +291,6 @@ def _tool_guidance_block(agent: Any) -> Optional[str]:
         _kanban_guidance = KANBAN_GUIDANCE
     tool_guidance = [
         memory_guidance,
-        BRAIN_GUIDANCE if "brain" in names else None,
         SESSION_SEARCH_GUIDANCE if "session_search" in names else None,
         SKILLS_GUIDANCE if "skill_manage" in names else None,
         _kanban_guidance,
@@ -515,18 +514,30 @@ def _timestamp_line(agent: Any) -> str:
 
 
 def _memory_parts(agent: Any) -> List[str]:
-    """Native Cognitive Brain prompt (authoritative self-awareness, active beliefs, user models)."""
+    """Built-in memory/USER.md blocks plus the external provider block (gated on
+    the same check ``inject_memory_provider_tools`` uses, so we never advertise
+    tools the toolset config gated off)."""
     parts: List[str] = []
-
-    # Native Cognitive Brain prompt (single source of truth for living memory & knowledge)
-    try:
-        from agent.brain.retrieval import build_static_brain_prompt
-        brain_block = build_static_brain_prompt()
-        if brain_block:
-            parts.append(brain_block)
-    except Exception as e:
-        logger.debug("Failed to inject native brain prompt: %s", e)
-
+    if agent._memory_store:
+        for enabled, kind in ((agent._memory_enabled, "memory"), (agent._user_profile_enabled, "user")):
+            block = agent._memory_store.format_for_system_prompt(kind) if enabled else None
+            if block:
+                parts.append(block)
+    # External memory provider system prompt block (additive to built-in). Gated on the same check
+    # ``inject_memory_provider_tools`` uses so we never advertise provider tools that the agent's toolset
+    # configuration has already gated off (#81014).
+    if agent._memory_manager:
+        try:
+            from agent.memory_manager import memory_provider_tools_exposed as _mem_exposed
+        except Exception:
+            _mem_exposed = None
+        if _mem_exposed is None or _mem_exposed(agent):
+            try:
+                _ext_mem_block = agent._memory_manager.build_system_prompt()
+            except Exception:
+                _ext_mem_block = None
+            if _ext_mem_block:
+                parts.append(_ext_mem_block)
     return parts
 
 

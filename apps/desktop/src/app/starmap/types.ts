@@ -69,11 +69,6 @@ export interface Palette {
   memoryInk: Rgb
   primary: Rgb
   skillInk: Rgb
-  selfInk: Rgb
-  beliefInk: Rgb
-  conceptInk: Rgb
-  userInk: Rgb
-  projectInk: Rgb
 }
 
 export interface Ring {

@@ -741,7 +741,7 @@ export const SECTIONS: DesktopConfigSection[] = [
   },
   {
     id: 'memory',
-    label: 'Knowledge & Memory',
+    label: 'Memory & Context',
     icon: Brain,
     keys: [
       'memory.memory_enabled',

@@ -80,18 +80,13 @@ def _agent_stale_thinking_on_wire(agent: Any) -> bool:
 
 
 def compose_multimodal_context_part(
-    ext_prefetch_cache: str, plugin_user_context: str, user_prompt: Optional[str] = None,
+    ext_prefetch_cache: str, plugin_user_context: str,
 ) -> Optional[str]:
-    """The ephemeral context of one turn (memory prefetch, brain subgraph recall, and ``pre_llm_call``)."""
+    """The ephemeral context of one turn (memory prefetch + ``pre_llm_call``) as one text
+    block; ``None`` when nothing is injected. The string sidecar appends it to ``content``;
+    a multimodal (list) turn carries it as a durable text part (#71998)."""
     fenced = build_memory_context_block(ext_prefetch_cache) if ext_prefetch_cache else ""
-    brain_recall = ""
-    if user_prompt:
-        try:
-            from agent.brain.retrieval import retrieve_turn_subgraph
-            brain_recall = retrieve_turn_subgraph(user_prompt) or ""
-        except Exception as e:
-            logger.debug("Turn brain recall skipped: %s", e)
-    injections = [part for part in (fenced, plugin_user_context, brain_recall) if part]
+    injections = [part for part in (fenced, plugin_user_context) if part]
     return "\n\n".join(injections) if injections else None
 
 
@@ -105,7 +100,7 @@ def compose_user_api_content(
     content is not a string (list content takes the text-part path)."""
     if not isinstance(content, str):
         return None
-    injection = compose_multimodal_context_part(ext_prefetch_cache, plugin_user_context, user_prompt=content)
+    injection = compose_multimodal_context_part(ext_prefetch_cache, plugin_user_context)
     return None if injection is None else content + "\n\n" + injection
 
 

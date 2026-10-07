@@ -140,12 +140,10 @@ import { $sidebarSessionRankIds } from '@/store/sidebar-sort'
 import {
   type AppView,
   ARTIFACTS_ROUTE,
-  BRAIN_ROUTE,
   CAPABILITIES_ROUTE,
   CRON_ROUTE,
   MESSAGING_ROUTE,
   SIDEBAR_NAV_AREA,
-  STARMAP_ROUTE,
   type SidebarNavContribution
 } from '../../routes'
 import type { SidebarNavItem } from '../../types'
@@ -245,13 +243,6 @@ const SIDEBAR_NAV: SidebarNavItem[] = [
     route: CRON_ROUTE,
     keybindActionId: 'nav.cron',
     tier: 'advanced'
-  },
-  {
-    id: 'brain',
-    label: '',
-    icon: props => <Codicon name="graph" {...props} />,
-    route: BRAIN_ROUTE,
-    keybindActionId: 'nav.brain'
   }
 ]
 
