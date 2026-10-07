@@ -33,6 +33,8 @@ CONTRACT_MODULES = [
     "agent.brain.index",
     "agent.brain.decay",
     "agent.brain.similarity",
+    "agent.brain.migrate",
+    "agent.brain.recall",
 ]
 
 # Names that MUST keep existing: removing them broke the live agent before.
@@ -105,12 +107,61 @@ class TestImportedSymbolsExist(unittest.TestCase):
 class TestBrainPackageIsImportSafe(unittest.TestCase):
     FORBIDDEN_TOP_LEVEL = ("numpy", "torch", "fastembed", "sentence_transformers", "onnxruntime", "ruamel")
 
+    def test_every_name_in_brain_all_is_resolvable(self):
+        """__all__ must not advertise a symbol that does not exist."""
+        import agent.brain as brain
+
+        missing = [name for name in brain.__all__ if not hasattr(brain, name)]
+        self.assertEqual(missing, [], f"agent.brain.__all__ advertises missing symbols: {missing}")
+
+    def test_public_api_is_callable(self):
+        import agent.brain as brain
+
+        for name in (
+            "recall_memories",
+            "recall_block",
+            "extract_cues",
+            "migrate_legacy_memory",
+            "plan_migration",
+            "text_similarity",
+        ):
+            self.assertTrue(callable(getattr(brain, name)), name)
+        for name in ("BrainVault", "BrainIndex", "RecallResult", "RecallHit"):
+            self.assertTrue(isinstance(getattr(brain, name), type), name)
+
+    def test_submodules_are_not_shadowed_by_the_package_reexports(self):
+        """`import agent.brain.recall` must give the MODULE, not a same-named function.
+
+        A previous version of agent/brain/__init__.py cached the re-exported functions into
+        the package globals, so `import agent.brain.similarity as sim` returned the
+        `similarity()` function and every `sim.tokenize(...)` call failed with
+        "'function' object has no attribute 'tokenize'".
+        """
+        import agent.brain.recall as recall_module
+        import agent.brain.similarity as similarity_module
+        from agent.brain.recall import recall as recall_fn
+        from agent.brain.similarity import similarity as similarity_fn
+
+        self.assertTrue(callable(recall_fn))
+        self.assertTrue(callable(similarity_fn))
+        self.assertEqual(recall_module.__name__, "agent.brain.recall")
+        self.assertEqual(similarity_module.__name__, "agent.brain.similarity")
+        # The module-level names are distinct objects from the package-level aliases.
+        import agent.brain as brain
+
+        self.assertIs(brain.recall_memories, recall_fn)
+        self.assertIs(brain.text_similarity, similarity_fn)
+        self.assertTrue(callable(similarity_module.tokenize))
+        self.assertTrue(callable(recall_module.recall_block))
+
     def test_importing_the_package_does_not_pull_heavy_deps(self):
         import agent.brain  # noqa: F401
         import agent.brain.decay  # noqa: F401
         import agent.brain.index  # noqa: F401
+        import agent.brain.migrate  # noqa: F401
         import agent.brain.models  # noqa: F401
         import agent.brain.parser  # noqa: F401
+        import agent.brain.recall  # noqa: F401
         import agent.brain.similarity  # noqa: F401
         import agent.brain.vault  # noqa: F401
 

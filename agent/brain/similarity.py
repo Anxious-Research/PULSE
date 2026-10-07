@@ -190,6 +190,29 @@ def jaccard(a_text: str, b_text: str) -> float:
     return len(a & b) / len(a | b)
 
 
+def overlap_coefficient(a_text_or_tokens, b_text_or_tokens) -> float:
+    """|A ∩ B| / min(|A|, |B|) — coverage, not symmetric similarity.
+
+    This is the right measure when one side is much shorter than the other, which is exactly
+    the recall case: a 6-word query against a 400-word note. Jaccard divides by the *union*,
+    so it collapses toward zero as the note gets longer — a note that contains every query
+    term still scores poorly. The overlap coefficient asks "how much of the shorter side is
+    found in the longer side", so a short query that is fully covered scores 1.0 regardless
+    of document length.
+    """
+    a = token_set(a_text_or_tokens) if isinstance(a_text_or_tokens, str) else set(a_text_or_tokens)
+    b = token_set(b_text_or_tokens) if isinstance(b_text_or_tokens, str) else set(b_text_or_tokens)
+    if not a or not b:
+        return 0.0
+    return len(a & b) / min(len(a), len(b))
+
+
+def bigrams(tokens: Iterable[str]) -> Set[str]:
+    """Adjacent word pairs as ``{"first second", ...}`` — lets a phrase cue be matched."""
+    seq = list(tokens)
+    return {f"{a} {b}" for a, b in zip(seq, seq[1:])}
+
+
 def similarity(a_text: str, b_text: str, *, embedder: Any = None) -> float:
     """Blended similarity in [0, 1]: vector cosine plus word overlap."""
     if not str(a_text or "").strip() or not str(b_text or "").strip():

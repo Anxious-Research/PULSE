@@ -76,6 +76,36 @@ class TestSimilarityScores(unittest.TestCase):
         self.assertAlmostEqual(sim.cosine([1.0, 0.0], [1.0, 0.0]), 1.0, places=9)
 
 
+class TestOverlapCoefficient(unittest.TestCase):
+    def test_short_query_fully_covered_scores_one(self):
+        """Jaccard would collapse this toward zero as the note grows; overlap must not."""
+        # Distinct filler words: token sets, not counts, so repeats would not dilute.
+        note = " ".join([f"filler{i}" for i in range(200)] + ["forgetting", "curve"])
+        self.assertLess(sim.jaccard("forgetting curve", note), 0.05)
+        self.assertAlmostEqual(sim.overlap_coefficient("forgetting curve", note), 1.0, places=9)
+
+    def test_length_independent(self):
+        short = "forgetting curve"
+        long_note = "forgetting curve " + " ".join(["x"] * 500)
+        self.assertAlmostEqual(sim.overlap_coefficient(short, long_note), 1.0, places=9)
+
+    def test_partial_coverage(self):
+        score = sim.overlap_coefficient("forgetting curve work", "the forgetting curve decays")
+        self.assertAlmostEqual(score, 2 / 3, places=6)
+
+    def test_empty_input_is_zero(self):
+        self.assertEqual(sim.overlap_coefficient("", "anything"), 0.0)
+        self.assertEqual(sim.overlap_coefficient("x", ""), 0.0)
+
+    def test_accepts_token_sets(self):
+        self.assertAlmostEqual(sim.overlap_coefficient({"a", "b"}, {"a", "b", "c"}), 1.0, places=9)
+
+    def test_bigrams(self):
+        self.assertEqual(sim.bigrams(["a", "b", "c"]), {"a b", "b c"})
+        self.assertEqual(sim.bigrams(["solo"]), set())
+        self.assertEqual(sim.bigrams([]), set())
+
+
 class TestNearDuplicate(unittest.TestCase):
     def test_exact_repeat_is_duplicate(self):
         self.assertTrue(sim.is_near_duplicate("remember this fact", "remember this fact"))

@@ -93,6 +93,19 @@ class TestRoundTrip(VaultTestCase):
     def test_missing_node_is_none(self):
         self.assertIsNone(self.vault.read_node("concept/nope"))
 
+    def test_category_follows_the_path_without_an_explicit_argument(self):
+        """A node written at user/x is a 'user' node, not a 'concept' node."""
+        node = self.vault.write_node("user/preferences", "body")
+        self.assertEqual(node.category, "user")
+        self.assertEqual(self.vault.read_node("user/preferences").category, "user")
+
+    def test_explicit_category_wins_over_the_path(self):
+        node = self.vault.write_node("concept/x", "body", category="belief")
+        self.assertEqual(node.category, "belief")
+
+    def test_bare_id_defaults_to_concept(self):
+        self.assertEqual(self.vault.write_node("thing", "body").category, "concept")
+
     def test_list_all_nodes_sorted_and_excludes_dotfiles(self):
         self.vault.write_node("concept/b", "b")
         self.vault.write_node("concept/a", "a")

@@ -292,6 +292,7 @@ class BrainVault:
         aliases: Optional[Iterable[str]] = None,
         related: Optional[Iterable[str]] = None,
         source_turn: Optional[str] = None,
+        extra: Optional[Dict[str, Any]] = None,
         now: Optional[float] = None,
         mark_access: bool = False,
     ) -> BrainNode:
@@ -313,7 +314,10 @@ class BrainVault:
 
             fm = Frontmatter.from_dict(prior.to_dict(), node_id=normalized)
             fm.title = title or fm.title or normalized.split("/")[-1].replace("-", " ")
-            fm.category = NodeCategory.coerce(category or fm.category or normalized.split("/")[0]).value
+            # Path is authoritative: a node at user/preferences is a 'user' node even when the
+            # caller passes no explicit category. Previously the prior/default category won, so
+            # every node written without an explicit category was labelled 'concept'.
+            fm.category = NodeCategory.coerce(category or normalized.split("/")[0] or fm.category).value
             if tags is not None:
                 fm.tags = [str(t).strip() for t in tags if str(t).strip()]
             if confidence is not None:
@@ -330,6 +334,8 @@ class BrainVault:
                 fm.related = [normalize_node_id(r) for r in related if str(r).strip()]
             if source_turn is not None:
                 fm.source_turn = str(source_turn)
+            if extra:
+                fm.extra.update({str(k): v for k, v in extra.items()})
 
             fm.touch_created(now=ts)
             if mark_access:
