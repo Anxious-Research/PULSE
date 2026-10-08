@@ -101,12 +101,21 @@ class TestTurnWiring(WiringTestCase):
 
 
 class TestSystemPromptWiring(WiringTestCase):
-    def test_prefix_absent_from_the_system_prompt_by_default(self):
+    def test_prefix_present_in_the_system_prompt_by_default(self):
+        """v3: Layer 1 is ON by default (specs/brain.md §11.1) — identity loads out of box."""
         from agent.system_prompt import _memory_parts
 
         self.vault.write_node("self/identity", "PULSE is a single entity.", title="Identity", now=T0)
         joined = "\n".join(_memory_parts(self.agent))
-        self.assertNotIn("PULSE is a single entity.", joined, "Layer 1 must be opt-in")
+        self.assertIn("PULSE is a single entity.", joined)
+
+    def test_prefix_absent_when_disabled(self):
+        from agent.system_prompt import _memory_parts
+
+        self.agent._agent_config = {"brain": {"prefix_enabled": False}}
+        self.vault.write_node("self/identity", "PULSE is a single entity.", title="Identity", now=T0)
+        joined = "\n".join(_memory_parts(self.agent))
+        self.assertNotIn("PULSE is a single entity.", joined, "Layer 1 must be opt-out")
 
     def test_prefix_appears_when_enabled(self):
         from agent.system_prompt import _memory_parts
