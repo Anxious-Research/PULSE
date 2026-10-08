@@ -50,6 +50,11 @@ logger = logging.getLogger(__name__)
 PRIMARY_EXPLICIT = 0.40
 PRIMARY_CORRECTION = 0.30
 PRIMARY_OUTCOME = 0.32
+#: A declarative statement about an entity ("Project Alpha uses architecture B") asserts how
+#: things ARE — the shape of durable knowledge. Weighted to clear the gate with novelty alone
+#: (0.34 + 0.10 = 0.44 fresh, ≥0.41 in a populated vault), so ordinary project facts are learned
+#: without an explicit "remember this", while chatter (no relational verb, no entity anchor) stays out.
+PRIMARY_DECLARATIVE = 0.34
 MODIFIER_NOVELTY = 0.10
 MODIFIER_RECURRENCE = 0.05
 
@@ -112,6 +117,65 @@ _CORRECTION_WEAK = re.compile(
     re.IGNORECASE,
 )
 _CORRECTION_WEAK_MIN = 2
+# A turn that OPENS with one of these revises what PULSE holds even when no other marker fires:
+# "Actually, that happened yesterday" is a revision, not idle narration. The comma/colon and the
+# negative lookahead matter — "actually let me check the logs" is discourse filler, not a correction.
+_CORRECTION_OPENER_RE = re.compile(
+    r"^\s*(?:actually|no|wait|correction|hold on|sorry)\s*[,:]\s*"
+    r"(?!let me\b|i'?ll\b|i will\b|could\b|can we\b|should we\b|maybe\b|hold on\b)",
+    re.IGNORECASE,
+)
+
+# ── declarative-fact detection ─────────────────────────────────────────────
+#
+# "Project X uses architecture A." is knowledge; "thanks, cool" is not. The discriminator is
+# grammatical: a declarative fact links a subject to a predicate with a *stable* relational verb,
+# and it is *about* something recallable (a proper noun, a coded name, or a domain concept).
+# Spec/doc prose is already gated by ``_is_specification_prose`` before this runs, so a plain
+# sentence that survives that gate and has this shape is genuine conversational knowledge.
+_DECLARATIVE_VERBS = re.compile(
+    r"\b(?:is|are|was|were|has|have|had|uses?|used|requires?|required|"
+    r"depends?\s+on|contains?|includes?|provides?|stores?|connects?|links?|"
+    r"supports?|exposes?|represents?|means?|equals?|consists?\s+of|"
+    r"should|must|will|needs?\s+to|serves?|powers?|runs?\s+on)\b",
+    re.IGNORECASE,
+)
+
+#: Domain concept words: a sentence anchored on one of these is about PULSE's world, so its
+#: linking verb asserts durable project knowledge rather than casual chat ("it is fine").
+_DECLARATIVE_DOMAIN_NOUNS = frozenset({
+    "pulse", "user", "project", "architecture", "brain", "graph", "memory", "system",
+    "model", "design", "plan", "decision", "feature", "api", "database", "server",
+    "deployment", "codebase", "repo", "repository", "workflow", "pipeline", "schema",
+    "config", "agent", "skill", "tool", "vault", "relationship", "node", "edge",
+    "recall", "encoder", "consolidation", "decay",
+})
+
+
+def _has_entity_anchor(statement: str) -> bool:
+    """True when a statement is *about* an entity PULSE could later recall it by.
+
+    Two anchors count: a proper noun / acronym (a capitalised token after the first word —
+    "Project Alpha", "PULSE", "architecture B"), or a domain concept word ("the graph", "the
+    Brain"). The first-word capital of "The graph…" is sentence case, not a proper noun, so it
+    is deliberately not treated as an anchor.
+    """
+    words = statement.split()
+    for i, word in enumerate(words):
+        core = word.strip("\"'(),.;:!?")
+        if i > 0 and len(core) >= 2 and core[0].isupper() and (core.isupper() or core[1:].islower()):
+            return True
+    lower = statement.lower()
+    return any(re.search(rf"\b{re.escape(noun)}\b", lower) for noun in _DECLARATIVE_DOMAIN_NOUNS)
+
+
+def _declarative_signal(text: str) -> float:
+    """``1.0`` for a declarative statement about a recallable entity, else ``0.0``."""
+    if not _DECLARATIVE_VERBS.search(text):
+        return 0.0
+    if not _has_entity_anchor(text):
+        return 0.0
+    return 1.0
 
 _OUTCOME_PATTERNS: Tuple[re.Pattern, ...] = tuple(
     re.compile(pattern, re.IGNORECASE)
@@ -125,6 +189,9 @@ _OUTCOME_PATTERNS: Tuple[re.Pattern, ...] = tuple(
         # Broke — equally memorable, and the reason "what went wrong" is recallable.
         r"\bbroke\b", r"\bbroken\b", r"\bregression\b", r"\breverted\b", r"\brolled back\b",
         r"\bfailed\b", r"\bfailure\b", r"\boutage\b",
+        # State changes — a change that outlives the turn ("we changed X", "migrated to Y").
+        r"\bchanged?\b", r"\bupdated?\b", r"\bmodified\b", r"\bswitched?\b", r"\bmigrated\b",
+        r"\breplaced?\b", r"\brefactored\b", r"\brewrote\b", r"\brenamed\b",
         # Verified state.
         r"\btests? pass", r"\bpassing\b", r"\bverified\b", r"\bit works\b", r"\bworks now\b",
         # Hinglish, same states.
@@ -178,6 +245,7 @@ class SalienceSignals:
     novelty: float = 0.0
     recurrence: float = 0.0
     outcome: float = 0.0
+    declarative: float = 0.0
 
     def as_dict(self) -> Dict[str, float]:
         return {
@@ -186,6 +254,7 @@ class SalienceSignals:
             "novelty": round(self.novelty, 4),
             "recurrence": round(self.recurrence, 4),
             "outcome": round(self.outcome, 4),
+            "declarative": round(self.declarative, 4),
         }
 
 
@@ -201,6 +270,7 @@ def score_salience(signals: SalienceSignals) -> float:
         PRIMARY_EXPLICIT * max(0.0, min(1.0, signals.explicit))
         + PRIMARY_CORRECTION * max(0.0, min(1.0, signals.correction))
         + PRIMARY_OUTCOME * max(0.0, min(1.0, signals.outcome))
+        + PRIMARY_DECLARATIVE * max(0.0, min(1.0, signals.declarative))
         + MODIFIER_NOVELTY * max(0.0, min(1.0, signals.novelty))
         + MODIFIER_RECURRENCE * max(0.0, min(1.0, signals.recurrence))
     )
@@ -240,6 +310,10 @@ def _correction_signal(text: str) -> float:
     for pattern in _CORRECTION_STRONG:
         if pattern.search(text):
             return 1.0
+    if _CORRECTION_OPENER_RE.match(text):
+        # A turn that opens with "Actually, …" / "No, …" revises what PULSE holds even when no
+        # other marker fires — the opener itself is the correction signal.
+        return 1.0
     if len(_CORRECTION_WEAK.findall(text)) >= _CORRECTION_WEAK_MIN:
         return 0.7
     return 0.0
@@ -268,6 +342,7 @@ def detect_signals(
     explicit = _marker_signal(text, _EXPLICIT_PATTERNS)
     correction = _correction_signal(text)
     outcome = _marker_signal(text, _OUTCOME_PATTERNS)
+    declarative = _declarative_signal(text)
 
     texts = [text for text in (str(t or "") for t in corpus) if text.strip()]
     if not texts:
@@ -285,6 +360,7 @@ def detect_signals(
         novelty=novelty,
         recurrence=recurrence,
         outcome=outcome,
+        declarative=declarative,
     )
 
 
@@ -403,10 +479,15 @@ def extract_candidates(
         )
         # Durable vs episode is decided by *kind of evidence*, not by score. An explicit statement
         # is one the user asked PULSE to hold ("remember that I prefer Hinglish", "my name is",
-        # "from now on"), and a correction is one that must take effect now — both are knowledge.
-        # A bare outcome is an event: "the deploy broke" is an episode until the pattern behind it
-        # recurs and consolidation promotes it (§3.1 "created mostly by consolidation").
-        durable = signals.correction >= 0.5 or signals.explicit >= 1.0
+        # "from now on"), a correction is one that must take effect now, and a declarative fact is
+        # a stable assertion about an entity ("Project Alpha uses architecture B") — all three are
+        # knowledge. A bare outcome is an event: "the deploy broke" is an episode until the pattern
+        # behind it recurs and consolidation promotes it (§3.1 "created mostly by consolidation").
+        durable = (
+            signals.correction >= 0.5
+            or signals.explicit >= 1.0
+            or signals.declarative >= 1.0
+        )
         candidates.append(
             MemoryCandidate(
                 text=statement,

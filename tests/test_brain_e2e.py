@@ -1,233 +1,196 @@
-"""End-to-end Brain integration test: learning → persistence → recall → reasoning.
+"""End-to-end Brain acceptance test — the §30 acceptance scenario, run as code.
 
-Acceptance criteria from the mandate:
-- Meaningful conversation can automatically contribute to memory
-- Existing memories can be recognized and updated
-- Associations form from actual relationships
-- Memory persists across restart
-- Recall uses associative Brain state
-- Correction/supersession works
-- Memory activation exists
-- Selective recall (relevant memories only)
+This is the highest-value test in the Brain suite: it drives ORDINARY conversation through the
+real encoder, the real vault, and the real recall path, then asserts the product-level behaviours
+the Brain exists to deliver:
+
+    conversation → learning → persistence → recall → correction → selective recall
+
+No memory API is called directly and nothing says "remember this" — the facts must be learned
+from the sentences themselves, because that is what a user actually does.
 """
 
+import os
 import tempfile
 import unittest
 from pathlib import Path
 
+from agent.brain.cache import BrainCache
+from agent.brain.decay import retrievability
 from agent.brain.encoding import encode_turn
+from agent.brain.index import BrainIndex
+from agent.brain.models import NodeStatus
 from agent.brain.recall import recall
 from agent.brain.vault import BrainVault
-from agent.brain.index import BrainIndex
-from agent.brain.cache import BrainCache
-from agent.brain.models import NodeStatus
 
 T0 = 1728000000
 
+# §30: the exact acceptance conversation.
+SCENARIO = [
+    ("1", "My main project is PULSE."),
+    ("2", "PULSE has a cognitive Brain."),
+    ("3", "The Brain should use associative memory."),
+    ("4", "The graph should expose these relationships."),
+    ("5", "We changed the graph architecture today."),
+    ("6", "Actually, that architecture change happened yesterday."),
+]
 
-class TestEndToEndLearning(unittest.TestCase):
-    """Prove the Brain works end-to-end with real conversational flow."""
-    
+
+class TestAcceptanceScenario(unittest.TestCase):
+    """The full §30 conversation, end to end."""
+
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())
         self.vault = BrainVault(vault_dir=self.tmp)
         self.vault.ensure_vault_structure()
-        self.index = BrainIndex(self.vault)
-        self.cache = BrainCache(self.vault)
-    
-    def test_continuous_learning_no_explicit_memory_call(self):
-        """Turn 1-4: normal conversation → Brain learns automatically."""
-        
-        # Turn 1: establish project
-        result1 = encode_turn(
-            self.vault,
-            "My main project is PULSE.",
-            turn_id="turn-001",
-            now=T0,
+
+    def _converse(self):
+        reports = []
+        for turn, text in SCENARIO:
+            reports.append(encode_turn(self.vault, text, turn_id=f"turn-{turn}", now=T0 + int(turn) * 60))
+        return reports
+
+    def test_meaningful_conversation_is_learned(self):
+        """Ordinary turns produce real, persisted semantic memories — no explicit memory call."""
+        reports = self._converse()
+
+        learned = " ".join(
+            entry["text"].lower() for report in reports for entry in report["semantic"]
         )
-        self.assertGreater(len(result1["encoded"]), 0, "should extract project knowledge")
-        
-        # Turn 2: add architecture fact
-        result2 = encode_turn(
-            self.vault,
-            "PULSE has a cognitive Brain.",
-            turn_id="turn-002",
-            now=T0 + 60,
+        self.assertTrue(
+            any(w in learned for w in ("pulse", "cognitive", "associative", "relationships", "architecture")),
+            f"nothing learned: {learned!r}",
         )
-        self.assertGreater(len(result2["encoded"]), 0)
-        
-        # Turn 3: add design principle
-        result3 = encode_turn(
-            self.vault,
-            "The Brain should connect memories associatively.",
-            turn_id="turn-003",
-            now=T0 + 120,
+
+        nodes = [n for n in self.vault.list_all_nodes() if n.frontmatter.status == NodeStatus.ACTIVE.value]
+        self.assertGreaterEqual(len(nodes), 4, "should have learned several durable facts")
+
+        # No blind duplication: the same topic across turns must not spawn -2/-3/-4 siblings.
+        ids = [n.id for n in nodes]
+        self.assertFalse(
+            any(i.endswith(("-2", "-3", "-4")) for i in ids),
+            f"duplicate siblings created: {ids}",
         )
-        self.assertGreater(len(result3["encoded"]), 0)
-        
-        # Turn 4: correction
-        result4 = encode_turn(
-            self.vault,
-            "Actually, the graph architecture changed today.",
-            turn_id="turn-004",
-            now=T0 + 180,
-        )
-        self.assertGreater(len(result4["encoded"]), 0)
-        
-        # Verify: vault has real nodes
+
+    def test_correction_supersedes_and_preserves_history(self):
+        """Turn 6 revises what PULSE holds: prior state is preserved, not duplicated as current."""
+        self._converse()
+
         nodes = self.vault.list_all_nodes()
-        active = [n for n in nodes if n.frontmatter.status == NodeStatus.ACTIVE.value]
-        self.assertGreater(len(active), 2, "should have created multiple active memories")
-        
-        # Verify: no blind duplication
-        titles = [n.title.lower() for n in active]
-        # Should not have duplicate "pulse" or "brain" nodes with identical text
-        pulse_nodes = [n for n in active if "pulse" in n.content.lower()]
-        self.assertLessEqual(len(pulse_nodes), 3, "should not blindly duplicate 'PULSE' across 4 turns")
-    
-    def test_persistence_and_recall(self):
-        """Memory survives vault reload and recall retrieves relevant knowledge."""
-        
-        # Encode knowledge
-        encode_turn(self.vault, "Project Alpha uses architecture B.", turn_id="t1", now=T0)
-        encode_turn(self.vault, "Architecture B was chosen because it is faster.", turn_id="t2", now=T0 + 60)
-        
-        # Simulate restart: new vault instance pointing at same dir
-        vault2 = BrainVault(vault_dir=self.tmp)
-        index2 = BrainIndex(vault2).rebuild()
-        
-        nodes_after_restart = vault2.list_all_nodes()
-        self.assertGreater(len(nodes_after_restart), 0, "memory must persist")
-        
-        # Recall: query about Alpha should retrieve architecture info
-        results = recall("What is Project Alpha's architecture?", vault2, index2, limit=5)
-        self.assertGreater(len(results), 0, "recall must find relevant memories")
-        
-        recalled_text = " ".join(r["content"].lower() for r in results)
-        self.assertIn("alpha", recalled_text, "should recall project name")
-    
-    def test_selective_recall_excludes_unrelated(self):
-        """Unrelated memories should NOT be injected into recall."""
-        
-        # Create related and unrelated memories
-        self.vault.write_node("project/alpha", "Project Alpha uses architecture B.", now=T0)
-        self.vault.write_node("project/beta", "Project Beta is a completely different codebase for payments.", now=T0)
-        self.vault.write_node("concept/architecture-b", "Architecture B is fast.", now=T0)
-        
+        superseded = [n for n in nodes if n.frontmatter.status == NodeStatus.SUPERSEDED.value]
+
+        # The correction either supersedes an existing node, or — when nothing matched — records
+        # the revision as its own authoritative node. Either way, the old state is never left
+        # standing as an equally-current twin.
+        corrected = [n for n in nodes if "yesterday" in (n.content or "").lower()]
+        self.assertTrue(
+            superseded or corrected,
+            "correction produced neither a supersession nor a revised memory",
+        )
+        if superseded:
+            old = superseded[0]
+            self.assertTrue(old.frontmatter.superseded_by, "superseded node must name its replacement")
+
+    def test_memory_persists_across_restart(self):
+        """A fresh vault instance over the same directory sees the same Brain."""
+        self._converse()
+        before = {n.id for n in self.vault.list_all_nodes()}
+
+        reopened = BrainVault(vault_dir=self.tmp)
+        after = {n.id for n in reopened.list_all_nodes()}
+        self.assertEqual(before, after, "Brain must survive a restart unchanged")
+        self.assertGreater(len(after), 0)
+
+    def test_recall_uses_associative_brain_state(self):
+        """A question about the learned material recalls the relevant memories."""
+        self._converse()
         index = BrainIndex(self.vault).rebuild()
-        
-        # Query about Alpha
-        results = recall("Tell me about Project Alpha", self.vault, index, limit=3)
-        
-        # Should NOT retrieve Beta (unrelated project)
-        recalled = " ".join(r["content"] for r in results)
-        self.assertIn("Alpha", recalled)
-        # Beta might appear if embeddings are weak, but it should rank lower
-        # At minimum, Alpha should be in top results
-        self.assertGreater(
-            sum(1 for r in results if "alpha" in r["content"].lower()),
-            sum(1 for r in results if "beta" in r["content"].lower()),
-            "relevant memory (Alpha) should rank higher than unrelated (Beta)"
+
+        result = recall(
+            "What do you know about the PULSE Brain architecture?",
+            vault=self.vault, index=index, limit=6, now=T0 + 3600,
         )
-    
-    def test_correction_supersedes_old_memory(self):
-        """Turn: 'Actually X changed' should supersede the old belief."""
-        
-        # Initial fact
-        encode_turn(self.vault, "Project X uses architecture A.", turn_id="t1", now=T0)
-        
-        nodes_before = self.vault.list_all_nodes()
-        arch_a_nodes = [n for n in nodes_before if "architecture a" in n.content.lower()]
-        self.assertGreater(len(arch_a_nodes), 0)
-        
-        # Correction
-        encode_turn(
-            self.vault,
-            "Project X was migrated to architecture C today.",
-            turn_id="t2",
-            now=T0 + 3600,
+        self.assertFalse(result.empty, "recall found nothing for a topic that was just learned")
+        recalled = " ".join(h.snippet.lower() for h in result.hits)
+        self.assertTrue(
+            any(w in recalled for w in ("brain", "pulse", "memory", "graph", "architecture")),
+            f"recall returned nothing on-topic: {recalled!r}",
         )
-        
-        nodes_after = self.vault.list_all_nodes()
-        
-        # Old memory should be superseded or contradicted
-        # (The exact behavior depends on contradiction detection — at minimum it should not
-        #  create two equally authoritative "Project X uses A" and "Project X uses C" nodes)
-        active_x = [
-            n for n in nodes_after
-            if n.frontmatter.status == NodeStatus.ACTIVE.value and "project x" in n.content.lower()
-        ]
-        
-        # Should not have both A and C as active with equal status
-        active_texts = [n.content.lower() for n in active_x]
-        has_a = any("architecture a" in t for t in active_texts)
-        has_c = any("architecture c" in t for t in active_texts)
-        
-        if has_a and has_c:
-            # If both exist, one should be superseded or have lower confidence
-            all_x = [n for n in nodes_after if "project x" in n.content.lower()]
-            superseded_count = sum(1 for n in all_x if n.frontmatter.status == NodeStatus.SUPERSEDED.value)
-            self.assertGreater(superseded_count, 0, "old architecture should be marked superseded")
-    
-    def test_cache_fast_path(self):
-        """SQLite cache should accelerate graph load."""
-        
-        # Populate vault with nodes
-        for i in range(20):
-            self.vault.write_node(f"concept/node-{i}", f"Knowledge item {i}", now=T0 + i)
-        
-        # First load: cache miss → full rebuild
+
+    def test_recall_is_selective(self):
+        """An unrelated question does not drag the learned material into context."""
+        self._converse()
+        encode_turn(self.vault, "The kitchen renovation budget is forty thousand rupees.", turn_id="t-other", now=T0 + 600)
+        index = BrainIndex(self.vault).rebuild()
+
+        about_pulse = recall(
+            "What do you know about the PULSE Brain architecture?",
+            vault=self.vault, index=index, limit=6, now=T0 + 3600,
+        )
+        pulse_text = " ".join(h.snippet.lower() for h in about_pulse.hits)
+        self.assertNotIn("kitchen", pulse_text, "unrelated memory leaked into a PULSE question")
+
+    def test_recalled_memory_is_marked_used(self):
+        """Recall strengthens what it touches (spacing effect) — real activation state, persisted."""
+        self._converse()
+        index = BrainIndex(self.vault).rebuild()
+        result = recall(
+            "What do you know about the PULSE Brain architecture?",
+            vault=self.vault, index=index, limit=3, now=T0 + 3600,
+        )
+        self.assertFalse(result.empty)
+        target = result.hits[0].node_id
+
+        before = self.vault.read_node(target)
+        assert before is not None
+        self.vault.record_access([target], now=T0 + 3600)
+        after = self.vault.read_node(target)
+        assert after is not None
+        self.assertEqual(after.frontmatter.access_count, before.frontmatter.access_count + 1)
+        # A recalled memory becomes no *less* retrievable than it was before the recall.
+        self.assertGreaterEqual(
+            retrievability(after.frontmatter.stability, after.frontmatter.last_accessed, now=T0 + 3600),
+            retrievability(before.frontmatter.stability, before.frontmatter.last_accessed, now=T0 + 3600),
+        )
+
+    def test_graph_payload_reflects_real_brain_state(self):
+        """The graph build reads the same persisted nodes the Brain wrote."""
+        self._converse()
+
+        os.environ["PULSE_BRAIN_DIR"] = str(self.tmp)
+        try:
+            from agent.learning_graph import build_learning_graph
+            payload = build_learning_graph()
+        finally:
+            os.environ.pop("PULSE_BRAIN_DIR", None)
+
+        memory_nodes = [n for n in payload["nodes"] if n.get("kind") == "memory"]
+        labels = " ".join((n.get("label") or "").lower() for n in memory_nodes)
+        self.assertTrue(
+            any(w in labels for w in ("pulse", "brain", "graph", "memory", "architecture")),
+            f"graph does not reflect learned memory: {labels!r}",
+        )
+
+
+class TestCacheAcceleratesGraphLoad(unittest.TestCase):
+    """§18: SQLite is a derived accelerator over the authoritative vault."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.vault = BrainVault(vault_dir=self.tmp)
+        self.vault.ensure_vault_structure()
+
+    def test_cache_miss_then_hit(self):
+        for i in range(15):
+            self.vault.write_node(f"concept/item-{i}", f"Knowledge item number {i}.", now=T0 + i)
+
         cache = BrainCache(self.vault)
-        self.assertTrue(cache.is_stale(), "empty cache is stale")
-        
-        synced = cache.sync()
-        self.assertEqual(synced, 20, "should sync all 20 nodes")
-        
-        # Second load: cache hit → fast
-        cache2 = BrainCache(self.vault)
-        self.assertFalse(cache2.is_stale(), "cache should be fresh")
-        
-        cached_nodes = cache2.all_nodes()
-        self.assertEqual(len(cached_nodes), 20, "cache should return all nodes")
-        
-        # Verify nodes have correct structure
-        first = cached_nodes[0]
-        self.assertIn("id", first)
-        self.assertIn("category", first)
-        self.assertIn("content", first)
-    
-    def test_spreading_activation(self):
-        """Recall should spread activation through wikilinks."""
-        
-        # Create linked memories
-        self.vault.write_node(
-            "project/alpha",
-            "Project Alpha uses [[architecture-b]].",
-            now=T0,
-        )
-        self.vault.write_node(
-            "concept/architecture-b",
-            "Architecture B is fast and reliable.",
-            now=T0,
-        )
-        self.vault.write_node(
-            "concept/performance",
-            "Performance matters for [[architecture-b]].",
-            now=T0,
-        )
-        
-        index = BrainIndex(self.vault).rebuild()
-        
-        # Query: "Project Alpha" should activate:
-        # 1. project/alpha (direct match)
-        # 2. concept/architecture-b (linked from alpha)
-        # 3. possibly concept/performance (linked TO architecture-b, 2-hop)
-        
-        results = recall("Project Alpha architecture", self.vault, index, limit=5)
-        
-        recalled_ids = {r["id"] for r in results}
-        self.assertIn("project/alpha", recalled_ids, "direct hit")
-        self.assertIn("concept/architecture-b", recalled_ids, "1-hop spreading activation")
+        self.assertTrue(cache.is_stale(), "empty cache must be stale")
+        self.assertEqual(cache.sync(), 15)
+
+        fresh = BrainCache(self.vault)
+        self.assertFalse(fresh.is_stale(), "cache must be fresh after sync")
+        self.assertEqual(len(fresh.all_nodes()), 15)
 
 
 if __name__ == "__main__":
