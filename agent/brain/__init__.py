@@ -69,6 +69,18 @@ __all__ = [
     "overlap_coefficient",
     "text_similarity",
     "tokenize",
+    # encoding & contradiction
+    "contradicts",
+    "detect_signals",
+    "encode_turn",
+    "extract_candidates",
+    "find_contradictions",
+    "score_salience",
+    # consolidation
+    "consolidate_vault",
+    "find_promotion_candidates",
+    "merge_near_duplicates",
+    "relink_mentions",
 ]
 
 # Public name -> (submodule, attribute). Only names that do NOT collide with a submodule.
@@ -106,6 +118,16 @@ _LAZY: dict = {
     "overlap_coefficient": ("similarity", "overlap_coefficient"),
     "text_similarity": ("similarity", "similarity"),
     "tokenize": ("similarity", "tokenize"),
+    "contradicts": ("correction", "contradicts"),
+    "detect_signals": ("encoding", "detect_signals"),
+    "encode_turn": ("encoding", "encode_turn"),
+    "extract_candidates": ("encoding", "extract_candidates"),
+    "find_contradictions": ("correction", "find_contradictions"),
+    "score_salience": ("encoding", "score_salience"),
+    "consolidate_vault": ("consolidate", "consolidate_vault"),
+    "find_promotion_candidates": ("consolidate", "find_promotion_candidates"),
+    "merge_near_duplicates": ("consolidate", "merge_near_duplicates"),
+    "relink_mentions": ("consolidate", "relink_mentions"),
 }
 
 

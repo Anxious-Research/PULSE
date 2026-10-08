@@ -37,6 +37,9 @@ CONTRACT_MODULES = [
     "agent.brain.recall",
     "agent.brain.prefix",
     "agent.brain.session",
+    "agent.brain.correction",
+    "agent.brain.encoding",
+    "agent.brain.consolidate",
 ]
 
 # Names that MUST keep existing: removing them broke the live agent before.

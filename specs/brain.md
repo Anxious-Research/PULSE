@@ -292,17 +292,14 @@ nodes with category/confidence/tags — the same endpoint the desktop already ca
 | **S2** ✅ | Migration importer (`MEMORY.md`/`USER.md` → vault), idempotent, dry-run first | run on a copy, diff | no |
 | **S3** ✅ | Recall engine (cue → activation → bounded block), flag-gated | recall tests | no |
 | **S4** ✅ | Prompt integration (Layer 1/2), flag-gated | cache-prefix unchanged; inject/skip behaviour | yes |
-| **S5** | Write policy + consolidation background pass | encoding/consolidation tests | no |
+| **S5** ✅ | Write policy + consolidation background pass | encoding/consolidation tests | no |
 | **S6** | UI unification: vault into `starmap/`, delete `brain/`, sidebar entry | graph renders real nodes; JS tests | yes |
 | **S7** | Decay/forgetting + reconsolidation live | decay tests | no |
 
-**Progress:** S1–S4 done — `agent/brain/` (parser, models, vault, index, decay, similarity,
-migrate, recall, prefix, session) with 200+ passing tests, wired into `turn_context` and
-`system_prompt` behind `brain.*` config. Behaviour is unchanged on a fresh install: an empty
-vault yields no recall and no prefix, so nothing can regress until real notes exist. S4 is the
-first stage that can alter a turn, and both its layers are individually switchable.
-Remaining: S5 (write policy + consolidation — the `memory` tool still writes the legacy flat
-store), S6 (UI), S7 (live decay/reconsolidation).
+**Progress:** S1–S5 done — `agent/brain/` (parser, models, vault, index, decay, similarity,
+migrate, recall, prefix, session, correction, encoding, consolidate) with 350+ passing tests,
+supporting turn encoding, contradiction superseding, consolidation passes, and prompt integration.
+Remaining: S6 (UI unification in `starmap/`), S7 (live decay/reconsolidation integration).
 
 Each stage: commits in `~/pulse-evolution/pulse`, pushed to GitHub, with commands + real output
 in the report. The user installs; the agent does not touch `$PULSE_HOME`.
