@@ -333,7 +333,11 @@ def brain_turn_context(agent: Any, user_message: Any, *, settings: Optional[Brai
     if settings.reconsolidate:
         # Recall is what makes a memory stick: strengthen exactly the notes that were used.
         try:
-            vault.record_access(result.node_ids())
+            # §25: hand the real activation values to the graph so it renders actual cognition.
+            vault.record_access(
+                result.node_ids(),
+                activation={h.node_id: h.activation for h in result.hits},
+            )
             # Our own metadata write must not look like a structural vault change.
             restamp_index_cache(agent, vault)
         except Exception:

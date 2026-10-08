@@ -384,15 +384,31 @@ class BrainVault:
         except Exception:
             logger.debug("brain write event emit skipped", exc_info=True)
 
-    def record_access(self, node_ids: Iterable[str], *, now: Optional[float] = None) -> int:
-        """Reconsolidation: strengthen recalled nodes (spacing effect). Returns count updated."""
+    def record_access(
+        self,
+        node_ids: Iterable[str],
+        *,
+        now: Optional[float] = None,
+        activation: Optional[Dict[str, float]] = None,
+    ) -> int:
+        """Reconsolidation: strengthen recalled nodes (spacing effect). Returns count updated.
+
+        ``activation`` carries the real spreading-activation value per node from the recall
+        that triggered this call, so the graph can render actual cognitive state (§25) rather
+        than a decorative pulse. A node that had gone dormant (retrievability decayed) emits
+        MEMORY_REACTIVATED; any other recalled node emits MEMORY_ACTIVATED.
+        """
         ts = int(now if now is not None else time.time())
         updated = 0
+        act_map = activation or {}
         for node_id in node_ids:
             node = self.read_node(node_id)
             if node is None:
                 continue
             fm = node.frontmatter
+            was_dormant = int(fm.access_count or 0) > 0 and decay_mod.is_dormant(
+                float(fm.stability or 0.0), fm.last_accessed, now=ts
+            )
             fm.access_count = int(fm.access_count) + 1
             fm.last_accessed = ts
             fm.updated_at = fm.updated_at or ts
@@ -402,8 +418,20 @@ class BrainVault:
                 self._atomic_write(node.path, text)
             updated += 1
             try:
-                from .events import MEMORY_REINFORCED, emit_brain_event
+                from .events import (
+                    MEMORY_ACTIVATED,
+                    MEMORY_REACTIVATED,
+                    MEMORY_REINFORCED,
+                    emit_brain_event,
+                )
 
+                # Transient activation for the live graph (§25): the memory was really retrieved.
+                emit_brain_event(
+                    MEMORY_REACTIVATED if was_dormant else MEMORY_ACTIVATED,
+                    node_id,
+                    activation=round(float(act_map.get(node_id, 0.0)), 4),
+                    dormancy_break=was_dormant,
+                )
                 emit_brain_event(
                     MEMORY_REINFORCED,
                     node_id,
