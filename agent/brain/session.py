@@ -121,9 +121,9 @@ class BrainSettings:
     encode_enabled: bool = True
     # Consolidation (§3.2) runs every N encoded turns, on the encode thread.
     consolidate_every: int = DEFAULT_CONSOLIDATE_EVERY
-    # Layer 1 — system-prompt prefix. Off by default: it edits the cached prefix, so it is
-    # only turned on deliberately (and only matters once self/ and user/ notes exist).
-    prefix_enabled: bool = False
+    # Layer 1 — system-prompt prefix. v3: ON by default so identity/preferences appear
+    # without config (§11.1). A new install writes self/identity on first session.
+    prefix_enabled: bool = True
     prefix_max_chars: int = prefix_mod.DEFAULT_MAX_CHARS
 
     @classmethod
