@@ -1,4 +1,4 @@
-import { darken, luminance, mixRgb, rgba } from './color'
+import { categoryInkFor, darken, luminance, mixRgb, rgba } from './color'
 import {
   LIT_BAND_ALPHA,
   NODE_SHAPE,
@@ -203,6 +203,18 @@ export function drawScene(scene: Scene): DrawResult {
   const { h, w } = size
   const { bandInk, base, bg, c, chipBg, darkTheme, inkInv, memoryInk, skillInk } = palette
   const { bandAlpha, lightSize, ringAlpha, sheen } = RING_PARAMS[darkTheme ? 'dark' : 'light']
+
+  // §7 "colour by category": resolve a node's ink from its vault category. Skills
+  // keep skillInk; a memory with a recognised category takes that category's hue;
+  // anything else (legacy flat-file cards, unknown categories) keeps memoryInk so
+  // nothing that rendered before changes colour.
+  const categoryInk = (n: SimNode): Rgb => {
+    if (n.kind !== 'memory') {
+      return skillInk
+    }
+
+    return categoryInkFor(n.category, palette.primary, bg)
+  }
 
   let animating = false
   const ringLabelRects: RingLabelRect[] = []
@@ -508,13 +520,27 @@ export function drawScene(scene: Scene): DrawResult {
     const sy = projY(n.y * posScale)
 
     ctx.globalAlpha = vis
-    const nodeInk = nodeHigh ? base : n.kind === 'memory' ? memoryInk : skillInk
+    // §7: colour by category. A vault memory's category says what kind of thing it
+    // is (self/user/concept/project/belief/daily); a skill has none, so it keeps
+    // the theme primary. Legacy cards without a category keep memoryInk.
+    const nodeInk = nodeHigh ? base : categoryInk(n)
     const shape = NODE_SHAPE[n.kind]
 
     if (shape === 'circle') {
       // Highlighted orbs pop full bright; others darken so the sheen reads. The
       // sprite carries the disk, so no path is built for circles.
       sphereFill(ctx, sx, sy, r, nodeInk, sheen, nodeHigh ? 0 : ORB_DARKEN)
+    } else if (n.kind === 'ghost') {
+      // §7: an unresolved link is not a node you can open — hollow, faint, and
+      // smaller than a real note so the eye reads it as a placeholder.
+      ctx.globalAlpha = vis * 0.55
+      shapePath(ctx, shape, sx, sy, r * 0.72)
+      ctx.strokeStyle = rgba(nodeInk, 0.9)
+      ctx.lineWidth = 1
+      ctx.setLineDash([2, 2])
+      ctx.stroke()
+      ctx.setLineDash([])
+      ctx.globalAlpha = vis
     } else {
       shapePath(ctx, shape, sx, sy, r)
       ctx.fillStyle = rgba(nodeInk, 1)

@@ -5,9 +5,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useThemeEpoch } from '@/hooks/use-theme-epoch'
 import { createRendererLoopPauseController } from '@/lib/renderer-loop-pause'
 import { createDoubleTapDetector, isSmartZoomWheel } from '@/lib/trackpad-gestures'
+import { cn } from '@/lib/utils'
 import type { StarmapGraph } from '@/types/pulse'
 
-import { computePalette, memoryInkFor, resolveRgb, rgba } from './color'
+import { categoryInkFor, computePalette, luminance, memoryInkFor, resolveRgb, rgba } from './color'
 import { RING_OUTER, TILT, ZOOM_MAX, ZOOM_MIN } from './constants'
 import { registerStarMapContextMenu } from './context-menu-handle'
 import { clamp, distToSegmentSq, fitScale, fitViewport, nodeRadius } from './geometry'
@@ -166,6 +167,93 @@ export function StarMap({
   // so the legend matches the rendered diamonds exactly.
   const [memoryColor, setMemoryColor] = useState('var(--theme-secondary)')
 
+  // §7 "colour by category … filter panel": the legend doubles as the filter. A
+  // hidden category's nodes (and their links) drop out of the simulation, and the
+  // row is struck through so the state is legible without a second panel.
+  const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set())
+
+  // The categories actually present on this map — drives the legend rows. Stale
+  // hides are pruned when the graph changes (a category with no nodes left must
+  // not stay filtered, or the map would look permanently empty).
+  const legendCategories = useMemo(() => {
+    const present = new Set<string>()
+
+    for (const node of graph.nodes) {
+      if (node.kind === 'memory' && node.category) {
+        present.add(node.category)
+      }
+    }
+
+    return [...present].sort()
+  }, [graph])
+
+  useEffect(() => {
+    if (hiddenCategories.size === 0) {
+      return
+    }
+
+    const present = new Set(legendCategories)
+
+    setHiddenCategories(prev => {
+      const stale = [...prev].filter(cat => !present.has(cat))
+
+      return stale.length ? new Set([...prev].filter(cat => present.has(cat))) : prev
+    })
+  }, [legendCategories, hiddenCategories.size])
+
+  const toggleCategory = useCallback((category: string) => {
+    setHiddenCategories(prev => {
+      const next = new Set(prev)
+
+      next.has(category) ? next.delete(category) : next.add(category)
+
+      return next
+    })
+  }, [])
+
+  const categoryColor = useCallback(
+    (category: string) => {
+      const el = canvasRef.current ?? wrapRef.current
+
+      if (!el) {
+        return memoryColor
+      }
+
+      const style = getComputedStyle(el)
+      const primary = resolveRgb(style.getPropertyValue('--theme-primary').trim() || style.color)
+      const bgVal = resolveRgb(
+        style.getPropertyValue('--background').trim() ||
+          style.getPropertyValue('--dt-background').trim() ||
+          (luminance(primary.r, primary.g, primary.b) > 0.55 ? '#fff' : '#000')
+      )
+
+      return rgba(categoryInkFor(category, primary, bgVal), 0.9)
+    },
+    [memoryColor, themeEpoch]
+  )
+
+  // §7: the filter hides nodes, so the simulation must see a graph without them —
+  // recompute once per (graph, filter) change, not per render.
+  const visibleGraph = useMemo(() => {
+    if (hiddenCategories.size === 0) {
+      return graph
+    }
+
+    const hiddenIds = new Set(
+      graph.nodes.filter(n => n.kind === 'memory' && n.category && hiddenCategories.has(n.category)).map(n => n.id)
+    )
+
+    if (hiddenIds.size === 0) {
+      return graph
+    }
+
+    return {
+      ...graph,
+      edges: graph.edges.filter(e => !hiddenIds.has(e.source) && !hiddenIds.has(e.target)),
+      nodes: graph.nodes.filter(n => !hiddenIds.has(n.id))
+    }
+  }, [graph, hiddenCategories])
+
   // Time scrubber: reveal 1 = the whole map (idle default); lower values hide
   // not-yet-reached nodes so playing/scrubbing "builds it up". revealRef feeds
   // the canvas loop and revealStore feeds the timeline + legend label — so a
@@ -247,17 +335,17 @@ export function StarMap({
   const adjacency = useMemo(() => {
     const m = new Map<string, Set<string>>()
 
-    for (const n of graph.nodes) {
+    for (const n of visibleGraph.nodes) {
       m.set(n.id, new Set())
     }
 
-    for (const e of graph.edges) {
+    for (const e of visibleGraph.edges) {
       m.get(e.source)?.add(e.target)
       m.get(e.target)?.add(e.source)
     }
 
     return m
-  }, [graph.edges, graph.nodes])
+  }, [visibleGraph.edges, visibleGraph.nodes])
 
   // Track the wrapper size.
   useEffect(() => {
@@ -284,7 +372,7 @@ export function StarMap({
       return
     }
 
-    const { byId, links, nodes, rings, sim } = buildSimulation(graph, invalidate)
+    const { byId, links, nodes, rings, sim } = buildSimulation(visibleGraph, invalidate)
     simRef.current = sim
     nodesRef.current = nodes
     linksRef.current = links
@@ -310,7 +398,7 @@ export function StarMap({
         simRef.current = null
       }
     }
-  }, [graph, invalidate, resetFades, size])
+  }, [visibleGraph, invalidate, resetFades, size])
 
   // eslint-disable-next-line no-restricted-syntax -- legitimate non-atom ref write (see eslint rule comment)
   useEffect(() => {
@@ -777,7 +865,9 @@ export function StarMap({
       setSelectedId(node.id)
       setMenuTarget({
         id: node.id,
-        kind: node.kind === 'memory' ? 'memory' : 'skill',
+        // §7: a ghost is an unresolved [[wikilink]] — it reaches a different menu
+        // (create the note) than a real node, so its kind survives uncoerced.
+        kind: node.kind,
         label: node.label,
         x: clientX,
         y: clientY
@@ -977,14 +1067,34 @@ export function StarMap({
         <ShareControls imported={imported} onImport={importCode} onResetMap={onResetMap} shareCode={shareCode} />
       </div>
 
-      {/* Legend — bottom-left, one entry per line like a conventional key. */}
-      <div className="pointer-events-none absolute bottom-2 left-2 flex flex-col gap-1 text-[0.62rem] text-muted-foreground">
+      {/* Legend — bottom-left, one entry per line like a conventional key.
+          §7: memories are coloured by vault category, so the key lists each one
+          present on this map (skills keep the theme primary). Interactive rows
+          double as the category filter — click to isolate, click again to restore. */}
+      <div className="pointer-events-auto absolute bottom-2 left-2 flex flex-col gap-1 text-[0.62rem] text-muted-foreground">
         <span className="flex items-center gap-1.5">
           <span className="inline-block size-2 rounded-full bg-[var(--theme-primary)]/80" /> skill
         </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block size-2 rotate-45" style={{ backgroundColor: memoryColor }} /> memory
-        </span>
+        {legendCategories.map(cat => (
+          <button
+            className="flex items-center gap-1.5 rounded px-0.5 transition-opacity hover:text-foreground"
+            key={cat}
+            onClick={() => toggleCategory(cat)}
+            title={hiddenCategories.has(cat) ? `Show ${cat} memories` : `Hide ${cat} memories`}
+            type="button"
+          >
+            <span
+              className="inline-block size-2 rotate-45 transition-opacity"
+              style={{ backgroundColor: categoryColor(cat), opacity: hiddenCategories.has(cat) ? 0.25 : 1 }}
+            />
+            <span className={cn(hiddenCategories.has(cat) && 'opacity-40 line-through')}>{cat}</span>
+          </button>
+        ))}
+        {legendCategories.length === 0 ? (
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block size-2 rotate-45" style={{ backgroundColor: memoryColor }} /> memory
+          </span>
+        ) : null}
         <span className="text-[0.58rem] text-muted-foreground/65">core = oldest · outer = newer</span>
         <RevealLabel axis={timeAxis} revealStore={revealStore} />
       </div>

@@ -26,7 +26,9 @@ from pulse_cli import __release_date__
 from pulse_cli.config import get_config_path, get_env_path
 from pulse_cli.version_info import get_version_info
 from pulse_constants import get_process_pulse_home, profile_name_for_home
-from pulse_cli.web_models import CuratorPause, LearningNodeRef, LearningNodeEdit, DebugShareRequest
+from pulse_cli.web_models import (
+    CuratorPause, LearningNodeCreate, LearningNodeRef, LearningNodeEdit, DebugShareRequest,
+)
 from pulse_cli.web_routers._common import config_scoped_to_thread, destructive_profile, scoped_to_thread
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -716,6 +718,22 @@ async def update_learning_node(body: LearningNodeEdit):
     from agent.learning_mutations import edit_node
     return await _learning_mutation(
         body.profile, lambda: edit_node(body.id, body.content), 400, "edit failed")
+
+
+@router.post("/api/learning/ghost")
+async def resolve_ghost_node(body: LearningNodeCreate):
+    """§7: create the note an unresolved [[wikilink]] (a ghost node) stands for.
+
+    The new note is written under the linked title, so every note already pointing
+    at it resolves on the next graph build — the ghost turns solid.
+    """
+    from agent.learning_mutations import resolve_ghost
+    return await _learning_mutation(
+        body.profile,
+        lambda: resolve_ghost(body.id, body.content, category=body.category),
+        404,
+        "could not create note",
+    )
 
 
 # Portal — Pulse Portal auth + Tool Gateway routing status (read-only).

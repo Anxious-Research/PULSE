@@ -54,6 +54,23 @@ class TestLinks(IndexTestCase):
         index = self.build(a__same="x", b__same="y", concept__a="see [[same]]")
         self.assertIn("same", index.unresolved_targets())
 
+    def test_resolution_by_title(self):
+        """[[An Unwritten Idea]] names a note by title — ids are slugs, so a spaced
+        link can only match via the note's title (or its slugified basename)."""
+        self.vault.write_node("concept/an-unwritten-idea", "now it exists",
+                              title="An Unwritten Idea", now=T0)
+        self.vault.write_node("concept/a", "see [[An Unwritten Idea]]", now=T0)
+        index = BrainIndex(self.vault).rebuild()
+        self.assertEqual(index.links_of("concept/a"), ["concept/an-unwritten-idea"])
+        self.assertEqual(index.unresolved_targets(), [])
+
+    def test_ambiguous_title_stays_unresolved(self):
+        self.vault.write_node("concept/idea-one", "x", title="Idea", now=T0)
+        self.vault.write_node("user/idea-two", "y", title="Idea", now=T0)
+        self.vault.write_node("concept/a", "see [[Idea]]", now=T0)
+        index = BrainIndex(self.vault).rebuild()
+        self.assertIn("Idea", index.unresolved_targets())
+
     def test_self_link_excluded_from_edges(self):
         index = self.build(concept__a="refers to [[concept/a]]")
         payload = index.to_graph_payload()

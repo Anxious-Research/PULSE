@@ -99,6 +99,34 @@ function complementaryInk(c: Rgb): Rgb {
   return hslToRgb(h + 165, Math.max(s, 0.5), clamp(l, 0.5, 0.7))
 }
 
+// §7: "Colour by category (self/user/concept/project/belief/daily)". Every vault
+// node carries one, so a memory's hue says *what kind of thing it is* at a
+// glance, not just that it is a memory. Skills keep the theme primary (they have
+// no vault category) and un categorised legacy cards fall back to the complementary
+// hue the map has always used — nothing that rendered before changes colour.
+export const CATEGORY_HUES: Record<string, number> = {
+  self: 210,
+  user: 285,
+  concept: 165,
+  project: 35,
+  belief: 320,
+  daily: 90,
+  ghost: 0
+}
+
+export function categoryInkFor(category: string | undefined, primary: Rgb, bg: Rgb): Rgb {
+  if (!category || !(category in CATEGORY_HUES)) {
+    return memoryInkFor(primary, bg)
+  }
+
+  // Same construction as memoryInkFor (vivid hue, muted toward the overlay
+  // background) so categories share one visual language instead of a raw rainbow.
+  const [, saturation, lightness] = rgbToHsl(primary)
+  const hue = CATEGORY_HUES[category]
+
+  return mixRgb(hslToRgb(hue, Math.max(saturation, 0.5), clamp(lightness, 0.5, 0.7)), bg, 0.45)
+}
+
 // Memory ink: the complementary hue muted toward the overlay background so it
 // reads as a distinct-but-quiet color (fake alpha), not a loud full-sat pop.
 export function memoryInkFor(primary: Rgb, bg: Rgb): Rgb {

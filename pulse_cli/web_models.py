@@ -226,6 +226,13 @@ class LearningNodeEdit(BaseModel):
     content: str
     profile: Optional[str] = None
 
+class LearningNodeCreate(BaseModel):
+    """Create the note a ghost node stands for (§7: unresolved [[wikilink]] → real note)."""
+    id: str            # the ghost node id, i.e. "ghost:<wikilink target>"
+    content: str
+    category: Optional[str] = None
+    profile: Optional[str] = None
+
 class DebugShareRequest(BaseModel):
     # Redaction scrubs credential-shaped tokens before logs leave the machine; opt-out only.
     redact: bool = True

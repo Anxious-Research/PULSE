@@ -51,37 +51,50 @@ def _resolve_fingerprint(chunks: list[str], fingerprint: str) -> int | None:
 
 
 def _locate_memory(node_id: str) -> tuple[Path, list[str], int]:
-    """Resolve a memory node id to (file, all §-delimited entries, local index).
-    Entries come from vault nodes or legacy MemoryStore files.
+    """Resolve a memory node id to (file, all entries, local index).
+
+    The vault is authoritative whenever it holds notes for this source; the legacy flat file
+    is the fallback for an install that has not been migrated yet. Reading the wrong one of
+    the two makes every id look stale, which is exactly the bug this ordering prevents.
     """
     from pulse_constants import get_pulse_home
     from tools.memory_tool import MemoryStore
 
+    from agent.learning_graph import _memory_cards
+
     source, gidx, fingerprint = _parse_memory_id(node_id)
     path = get_pulse_home() / "memories" / _MEMORY_FILES[source]
-    if path.exists():
+    cards = [c for c in _memory_cards() if c.get("source") == source]
+    vault_cards = [c for c in cards if c.get("node_id")]
+    if vault_cards:
+        # ``content`` (the whole node), not ``body`` (the card's 1200-char excerpt): the id's
+        # fingerprint digests the whole node, so a truncated excerpt can never match it.
+        chunks = [c.get("content") or c.get("body", "") for c in vault_cards]
+        index_src = vault_cards
+    elif path.exists():
         chunks = MemoryStore._read_file(path)
+        index_src = None
     else:
-        from agent.learning_graph import _memory_cards
+        return path, [], -1  # nothing on disk for this source
 
-        cards = _memory_cards()
-        chunks = [
-            c["body"] for c in cards
-            if (c.get("source") == source or (source == "profile" and c.get("source") == "profile"))
-        ]
     if fingerprint:
         local = _resolve_fingerprint(chunks, fingerprint)
         if local is None:
             raise ValueError("memory node id is stale — refresh the graph")
         return path, chunks, local
-    from agent.learning_graph import _memory_cards
 
-    cards = _memory_cards()
+    # No fingerprint in the id: fall back to position, verified against the source.
     if not 0 <= gidx < len(cards):
         raise IndexError(f"memory index {gidx} out of range")
     if cards[gidx].get("source") != source:
         raise ValueError("memory node id is stale — refresh the graph")
-    local = gidx if source == "memory" else gidx - sum(1 for c in cards if c.get("source") == "memory")
+    if index_src is not None:
+        try:
+            local = index_src.index(cards[gidx])
+        except ValueError:
+            raise ValueError("memory node id is stale — refresh the graph") from None
+    else:
+        local = gidx - sum(1 for c in cards if c.get("source") == "memory")
     if not 0 <= local < len(chunks):
         raise ValueError("memory node id is stale — refresh the graph")
     return path, chunks, local
@@ -210,3 +223,78 @@ def _edit_memory(node_id: str, content: str) -> dict[str, Any]:
     if not body:
         return {"ok": False, "message": "empty memory — use delete to remove it"}
     return _mutate_memory(node_id, body)
+
+
+# ── Ghost resolution (§7) ───────────────────────────────────────────────────
+#
+# A ghost node is an unresolved ``[[wikilink]]`` — someone linked to a note that
+# does not exist yet. §7's graph shows it as a hollow placeholder; the useful
+# action on it is to create the missing note, which turns the ghost solid and
+# makes every link pointing at it resolve.
+
+_GHOST_PREFIX = "ghost:"
+
+
+def is_ghost_node(node_id: str) -> bool:
+    """True for a ghost node id from ``agent.learning_graph._vault_link_edges``."""
+    return node_id.startswith(_GHOST_PREFIX)
+
+
+def resolve_ghost(node_id: str, content: str, *, category: str | None = None) -> dict[str, Any]:
+    """Create the note a ghost stands for, so its links resolve.
+
+    ``node_id`` is ``ghost:<wikilink target>``; the target is the title the other
+    notes already link with, so the new note is written under that title (and the
+    caller's link text keeps working — a resolved link must not need a rename).
+    Returns the created node id, which the graph reload surfaces as a real node.
+    """
+    if not is_ghost_node(node_id):
+        return {"ok": False, "message": f"not a ghost node: {node_id!r}"}
+
+    target = node_id[len(_GHOST_PREFIX):].strip()
+    if not target:
+        return {"ok": False, "message": "empty wikilink target"}
+
+    from agent.brain.session import get_write_vault
+
+    vault = get_write_vault()
+    if vault is None:
+        return {"ok": False, "message": "brain vault unavailable — set PULSE_HOME"}
+
+    body = (content or "").strip()
+    if not body:
+        return {"ok": False, "message": "empty note content"}
+
+    chosen = (category or "concept").strip() or "concept"
+    try:
+        from agent.brain.vault import NodeCategory
+
+        # An unknown category would land the note outside the vault's directory
+        # contract; coerce to the closest valid one rather than refusing the write.
+        chosen = NodeCategory.coerce(chosen).value
+    except Exception:
+        pass
+
+    title = body.splitlines()[0].lstrip("#").strip() or target
+    try:
+        from agent.brain.parser import slugify
+
+        node_id_created = vault.unique_node_id(chosen, slugify(title))
+        vault.write_node(
+            node_id_created,
+            body,
+            title=title,
+            category=chosen,
+            tags=["ghost-resolved"],
+            status="active",
+        )
+    except Exception:
+        return {"ok": False, "message": f"could not create note for {target!r} — nothing was written"}
+
+    return {
+        "ok": True,
+        "message": f"created note for {target!r}",
+        "id": node_id_created,
+        "title": title,
+        "category": chosen,
+    }

@@ -182,11 +182,16 @@ def _memory_cards() -> list[dict[str, Any]]:
                     "timestamp": int(node.timestamp or 0) + chunk_idx if node.timestamp else None,
                     "title": (first[:80] + "…") if len(first) > 80 else first,
                     "body": node.content[:1200],
+                    # Full text: the fingerprint digests the whole node, so the mutation path
+                    # must compare against the whole node too — a >1200-char note hashed from
+                    # its truncated body never matches its own id.
+                    "content": node.content,
                     "fingerprint": memory_fingerprint(node.content),
                     "node_id": node.id,
                     "category": node.frontmatter.category,
                     "tags": node.frontmatter.tags,
                     "stability": node.frontmatter.stability,
+                    "confidence": node.frontmatter.confidence,
                 })
             if cards:
                 return cards
@@ -231,6 +236,56 @@ def _memory_skill_edges(memory_cards: list[dict[str, Any]], skills: list[SkillNo
     return edges
 
 
+def _vault_link_edges(memory_cards: list[dict[str, Any]]) -> tuple[list[tuple[str, str]], list[dict[str, Any]]]:
+    """Vault edges as ``(source, target)`` pairs, plus ghost nodes for dangling links.
+
+    §7 of the spec: *edges = resolved ``[[wikilinks]]``; directional arrows; unresolved links
+    render as ghost nodes*. This is the part that makes the map the brain instead of a
+    lexical guess — a link the user (or consolidation) actually wrote is knowledge; the
+    memory↔skill overlap edges are only a hint. Directions are preserved because "A links to
+    B" is not the same fact as "B links to A".
+    """
+    graph_id_by_node = {
+        card["node_id"]: memory_node_id(card, index)
+        for index, card in enumerate(memory_cards)
+        if card.get("node_id")
+    }
+    if not graph_id_by_node:
+        return [], []
+    try:
+        from agent.brain.index import BrainIndex
+        from agent.brain.vault import BrainVault
+
+        index = BrainIndex(BrainVault()).rebuild()
+    except Exception:
+        # A graph that cannot read the vault is still a graph of skills; never raise here.
+        return [], []
+
+    edges: list[tuple[str, str]] = []
+    for source_id, targets in index.forward.items():
+        source = graph_id_by_node.get(source_id)
+        if source is None:
+            continue
+        for target in targets:
+            resolved = graph_id_by_node.get(target)
+            if resolved is not None and resolved != source:
+                edges.append((source, resolved))
+
+    ghosts: dict[str, dict[str, Any]] = {}
+    for target, source_ids in index.unresolved.items():
+        ghost_id = f"ghost:{target}"
+        ghosts.setdefault(ghost_id, {
+            "id": ghost_id, "label": target, "kind": "ghost", "category": "ghost",
+            "useCount": 0, "state": "unresolved", "createdBy": None, "pinned": False,
+            "timestamp": None,
+        })
+        for source_id in source_ids:
+            source = graph_id_by_node.get(source_id)
+            if source is not None:
+                edges.append((source, ghost_id))
+    return list(dict.fromkeys(edges)), list(ghosts.values())
+
+
 def _has_learning_signal(node: SkillNode) -> bool:
     """Graph-worthy: agent-created, user-taught (/learn), or actually used.
 
@@ -252,9 +307,11 @@ def build_learning_graph() -> dict[str, Any]:
     }
     skill_edges, memory_cards = build_edges(learned_skills), _memory_cards()
     memory_edges = _memory_skill_edges(memory_cards, list(learned_skills.values()))
+    # §7: the vault's own links are the graph's real edges — resolved [[wikilinks]] between
+    # notes, plus ghost nodes for links whose target does not exist yet.
+    vault_edges, ghost_nodes = _vault_link_edges(memory_cards)
     clusters = Counter(node.category for node in learned_skills.values())
-    if memory_cards:
-        clusters["memory"] = len(memory_cards)
+    clusters.update(card.get("category") or "memory" for card in memory_cards)
 
     graph_nodes = [
         {
@@ -265,18 +322,29 @@ def build_learning_graph() -> dict[str, Any]:
     ] + [
         {
             "id": memory_node_id(card, i), "label": card["title"], "kind": "memory",
-            "memorySource": card["source"], "timestamp": card.get("timestamp"), "category": "memory",
+            "memorySource": card["source"], "timestamp": card.get("timestamp"),
+            # §7: colour and filter by the vault's own category (self/user/concept/project/
+            # belief/daily). A legacy flat-file card has none, so it keeps the old "memory".
+            "category": card.get("category") or "memory",
+            "confidence": card.get("confidence"),
+            "tags": card.get("tags") or [],
+            "vaultId": card.get("node_id"),
             "useCount": 0, "state": "active", "createdBy": "memory", "pinned": False,
         }
         for i, card in enumerate(memory_cards)
-    ]
+    ] + ghost_nodes
     return {
         "nodes": graph_nodes,
-        "edges": [{"source": a, "target": b} for a, b in skill_edges + memory_edges],
+        "edges": [
+            {"source": a, "target": b, "kind": kind}
+            for kind, pairs in (("related", skill_edges), ("memory-skill", memory_edges), ("wikilink", vault_edges))
+            for a, b in pairs
+        ],
         "clusters": [{"category": c, "count": n} for c, n in sorted(clusters.items(), key=lambda kv: -kv[1])],
         "memory": memory_cards,
         "stats": {
             **density_stats(learned_skills, skill_edges),
             "memory_nodes": len(memory_cards), "memory_skill_edges": len(memory_edges), "learned_skills": len(learned_skills),
+            "vault_edges": len(vault_edges), "ghost_nodes": len(ghost_nodes),
         },
     }

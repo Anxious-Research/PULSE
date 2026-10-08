@@ -88,6 +88,22 @@ export function editLearningNode(
   })
 }
 
+/** §7: create the note a ghost node stands for — an unresolved [[wikilink]]
+ *  becomes a real note under the linked title, so the links resolve. */
+export function resolveGhostNode(
+  id: string,
+  content: string,
+  profile?: ProfileScope,
+  category?: string
+): Promise<{ category: string; id: string; message: string; ok: boolean; title: string }> {
+  return window.pulseDesktop.api<{ category: string; id: string; message: string; ok: boolean; title: string }>({
+    ...capabilityScoped(profile),
+    path: '/api/learning/ghost',
+    method: 'POST',
+    body: { category, content, id }
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Skills hub — search / preview / scan / install (parity with `pulse skills`
 // and the dashboard's Browse-hub tab). Installs spawn background actions whose

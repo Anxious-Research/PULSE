@@ -12,7 +12,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { deleteLearningNode, editLearningNode, getLearningNode } from '@/pulse'
+import { deleteLearningNode, editLearningNode, getLearningNode, resolveGhostNode } from '@/pulse'
 import { notifyError } from '@/store/notifications'
 import { evictStarmapNode, loadStarmapGraph } from '@/store/starmap'
 
@@ -20,7 +20,7 @@ import { useOnProfileSwitch } from '../hooks/use-on-profile-switch'
 
 export interface NodeMenuTarget {
   id: string
-  kind: 'memory' | 'skill'
+  kind: 'ghost' | 'memory' | 'skill'
   label: string
   x: number
   y: number
@@ -38,9 +38,16 @@ interface EditState {
   label: string
 }
 
+interface CreateState {
+  content: string
+  id: string
+  label: string
+}
+
 /** Right-click actions for a star-map node: edit (modal) or delete (confirm). */
 export function NodeContextMenu({ onClose, onNodeRemoved, target }: NodeContextMenuProps) {
   const [editing, setEditing] = useState<EditState | null>(null)
+  const [creating, setCreating] = useState<CreateState | null>(null)
   const [deleting, setDeleting] = useState<Omit<NodeMenuTarget, 'x' | 'y'> | null>(null)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -56,6 +63,7 @@ export function NodeContextMenu({ onClose, onNodeRemoved, target }: NodeContextM
   useOnProfileSwitch(() => {
     editEpoch.current += 1
     setEditing(null)
+    setCreating(null)
     setDeleting(null)
     setError(null)
   })
@@ -111,7 +119,36 @@ export function NodeContextMenu({ onClose, onNodeRemoved, target }: NodeContextM
     }
   }
 
-  const menuOpen = target && !editing && !deleting
+  const createNote = async () => {
+    if (!creating) {
+      return
+    }
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      // §7: the new note is written under the title every existing link already
+      // uses, so the ghost dissolves and its links resolve on reload. The vault
+      // picks the category from the note's own content; a category override would
+      // misfile a note whose heading says otherwise.
+      const res = await resolveGhostNode(creating.id, creating.content)
+
+      if (!res.ok) {
+        throw new Error(res.message)
+      }
+
+      setCreating(null)
+      // A fresh graph — the ghost is replaced by a real node and its links resolve.
+      void loadStarmapGraph(true)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const menuOpen = target && !editing && !creating && !deleting
 
   return (
     <>
@@ -126,24 +163,43 @@ export function NodeContextMenu({ onClose, onNodeRemoved, target }: NodeContextM
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" onCloseAutoFocus={e => e.preventDefault()} side="bottom">
             <DropdownMenuLabel className="truncate text-[0.68rem] font-normal text-muted-foreground">
-              {target.label}
+              {target.kind === 'ghost' ? `Unresolved: ${target.label}` : target.label}
             </DropdownMenuLabel>
-            <DropdownMenuItem
-              disabled={loading}
-              onSelect={e => {
-                // Keep the menu up while the node content loads; openEdit closes it.
-                e.preventDefault()
-                void openEdit()
-              }}
-            >
-              Edit {noun}…
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onSelect={() => setDeleting({ id: target.id, kind: target.kind, label: target.label })}
-              variant="destructive"
-            >
-              {target.kind === 'skill' ? 'Archive skill' : 'Delete memory'}
-            </DropdownMenuItem>
+            {target.kind === 'ghost' ? (
+              // §7: a ghost is a [[wikilink]] whose note does not exist. Editing it
+              // would be editing nothing; deleting it would orphan the links pointing
+              // here. The only meaningful action is to create the note.
+              <DropdownMenuItem
+                onSelect={() =>
+                  setCreating({
+                    content: `# ${target.label}\n\n`,
+                    id: target.id,
+                    label: target.label
+                  })
+                }
+              >
+                Create “{target.label}” note…
+              </DropdownMenuItem>
+            ) : (
+              <>
+                <DropdownMenuItem
+                  disabled={loading}
+                  onSelect={e => {
+                    // Keep the menu up while the node content loads; openEdit closes it.
+                    e.preventDefault()
+                    void openEdit()
+                  }}
+                >
+                  Edit {noun}…
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => setDeleting({ id: target.id, kind: target.kind, label: target.label })}
+                  variant="destructive"
+                >
+                  {target.kind === 'skill' ? 'Archive skill' : 'Delete memory'}
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ) : null}
@@ -173,6 +229,39 @@ export function NodeContextMenu({ onClose, onNodeRemoved, target }: NodeContextM
             </Button>
             <Button disabled={saving} onClick={() => void save()}>
               {saving ? 'Saving…' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog onOpenChange={value => !value && !saving && setCreating(null)} open={Boolean(creating)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create “{creating?.label}”</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-1.5 text-xs text-muted-foreground">
+            Nothing links here yet — this note makes every <span className="font-mono">[[{creating?.label}]]</span> resolve.
+          </div>
+          <div className="h-80">
+            {creating && (
+              <CodeEditor
+                filePath="brain/note.md"
+                framed
+                initialValue={creating.content}
+                key={creating.id}
+                onCancel={() => !saving && setCreating(null)}
+                onChange={content => setCreating(prev => (prev ? { ...prev, content } : prev))}
+                onSave={() => void createNote()}
+              />
+            )}
+          </div>
+          {error ? <p className="text-xs text-destructive">{error}</p> : null}
+          <DialogFooter>
+            <Button disabled={saving} onClick={() => setCreating(null)} type="button" variant="ghost">
+              Cancel
+            </Button>
+            <Button disabled={saving} onClick={() => void createNote()}>
+              {saving ? 'Creating…' : 'Create note'}
             </Button>
           </DialogFooter>
         </DialogContent>

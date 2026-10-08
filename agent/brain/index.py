@@ -99,6 +99,21 @@ class BrainIndex:
         matches = [n for n in self._ids if n.split("/")[-1].lower() == lowered]
         if len(matches) == 1:
             return matches[0]
+        # Title links: [[An Unwritten Idea]] names a note by its title, not its file
+        # name — ids are slugs, so a link containing spaces can only resolve by title
+        # (spec §7: unresolved *title* links become ghosts; here we give them a chance
+        # to resolve first). Slug-compare so [[an unwritten idea]] and [[An Unwritten
+        # Idea]] both reach concept/an-unwritten-idea.
+        from .parser import slugify
+
+        wanted = slugify(target)
+        if wanted and wanted != "untitled":
+            by_title = [n for n in self._ids if slugify(self.titles.get(n, "")) == wanted]
+            if len(by_title) == 1:
+                return by_title[0]
+            by_basename = [n for n in self._ids if slugify(n.split("/")[-1]) == wanted]
+            if len(by_basename) == 1:
+                return by_basename[0]
         return None
 
     def resolve(self, name: str) -> Optional[str]:

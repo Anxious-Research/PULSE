@@ -870,7 +870,7 @@ export interface UsageStats {
 export interface StarmapNode {
   id: string
   label: string
-  kind: 'memory' | 'skill'
+  kind: 'ghost' | 'memory' | 'skill'
   memorySource?: 'memory' | 'profile'
   timestamp?: null | number
   category: string

@@ -108,7 +108,8 @@ import {
   NEW_CHAT_ROUTE,
   PROFILES_ROUTE,
   sessionRoute,
-  SETTINGS_ROUTE
+  SETTINGS_ROUTE,
+  STARMAP_ROUTE
 } from '../routes'
 
 export interface KeybindRuntimeDeps {
@@ -304,6 +305,7 @@ export function useKeybinds(deps: KeybindRuntimeDeps): void {
     'nav.messaging': () => navigateToWorkspacePage(navigate, MESSAGING_ROUTE),
     'nav.artifacts': () => navigateToWorkspacePage(navigate, ARTIFACTS_ROUTE),
     'nav.cron': () => navigate(CRON_ROUTE),
+    'nav.starmap': () => navigate(STARMAP_ROUTE),
     'nav.agents': () => navigate(AGENTS_ROUTE),
 
     'session.new': () => {
