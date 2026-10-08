@@ -1,57 +1,50 @@
 import { useStore } from '@nanostores/react'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 
 import { PageLoader } from '@/components/page-loader'
 import { useI18n } from '@/i18n'
 import { $starmapError, $starmapGraph, $starmapLoading, loadStarmapGraph } from '@/store/starmap'
-import type { StarmapGraph } from '@/types/pulse'
 
+import { BrainGraph } from '../brain-graph/brain-graph'
 import { Panel, PanelEmpty } from '../overlays/panel'
 
-import { StarMap } from './star-map'
+// How often the open graph re-reads the vault so newly written notes appear on
+// their own. The graph diffs each fetch and only animates what actually
+// changed, so this is cheap and never disturbs the layout.
+const LIVE_REFRESH_MS = 4000
 
-// Star map overlay: a top-down map of what PULSE has learned for a profile,
-// over a radial time axis. Data is fetched on demand into the $starmap* atoms;
-// the map itself lives in ./star-map. The chrome is owned by the map itself
-// (timeline scrubber + legend float over the canvas), so there's no panel
-// header here.
+// Memory overlay: the live, Obsidian-style force graph of everything PULSE has
+// learned for a profile — every note is a node, every [[wikilink]] an edge.
+// Data is fetched on demand into the $starmap* atoms and re-read on a timer so
+// the graph grows in front of you as the brain encodes new memories.
 export function StarmapView({ onClose }: { onClose: () => void }) {
   const { t } = useI18n()
   const graph = useStore($starmapGraph)
   const loading = useStore($starmapLoading)
   const error = useStore($starmapError)
 
-  // A pasted share code populates the map with someone else's (or an exported)
-  // graph, overriding the live profile scan. Cleared by "back to my map" and
-  // whenever a fresh profile graph loads in.
-  const [imported, setImported] = useState<StarmapGraph | null>(null)
-
   useEffect(() => {
     void loadStarmapGraph()
   }, [])
 
-  // Drop a stale import when the underlying profile graph changes out from under it.
+  // Live reaction: poll the vault while the graph is open. loadStarmapGraph
+  // de-dupes in-flight requests and the graph only moves for real changes.
   useEffect(() => {
-    setImported(null)
-  }, [graph])
+    const timer = window.setInterval(() => void loadStarmapGraph(true), LIVE_REFRESH_MS)
 
-  const shown = imported ?? graph
+    return () => window.clearInterval(timer)
+  }, [])
 
   return (
     <Panel closeLabel={t.starmap.close} onClose={onClose}>
       {error ? (
         <PanelEmpty description={error} icon="warning" title={t.starmap.loadFailed} />
-      ) : !shown && loading ? (
+      ) : !graph && loading ? (
         <PageLoader aria-label={t.starmap.loading} className="min-h-0 flex-1" />
-      ) : shown && shown.nodes.length === 0 && !imported ? (
+      ) : graph && graph.nodes.length === 0 ? (
         <PanelEmpty description={t.starmap.emptyDesc} icon="lightbulb" title={t.starmap.emptyTitle} />
-      ) : shown ? (
-        <StarMap
-          graph={shown}
-          imported={imported !== null}
-          onImport={setImported}
-          onResetMap={() => setImported(null)}
-        />
+      ) : graph ? (
+        <BrainGraph graph={graph} onRefresh={() => void loadStarmapGraph(true)} />
       ) : null}
     </Panel>
   )
