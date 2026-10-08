@@ -161,40 +161,74 @@ def memory_node_id(card: dict[str, Any], index: int) -> str:
 def _memory_cards() -> list[dict[str, Any]]:
     """Vault nodes as memory cards (active nodes from self/, user/, concept/, project/, belief/).
     Falls back to MEMORY.md / USER.md if vault is empty.
+    
+    §9 fast path: when the SQLite cache is available and fresh, load from there (O(1) query)
+    instead of parsing every .md file (O(vault_size)).
     """
     cards: list[dict[str, Any]] = []
     try:
         from agent.brain.vault import BrainVault
+        from agent.brain.cache import BrainCache
         from agent.brain.models import NodeStatus
 
         vault = BrainVault()
-        if vault.vault_dir.exists():
-            nodes = [
-                n for n in vault.list_all_nodes()
-                if n.frontmatter.status == NodeStatus.ACTIVE.value and (n.content or "").strip()
-            ]
-            nodes.sort(key=lambda n: (n.timestamp or 0, n.id))
-            for chunk_idx, node in enumerate(nodes):
-                source = "profile" if node.frontmatter.category == "user" else "memory"
-                first = (node.title or (node.content.splitlines()[0] if node.content else "")).strip().lstrip("# ").strip()
-                cards.append({
-                    "source": source,
-                    "timestamp": int(node.timestamp or 0) + chunk_idx if node.timestamp else None,
-                    "title": (first[:80] + "…") if len(first) > 80 else first,
-                    "body": node.content[:1200],
-                    # Full text: the fingerprint digests the whole node, so the mutation path
-                    # must compare against the whole node too — a >1200-char note hashed from
-                    # its truncated body never matches its own id.
-                    "content": node.content,
-                    "fingerprint": memory_fingerprint(node.content),
-                    "node_id": node.id,
-                    "category": node.frontmatter.category,
-                    "tags": node.frontmatter.tags,
-                    "stability": node.frontmatter.stability,
-                    "confidence": node.frontmatter.confidence,
-                })
-            if cards:
-                return cards
+        if not vault.vault_dir.exists():
+            raise FileNotFoundError("vault missing")
+        
+        # Try cache first (fast path)
+        cache = BrainCache(vault)
+        if not cache.is_stale():
+            cache_nodes = cache.all_nodes()
+            if cache_nodes:
+                for chunk_idx, entry in enumerate(cache_nodes):
+                    fm = entry.get("frontmatter", {})
+                    if fm.get("status") != NodeStatus.ACTIVE.value:
+                        continue
+                    content = entry.get("content", "").strip()
+                    if not content:
+                        continue
+                    source = "profile" if entry["category"] == "user" else "memory"
+                    first = entry["title"].strip().lstrip("# ").strip()
+                    cards.append({
+                        "source": source,
+                        "timestamp": int(fm.get("updated_at") or fm.get("created_at") or 0) + chunk_idx,
+                        "title": (first[:80] + "…") if len(first) > 80 else first,
+                        "body": content[:1200],
+                        "content": content,
+                        "fingerprint": memory_fingerprint(content),
+                        "node_id": entry["id"],
+                        "category": entry["category"],
+                        "tags": fm.get("tags") or [],
+                        "stability": fm.get("stability", 1.0),
+                        "confidence": fm.get("confidence", 0.8),
+                    })
+                if cards:
+                    return cards
+        
+        # Cache miss or stale — fall back to vault O(N) scan
+        nodes = [
+            n for n in vault.list_all_nodes()
+            if n.frontmatter.status == NodeStatus.ACTIVE.value and (n.content or "").strip()
+        ]
+        nodes.sort(key=lambda n: (n.timestamp or 0, n.id))
+        for chunk_idx, node in enumerate(nodes):
+            source = "profile" if node.frontmatter.category == "user" else "memory"
+            first = (node.title or (node.content.splitlines()[0] if node.content else "")).strip().lstrip("# ").strip()
+            cards.append({
+                "source": source,
+                "timestamp": int(node.timestamp or 0) + chunk_idx if node.timestamp else None,
+                "title": (first[:80] + "…") if len(first) > 80 else first,
+                "body": node.content[:1200],
+                "content": node.content,
+                "fingerprint": memory_fingerprint(node.content),
+                "node_id": node.id,
+                "category": node.frontmatter.category,
+                "tags": node.frontmatter.tags,
+                "stability": node.frontmatter.stability,
+                "confidence": node.frontmatter.confidence,
+            })
+        if cards:
+            return cards
     except Exception:
         pass
 
@@ -244,6 +278,8 @@ def _vault_link_edges(memory_cards: list[dict[str, Any]]) -> tuple[list[tuple[st
     lexical guess — a link the user (or consolidation) actually wrote is knowledge; the
     memory↔skill overlap edges are only a hint. Directions are preserved because "A links to
     B" is not the same fact as "B links to A".
+    
+    §9 fast path: when the cache is fresh, read edges from SQLite instead of rebuilding the index.
     """
     graph_id_by_node = {
         card["node_id"]: memory_node_id(card, index)
@@ -255,8 +291,43 @@ def _vault_link_edges(memory_cards: list[dict[str, Any]]) -> tuple[list[tuple[st
     try:
         from agent.brain.index import BrainIndex
         from agent.brain.vault import BrainVault
+        from agent.brain.cache import BrainCache
 
-        index = BrainIndex(BrainVault()).rebuild()
+        vault = BrainVault()
+        cache = BrainCache(vault)
+        
+        # Try cache edges (O(1) query)
+        if not cache.is_stale():
+            cache_edges = cache.all_edges()
+            if cache_edges:
+                # Build resolved/unresolved from cache data
+                edges: list[tuple[str, str]] = []
+                unresolved: dict[str, set[str]] = {}
+                for source, target, kind in cache_edges:
+                    source_graph = graph_id_by_node.get(source)
+                    target_graph = graph_id_by_node.get(target)
+                    if source_graph and target_graph and source_graph != target_graph:
+                        edges.append((source_graph, target_graph))
+                    elif source_graph and not target_graph:
+                        unresolved.setdefault(target, set()).add(source)
+                
+                ghosts: dict[str, dict[str, Any]] = {}
+                for target, source_ids in unresolved.items():
+                    ghost_id = f"ghost:{target}"
+                    ghosts.setdefault(ghost_id, {
+                        "id": ghost_id, "label": target, "kind": "ghost", "category": "ghost",
+                        "useCount": 0, "state": "unresolved", "createdBy": None, "pinned": False,
+                        "timestamp": None,
+                    })
+                    for source_id in source_ids:
+                        source_graph = graph_id_by_node.get(source_id)
+                        if source_graph:
+                            edges.append((source_graph, ghost_id))
+                
+                return list(dict.fromkeys(edges)), list(ghosts.values())
+        
+        # Cache miss/stale — fall back to full index rebuild
+        index = BrainIndex(vault).rebuild()
     except Exception:
         # A graph that cannot read the vault is still a graph of skills; never raise here.
         return [], []
