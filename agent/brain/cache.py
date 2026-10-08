@@ -282,6 +282,13 @@ class BrainCache:
                 "INSERT OR IGNORE INTO edges (source, target, kind) VALUES (?, ?, 'supersedes')",
                 (node_id, target),
             )
+
+        # Derived 'related' edges (§5: consolidation writes these from entity mentions / semantic overlap).
+        for target in (node.frontmatter.related if node.frontmatter else None) or []:
+            self.conn.execute(
+                "INSERT OR IGNORE INTO edges (source, target, kind) VALUES (?, ?, 'related')",
+                (node_id, target),
+            )
         self.conn.commit()
 
     def update_node(self, node_id: str) -> None:

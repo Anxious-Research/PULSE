@@ -273,13 +273,14 @@ def _memory_skill_edges(memory_cards: list[dict[str, Any]], skills: list[SkillNo
 def _vault_link_edges(memory_cards: list[dict[str, Any]]) -> tuple[list[tuple[str, str]], list[dict[str, Any]]]:
     """Vault edges as ``(source, target)`` pairs, plus ghost nodes for dangling links.
 
-    §7 of the spec: *edges = resolved ``[[wikilinks]]``; directional arrows; unresolved links
-    render as ghost nodes*. This is the part that makes the map the brain instead of a
-    lexical guess — a link the user (or consolidation) actually wrote is knowledge; the
-    memory↔skill overlap edges are only a hint. Directions are preserved because "A links to
-    B" is not the same fact as "B links to A".
-    
+    §7 of the spec: *edges = resolved ``[[wikilinks]]`` + derived ``related`` frontmatter (entity
+    mentions, semantic overlap). Directional arrows point from source → target; unresolved links
+    become ghost nodes so the graph shows "A wants to link to B even though B doesn't exist yet."
+    Wikilinks and derived relations are treated equally because both represent knowledge — a
+    lexical guess is a hint; a link the user (or consolidation) actually wrote is knowledge.
+
     §9 fast path: when the cache is fresh, read edges from SQLite instead of rebuilding the index.
+    The cache stores both wikilinks (kind='wikilink') and derived relations (kind='related').
     """
     graph_id_by_node = {
         card["node_id"]: memory_node_id(card, index)

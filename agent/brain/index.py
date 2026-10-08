@@ -57,9 +57,17 @@ class BrainIndex:
         for node_id, node in entries:
             targets: List[str] = []
             seen: Set[str] = set()
+            # Explicit [[wikilinks]]
             for link in node.wikilinks:
                 resolved = self._resolve(link.target)
                 key = resolved or link.target
+                if key not in seen:
+                    seen.add(key)
+                    targets.append(key)
+            # Derived 'related' edges from consolidation (§5: entity mentions, semantic overlap)
+            for related_id in node.frontmatter.related or []:
+                resolved = self._resolve(related_id)
+                key = resolved or related_id
                 if key not in seen:
                     seen.add(key)
                     targets.append(key)
