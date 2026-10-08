@@ -348,7 +348,41 @@ class BrainVault:
             text = compose_markdown(fm.to_dict(include_empty=False), content)
             self._atomic_write(path, text)
 
-        return self._node_from_text(normalized, path, text)
+        node = self._node_from_text(normalized, path, text)
+        self._emit_write_events(node, previous)
+        return node
+
+    def _emit_write_events(self, node: Any, previous: Any) -> None:
+        """Publish the real events one write produced (§16). Called outside the vault lock.
+
+        A write is either the birth of a node (``MEMORY_CREATED``) or a rewrite of one that
+        already existed (``MEMORY_UPDATED``) — the graph needs to tell those apart, because a
+        rewrite must move an existing node, not spawn a twin. Links in the body become
+        relationship events, so an edge appears in the graph exactly when the wikilink that
+        justifies it is written.
+        """
+        try:
+            from .events import (
+                MEMORY_CREATED,
+                MEMORY_UPDATED,
+                RELATIONSHIP_CREATED,
+                emit_brain_event,
+            )
+
+            kind = MEMORY_UPDATED if previous is not None else MEMORY_CREATED
+            emit_brain_event(
+                kind,
+                node.id,
+                category=node.frontmatter.category,
+                title=node.frontmatter.title,
+                status=node.frontmatter.status,
+                salience=round(float(node.frontmatter.salience or 0.0), 4),
+            )
+            for link in node.wikilinks or []:
+                target = getattr(link, "target", None) or str(link)
+                emit_brain_event(RELATIONSHIP_CREATED, node.id, target=target, rel="wikilink")
+        except Exception:
+            logger.debug("brain write event emit skipped", exc_info=True)
 
     def record_access(self, node_ids: Iterable[str], *, now: Optional[float] = None) -> int:
         """Reconsolidation: strengthen recalled nodes (spacing effect). Returns count updated."""
@@ -367,6 +401,17 @@ class BrainVault:
             with _vault_lock(self.vault_dir):
                 self._atomic_write(node.path, text)
             updated += 1
+            try:
+                from .events import MEMORY_REINFORCED, emit_brain_event
+
+                emit_brain_event(
+                    MEMORY_REINFORCED,
+                    node_id,
+                    access_count=fm.access_count,
+                    stability=round(float(fm.stability or 0.0), 4),
+                )
+            except Exception:
+                logger.debug("reinforce event emit skipped", exc_info=True)
         return updated
 
     def supersede(self, old_id: str, new_id: str, *, now: Optional[float] = None) -> bool:
@@ -386,6 +431,12 @@ class BrainVault:
         text = compose_markdown(fm.to_dict(include_empty=False), node.content)
         with _vault_lock(self.vault_dir):
             self._atomic_write(node.path, text)
+        try:
+            from .events import MEMORY_SUPERSEDED, emit_brain_event
+
+            emit_brain_event(MEMORY_SUPERSEDED, old_id, superseded_by=fm.superseded_by)
+        except Exception:
+            logger.debug("supersede event emit skipped", exc_info=True)
         return True
 
     # -- delete / rename ---------------------------------------------------
@@ -404,6 +455,12 @@ class BrainVault:
             except OSError as exc:
                 logger.warning("brain node delete failed: %s (%s)", path, exc)
                 return False
+        try:
+            from .events import MEMORY_DELETED, emit_brain_event
+
+            emit_brain_event(MEMORY_DELETED, node_id)
+        except Exception:
+            logger.debug("delete event emit skipped", exc_info=True)
         return True
 
     def rename_node(self, old_id: str, new_id: str, *, now: Optional[float] = None) -> Dict[str, Any]:

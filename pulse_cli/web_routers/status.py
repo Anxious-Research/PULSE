@@ -688,6 +688,25 @@ async def get_learning_graph(profile: Optional[str] = None):
         raise HTTPException(status_code=500, detail="Failed to build learning graph")
 
 
+@router.get("/api/brain/events/recent")
+async def get_brain_events_recent(since: int = 0):
+    """Recent real Brain events — a late graph client's catch-up (specs/brain.md §16).
+
+    The live tail arrives over ``/api/events?channel=brain``; this returns what already happened
+    so a desktop that opens the panel, reconnects, or restarts does not have to re-read the whole
+    vault to resynchronise. ``since`` is the last ``seq`` the client applied.
+    """
+    try:
+        from agent.brain.events import get_brain_event_bus
+
+        bus = get_brain_event_bus()
+        events = bus.history(since_seq=max(0, int(since)))
+        return {"seq": bus.seq, "events": [e.to_dict() for e in events]}
+    except Exception:
+        _log.exception("GET /api/brain/events/recent failed")
+        raise HTTPException(status_code=500, detail="Failed to read brain events")
+
+
 async def _learning_mutation(profile: Optional[str], fn, status: int, fallback: str):
     """Run a learning_mutations call under ``_profile_scope`` off-loop; a non-ok result
     becomes ``HTTPException(status, message)``."""

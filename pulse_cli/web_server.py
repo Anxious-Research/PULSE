@@ -303,6 +303,17 @@ async def _lifespan(app: "FastAPI"):
 
     start_background_bootstrap()
 
+    # Real Brain events → the gateway channel transport (specs/brain.md §16). Installed on the
+    # serving loop so the fan-out can schedule broadcasts; the graph's live tail rides the same
+    # /api/events channel transport as everything else instead of a private socket.
+    _brain_events_unsubscribe = None
+    try:
+        from pulse_cli.brain_events_bridge import install_brain_event_bridge
+
+        _brain_events_unsubscribe = install_brain_event_bridge(app)
+    except Exception:
+        _log.debug("brain event bridge not installed; graph will poll", exc_info=True)
+
     try:
         yield
     finally:
@@ -310,6 +321,11 @@ async def _lifespan(app: "FastAPI"):
             tui_gateway.server.clear_tui_message_injector()
         except Exception:
             _log.debug("TUI message injector clear skipped", exc_info=True)
+        if _brain_events_unsubscribe is not None:
+            try:
+                _brain_events_unsubscribe()
+            except Exception:
+                _log.debug("brain event bridge unsubscribe skipped", exc_info=True)
         hosted_room_start_cancel.set()
         _hosted_groups.stop_hosted_room_service(timeout=5.0)
         hosted_room_start_thread.join(timeout=1.0)
