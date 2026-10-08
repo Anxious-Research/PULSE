@@ -23,6 +23,14 @@ import type {
   SimNode,
   Viewport
 } from './types'
+import {
+  drawBloomGlow,
+  drawDeepSpaceBackground,
+  drawPulseEffect,
+  heatmapBrightness,
+  ParticleSystem,
+  PULSE_DURATION
+} from './visual-v3'
 
 export interface Scene {
   adjacency: Map<string, Set<string>>
@@ -38,6 +46,10 @@ export interface Scene {
   memById: Map<string, MemoryCard>
   nodes: SimNode[]
   palette: Palette
+  // v3: particle system for animated spreading activation
+  particles?: ParticleSystem
+  // v3: birth timestamps for pulse effects
+  birthTimes?: Map<string, number>
   // Time scrubber: only paint nodes/links whose recency has been reached. 1 =
   // everything (the default, idle state); lower values "build up" the map.
   reveal: number
@@ -204,6 +216,23 @@ export function drawScene(scene: Scene): DrawResult {
   const { bandInk, base, bg, c, chipBg, darkTheme, inkInv, memoryInk, skillInk } = palette
   const { bandAlpha, lightSize, ringAlpha, sheen } = RING_PARAMS[darkTheme ? 'dark' : 'light']
 
+  // v3: init particle system and birth tracking if not present
+  const particles = scene.particles ?? new ParticleSystem()
+  const birthTimes = scene.birthTimes ?? new Map<string, number>()
+  const now = performance.now()
+  if (scene.particles) {
+    particles.update(now)
+  }
+
+  // v3: heatmap brightness — track max access_count for normalization
+  let maxAccess = 1
+  for (const n of nodes) {
+    const card = memById.get(n.id)
+    if (card?.access_count && card.access_count > maxAccess) {
+      maxAccess = card.access_count
+    }
+  }
+
   // §7 "colour by category": resolve a node's ink from its vault category. Skills
   // keep skillInk; a memory with a recognised category takes that category's hue;
   // anything else (legacy flat-file cards, unknown categories) keeps memoryInk so
@@ -281,6 +310,9 @@ export function drawScene(scene: Scene): DrawResult {
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   ctx.clearRect(0, 0, w, h)
+
+  // v3: deep space background gradient
+  drawDeepSpaceBackground(ctx, w, h)
 
   ctx.globalAlpha = 1
 
@@ -520,16 +552,28 @@ export function drawScene(scene: Scene): DrawResult {
     const sy = projY(n.y * posScale)
 
     ctx.globalAlpha = vis
+
+    // v3: heatmap brightness encoding (memory strength = access_count)
+    const card = memById.get(n.id)
+    const brightness = card?.access_count ? heatmapBrightness(card.access_count, maxAccess) : 0.4
+    
     // §7: colour by category. A vault memory's category says what kind of thing it
     // is (self/user/concept/project/belief/daily); a skill has none, so it keeps
     // the theme primary. Legacy cards without a category keep memoryInk.
     const nodeInk = nodeHigh ? base : categoryInk(n)
     const shape = NODE_SHAPE[n.kind]
 
+    // v3: bloom glow for hover/focus
+    if ((nodeHigh || n.id === hoverId) && revealed) {
+      drawBloomGlow(ctx, sx, sy, r, nodeInk, nodeHigh ? 1 : 0.5)
+    }
+
     if (shape === 'circle') {
+      // v3: adjust sheen by heatmap brightness (brighter = more accessed)
+      const effectiveSheen = sheen * brightness
       // Highlighted orbs pop full bright; others darken so the sheen reads. The
       // sprite carries the disk, so no path is built for circles.
-      sphereFill(ctx, sx, sy, r, nodeInk, sheen, nodeHigh ? 0 : ORB_DARKEN)
+      sphereFill(ctx, sx, sy, r, nodeInk, effectiveSheen, nodeHigh ? 0 : ORB_DARKEN)
     } else if (n.kind === 'ghost') {
       // §7: an unresolved link is not a node you can open — hollow, faint, and
       // smaller than a real note so the eye reads it as a placeholder.
@@ -553,6 +597,16 @@ export function drawScene(scene: Scene): DrawResult {
       ctx.lineWidth = 1.4
       shapePath(ctx, shape, sx, sy, r + 4)
       ctx.stroke()
+    }
+
+    // v3: pulse effect for newly-created nodes
+    if (revealed && !birthTimes.has(n.id)) {
+      birthTimes.set(n.id, now)
+    }
+    const birthTime = birthTimes.get(n.id)
+    if (birthTime && now - birthTime < PULSE_DURATION) {
+      const pulseProgress = (now - birthTime) / PULSE_DURATION
+      drawPulseEffect(ctx, sx, sy, r, nodeInk, pulseProgress)
     }
   }
 
@@ -694,6 +748,11 @@ export function drawScene(scene: Scene): DrawResult {
     }
 
     ctx.textBaseline = 'alphabetic'
+  }
+
+  // v3: draw particles (spreading activation visualization)
+  if (scene.particles) {
+    particles.draw(ctx, now)
   }
 
   // Neighbor constellation labels — greedy placement that clamps to the overlay

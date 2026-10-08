@@ -900,6 +900,8 @@ export interface StarmapMemoryCard {
   /** Digest of the card's text, carried in its node id so an edit names this card and not
    *  whatever now sits at its index. Absent on an imported or pre-fingerprint graph. */
   fingerprint?: string
+  /** v3: access count for heatmap brightness (memory strength). */
+  access_count?: number
 }
 
 export interface StarmapGraph {
