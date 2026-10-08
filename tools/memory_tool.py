@@ -42,21 +42,26 @@ def get_memory_dir() -> Path:
 
 from tools.memory_tool_store import (  # noqa: E402,F401  (re-exports)
     ENTRY_DELIMITER, MEMORY_BLOCK_HEADERS, MemoryStore, _scan_memory_content)
+from agent.brain.store import BrainStore
 
 
-def load_on_disk_store() -> "MemoryStore":
-    """Fresh on-disk MemoryStore with configured limits/flags for contexts with no live
-    agent (gateway, Desktop, ``/memory``) so approvals enforce the SAME caps as
-    ``agent_init``. Falls back to defaults if config can't load; never raises."""
+def load_on_disk_store() -> "BrainStore":
+    """Fresh vault-backed store with the configured flags, for contexts with no live agent
+    (gateway, Desktop, ``/memory``) so approvals write the SAME brain as ``agent_init``.
+
+    The char limits are still read and passed for signature compatibility, but the vault has
+    no budget (specs/brain.md §1) — they are accepted and ignored, and no write here can fail
+    for capacity. Falls back to defaults if config can't load; never raises.
+    """
     try:
         from pulse_cli.config import load_config
         config = load_config() or {}
         mem_cfg = get_builtin_memory_config(config)
         memory_enabled, user_profile_enabled = get_builtin_memory_store_flags(config)
-        store = MemoryStore(int(mem_cfg.get("memory_char_limit", 2200)), int(mem_cfg.get("user_char_limit", 1375)),
-                            memory_enabled=memory_enabled, user_profile_enabled=user_profile_enabled)
+        store = BrainStore(int(mem_cfg.get("memory_char_limit", 2200)), int(mem_cfg.get("user_char_limit", 1375)),
+                           memory_enabled=memory_enabled, user_profile_enabled=user_profile_enabled)
     except Exception:
-        store = MemoryStore()  # config optional — fall back to defaults rather than break /memory
+        store = BrainStore()  # config optional — fall back to defaults rather than break /memory
     store.load_from_disk()
     return store
 

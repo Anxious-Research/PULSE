@@ -21,11 +21,14 @@ Three rules, each from the failure that cost the user their memory:
 from __future__ import annotations
 
 import logging
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
+from . import consolidate as consolidate_mod
+from . import encoding as encoding_mod
 from . import prefix as prefix_mod
 from .index import BrainIndex
 from .recall import (
@@ -46,6 +49,8 @@ DEFAULT_RECALL_LIMIT = DEFAULT_LIMIT
 DEFAULT_RECALL_HOPS = DEFAULT_HOPS
 DEFAULT_RECALL_MIN_SCORE = DEFAULT_MIN_SCORE
 DEFAULT_SPREAD_DECAY = DEFAULT_DECAY
+# Consolidation cadence (§3.2) — a pass every N encoded turns, never on the reply path.
+DEFAULT_CONSOLIDATE_EVERY = 8
 
 
 def _truthy(value: Any, *, default: bool = True) -> bool:
@@ -110,6 +115,12 @@ class BrainSettings:
     spread_decay: float = DEFAULT_SPREAD_DECAY
     # Reconsolidation: recalling a note strengthens it (spacing effect).
     reconsolidate: bool = True
+    # Write path (§3.1): encode each completed turn. The rollback lever — turning this
+    # off leaves the brain readable but frozen, which is what you want if an encode
+    # starts producing notes that should not be there.
+    encode_enabled: bool = True
+    # Consolidation (§3.2) runs every N encoded turns, on the encode thread.
+    consolidate_every: int = DEFAULT_CONSOLIDATE_EVERY
     # Layer 1 — system-prompt prefix. Off by default: it edits the cached prefix, so it is
     # only turned on deliberately (and only matters once self/ and user/ notes exist).
     prefix_enabled: bool = False
@@ -129,6 +140,10 @@ class BrainSettings:
             recall_min_score=_score(section.get("recall_min_score"), DEFAULT_RECALL_MIN_SCORE),
             spread_decay=_score(section.get("spread_decay"), DEFAULT_SPREAD_DECAY),
             reconsolidate=_truthy(section.get("reconsolidate"), default=True),
+            encode_enabled=_truthy(section.get("encode_enabled"), default=True),
+            consolidate_every=_positive_int(
+                section.get("consolidate_every"), DEFAULT_CONSOLIDATE_EVERY, minimum=1, maximum=1000
+            ),
             prefix_enabled=_truthy(section.get("prefix_enabled"), default=False),
             prefix_max_chars=_positive_int(
                 section.get("prefix_max_chars"), prefix_mod.DEFAULT_MAX_CHARS, minimum=200, maximum=60000
@@ -380,3 +395,175 @@ def brain_status(agent: Any = None) -> Dict[str, Any]:
     except Exception:
         status["vault"] = {"error": "stats failed"}
     return status
+
+
+# ── write path (specs/brain.md §3.1, §3.2) ───────────────────────────────────
+#
+# The read path above is deliberately forbidden from creating the vault. The write path is
+# the opposite: it owns directory creation and is allowed to touch disk. It runs off the
+# turn, so a slow disk can never delay a reply. The same three rules hold — fail-open,
+# silent, and absent-by-default in effect.
+
+# One encode in flight at a time. A burst of quick turns must not stack vault writers on
+# top of each other; skipping a pass costs one turn's episodic line, which consolidation
+# would have merged anyway.
+_encode_lock = threading.Lock()
+_encode_state: Dict[str, Any] = {"running": False, "since_consolidate": 0}
+_legacy_migrated: set = set()
+
+
+def get_write_vault(agent: Any = None) -> Optional[BrainVault]:
+    """Vault for the write path — unlike ``get_agent_vault`` this **may** create it.
+
+    Creating directories is itself a write, so only this path is permitted to do it. Any
+    failure returns ``None`` and the caller writes nothing this turn.
+    """
+    cached = getattr(agent, "_brain_vault", None) if agent is not None else None
+    if cached is not None:
+        return cached
+    try:
+        vault = BrainVault()
+        vault.ensure_vault_structure()
+    except Exception:
+        logger.debug("brain vault could not be created for writing", exc_info=True)
+        return None
+    if agent is not None:
+        try:
+            agent._brain_vault = vault
+        except Exception:
+            pass
+    return vault
+
+
+def migrate_legacy_once(vault: Any = None) -> Dict[str, Any]:
+    """Import legacy flat ``MEMORY.md`` / ``USER.md`` into the vault — once per process.
+
+    §5 makes the vault the only memory, so entries a user already had must arrive *before*
+    anything reads the vault as authoritative. The importer is additive and idempotent (§2:
+    nothing replaces anything by deleting it) and never touches the source file.
+    """
+    if vault is None:
+        return {"skipped": "no vault"}
+    key = str(getattr(vault, "vault_dir", "") or "")
+    with _encode_lock:
+        if key and key in _legacy_migrated:
+            return {"skipped": "already migrated"}
+        _legacy_migrated.add(key)
+    try:
+        from .migrate import migrate_legacy_memory
+
+        return migrate_legacy_memory(vault=vault, dry_run=False)
+    except Exception:
+        logger.debug("legacy memory import failed", exc_info=True)
+        with _encode_lock:
+            _legacy_migrated.discard(key)  # let a later turn retry
+        return {"skipped": "import failed"}
+
+
+def brain_encode_turn(
+    agent: Any,
+    user_text: str,
+    assistant_text: str = "",
+    *,
+    session_id: str = "",
+    settings: Optional[BrainSettings] = None,
+    dry_run: bool = False,
+) -> Dict[str, Any]:
+    """Encode one completed turn into the vault (§3.1). Never raises.
+
+    The **user's** message is the statement source: that is where durable claims and
+    corrections come from. The assistant's reply is passed as corpus only, so a fact PULSE
+    merely restated back this turn does not look novel enough to encode again.
+    """
+    settings = settings or resolve_settings(agent)
+    if not settings.enabled or not settings.encode_enabled:
+        return {"encode": "disabled"}
+    text = (user_text or "").strip()
+    if not text:
+        return {"encode": "empty"}
+    vault = get_write_vault(agent)
+    if vault is None:
+        return {"encode": "no vault"}
+    migrate_legacy_once(vault)
+    try:
+        report = encoding_mod.encode_turn(
+            vault,
+            text,
+            turn_id=session_id or None,
+            corpus_extra=assistant_text or "",
+            dry_run=dry_run,
+        )
+    except Exception:
+        logger.debug("brain encode failed", exc_info=True)
+        return {"encode": "failed"}
+    if not dry_run:
+        restamp_index_cache(agent, vault)
+    return report
+
+
+def brain_consolidate(agent: Any = None, *, vault: Any = None, dry_run: bool = False) -> Dict[str, Any]:
+    """Run one consolidation pass over the vault (§3.2). Never raises.
+
+    Promotes recurring episodic lines to semantic notes, merges near-duplicates, and rewrites
+    links. Every step is additive or in-place; nothing is deleted (§12).
+    """
+    settings = resolve_settings(agent)
+    if not settings.enabled or not settings.encode_enabled:
+        return {"consolidate": "disabled"}
+    vault = vault if vault is not None else get_write_vault(agent)
+    if vault is None:
+        return {"consolidate": "no vault"}
+    try:
+        report = consolidate_mod.consolidate_vault(vault, dry_run=dry_run)
+    except Exception:
+        logger.debug("brain consolidation failed", exc_info=True)
+        return {"consolidate": "failed"}
+    if not dry_run:
+        restamp_index_cache(agent, vault)
+    return report
+
+
+def _encode_worker(agent: Any, user_text: str, assistant_text: str, session_id: str) -> None:
+    """Body of the background encode thread: encode, then consolidate when due."""
+    try:
+        brain_encode_turn(agent, user_text, assistant_text, session_id=session_id)
+        settings = resolve_settings(agent)
+        with _encode_lock:
+            _encode_state["since_consolidate"] += 1
+            due = _encode_state["since_consolidate"] >= max(1, int(settings.consolidate_every))
+            if due:
+                _encode_state["since_consolidate"] = 0
+        if due:
+            brain_consolidate(agent)
+    except Exception:
+        logger.debug("brain encode worker failed", exc_info=True)
+    finally:
+        with _encode_lock:
+            _encode_state["running"] = False
+
+
+def brain_encode_turn_async(
+    agent: Any, user_text: str, assistant_text: str = "", *, session_id: str = ""
+) -> bool:
+    """Turn-end entry point (§3.1). Returns whether a pass was scheduled.
+
+    Never blocks the caller and never raises: this runs *after* a reply has been sent, so a
+    failure here must be invisible to the user. At most one pass at a time.
+    """
+    with _encode_lock:
+        if _encode_state["running"]:
+            return False
+        _encode_state["running"] = True
+    try:
+        threading.Thread(
+            target=_encode_worker,
+            args=(agent, user_text, assistant_text, session_id),
+            name="brain-encode",
+            daemon=True,
+        ).start()
+    except Exception:
+        logger.debug("brain encode could not be scheduled", exc_info=True)
+        with _encode_lock:
+            _encode_state["running"] = False
+        return False
+    return True

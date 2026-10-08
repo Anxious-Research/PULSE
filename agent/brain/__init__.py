@@ -81,11 +81,14 @@ __all__ = [
     "find_promotion_candidates",
     "merge_near_duplicates",
     "relink_mentions",
+    # memory store adapter
+    "BrainStore",
 ]
 
 # Public name -> (submodule, attribute). Only names that do NOT collide with a submodule.
 _LAZY: dict = {
     "BrainVault": ("vault", "BrainVault"),
+    "BrainStore": ("store", "BrainStore"),
     "get_brain_vault_dir": ("vault", "get_brain_vault_dir"),
     "BrainNode": ("models", "BrainNode"),
     "Frontmatter": ("models", "Frontmatter"),

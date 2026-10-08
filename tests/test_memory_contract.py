@@ -40,6 +40,7 @@ CONTRACT_MODULES = [
     "agent.brain.correction",
     "agent.brain.encoding",
     "agent.brain.consolidate",
+    "agent.brain.store",
 ]
 
 # Names that MUST keep existing: removing them broke the live agent before.
@@ -54,6 +55,7 @@ REQUIRED_NAMES = {
         "apply_memory_pending",
     ],
     "tools.memory_tool_store": ["MemoryStore", "ENTRY_DELIMITER"],
+    "agent.brain.store": ["BrainStore"],
     # Imported by agent/turn_context.py and agent/system_prompt.py at runtime. A rename here
     # would drop memory silently (the import sits in a try/except by design), so pin it.
     "agent.brain.session": [
@@ -80,6 +82,8 @@ def _iter_python_files():
 def _imported_names_from(source: str, module: str) -> set:
     """Names imported by ``from <module> import ...`` anywhere under the repo."""
     found: set = set()
+    if module not in source:
+        return found
     try:
         tree = ast.parse(source)
     except (SyntaxError, ValueError):

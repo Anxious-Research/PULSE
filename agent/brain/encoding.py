@@ -411,6 +411,7 @@ def encode_turn(
     now: Optional[float] = None,
     threshold: float = DEFAULT_THRESHOLD,
     embedder: Any = None,
+    corpus_extra: str = "",
     dry_run: bool = False,
 ) -> Dict[str, Any]:
     """Encode one turn into the vault. Returns a report; ``dry_run`` writes nothing.
@@ -423,6 +424,11 @@ def encode_turn(
     nodes = vault.list_all_nodes() if vault is not None else []
     existing = [(node.id, node.content or "") for node in nodes if (node.content or "").strip()]
     corpus = [content for _, content in existing]
+    # ``corpus_extra`` widens the novelty pool without being a statement source: the
+    # assistant's own reply goes here, so a fact PULSE merely restated this turn does
+    # not look novel enough to encode a second time.
+    if (corpus_extra or "").strip():
+        corpus = [*corpus, corpus_extra.strip()]
 
     candidates = extract_candidates(
         text, corpus=corpus, existing=existing, threshold=threshold, embedder=embedder

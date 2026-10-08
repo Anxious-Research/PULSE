@@ -929,12 +929,26 @@ class AIAgent(
         is almost certainly a retry of the same intent, and a prefetch keyed on the interrupted turn would
         fire against stale context. See #15218.
         """
-        if interrupted or not (self._memory_manager and final_response and original_user_message):
+        if interrupted or not (final_response and original_user_message):
             return
         # Flatten multimodal parts to text (newline-joined for memory).
         user_text = _summarize_user_message_for_log(original_user_message, sep="\n")
         response_text = _summarize_user_message_for_log(final_response, sep="\n")
         if not (user_text and response_text):
+            return
+        # Native brain: encode this turn (specs/brain.md §3.1). It owns its own config gate
+        # (``brain.enabled`` / ``brain.encode_enabled``) and does its work on a background
+        # thread, so it runs even when no external provider is configured — the brain is an
+        # organ of PULSE, not a memory provider. Best-effort by construction.
+        try:
+            from agent.brain.session import brain_encode_turn_async
+
+            brain_encode_turn_async(
+                self, user_text, response_text, session_id=self.session_id or ""
+            )
+        except Exception:
+            logger.debug("brain encode hook failed", exc_info=True)
+        if not self._memory_manager:
             return
         try:
             sync_kwargs = {"session_id": self.session_id or "", **({"messages": messages} if messages is not None else {})}

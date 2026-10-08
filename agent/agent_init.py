@@ -1328,18 +1328,27 @@ def _init_memory(agent, _agent_cfg, skip_memory, platform, memory_manager=None):
         and "memory" not in (agent.disabled_toolsets or [])
     )
     if not skip_memory or _memory_toolset_requested:
+        # Default BEFORE the risky block (specs/brain.md §6.1): if any import below fails,
+        # ``mem_config`` stays a dict instead of going unbound, so the ``mem_config.get(...)``
+        # further down can never raise UnboundLocalError and kill memory on every run — the
+        # exact failure §2.2 documents.
+        mem_config = {}
         # Memory is optional — don't break agent init
         with suppress(Exception):
             from tools.memory_tool import (
-                MemoryStore, get_builtin_memory_config, get_builtin_memory_store_flags,
+                get_builtin_memory_config, get_builtin_memory_store_flags,
             )
+            from agent.brain.store import BrainStore
+
             mem_config = get_builtin_memory_config(_agent_cfg)
             agent._memory_enabled, agent._user_profile_enabled = get_builtin_memory_store_flags(
                 _agent_cfg
             )
             agent._memory_nudge_interval = int(mem_config.get("nudge_interval", 10))
             if agent._memory_enabled or agent._user_profile_enabled:
-                agent._memory_store = MemoryStore(
+                # The brain vault is the store (specs/brain.md §5). The char limits are
+                # accepted for signature compatibility and ignored — storage is unbounded.
+                agent._memory_store = BrainStore(
                     memory_char_limit=mem_config.get("memory_char_limit", 2200),
                     user_char_limit=mem_config.get("user_char_limit", 1375),
                     memory_enabled=agent._memory_enabled,
