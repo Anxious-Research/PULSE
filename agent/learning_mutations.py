@@ -52,18 +52,23 @@ def _resolve_fingerprint(chunks: list[str], fingerprint: str) -> int | None:
 
 def _locate_memory(node_id: str) -> tuple[Path, list[str], int]:
     """Resolve a memory node id to (file, all §-delimited entries, local index).
-    Entries come from ``MemoryStore._read_file`` — the memory tool's own parser. A
-    fingerprinted id resolves by the entry's text; a legacy id by position (a profile
-    card's local index is its global index minus the MEMORY.md card count). Read-only
-    view: mutations resolve the id again INSIDE ``_mutate_memory``'s lock."""
+    Entries come from vault nodes or legacy MemoryStore files.
+    """
     from pulse_constants import get_pulse_home
     from tools.memory_tool import MemoryStore
 
     source, gidx, fingerprint = _parse_memory_id(node_id)
     path = get_pulse_home() / "memories" / _MEMORY_FILES[source]
-    if not path.exists():
-        raise ValueError(f"{path.name} not found")
-    chunks = MemoryStore._read_file(path)
+    if path.exists():
+        chunks = MemoryStore._read_file(path)
+    else:
+        from agent.learning_graph import _memory_cards
+
+        cards = _memory_cards()
+        chunks = [
+            c["body"] for c in cards
+            if (c.get("source") == source or (source == "profile" and c.get("source") == "profile"))
+        ]
     if fingerprint:
         local = _resolve_fingerprint(chunks, fingerprint)
         if local is None:

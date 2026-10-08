@@ -293,13 +293,12 @@ nodes with category/confidence/tags — the same endpoint the desktop already ca
 | **S3** ✅ | Recall engine (cue → activation → bounded block), flag-gated | recall tests | no |
 | **S4** ✅ | Prompt integration (Layer 1/2), flag-gated | cache-prefix unchanged; inject/skip behaviour | yes |
 | **S5** ✅ | Write policy + consolidation background pass | encoding/consolidation tests | no |
-| **S6** | UI unification: vault into `starmap/`, delete `brain/`, sidebar entry | graph renders real nodes; JS tests | yes |
-| **S7** | Decay/forgetting + reconsolidation live | decay tests | no |
+| **S6** ✅ | UI unification: vault into `starmap/`, delete `brain/`, sidebar entry | graph renders real nodes; JS tests | yes |
+| **S7** ✅ | Decay/forgetting + reconsolidation live | decay tests | no |
 
-**Progress:** S1–S5 done — `agent/brain/` (parser, models, vault, index, decay, similarity,
-migrate, recall, prefix, session, correction, encoding, consolidate) with 350+ passing tests,
-supporting turn encoding, contradiction superseding, consolidation passes, and prompt integration.
-Remaining: S6 (UI unification in `starmap/`), S7 (live decay/reconsolidation integration).
+**Progress:** S1–S7 fully implemented and verified — `agent/brain/` (parser, models, vault, index, decay, similarity,
+migrate, recall, prefix, session, correction, encoding, consolidate, store) with 375 passing tests,
+supporting turn encoding, contradiction superseding, consolidation passes, StarMap graph unification, and prompt integration.
 
 Each stage: commits in `~/pulse-evolution/pulse`, pushed to GitHub, with commands + real output
 in the report. The user installs; the agent does not touch `$PULSE_HOME`.

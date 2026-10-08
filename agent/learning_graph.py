@@ -159,27 +159,54 @@ def memory_node_id(card: dict[str, Any], index: int) -> str:
 
 
 def _memory_cards() -> list[dict[str, Any]]:
-    """``MEMORY.md`` / ``USER.md`` entries as the memory tool parses them; every
-    entry becomes one card (MEMORY.md cards first, then USER.md)."""
+    """Vault nodes as memory cards (active nodes from self/, user/, concept/, project/, belief/).
+    Falls back to MEMORY.md / USER.md if vault is empty.
+    """
+    cards: list[dict[str, Any]] = []
+    try:
+        from agent.brain.vault import BrainVault
+        from agent.brain.models import NodeStatus
+
+        vault = BrainVault()
+        if vault.vault_dir.exists():
+            nodes = [
+                n for n in vault.list_all_nodes()
+                if n.frontmatter.status == NodeStatus.ACTIVE.value and (n.content or "").strip()
+            ]
+            nodes.sort(key=lambda n: (n.timestamp or 0, n.id))
+            for chunk_idx, node in enumerate(nodes):
+                source = "profile" if node.frontmatter.category == "user" else "memory"
+                first = (node.title or (node.content.splitlines()[0] if node.content else "")).strip().lstrip("# ").strip()
+                cards.append({
+                    "source": source,
+                    "timestamp": int(node.timestamp or 0) + chunk_idx if node.timestamp else None,
+                    "title": (first[:80] + "…") if len(first) > 80 else first,
+                    "body": node.content[:1200],
+                    "fingerprint": memory_fingerprint(node.content),
+                    "node_id": node.id,
+                    "category": node.frontmatter.category,
+                    "tags": node.frontmatter.tags,
+                    "stability": node.frontmatter.stability,
+                })
+            if cards:
+                return cards
+    except Exception:
+        pass
+
     from tools.memory_tool import MemoryStore
 
     base = get_pulse_home() / "memories"
-    cards: list[dict[str, Any]] = []
     for fname, source in (("MEMORY.md", "memory"), ("USER.md", "profile")):
         path = base / fname
         try:
             file_ts = _to_int_ts(path.stat().st_mtime)
         except OSError:
             continue
-        # The store's own parser (utf-8-sig, same delimiter): a hand-rolled split kept a Notepad
-        # BOM glued to the first entry, so its fingerprint never matched the store's and the card
-        # was "stale" forever.
         for chunk_idx, chunk in enumerate(MemoryStore._read_file(path)):
             first = chunk.splitlines()[0].strip().lstrip("# ").strip()
             cards.append({
                 "source": source, "timestamp": file_ts + chunk_idx if file_ts is not None else None,
                 "title": (first[:80] + "…") if len(first) > 80 else first, "body": chunk[:1200],
-                # Digest the WHOLE chunk, not the truncated ``body`` a long memory renders with.
                 "fingerprint": memory_fingerprint(chunk),
             })
     return cards
