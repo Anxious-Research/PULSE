@@ -144,7 +144,7 @@ class BrainSettings:
             consolidate_every=_positive_int(
                 section.get("consolidate_every"), DEFAULT_CONSOLIDATE_EVERY, minimum=1, maximum=1000
             ),
-            prefix_enabled=_truthy(section.get("prefix_enabled"), default=False),
+            prefix_enabled=_truthy(section.get("prefix_enabled"), default=True),
             prefix_max_chars=_positive_int(
                 section.get("prefix_max_chars"), prefix_mod.DEFAULT_MAX_CHARS, minimum=200, maximum=60000
             ),

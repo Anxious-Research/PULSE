@@ -54,8 +54,9 @@ MODIFIER_NOVELTY = 0.10
 MODIFIER_RECURRENCE = 0.05
 
 #: A weak signal with a novel topic maxes out at 0.15, so trivia cannot cross this — something
-#: must actually be asserted, corrected or decided for a turn to be remembered.
-DEFAULT_THRESHOLD = 0.35
+#: must actually be asserted, corrected or decided for a turn to be remembered. Raised to 0.40
+#: to filter marginal spec/doc fragments while preserving outcome-only memories (0.32+0.10=0.42).
+DEFAULT_THRESHOLD = 0.40
 
 #: §3.5: corrections always encode, however they are worded.
 CORRECTION_FLOOR = 0.95
@@ -163,6 +164,10 @@ _REMEMBER_RE = re.compile(r"\bremember\b|\byaad rakh", re.IGNORECASE)
 _MIN_STATEMENT_WORDS = 3
 _MIN_STATEMENT_CHARS = 10
 
+# Formatted prose markers: tree diagrams, list bullets, box-drawing, markdown structure.
+# When >40% of lines start with these, the message is spec/doc content, not conversational facts.
+_PROSE_MARKERS = re.compile(r'^[\s│├└─•\-*>#`]{1,4}(?:\s|[a-zA-Z])', re.MULTILINE)
+
 
 @dataclass(frozen=True)
 class SalienceSignals:
@@ -212,6 +217,22 @@ def is_trivial(text: str) -> bool:
     if _COMMAND_RE.match(stripped) or _TRIVIA_RE.match(stripped):
         return True
     return len(stripped) < _MIN_STATEMENT_CHARS and not _REMEMBER_RE.search(stripped)
+
+
+def _is_specification_prose(text: str) -> bool:
+    """True when the message is primarily spec/doc prose, not conversational facts.
+    
+    Detects tree diagrams, bullet lists, markdown structure, and formatted blocks that are
+    documentation content rather than user statements to remember. A message that is >40%
+    structured prose (lines starting with formatting markers) is filtered wholesale before
+    statement extraction, so spec trees and skill content aren't blindly turned into nodes.
+    """
+    lines = [line for line in (text or "").splitlines() if line.strip()]
+    if not lines:
+        return False
+    # Count lines starting with tree/list/structure markers
+    formatted = sum(1 for line in lines if _PROSE_MARKERS.match(line))
+    return formatted / len(lines) > 0.40
 
 
 def _correction_signal(text: str) -> float:
@@ -362,6 +383,9 @@ def extract_candidates(
     """
     if is_trivial(text):
         return []
+    # Block spec/documentation prose before statement extraction (fixes junk-encoding defect).
+    if _is_specification_prose(text):
+        return []
 
     corpus_texts = list(corpus) or [content for _, content in existing]
     candidates: List[MemoryCandidate] = []
@@ -453,6 +477,22 @@ def encode_turn(
         report["episodic"] = _append_episodic(vault, episodic, turn_id=turn_id, now=ts, dry_run=dry_run)
 
     for candidate in semantic:
+        # Immediate duplicate check: skip if content is >85% similar to an existing node in
+        # the same category (fixes -2/-3 suffix proliferation).
+        existing_similar = [
+            node for node in nodes
+            if node.category == candidate.category
+            and (node.content or "").strip()
+            and similarity(candidate.text, node.content, embedder=embedder) > 0.85
+        ]
+        if existing_similar:
+            report["skipped"].append({
+                "reason": "near_duplicate",
+                "candidate": candidate.as_dict(),
+                "existing_node": existing_similar[0].id,
+            })
+            continue
+        
         node_id = vault.unique_node_id(candidate.category, slugify(candidate.title))
         if dry_run:
             report["semantic"].append({"node_id": node_id, **candidate.as_dict()})

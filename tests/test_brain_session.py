@@ -94,9 +94,9 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(settings.recall_min_score, 0.10)
         self.assertEqual(settings.recall_hops, 2)
 
-    def test_prefix_is_off_by_default(self):
-        """Layer 1 edits the cached prefix, so it must be opt-in."""
-        self.assertFalse(BrainSettings.from_config({}).prefix_enabled)
+    def test_prefix_is_on_by_default(self):
+        """v3: Layer 1 is ON by default for out-of-box experience (specs/brain.md §11.1)."""
+        self.assertTrue(BrainSettings.from_config({}).prefix_enabled)
 
     def test_resolve_settings_prefers_agent_config(self):
         agent = SimpleNamespace(_agent_config={"brain": {"recall_limit": 3}})
@@ -267,9 +267,11 @@ class TestReconsolidation(BridgeTestCase):
 
 
 class TestStablePrefix(BridgeTestCase):
-    def test_off_by_default(self):
+    def test_on_by_default_v3(self):
+        """v3: prefix_enabled=True by default, so self/identity appears without config."""
         self.vault.write_node("self/identity", "PULSE is a single entity", title="Identity", now=T0)
-        self.assertEqual(brain_stable_prefix(self.agent), "")
+        prefix = brain_stable_prefix(self.agent)
+        self.assertIn("PULSE is a single entity", prefix)
 
     def test_enabled_returns_the_prefix(self):
         self.vault.write_node("self/identity", "PULSE is a single entity", title="Identity", now=T0)
