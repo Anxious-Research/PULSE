@@ -180,5 +180,76 @@ class TestRecentEventsEndpoint(unittest.TestCase):
         self.assertIn("concept/endpoint-probe", [e["node_id"] for e in body["events"]])
 
 
+class TestLiveFrameCrossesTheSocket(unittest.TestCase):
+    """End-to-end: a real vault mutation delivers a frame over /api/events?channel=brain.
+
+    This exercises the whole live tail — bus → bridge → gateway channel transport → a WebSocket
+    subscriber — not just the bus or the bridge in isolation. The frame under test is produced by
+    an actual ``write_node``; nothing here hand-builds an event.
+    """
+
+    def test_mutation_frame_reaches_a_channel_subscriber(self):
+        import contextlib
+        import tempfile
+        import threading
+        import time
+
+        try:
+            from fastapi import FastAPI
+            from starlette.testclient import TestClient
+        except Exception as exc:  # pragma: no cover - environment guard
+            self.skipTest(f"FastAPI/TestClient unavailable: {exc}")
+
+        import pulse_cli.web_routers.chat_ws as chat_ws
+        from pulse_cli.brain_events_bridge import BRAIN_CHANNEL, install_brain_event_bridge
+
+        # The sidecar accept-path gates read dashboard state owned by web_server. In-process the
+        # TestClient peer is "testclient" (not loopback), so make the gate loopback-permissive —
+        # the gate itself is covered by the dashboard auth suite; here we test the event path.
+        orig_enabled = chat_ws._DASHBOARD_EMBEDDED_CHAT_ENABLED
+        orig_auth = chat_ws._ws_auth_ok
+        orig_allowed = chat_ws._ws_request_is_allowed
+        chat_ws._DASHBOARD_EMBEDDED_CHAT_ENABLED = True
+        chat_ws._ws_auth_ok = lambda ws: True
+        chat_ws._ws_request_is_allowed = lambda ws: True
+
+        tmp = Path(tempfile.mkdtemp())
+        bridge = {}
+
+        @contextlib.asynccontextmanager
+        async def _lifespan(app):
+            bridge["unsub"] = install_brain_event_bridge(app)
+            try:
+                yield
+            finally:
+                if bridge.get("unsub"):
+                    bridge["unsub"]()
+
+        app = FastAPI(lifespan=_lifespan)
+        app.include_router(chat_ws.router)
+
+        try:
+            with TestClient(app) as client:
+                with client.websocket_connect(f"/api/events?channel={BRAIN_CHANNEL}") as sock:
+                    time.sleep(0.25)  # let the subscriber register
+                    vault = BrainVault(vault_dir=tmp)
+                    vault.ensure_vault_structure()
+                    # Mutate off the loop thread — exactly how a turn's encode runs.
+                    t = threading.Thread(
+                        target=lambda: vault.write_node(
+                            "concept/wire-probe", "Wire probe is a real memory.",
+                            category="concept", salience=0.6))
+                    t.start()
+                    t.join()
+                    frame = json.loads(sock.receive_text())
+        finally:
+            chat_ws._DASHBOARD_EMBEDDED_CHAT_ENABLED = orig_enabled
+            chat_ws._ws_auth_ok = orig_auth
+            chat_ws._ws_request_is_allowed = orig_allowed
+
+        self.assertEqual(frame["kind"], MEMORY_CREATED)
+        self.assertEqual(frame["node_id"], "concept/wire-probe")
+
+
 if __name__ == "__main__":
     unittest.main()
