@@ -66,7 +66,13 @@ export function buildGraph(
 
   const links: GLink[] = graph.edges
     .filter(e => byId.has(e.source) && byId.has(e.target) && known.has(e.source) && known.has(e.target))
-    .map(e => ({ source: e.source, target: e.target }))
+    .map(e => ({
+      source: e.source,
+      target: e.target,
+      kind: e.kind,
+      provenance: e.provenance,
+      confidence: typeof e.confidence === 'number' ? e.confidence : undefined
+    }))
 
   const sim = forceSimulation<GNode, GLink>(nodes)
     .alphaDecay(0.0228)

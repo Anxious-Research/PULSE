@@ -21,7 +21,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from .vault import BrainVault
 
 # Bump when the schema changes so an old cache is rebuilt, not mis-read.
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 
 class BrainCache:
@@ -83,9 +83,11 @@ class BrainCache:
             );
 
             CREATE TABLE IF NOT EXISTS edges (
-                source TEXT NOT NULL,
-                target TEXT NOT NULL,
-                kind   TEXT NOT NULL,
+                source      TEXT NOT NULL,
+                target      TEXT NOT NULL,
+                kind        TEXT NOT NULL,
+                provenance  TEXT NOT NULL DEFAULT 'inferred_entity',
+                confidence  REAL NOT NULL DEFAULT 0.5,
                 PRIMARY KEY (source, target, kind)
             );
 
@@ -266,28 +268,19 @@ class BrainCache:
             (node_id, node.title, content),
         )
 
-        # Wikilink edges (raw target — resolution is the index's job).
+        # Typed edges (focus-topic model): a node's relations carry type + provenance +
+        # confidence. Derived legacy nodes (no ``relations`` field) are interpreted through
+        # ``typed_relations()`` so an old vault indexes with correct types and no migration.
         self.conn.execute("DELETE FROM edges WHERE source = ?", (node_id,))
-        for link in node.wikilinks or []:
-            target = getattr(link, "target", None)
-            if target:
-                self.conn.execute(
-                    "INSERT OR IGNORE INTO edges (source, target, kind) VALUES (?, ?, 'wikilink')",
-                    (node_id, target),
-                )
-
-        # supersedes is a real, typed edge — surface it so the graph can draw it.
-        for target in (node.frontmatter.supersedes if node.frontmatter else None) or []:
+        try:
+            typed = node.typed_relations()
+        except Exception:
+            typed = []
+        for rel in typed:
             self.conn.execute(
-                "INSERT OR IGNORE INTO edges (source, target, kind) VALUES (?, ?, 'supersedes')",
-                (node_id, target),
-            )
-
-        # Derived 'related' edges (§5: consolidation writes these from entity mentions / semantic overlap).
-        for target in (node.frontmatter.related if node.frontmatter else None) or []:
-            self.conn.execute(
-                "INSERT OR IGNORE INTO edges (source, target, kind) VALUES (?, ?, 'related')",
-                (node_id, target),
+                "INSERT OR IGNORE INTO edges (source, target, kind, provenance, confidence) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (node_id, rel.target, rel.rel_type, rel.provenance, float(rel.confidence)),
             )
         self.conn.commit()
 
@@ -337,6 +330,27 @@ class BrainCache:
         except sqlite3.Error:
             return []
         return [(r["source"], r["target"], r["kind"]) for r in rows]
+
+    def all_edges_typed(self) -> List[Dict[str, Any]]:
+        """Every edge with its full typed contract (kind, provenance, confidence)."""
+        if not self.conn:
+            return []
+        try:
+            rows = self.conn.execute(
+                "SELECT source, target, kind, provenance, confidence FROM edges"
+            ).fetchall()
+        except sqlite3.Error:
+            return []
+        return [
+            {
+                "source": r["source"],
+                "target": r["target"],
+                "kind": r["kind"],
+                "provenance": r["provenance"],
+                "confidence": float(r["confidence"]),
+            }
+            for r in rows
+        ]
 
     # -- recall -------------------------------------------------------------
 

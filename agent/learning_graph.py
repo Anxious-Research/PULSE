@@ -270,17 +270,18 @@ def _memory_skill_edges(memory_cards: list[dict[str, Any]], skills: list[SkillNo
     return edges
 
 
-def _vault_link_edges(memory_cards: list[dict[str, Any]]) -> tuple[list[tuple[str, str]], list[dict[str, Any]]]:
-    """Vault edges as ``(source, target)`` pairs, plus ghost nodes for dangling links.
+def _vault_link_edges(memory_cards: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Vault edges as typed dicts ``{source, target, kind, provenance, confidence}``, plus ghost nodes.
 
     §7 of the spec: *edges = resolved ``[[wikilinks]]`` + derived ``related`` frontmatter (entity
     mentions, semantic overlap). Directional arrows point from source → target; unresolved links
     become ghost nodes so the graph shows "A wants to link to B even though B doesn't exist yet."
-    Wikilinks and derived relations are treated equally because both represent knowledge — a
-    lexical guess is a hint; a link the user (or consolidation) actually wrote is knowledge.
+    Each edge now carries the typed-edge contract (relationship type + provenance + confidence)
+    so the UI can distinguish an explicitly asserted link from an inferred one and weight it by
+    trust rather than treating every line as equal.
 
-    §9 fast path: when the cache is fresh, read edges from SQLite instead of rebuilding the index.
-    The cache stores both wikilinks (kind='wikilink') and derived relations (kind='related').
+    §9 fast path: when the cache is fresh, read typed edges from SQLite instead of rebuilding the
+    index. The cache stores kind/provenance/confidence per edge.
     """
     graph_id_by_node = {
         card["node_id"]: memory_node_id(card, index)
@@ -289,6 +290,16 @@ def _vault_link_edges(memory_cards: list[dict[str, Any]]) -> tuple[list[tuple[st
     }
     if not graph_id_by_node:
         return [], []
+
+    GHOST_META = {"provenance": "asserted", "confidence": 1.0}
+
+    def _ghost(target: str) -> dict[str, Any]:
+        return {
+            "id": f"ghost:{target}", "label": target, "kind": "ghost", "category": "ghost",
+            "useCount": 0, "state": "unresolved", "createdBy": None, "pinned": False,
+            "timestamp": None,
+        }
+
     try:
         from agent.brain.index import BrainIndex
         from agent.brain.vault import BrainVault
@@ -296,66 +307,88 @@ def _vault_link_edges(memory_cards: list[dict[str, Any]]) -> tuple[list[tuple[st
 
         vault = BrainVault()
         cache = BrainCache(vault)
-        
-        # Try cache edges (O(1) query)
+
+        # Fast path: typed edges straight from the cache.
         if not cache.is_stale():
-            cache_edges = cache.all_edges()
+            cache_edges = cache.all_edges_typed()
             if cache_edges:
-                # Build resolved/unresolved from cache data
-                edges: list[tuple[str, str]] = []
-                unresolved: dict[str, set[str]] = {}
-                for source, target, kind in cache_edges:
-                    source_graph = graph_id_by_node.get(source)
-                    target_graph = graph_id_by_node.get(target)
+                edges: list[dict[str, Any]] = []
+                unresolved: dict[str, list[dict[str, Any]]] = {}
+                for ce in cache_edges:
+                    source_graph = graph_id_by_node.get(ce["source"])
+                    target_graph = graph_id_by_node.get(ce["target"])
                     if source_graph and target_graph and source_graph != target_graph:
-                        edges.append((source_graph, target_graph))
+                        edges.append({
+                            "source": source_graph, "target": target_graph,
+                            "kind": ce["kind"], "provenance": ce["provenance"],
+                            "confidence": ce["confidence"],
+                        })
                     elif source_graph and not target_graph:
-                        unresolved.setdefault(target, set()).add(source)
-                
+                        unresolved.setdefault(ce["target"], []).append({
+                            "source": source_graph, "kind": ce["kind"],
+                            "provenance": ce["provenance"], "confidence": ce["confidence"],
+                        })
+
                 ghosts: dict[str, dict[str, Any]] = {}
-                for target, source_ids in unresolved.items():
+                for target, refs in unresolved.items():
                     ghost_id = f"ghost:{target}"
-                    ghosts.setdefault(ghost_id, {
-                        "id": ghost_id, "label": target, "kind": "ghost", "category": "ghost",
-                        "useCount": 0, "state": "unresolved", "createdBy": None, "pinned": False,
-                        "timestamp": None,
-                    })
-                    for source_id in source_ids:
-                        source_graph = graph_id_by_node.get(source_id)
-                        if source_graph:
-                            edges.append((source_graph, ghost_id))
-                
-                return list(dict.fromkeys(edges)), list(ghosts.values())
-        
-        # Cache miss/stale — fall back to full index rebuild
+                    ghosts.setdefault(ghost_id, _ghost(target))
+                    for ref in refs:
+                        edges.append({
+                            "source": ref["source"], "target": ghost_id,
+                            "kind": ref["kind"], "provenance": ref["provenance"],
+                            "confidence": ref["confidence"],
+                        })
+                return _dedupe_typed_edges(edges), list(ghosts.values())
+
+        # Cache miss/stale — rebuild and read typed relations off each node.
         index = BrainIndex(vault).rebuild()
     except Exception:
         # A graph that cannot read the vault is still a graph of skills; never raise here.
         return [], []
 
-    edges: list[tuple[str, str]] = []
-    for source_id, targets in index.forward.items():
-        source = graph_id_by_node.get(source_id)
+    edges = []
+    ghosts = {}
+    for node_id, node in vault.iter_nodes():
+        source = graph_id_by_node.get(node_id)
         if source is None:
             continue
-        for target in targets:
-            resolved = graph_id_by_node.get(target)
+        try:
+            typed = node.typed_relations()
+        except Exception:
+            typed = []
+        for rel in typed:
+            resolved_id = index._resolve(rel.target) if hasattr(index, "_resolve") else rel.target
+            resolved = graph_id_by_node.get(resolved_id or rel.target)
             if resolved is not None and resolved != source:
-                edges.append((source, resolved))
+                edges.append({
+                    "source": source, "target": resolved, "kind": rel.rel_type,
+                    "provenance": rel.provenance, "confidence": rel.confidence,
+                })
+            elif resolved is None:
+                ghost_id = f"ghost:{rel.target}"
+                ghosts.setdefault(ghost_id, _ghost(rel.target))
+                edges.append({
+                    "source": source, "target": ghost_id, "kind": rel.rel_type,
+                    "provenance": rel.provenance, "confidence": rel.confidence,
+                })
+    return _dedupe_typed_edges(edges), list(ghosts.values())
 
-    ghosts: dict[str, dict[str, Any]] = {}
-    for target, source_ids in index.unresolved.items():
-        ghost_id = f"ghost:{target}"
-        ghosts.setdefault(ghost_id, {
-            "id": ghost_id, "label": target, "kind": "ghost", "category": "ghost",
-            "useCount": 0, "state": "unresolved", "createdBy": None, "pinned": False,
-            "timestamp": None,
-        })
-        for source_id in source_ids:
-            source = graph_id_by_node.get(source_id)
-            if source is not None:
-                edges.append((source, ghost_id))
-    return list(dict.fromkeys(edges)), list(ghosts.values())
+
+def _dedupe_typed_edges(edges: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Collapse duplicate (source, target) pairs, keeping the most trustworthy edge.
+
+    Confidence is NOT summed across duplicates — an edge regenerated from identical evidence must
+    not inflate trust. We keep the single strongest relation (asserted beats inferred; higher
+    confidence wins).
+    """
+    best: dict[tuple[str, str], dict[str, Any]] = {}
+    for e in edges:
+        key = (e["source"], e["target"])
+        prior = best.get(key)
+        if prior is None or e["confidence"] > prior["confidence"]:
+            best[key] = e
+    return list(best.values())
 
 
 def _has_learning_signal(node: SkillNode) -> bool:
@@ -408,9 +441,14 @@ def build_learning_graph() -> dict[str, Any]:
     return {
         "nodes": graph_nodes,
         "edges": [
-            {"source": a, "target": b, "kind": kind}
-            for kind, pairs in (("related", skill_edges), ("memory-skill", memory_edges), ("wikilink", vault_edges))
-            for a, b in pairs
+            # Skill/memory edges are structural (asserted, full confidence); vault edges carry
+            # the typed-edge contract already (kind/provenance/confidence) and pass through as-is.
+            *(
+                {"source": a, "target": b, "kind": kind, "provenance": "asserted", "confidence": 1.0}
+                for kind, pairs in (("related", skill_edges), ("memory-skill", memory_edges))
+                for a, b in pairs
+            ),
+            *vault_edges,
         ],
         "clusters": [{"category": c, "count": n} for c, n in sorted(clusters.items(), key=lambda kv: -kv[1])],
         "memory": memory_cards,

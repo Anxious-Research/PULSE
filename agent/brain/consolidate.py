@@ -243,6 +243,7 @@ def relink_mentions(
 
     # Build entity index from all active nodes
     from .entities import build_entity_index, find_entity_mentions
+    from .relations import Relation, RelationType, Provenance, parse_relations, merge_into, dump_relations
     entity_index = build_entity_index(active_nodes)
 
     relinked: List[Dict[str, Any]] = []
@@ -254,13 +255,43 @@ def relink_mentions(
         # Find entities mentioned in this node's content
         mentioned = find_entity_mentions(content, entity_index)
         new_related_to_add: List[str] = []
-        
+        # (target_id -> the entity string that justified the link) is the edge's evidence.
+        evidence_by_target: Dict[str, str] = {}
+
         for target_id, matched_entity in mentioned:
-            if target_id == node.id or target_id in existing_related:
+            if target_id == node.id:
+                continue
+            evidence_by_target.setdefault(target_id, str(matched_entity))
+            if target_id in existing_related:
                 continue
             new_related_to_add.append(target_id)
 
-        if new_related_to_add:
+        # Build/update the TYPED relations for this node: each entity-mention edge is an
+        # INFERRED_ENTITY relation whose confidence is corroborated by the matched entity string.
+        # Re-running consolidation over the same text contributes the same evidence hash, so
+        # confidence does NOT inflate on repeat (idempotent by construction).
+        typed = parse_relations(node.frontmatter.relations or [])
+        changed_relations = False
+        for target_id, entity_text in evidence_by_target.items():
+            if target_id == node.id:
+                continue
+            before = next((r for r in typed if r.target == target_id
+                           and r.rel_type == RelationType.MENTIONS.value), None)
+            before_conf = before.confidence if before else None
+            before_ev = len(before.evidence) if before else -1
+            merge_into(
+                typed,
+                Relation(target=target_id, rel_type=RelationType.MENTIONS.value,
+                         provenance=Provenance.INFERRED_ENTITY.value),
+                evidence_text=f"{node.id}|{entity_text.lower()}",
+                now=now,
+            )
+            after = next((r for r in typed if r.target == target_id
+                          and r.rel_type == RelationType.MENTIONS.value), None)
+            if after and (after.confidence != before_conf or len(after.evidence) != before_ev):
+                changed_relations = True
+
+        if new_related_to_add or changed_relations:
             combined_related = sorted(set(existing_related) | set(new_related_to_add))
             relinked.append({
                 "node_id": node.id,
@@ -268,12 +299,13 @@ def relink_mentions(
             })
             if not dry_run:
                 # Append related links block to the node body if not present
-                link_refs = " ".join(f"[[{lid}]]" for lid in new_related_to_add)
                 updated_body = content
-                if "## Related" in updated_body:
-                    updated_body = updated_body + f"\n- {link_refs}"
-                else:
-                    updated_body = updated_body + f"\n\n## Related\n- {link_refs}"
+                if new_related_to_add:
+                    link_refs = " ".join(f"[[{lid}]]" for lid in new_related_to_add)
+                    if "## Related" in updated_body:
+                        updated_body = updated_body + f"\n- {link_refs}"
+                    else:
+                        updated_body = updated_body + f"\n\n## Related\n- {link_refs}"
 
                 vault.write_node(
                     node.id,
@@ -285,6 +317,7 @@ def relink_mentions(
                     salience=node.frontmatter.salience,
                     confidence=node.frontmatter.confidence,
                     related=combined_related,
+                    relations=dump_relations(typed),
                     now=now,
                 )
 

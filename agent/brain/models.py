@@ -108,6 +108,9 @@ class Frontmatter:
     source_turn: Optional[str] = None
     aliases: List[str] = field(default_factory=list)
     related: List[str] = field(default_factory=list)
+    #: Typed edge tokens (see agent/brain/relations.py). Additive and backward-compatible:
+    #: ``related`` stays the denormalized list of target ids derived from these.
+    relations: List[str] = field(default_factory=list)
     extra: Dict[str, Any] = field(default_factory=dict)
 
     # -- construction -------------------------------------------------------
@@ -119,7 +122,7 @@ class Frontmatter:
         known = {
             "title", "category", "tags", "created_at", "updated_at", "last_accessed",
             "access_count", "stability", "salience", "confidence", "status",
-            "supersedes", "superseded_by", "source_turn", "aliases", "related",
+            "supersedes", "superseded_by", "source_turn", "aliases", "related", "relations",
         }
         fallback_title = node_id.split("/")[-1].replace("-", " ").replace("_", " ").strip() or node_id
         return cls(
@@ -139,6 +142,7 @@ class Frontmatter:
             source_turn=(str(raw["source_turn"]) if raw.get("source_turn") else None),
             aliases=_as_list(raw.get("aliases")),
             related=_as_list(raw.get("related")),
+            relations=_as_list(raw.get("relations")),
             extra={k: v for k, v in raw.items() if k not in known},
         )
 
@@ -167,6 +171,8 @@ class Frontmatter:
             out["aliases"] = list(self.aliases)
         if self.related:
             out["related"] = list(self.related)
+        if self.relations:
+            out["relations"] = list(self.relations)
         out.update(self.extra)
         if not include_empty:
             out = {k: v for k, v in out.items() if v not in (None, [], "")}
@@ -214,6 +220,25 @@ class BrainNode:
 
     def link_targets(self) -> List[str]:
         return [w.target for w in self.wikilinks]
+
+    def typed_relations(self) -> List[Any]:
+        """Typed edges for this node, deriving legacy frontmatter when ``relations`` is absent.
+
+        A node written before the typed-edge model has no ``relations`` field; its edges are
+        reconstructed from ``related``/``supersedes``/``[[wikilinks]]`` so an old vault is
+        understood as typed edges with zero migration. A node that DOES carry ``relations``
+        uses them verbatim.
+        """
+        from .relations import derive_from_frontmatter, parse_relations
+
+        if self.frontmatter.relations:
+            return parse_relations(self.frontmatter.relations)
+        return derive_from_frontmatter(
+            related=self.frontmatter.related,
+            supersedes=self.frontmatter.supersedes,
+            wikilink_targets=self.link_targets(),
+            created_at=self.frontmatter.created_at,
+        )
 
     def to_summary_dict(self) -> Dict[str, Any]:
         """Compact representation for the graph payload / UI."""

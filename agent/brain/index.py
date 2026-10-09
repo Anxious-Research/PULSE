@@ -241,16 +241,56 @@ class BrainIndex:
         }
 
     def to_graph_payload(self) -> Dict[str, Any]:
-        """``{nodes, edges}`` ready for the desktop graph (resolved edges only)."""
+        """``{nodes, edges}`` ready for the desktop graph (resolved edges only).
+
+        Each edge carries the typed-edge contract — ``source``, ``target`` plus ``kind``,
+        ``provenance`` and ``confidence`` — so a consumer can style and trust an edge, not just
+        draw a line. The bare ``source``/``target`` keys are kept unchanged for backward
+        compatibility; legacy nodes (no ``relations`` field) are read through
+        ``BrainNode.typed_relations()``, which derives a defensible type from the old
+        ``related``/``supersedes``/wikilink data, so nothing on disk needs migrating.
+        """
         self.ensure_built()
-        edges: List[Tuple[str, str]] = []
-        for source, targets in self.forward.items():
-            for target in targets:
-                if target in self._ids and source != target:
-                    edges.append((min(source, target), max(source, target)))
-        deduped = list(dict.fromkeys(edges))
+        # Map resolved (source, target) -> the strongest typed relation justifying that edge.
+        from .relations import Relation
+        from .models import NodeStatus
+
+        # Req #9: a superseded or inactive node must not keep MISLEADING active edges — drop any
+        # edge whose endpoint is superseded. (Deleted nodes are already gone from the vault.)
+        active_ids: Set[str] = set()
+        node_by_id: Dict[str, Any] = {}
+        for node_id, node in self.vault.iter_nodes():
+            node_by_id[node_id] = node
+            if node_id in self._ids and node.frontmatter.status == NodeStatus.ACTIVE.value:
+                active_ids.add(node_id)
+
+        best: Dict[Tuple[str, str], Relation] = {}
+        for node_id, node in node_by_id.items():
+            if node_id not in active_ids:
+                continue
+            for rel in node.typed_relations():
+                resolved = self._resolve(rel.target) or rel.target
+                if resolved not in active_ids or resolved == node_id:
+                    continue
+                key = (min(node_id, resolved), max(node_id, resolved))
+                prior = best.get(key)
+                # Keep the most trustworthy relation per undirected pair (assert > inferred;
+                # higher confidence wins ties).
+                if prior is None or rel.confidence > prior.confidence:
+                    best[key] = rel
+
+        edges: List[Dict[str, Any]] = []
+        for (a, b), rel in best.items():
+            edges.append({
+                "source": a,
+                "target": b,
+                "kind": rel.rel_type,
+                "provenance": rel.provenance,
+                "confidence": rel.confidence,
+            })
+        edges.sort(key=lambda e: (e["source"], e["target"]))
         return {
             "nodes": sorted(self._ids),
-            "edges": [{"source": a, "target": b} for a, b in deduped],
+            "edges": edges,
             "unresolved": {k: sorted(set(v)) for k, v in self.unresolved.items()},
         }

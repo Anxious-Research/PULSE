@@ -291,6 +291,7 @@ class BrainVault:
         supersedes: Optional[Iterable[str]] = None,
         aliases: Optional[Iterable[str]] = None,
         related: Optional[Iterable[str]] = None,
+        relations: Optional[Iterable[str]] = None,
         source_turn: Optional[str] = None,
         extra: Optional[Dict[str, Any]] = None,
         now: Optional[float] = None,
@@ -332,6 +333,17 @@ class BrainVault:
                 fm.aliases = [str(a).strip() for a in aliases if str(a).strip()]
             if related is not None:
                 fm.related = [normalize_node_id(r) for r in related if str(r).strip()]
+            if relations is not None:
+                # Typed edges are authoritative when provided: store the tokens and keep the
+                # denormalized ``related`` list in sync so legacy readers (index, learning_graph)
+                # see the same targets.
+                from .relations import parse_relations
+
+                parsed = parse_relations([str(r) for r in relations])
+                fm.relations = [rel.to_token() for rel in parsed]
+                derived_targets = [normalize_node_id(rel.target) for rel in parsed if rel.target]
+                merged_related = list(dict.fromkeys([*(fm.related or []), *derived_targets]))
+                fm.related = [str(r) for r in merged_related if r]
             if source_turn is not None:
                 fm.source_turn = str(source_turn)
             if extra:

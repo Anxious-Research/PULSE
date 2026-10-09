@@ -25,6 +25,12 @@ export interface GNode extends StarmapNode, SimulationNodeDatum {
 export interface GLink extends SimulationLinkDatum<GNode> {
   source: GNode | string
   target: GNode | string
+  /** Relationship type carried from the typed-edge model (styles the stroke). */
+  kind?: string
+  /** How the relationship was established ('asserted' | 'inferred_entity' | 'correction'). */
+  provenance?: string
+  /** Trust 0–1: drives stroke opacity so weak inferred links read as fainter. */
+  confidence?: number
 }
 
 /** Obsidian-style force knobs (the "Forces" section of its graph settings). */

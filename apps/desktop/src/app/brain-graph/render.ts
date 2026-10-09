@@ -131,20 +131,31 @@ export function drawGraph(input: DrawInput): boolean {
     const sColors = getNodeColorSet(s)
     const tColors = getNodeColorSet(t)
 
+    // Typed-edge styling (no clutter): trust (confidence) modulates opacity so a weak
+    // inferred link reads fainter than an asserted one; an inferred-entity edge is dashed
+    // to visually separate "derived from a shared mention" from an explicit assertion;
+    // a supersedes/correction edge is drawn boldest because it carries the belief change.
+    const confidence = typeof link.confidence === 'number' ? Math.max(0, Math.min(1, link.confidence)) : 1
+    const inferred = link.provenance === 'inferred_entity'
+    const trust = 0.45 + 0.55 * confidence // keep even weak links visible, never invisible
+
     // Glowing gradient line
     const grad = ctx.createLinearGradient(sX, sY, tX, tY)
-    const baseAlpha = lit ? 0.85 : focusId ? 0.04 : 0.22
+    const baseAlpha = (lit ? 0.85 : focusId ? 0.04 : 0.22) * trust
     const edgeAlpha = baseAlpha * born
 
     grad.addColorStop(0, rgba(sColors.glow, edgeAlpha))
     grad.addColorStop(1, rgba(tColors.glow, edgeAlpha))
 
+    ctx.save()
     ctx.strokeStyle = grad
-    ctx.lineWidth = lit ? 1.8 : 0.85
+    ctx.lineWidth = (lit ? 1.8 : 0.85) * (link.kind === 'supersedes' ? 1.6 : 1)
+    ctx.setLineDash(inferred ? [4, 3] : [])
     ctx.beginPath()
     ctx.moveTo(sX, sY)
     ctx.lineTo(tX, tY)
     ctx.stroke()
+    ctx.restore()
   }
 
   // 4. Render 3D Spherical Nodes

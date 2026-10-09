@@ -95,9 +95,18 @@ class TestBrainLearningGraph(unittest.TestCase):
         beta_id = next(n["id"] for n in graph["nodes"] if n.get("vaultId") == "concept/beta")
 
         wikilinks = [e for e in graph["edges"] if e.get("kind") == "wikilink"]
-        self.assertIn({"source": alpha_id, "target": beta_id, "kind": "wikilink"}, wikilinks)
+        self.assertTrue(
+            any(e["source"] == alpha_id and e["target"] == beta_id for e in wikilinks),
+            "the resolved alpha->beta wikilink edge must be present",
+        )
+        # Typed-edge contract: an explicit wikilink is asserted at full confidence.
+        ab = next(e for e in wikilinks if e["source"] == alpha_id and e["target"] == beta_id)
+        self.assertEqual(ab["provenance"], "asserted")
+        self.assertEqual(ab["confidence"], 1.0)
         # Direction is preserved: beta does not link back to alpha.
-        self.assertNotIn({"source": beta_id, "target": alpha_id, "kind": "wikilink"}, wikilinks)
+        self.assertFalse(
+            any(e["source"] == beta_id and e["target"] == alpha_id for e in wikilinks),
+        )
         self.assertGreaterEqual(graph["stats"]["vault_edges"], 1)
         self.assertIn(alpha_id, by_id)
 
@@ -188,7 +197,10 @@ class TestGhostResolution(unittest.TestCase):
         alpha_id = next(n["id"] for n in after["nodes"] if n.get("vaultId") == "concept/alpha")
         created_id = next(n["id"] for n in after["nodes"] if "Unwritten" in n["label"])
         wikilinks = [e for e in after["edges"] if e.get("kind") == "wikilink"]
-        self.assertIn({"source": alpha_id, "target": created_id, "kind": "wikilink"}, wikilinks)
+        self.assertTrue(
+            any(e["source"] == alpha_id and e["target"] == created_id for e in wikilinks),
+            "the formerly-dangling link must now be a resolved wikilink edge",
+        )
 
     def test_resolve_ghost_rejects_a_real_node_id(self):
         """Editing a real node goes through edit_node; this path only creates ghosts."""

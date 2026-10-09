@@ -85,6 +85,27 @@ describe('force', () => {
 
       expect(links).toHaveLength(2)
     })
+
+    it('carries the typed-edge contract (kind/provenance/confidence) onto links', () => {
+      const typedGraph: StarmapGraph = {
+        ...mockGraph,
+        edges: [
+          { confidence: 1, kind: 'wikilink', provenance: 'asserted', source: 'a', target: 'b' },
+          { confidence: 0.5, kind: 'mentions', provenance: 'inferred_entity', source: 'b', target: 'c' }
+        ]
+      }
+
+      const { links } = buildGraph(typedGraph, new Map(), () => {})
+
+      const idOf = (x: unknown): string => (typeof x === 'string' ? x : (x as { id: string }).id)
+      const ab = links.find(l => idOf(l.source) === 'a' && idOf(l.target) === 'b')
+      const bc = links.find(l => idOf(l.source) === 'b' && idOf(l.target) === 'c')
+      expect(ab?.kind).toBe('wikilink')
+      expect(ab?.provenance).toBe('asserted')
+      expect(ab?.confidence).toBe(1)
+      expect(bc?.kind).toBe('mentions')
+      expect(bc?.confidence).toBe(0.5)
+    })
   })
 
   describe('bounds', () => {

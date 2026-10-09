@@ -880,10 +880,19 @@ export interface StarmapNode {
   pinned: boolean
 }
 
-/** A declared `related_skills` link; both endpoints are guaranteed to be nodes. */
+/** A graph edge with the typed-edge contract: a relationship type plus how it was
+ *  established (provenance) and how much it is trusted (confidence, 0–1). The two bare
+ *  keys stay required for backward compatibility; the metadata is optional so older
+ *  payloads keep type-checking. */
 export interface StarmapEdge {
   source: string
   target: string
+  /** Relationship type: 'wikilink' | 'mentions' | 'related' | 'memory-skill' | 'supersedes' | 'related_to'. */
+  kind?: string
+  /** How the relationship was established: 'asserted' | 'inferred_entity' | 'correction'. */
+  provenance?: string
+  /** Trust in the relationship, 0–1 (asserted edges are 1.0; inferred edges are lower). */
+  confidence?: number
 }
 
 export interface StarmapCluster {
