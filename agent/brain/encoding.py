@@ -109,7 +109,7 @@ _CORRECTION_STRONG: Tuple[re.Pattern, ...] = tuple(
         r"\bstop (?:doing|that|using|adding|writing)\b", r"\bdon'?t do that\b",
         r"\bnever do that\b", r"\bthat is not (?:what|how)\b", r"\bwrong\b",
         r"\bgalat\b", r"\baisa nahi\b", r"\bnahi,?\s+(?:aisa|ye|wo)\b",
-        r"\bmat karo\b", r"\bband karo\b", r"\bcorrection\b",
+        r"\bmat karo\b", r"\bband karo\b", r"\bcorrections?\b\s*[,:]",
         r"\bi (?:did ?n'?t|never) (?:say|ask|mean)\b", r"\bundo (?:that|this)\b",
         r"\brevert (?:that|this)\b",
     )
