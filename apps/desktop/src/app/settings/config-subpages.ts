@@ -61,7 +61,7 @@ const CONFIG_SUBPAGE_DEFINITIONS: Record<string, ConfigSubpageDefinition[]> = {
     }
   ],
   memory: [
-    { id: 'persistent', labelKey: 'memoryPersistent', prefixes: ['memory.'] },
+    { id: 'persistent', labelKey: 'memoryPersistent', prefixes: ['memory.', 'brain.'] },
     {
       id: 'context',
       labelKey: 'memoryContext',
