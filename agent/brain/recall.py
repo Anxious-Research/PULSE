@@ -21,10 +21,13 @@ Deliberate properties:
 
 from __future__ import annotations
 
+import hashlib
 import math
 import re
+import threading
+from collections import OrderedDict
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List, Optional, Sequence
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from . import decay as decay_mod
 from .index import BrainIndex
@@ -229,28 +232,81 @@ def _prose(text: str) -> str:
     return re.sub(r"\s+([.,;:!?])", r"\1", stripped)
 
 
+def _node_terms(node: Any) -> Dict[str, Any]:
+    """The token/term sets for one node — everything the scorer needs, minus the node itself."""
+    title_text = f"{node.title} {' '.join(node.tags)}".strip()
+    title_tokens = tokenize(title_text)
+    body_tokens = tokenize(_prose(node.content or ""))
+    return {
+        "title_text": title_text,
+        "title_uni": _keyset(title_tokens),
+        "body_uni": _keyset(body_tokens),
+        "title_bi": _bigram_keys(title_tokens),
+        "body_bi": _bigram_keys(body_tokens),
+    }
+
+
+def _content_digest(node: Any) -> str:
+    """Digest of what the term sets depend on: title, tags, body. Cheap, stable, collision-safe."""
+    h = hashlib.blake2b(digest_size=16)
+    h.update(str(getattr(node, "title", "") or "").encode("utf-8", "ignore"))
+    h.update(b"\x00")
+    h.update(" ".join(getattr(node, "tags", None) or []).encode("utf-8", "ignore"))
+    h.update(b"\x00")
+    h.update((getattr(node, "content", "") or "").encode("utf-8", "ignore"))
+    return h.hexdigest()
+
+
+# Prepared term sets, keyed by (node_id, content-digest). Recall used to re-tokenize EVERY node
+# on every turn — an O(vault) cost that defeats the point of a growing memory. Caching the
+# per-node term sets makes a turn pay only for nodes that changed since the last turn, with
+# byte-identical scores (the sets are pure functions of title+tags+body). Bounded LRU so a very
+# large vault cannot make recall an unbounded RAM consumer: evicted nodes are simply re-tokenized.
+_PREPARE_CACHE: "OrderedDict[Tuple[str, str], Dict[str, Any]]" = OrderedDict()
+_PREPARE_CACHE_MAX = 40000
+_PREPARE_LOCK = threading.Lock()
+
+
+def _prepared_entry(node: Any) -> Dict[str, Any]:
+    """Term sets for *node*, from the cache when unchanged."""
+    key = (node.id, _content_digest(node))
+    with _PREPARE_LOCK:
+        entry = _PREPARE_CACHE.get(key)
+        if entry is not None:
+            _PREPARE_CACHE.move_to_end(key)
+    if entry is None:
+        entry = _node_terms(node)
+        with _PREPARE_LOCK:
+            _PREPARE_CACHE[key] = entry
+            while len(_PREPARE_CACHE) > _PREPARE_CACHE_MAX:
+                _PREPARE_CACHE.popitem(last=False)
+    return {**entry, "node": node}
+
+
 def _prepare(nodes: Sequence[Any]) -> List[Dict[str, Any]]:
-    """Per-node term sets, computed once and reused for every cue."""
-    prepared: List[Dict[str, Any]] = []
-    for node in nodes:
-        title_text = f"{node.title} {' '.join(node.tags)}".strip()
-        title_tokens = tokenize(title_text)
-        body_tokens = tokenize(_prose(node.content or ""))
-        prepared.append(
-            {
-                "node": node,
-                "title_text": title_text,
-                "title_uni": _keyset(title_tokens),
-                "body_uni": _keyset(body_tokens),
-                "title_bi": _bigram_keys(title_tokens),
-                "body_bi": _bigram_keys(body_tokens),
-            }
-        )
-    return prepared
+    """Per-node term sets, computed once per node and reused across cues AND turns."""
+    return [_prepared_entry(node) for node in nodes]
 
 
 def _matches(cue_key: str, uni: set, bi: set) -> bool:
     return cue_key in bi if " " in cue_key else cue_key in uni
+
+
+def _entries_from_index(index: Any, vault: BrainVault) -> List[tuple]:
+    """``[(node_id, node)]`` from the built index when it belongs to *vault*.
+
+    A passed index is authoritative for its own vault; the vault-dir match guards against a
+    caller handing a mismatched pair, in which case we fall back to a real disk read.
+    """
+    try:
+        index_vault = getattr(index, "vault", None)
+        if index_vault is not None and getattr(index_vault, "vault_dir", object()) == getattr(vault, "vault_dir", None):
+            entries = index.entries()
+            if entries:
+                return entries
+    except Exception:
+        pass
+    return vault.iter_nodes()
 
 
 def _seed_scores(
@@ -386,7 +442,9 @@ def recall(
 
     v = vault or BrainVault()
     idx = index if index is not None else BrainIndex(v).rebuild()
-    entries = v.iter_nodes()
+    # Reuse the nodes the index already read+parsed. Calling ``v.iter_nodes()`` here re-read and
+    # re-parsed the whole vault on every turn even though the index had just done exactly that.
+    entries = _entries_from_index(idx, v)
     if not entries:
         return RecallResult()
 

@@ -1318,13 +1318,29 @@ DEFAULT_CONFIG = {
         # true = foreground writes prompt inline; background writes are staged (/memory
         # pending|approve <id>|reject <id>). To disable memory: memory_enabled.
         "write_approval": False,
-        "memory_char_limit": 2200,   # ~800 tokens at 2.75 chars/token
-        "user_char_limit": 1375,     # ~500 tokens at 2.75 chars/token
+        # LEGACY, accepted-and-ignored. Historical char caps for the pre-Brain flat store
+        # (MEMORY.md/USER.md). Durable memory now lives in the PULSE Brain vault with NO token/
+        # char/count ceiling (specs/brain.md §1), so these no longer bound anything; they are kept
+        # readable so existing config files keep loading. The real per-turn bound is brain.* below.
+        "memory_char_limit": 2200,   # legacy — was ~800 tokens at 2.75 chars/token
+        "user_char_limit": 1375,     # legacy — was ~500 tokens at 2.75 chars/token
         # Periodic built-in memory review; 0 when an external provider auto-extracts.
         "nudge_interval": 10,
         # External memory provider plugin (empty = built-in only); only ONE at a time: "openviking",
         # "mem0", "holographic", "retaindb", "byterover", or a catalog-installed one ("hindsight").
         "provider": "",
+    },
+    # PULSE Brain — the native cognitive memory (agent/brain/). Durable storage is UNBOUNDED: the
+    # vault grows with available disk, with no application-defined token/char/memory-count ceiling.
+    # These settings bound only what is INJECTED per turn, never what is STORED. Recall freshness,
+    # consolidation cadence and cache behaviour are internal and auto-tuned.
+    "brain": {
+        # Tokens of recalled memory injected into the prompt for ONE turn (Layer 2 recall). This is
+        # a per-REQUEST budget, not a storage cap. Clamped 64..8000.
+        "recall_max_tokens": 600,
+        # Character budget for the always-on identity/profile block (Layer 1 stable prefix). Per-turn
+        # injection only — it never limits durable memory. Clamped 200..60000.
+        "prefix_max_chars": 6000,
     },
     # Subagent delegation — override the provider:model used by delegate_task so children run on a
     # cheaper/faster model. Uses the same runtime provider resolution as CLI/gateway startup, so

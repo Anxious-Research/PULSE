@@ -551,9 +551,15 @@ export const FIELD_LABELS: Record<string, string> = defineFieldCopy({
   memory: {
     memoryEnabled: 'Persistent Memory',
     userProfileEnabled: 'User Profile',
-    memoryCharLimit: 'Memory Budget',
-    userCharLimit: 'Profile Budget',
+    // Legacy keys (pre-Brain flat store). Still defined so existing locale overrides stay valid;
+    // no longer rendered — durable memory is unbounded (brain.* holds the real per-turn budgets).
+    memoryCharLimit: 'Memory Budget (legacy)',
+    userCharLimit: 'Profile Budget (legacy)',
     provider: 'Memory Provider'
+  },
+  brain: {
+    recallMaxTokens: 'Recall Context Budget',
+    prefixMaxChars: 'Stable Prefix Budget'
   },
   context: {
     engine: 'Context Engine'
@@ -631,8 +637,14 @@ export const FIELD_DESCRIPTIONS: Record<string, string> = defineFieldCopy({
     enabled: 'Create rollback snapshots before file edits.'
   },
   memory: {
-    memoryEnabled: 'Save durable memories that can help future sessions.',
+    memoryEnabled: 'Save durable memories that can help future sessions. Storage is unbounded.',
     userProfileEnabled: 'Maintain a compact profile of user preferences.'
+  },
+  brain: {
+    recallMaxTokens:
+      'Tokens of recalled memory injected into the prompt for ONE turn (per-request). This is not a storage cap — the Brain grows without a fixed limit. Default 600.',
+    prefixMaxChars:
+      'Character budget for the always-on identity/profile block. Per-turn injection only; it never limits how much durable memory PULSE keeps. Default 6000.'
   },
   context: {
     engine: 'Strategy for managing long conversations near the context limit.'
@@ -746,8 +758,8 @@ export const SECTIONS: DesktopConfigSection[] = [
     keys: [
       'memory.memory_enabled',
       'memory.user_profile_enabled',
-      'memory.memory_char_limit',
-      'memory.user_char_limit',
+      'brain.recall_max_tokens',
+      'brain.prefix_max_chars',
       'memory.provider',
       'context.engine',
       'compression.enabled',

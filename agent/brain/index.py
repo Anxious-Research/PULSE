@@ -29,6 +29,14 @@ class BrainIndex:
         self.titles: Dict[str, str] = {}
         self._ids: Set[str] = set()
         self._built = False
+        self._node_by_id: Dict[str, Any] = {}
+        # Precomputed lookup maps so link resolution is O(1) per link instead of a scan of
+        # every id (that scan made ``rebuild()`` O(N^2) — ~7s on a 3000-node vault, paid on
+        # every turn whose vault mtime changed). Built in ``_build_resolution_maps``.
+        self._lower_to_id: Dict[str, str] = {}
+        self._ids_by_basename_lower: Dict[str, List[str]] = {}
+        self._ids_by_title_slug: Dict[str, List[str]] = {}
+        self._ids_by_basename_slug: Dict[str, List[str]] = {}
 
     # -- build -------------------------------------------------------------
 
@@ -43,6 +51,9 @@ class BrainIndex:
         self.aliases, self.tags, self.titles = {}, {}, {}
         entries = self.vault.iter_nodes()
         self._ids = {node_id for node_id, _ in entries}
+        # Keep the parsed nodes so ``to_graph_payload`` does not re-read and re-parse the
+        # whole vault (it previously called ``iter_nodes()`` a second time per build).
+        self._node_by_id = {node_id: node for node_id, node in entries}
 
         # Pass 1 — identities.
         for node_id, node in entries:
@@ -52,6 +63,9 @@ class BrainIndex:
                     self.aliases.setdefault(str(alias).lower(), node_id)
             for tag in node.frontmatter.tags:
                 self.tags.setdefault(str(tag), []).append(node_id)
+
+        # Precompute resolution lookups BEFORE pass 2, so each link resolves in O(1).
+        self._build_resolution_maps()
 
         # Pass 2 — links, now that every target is known.
         for node_id, node in entries:
@@ -87,25 +101,70 @@ class BrainIndex:
             self.rebuild()
         return self
 
+    def entries(self) -> List[tuple]:
+        """The parsed ``[(node_id, node), ...]`` this index was built from.
+
+        Lets a consumer (recall) reuse the nodes the rebuild already read and parsed instead
+        of calling ``vault.iter_nodes()`` a second time — one full vault parse per turn rather
+        than two. Equivalent to ``vault.iter_nodes()`` for the vault this index belongs to.
+        """
+        self.ensure_built()
+        return list(self._node_by_id.items())
+
+    @property
+    def ids(self) -> Set[str]:
+        """Every node id known to the index (builds it first if needed)."""
+        self.ensure_built()
+        return set(self._ids)
+
     # -- resolution --------------------------------------------------------
 
+    def _build_resolution_maps(self) -> None:
+        """Precompute the O(1) link-resolution lookups used by ``_resolve``.
+
+        Ids are walked in **sorted** order so a case-insensitive or ambiguous match always
+        resolves to the same node on every run — the previous ``set`` iteration made that
+        order hash-dependent (a latent nondeterminism), and each miss cost a full scan of
+        every id, which is what made ``rebuild()`` quadratic.
+        """
+        from .parser import slugify
+
+        self._lower_to_id = {}
+        self._ids_by_basename_lower = {}
+        self._ids_by_title_slug = {}
+        self._ids_by_basename_slug = {}
+        for node_id in sorted(self._ids):
+            self._lower_to_id.setdefault(node_id.lower(), node_id)
+            base = node_id.split("/")[-1]
+            self._ids_by_basename_lower.setdefault(base.lower(), []).append(node_id)
+            title_slug = slugify(self.titles.get(node_id, ""))
+            if title_slug:
+                self._ids_by_title_slug.setdefault(title_slug, []).append(node_id)
+            base_slug = slugify(base)
+            if base_slug:
+                self._ids_by_basename_slug.setdefault(base_slug, []).append(node_id)
+
     def _resolve(self, name: str) -> Optional[str]:
-        """Resolve a wikilink to a node id: exact, case-insensitive, alias, then basename."""
+        """Resolve a wikilink to a node id: exact, case-insensitive, alias, then basename.
+
+        Every step is a precomputed dict hit (``_build_resolution_maps``), so resolution is
+        O(1) regardless of vault size — the previous per-step scans of ``self._ids`` were
+        what made a large ``rebuild()`` quadratic.
+        """
         target = normalize_node_id(name)
         if not target:
             return None
         if target in self._ids:
             return target
         lowered = target.lower()
-        for node_id in self._ids:
-            if node_id.lower() == lowered:
-                return node_id
+        if lowered in self._lower_to_id:
+            return self._lower_to_id[lowered]
         alias_hit = self.aliases.get(lowered)
         if alias_hit:
             return alias_hit
         # Obsidian "shortest path" links: [[preferences]] may mean user/preferences.
-        matches = [n for n in self._ids if n.split("/")[-1].lower() == lowered]
-        if len(matches) == 1:
+        matches = self._ids_by_basename_lower.get(lowered)
+        if matches is not None and len(matches) == 1:
             return matches[0]
         # Title links: [[An Unwritten Idea]] names a note by its title, not its file
         # name — ids are slugs, so a link containing spaces can only resolve by title
@@ -116,11 +175,11 @@ class BrainIndex:
 
         wanted = slugify(target)
         if wanted and wanted != "untitled":
-            by_title = [n for n in self._ids if slugify(self.titles.get(n, "")) == wanted]
-            if len(by_title) == 1:
+            by_title = self._ids_by_title_slug.get(wanted)
+            if by_title is not None and len(by_title) == 1:
                 return by_title[0]
-            by_basename = [n for n in self._ids if slugify(n.split("/")[-1]) == wanted]
-            if len(by_basename) == 1:
+            by_basename = self._ids_by_basename_slug.get(wanted)
+            if by_basename is not None and len(by_basename) == 1:
                 return by_basename[0]
         return None
 
@@ -258,9 +317,8 @@ class BrainIndex:
         # Req #9: a superseded or inactive node must not keep MISLEADING active edges — drop any
         # edge whose endpoint is superseded. (Deleted nodes are already gone from the vault.)
         active_ids: Set[str] = set()
-        node_by_id: Dict[str, Any] = {}
-        for node_id, node in self.vault.iter_nodes():
-            node_by_id[node_id] = node
+        node_by_id: Dict[str, Any] = self._node_by_id
+        for node_id, node in node_by_id.items():
             if node_id in self._ids and node.frontmatter.status == NodeStatus.ACTIVE.value:
                 active_ids.add(node_id)
 

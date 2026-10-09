@@ -347,13 +347,13 @@ describe('settings helpers', () => {
     })
 
     it('infers the field type from the config value when the schema omits the key', () => {
-      const config: PULSEConfigRecord = { memory: { provider: '', memory_enabled: true, memory_char_limit: 2200 } }
+      const config: PULSEConfigRecord = { memory: { provider: '', memory_enabled: true }, brain: { recall_max_tokens: 600 } }
 
       const fields = new Map(sectionFieldEntries({}, config).get('memory') ?? [])
 
       expect(fields.get('memory.provider')?.type).toBe('string')
       expect(fields.get('memory.memory_enabled')?.type).toBe('boolean')
-      expect(fields.get('memory.memory_char_limit')?.type).toBe('number')
+      expect(fields.get('brain.recall_max_tokens')?.type).toBe('number')
     })
 
     it('prefers the backend schema entry over inference when both exist', () => {
