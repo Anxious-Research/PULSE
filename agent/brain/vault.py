@@ -442,6 +442,48 @@ class BrainVault:
                 logger.debug("reinforce event emit skipped", exc_info=True)
         return updated
 
+    def revise_attribute(
+        self,
+        node_id: str,
+        new_content: str,
+        *,
+        reason: str = "",
+        source_turn: Optional[str] = None,
+        now: Optional[float] = None,
+    ) -> bool:
+        """Correct one node's content in place, keeping the prior assertion as history (§3 A).
+
+        This is reconsolidation, not supersession: the event is still true, so the node keeps its
+        identity, edges and memory metadata — only the wrong attribute is rewritten. The previous
+        text is appended to a ``corrections`` provenance log in frontmatter so the history is never
+        lost, and a ``MEMORY_UPDATED`` event tells the graph to refresh the existing node rather
+        than spawn a twin.
+        """
+        ts = int(now if now is not None else time.time())
+        node = self.read_node(node_id)
+        if node is None:
+            return False
+        prior_content = (node.content or "").strip()
+        if prior_content == str(new_content or "").strip():
+            return False
+        fm = node.frontmatter
+        history = list(fm.extra.get("corrections") or [])
+        history.append({"at": ts, "from": prior_content, "reason": reason or "temporal correction"})
+        fm.extra["corrections"] = history
+        if source_turn is not None:
+            fm.source_turn = str(source_turn)
+        fm.updated_at = ts
+        text = compose_markdown(fm.to_dict(include_empty=False), new_content)
+        with _vault_lock(self.vault_dir):
+            self._atomic_write(node.path, text)
+        try:
+            from .events import MEMORY_UPDATED, emit_brain_event
+
+            emit_brain_event(MEMORY_UPDATED, node_id, reason="corrected")
+        except Exception:
+            logger.debug("revise event emit skipped", exc_info=True)
+        return True
+
     def supersede(self, old_id: str, new_id: str, *, now: Optional[float] = None) -> bool:
         """Mark ``old_id`` as replaced by ``new_id`` — the correction path.
 

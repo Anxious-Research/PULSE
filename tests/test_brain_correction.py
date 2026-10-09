@@ -16,6 +16,7 @@ import unittest
 from agent.brain.correction import (
     contradicts,
     find_contradictions,
+    find_temporal_revisions,
     numbers,
     polarity,
     topic_overlap,
@@ -165,6 +166,68 @@ class TestFindContradictions(unittest.TestCase):
 
     def test_no_contradictions_returns_empty(self):
         self.assertEqual(find_contradictions("kubernetes ingress", [("a", "forgetting curve")]), [])
+
+    def test_correction_mode_supersedes_a_same_polarity_value_swap(self):
+        """A correction that swaps a value with no negation/number ("B" for "A") is a
+        contradiction only when the caller knows it is a correction."""
+        candidates = [("concept/arch", "the project uses architecture A")]
+        got = find_contradictions(
+            "Correction: the project now uses architecture B, not architecture A",
+            candidates,
+            correction_mode=True,
+        )
+        self.assertEqual(got, ["concept/arch"])
+
+    def test_value_swap_is_not_a_contradiction_without_correction_mode(self):
+        """The same value swap must NOT tombstone the fact during ordinary encoding."""
+        candidates = [("concept/arch", "the project uses architecture A")]
+        self.assertEqual(
+            find_contradictions("the project uses architecture B", candidates), []
+        )
+
+    def test_correction_mode_still_ignores_a_restatement(self):
+        """Correction mode must not supersede an identical restatement of the fact."""
+        candidates = [("concept/arch", "the project uses architecture A")]
+        self.assertEqual(
+            find_contradictions(
+                "the project uses architecture A", candidates, correction_mode=True
+            ),
+            [],
+        )
+
+
+class TestFindTemporalRevisions(unittest.TestCase):
+    def test_corrects_the_when_of_a_known_event_in_place(self):
+        candidates = [("user/migration", "My project migrated to architecture B today")]
+        got = find_temporal_revisions(
+            "Correction: the migration happened yesterday, not today",
+            candidates,
+            recency={"user/migration": 100},
+        )
+        self.assertEqual(len(got), 1)
+        node_id, corrected = got[0]
+        self.assertEqual(node_id, "user/migration")
+        self.assertIn("yesterday", corrected.lower())
+        self.assertNotIn("today", corrected.lower())
+
+    def test_no_revision_when_no_temporal_phrase(self):
+        candidates = [("user/migration", "My project migrated to architecture B today")]
+        self.assertEqual(
+            find_temporal_revisions("the project is great", candidates, recency={}), []
+        )
+
+    def test_deictic_correction_falls_back_to_most_recent_dated_event(self):
+        candidates = [
+            ("user/old", "The database upgrade shipped today"),
+            ("user/new", "The refactor landed today"),
+        ]
+        got = find_temporal_revisions(
+            "actually it was yesterday",
+            candidates,
+            recency={"user/old": 10, "user/new": 99},
+        )
+        self.assertEqual(len(got), 1)
+        self.assertEqual(got[0][0], "user/new")
 
 
 if __name__ == "__main__":

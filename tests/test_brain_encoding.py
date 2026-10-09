@@ -194,7 +194,8 @@ class TestStatementExtraction(unittest.TestCase):
         (candidate,) = extract_candidates("Remember that my name is Ankit")
         payload = candidate.as_dict()
         self.assertEqual(
-            set(payload), {"text", "kind", "category", "title", "salience", "signals", "supersedes"}
+            set(payload),
+            {"text", "kind", "category", "title", "salience", "signals", "supersedes", "temporal_revisions"},
         )
 
 

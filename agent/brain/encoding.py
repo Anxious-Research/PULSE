@@ -35,7 +35,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from .correction import find_contradictions
+from .correction import find_contradictions, find_temporal_revisions
 from .models import NodeCategory, NodeStatus
 from .parser import slugify
 from .similarity import similarity
@@ -55,6 +55,11 @@ PRIMARY_OUTCOME = 0.32
 #: (0.34 + 0.10 = 0.44 fresh, ≥0.41 in a populated vault), so ordinary project facts are learned
 #: without an explicit "remember this", while chatter (no relational verb, no entity anchor) stays out.
 PRIMARY_DECLARATIVE = 0.34
+#: A durable state change ("we changed the graph architecture", "migrated to architecture B")
+#: asserts that reality is now different — that is knowledge about the world, not a fleeting
+#: episode, and it is exactly what a later correction revises. Weighted to clear the gate with
+#: novelty alone (0.38 + 0.10 = 0.48) so the event is an addressable, correctable node.
+PRIMARY_STATE_CHANGE = 0.38
 MODIFIER_NOVELTY = 0.10
 MODIFIER_RECURRENCE = 0.05
 
@@ -180,7 +185,7 @@ def _declarative_signal(text: str) -> float:
 _OUTCOME_PATTERNS: Tuple[re.Pattern, ...] = tuple(
     re.compile(pattern, re.IGNORECASE)
     for pattern in (
-        # Shipped / landed — a state change that outlives the turn.
+        # Shipped / landed — a result that outlives the turn.
         r"\bshipped\b", r"\bdeployed\b", r"\breleased\b", r"\bpublished\b",
         r"\bmerged\b", r"\bcommitted\b", r"\bpushed\b", r"\blanded\b",
         # Resolved / decided.
@@ -189,13 +194,23 @@ _OUTCOME_PATTERNS: Tuple[re.Pattern, ...] = tuple(
         # Broke — equally memorable, and the reason "what went wrong" is recallable.
         r"\bbroke\b", r"\bbroken\b", r"\bregression\b", r"\breverted\b", r"\brolled back\b",
         r"\bfailed\b", r"\bfailure\b", r"\boutage\b",
-        # State changes — a change that outlives the turn ("we changed X", "migrated to Y").
-        r"\bchanged?\b", r"\bupdated?\b", r"\bmodified\b", r"\bswitched?\b", r"\bmigrated\b",
-        r"\breplaced?\b", r"\brefactored\b", r"\brewrote\b", r"\brenamed\b",
         # Verified state.
         r"\btests? pass", r"\bpassing\b", r"\bverified\b", r"\bit works\b", r"\bworks now\b",
         # Hinglish, same states.
         r"\bkar diya\b", r"\bho gaya\b", r"\bban gaya\b", r"\btest pass\b",
+    )
+)
+
+#: Durable *state changes* — the world is now different. These are knowledge (an event worth a
+#: node, addressable and revisable), not a transient episode, so they encode semantic. A later
+#: correction ("that change happened yesterday") revises this node's attribute instead of
+#: orphaning the event in a day note.
+_STATE_CHANGE_PATTERNS: Tuple[re.Pattern, ...] = tuple(
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        r"\bchanged?\b", r"\bupdated?\b", r"\bmodified\b", r"\bswitched?\b", r"\bmigrated\b",
+        r"\breplaced?\b", r"\brefactored\b", r"\brewrote\b", r"\brenamed\b", r"\bupgraded?\b",
+        r"\bmoved?\s+(?:to|from)\b", r"\bnow uses?\b", r"\bno longer\b",
     )
 )
 
@@ -246,6 +261,7 @@ class SalienceSignals:
     recurrence: float = 0.0
     outcome: float = 0.0
     declarative: float = 0.0
+    state_change: float = 0.0
 
     def as_dict(self) -> Dict[str, float]:
         return {
@@ -255,6 +271,7 @@ class SalienceSignals:
             "recurrence": round(self.recurrence, 4),
             "outcome": round(self.outcome, 4),
             "declarative": round(self.declarative, 4),
+            "state_change": round(self.state_change, 4),
         }
 
 
@@ -271,6 +288,7 @@ def score_salience(signals: SalienceSignals) -> float:
         + PRIMARY_CORRECTION * max(0.0, min(1.0, signals.correction))
         + PRIMARY_OUTCOME * max(0.0, min(1.0, signals.outcome))
         + PRIMARY_DECLARATIVE * max(0.0, min(1.0, signals.declarative))
+        + PRIMARY_STATE_CHANGE * max(0.0, min(1.0, signals.state_change))
         + MODIFIER_NOVELTY * max(0.0, min(1.0, signals.novelty))
         + MODIFIER_RECURRENCE * max(0.0, min(1.0, signals.recurrence))
     )
@@ -343,6 +361,9 @@ def detect_signals(
     correction = _correction_signal(text)
     outcome = _marker_signal(text, _OUTCOME_PATTERNS)
     declarative = _declarative_signal(text)
+    # A state change only counts when the statement is otherwise substantive (≥3 content words):
+    # "updated" alone in a fragment is not a durable claim about the world.
+    state_change = _marker_signal(text, _STATE_CHANGE_PATTERNS) if len(text.split()) >= _MIN_STATEMENT_WORDS else 0.0
 
     texts = [text for text in (str(t or "") for t in corpus) if text.strip()]
     if not texts:
@@ -361,6 +382,7 @@ def detect_signals(
         recurrence=recurrence,
         outcome=outcome,
         declarative=declarative,
+        state_change=state_change,
     )
 
 
@@ -430,6 +452,10 @@ class MemoryCandidate:
     salience: float
     signals: SalienceSignals
     supersedes: List[str] = field(default_factory=list)
+    #: Attribute-level corrections: ``[(node_id, corrected_text)]`` for existing nodes whose
+    #: temporal attribute this statement revises (e.g. "happened yesterday" fixing "changed today").
+    #: These are updated in place — the event is not superseded, only its attribute is corrected.
+    temporal_revisions: List[Tuple[str, str]] = field(default_factory=list)
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -440,6 +466,7 @@ class MemoryCandidate:
             "salience": round(self.salience, 4),
             "signals": self.signals.as_dict(),
             "supersedes": list(self.supersedes),
+            "temporal_revisions": list(self.temporal_revisions),
         }
 
 
@@ -448,6 +475,7 @@ def extract_candidates(
     *,
     corpus: Sequence[str] = (),
     existing: Sequence[Tuple[str, str]] = (),
+    recency: Optional[Dict[str, int]] = None,
     threshold: float = DEFAULT_THRESHOLD,
     embedder: Any = None,
 ) -> List[MemoryCandidate]:
@@ -455,7 +483,9 @@ def extract_candidates(
 
     ``existing`` is ``(node_id, content)`` for the nodes a correction may supersede; ``corpus`` is
     the broader text pool used for novelty and recurrence. Passing ``existing`` implies ``corpus``
-    entries with the same shape, so the caller can hand one list to both.
+    entries with the same shape, so the caller can hand one list to both. ``recency`` maps a node
+    id to its last-updated timestamp, used only to break ties when a deictic correction
+    ("it happened yesterday") must pick which recent event it refers to.
     """
     if is_trivial(text):
         return []
@@ -472,21 +502,39 @@ def extract_candidates(
         if salience < float(threshold):
             continue
 
+        # Attribute-level temporal correction: the statement corrects *when* a known event
+        # happened. The event node is revised in place instead of being superseded, and this
+        # statement does not itself become a duplicate node. Checked first because a pure
+        # temporal fix must not also be read as a contradiction of the event it belongs to.
+        temporal_revisions = (
+            find_temporal_revisions(statement, existing, recency=recency)
+            if existing and signals.correction >= 0.5
+            else []
+        )
+        revised_ids = {node_id for node_id, _ in temporal_revisions}
         supersedes = (
-            find_contradictions(statement, existing, embedder=embedder)
+            [
+                node_id
+                for node_id in find_contradictions(
+                    statement, existing, correction_mode=True, embedder=embedder
+                )
+                if node_id not in revised_ids
+            ]
             if existing and signals.correction >= 0.5
             else []
         )
         # Durable vs episode is decided by *kind of evidence*, not by score. An explicit statement
         # is one the user asked PULSE to hold ("remember that I prefer Hinglish", "my name is",
-        # "from now on"), a correction is one that must take effect now, and a declarative fact is
-        # a stable assertion about an entity ("Project Alpha uses architecture B") — all three are
-        # knowledge. A bare outcome is an event: "the deploy broke" is an episode until the pattern
-        # behind it recurs and consolidation promotes it (§3.1 "created mostly by consolidation").
+        # "from now on"), a correction is one that must take effect now, a declarative fact is
+        # a stable assertion about an entity ("Project Alpha uses architecture B"), and a state
+        # change ("we changed the graph architecture") is a durable event the world now reflects —
+        # all four are knowledge and become addressable nodes. A bare transient outcome is an
+        # episode ("the deploy broke") until the pattern behind it recurs (§3.1).
         durable = (
             signals.correction >= 0.5
             or signals.explicit >= 1.0
             or signals.declarative >= 1.0
+            or signals.state_change >= 1.0
         )
         candidates.append(
             MemoryCandidate(
@@ -497,6 +545,7 @@ def extract_candidates(
                 salience=salience,
                 signals=signals,
                 supersedes=supersedes,
+                temporal_revisions=temporal_revisions,
             )
         )
     return candidates
@@ -528,6 +577,10 @@ def encode_turn(
     """
     nodes = vault.list_all_nodes() if vault is not None else []
     existing = [(node.id, node.content or "") for node in nodes if (node.content or "").strip()]
+    recency = {
+        node.id: int(node.frontmatter.updated_at or node.frontmatter.created_at or 0)
+        for node in nodes
+    }
     corpus = [content for _, content in existing]
     # ``corpus_extra`` widens the novelty pool without being a statement source: the
     # assistant's own reply goes here, so a fact PULSE merely restated this turn does
@@ -536,13 +589,14 @@ def encode_turn(
         corpus = [*corpus, corpus_extra.strip()]
 
     candidates = extract_candidates(
-        text, corpus=corpus, existing=existing, threshold=threshold, embedder=embedder
+        text, corpus=corpus, existing=existing, recency=recency, threshold=threshold, embedder=embedder
     )
     report: Dict[str, Any] = {
         "candidates": [candidate.as_dict() for candidate in candidates],
         "episodic": [],
         "semantic": [],
         "superseded": [],
+        "revised": [],
         "skipped": [],
         "dry_run": bool(dry_run),
     }
@@ -558,6 +612,23 @@ def encode_turn(
         report["episodic"] = _append_episodic(vault, episodic, turn_id=turn_id, now=ts, dry_run=dry_run)
 
     for candidate in semantic:
+        # Attribute-level temporal correction (§3 A): the statement only revises *when* a known
+        # event happened. Fix that event in place and keep its history — do NOT supersede it and
+        # do NOT write a twin node for the correction itself.
+        if candidate.temporal_revisions:
+            revised_ids: List[str] = []
+            for target_id, corrected_text in candidate.temporal_revisions:
+                if dry_run:
+                    revised_ids.append(target_id)
+                    continue
+                if vault.revise_attribute(
+                    target_id, corrected_text, reason="temporal correction", source_turn=turn_id, now=ts
+                ):
+                    revised_ids.append(target_id)
+            if revised_ids:
+                report["revised"].append({"candidate": candidate.as_dict(), "nodes": revised_ids})
+                continue  # correction folded into the existing event; no new node
+
         # Immediate duplicate check: skip if content is >85% similar to an existing node in
         # the same category (fixes -2/-3 suffix proliferation).
         existing_similar = [

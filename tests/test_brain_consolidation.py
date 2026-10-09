@@ -149,6 +149,23 @@ class TestRelinkMentions(ConsolidationTestCase):
         n2_after = self.vault.read_node(n2.id)
         self.assertIn(f"[[{n1.id}]]", n2_after.content)
 
+    def test_generic_concepts_do_not_create_indiscriminate_links(self):
+        """§3: ambient words every note mentions ("PULSE", "Brain", "architecture") must not
+        become linking entities, or every memory links to every other. Only specific,
+        multi-word entities establish a defensible semantic edge."""
+        self.vault.write_node(
+            "concept/one", "PULSE has a Brain and an architecture.", title="System One"
+        )
+        self.vault.write_node(
+            "concept/two", "The Brain architecture of PULSE is a system.", title="System Two"
+        )
+        self.vault.write_node(
+            "concept/three", "A PULSE system with a Brain architecture.", title="System Three"
+        )
+        relinked = relink_mentions(self.vault)
+        # Nothing but generic words is shared, so no edges should form.
+        self.assertEqual(relinked, [])
+
 
 class TestConsolidateVault(ConsolidationTestCase):
     def test_full_consolidation_pass(self):
