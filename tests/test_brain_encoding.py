@@ -117,6 +117,20 @@ class TestSignalDetection(unittest.TestCase):
         for text in ["That's wrong, it should be 800.", "stop adding a memory block every turn"]:
             self.assertEqual(detect_signals(text).correction, 1.0, text)
 
+    def test_explicit_correction_opener_fires(self):
+        """A statement that opens with "Correction:" / "Corrections," is a real correction."""
+        for text in ["Correction: the budget is 800.", "Corrections, use tabs not spaces."]:
+            self.assertEqual(detect_signals(text).correction, 1.0, text)
+
+    def test_bare_mention_of_the_word_correction_is_not_a_correction(self):
+        """Prose that merely mentions correction must not get the §3.5 correction floor."""
+        for text in [
+            "The correction system stores provenance.",
+            "This paragraph needs correction before review.",
+            "Correction must be real.",
+        ]:
+            self.assertEqual(detect_signals(text).correction, 0.0, text)
+
     def test_a_single_weak_marker_is_not_a_correction(self):
         """ "actually" and "instead" are ordinary words; one alone is not evidence."""
         self.assertEqual(detect_signals("actually let me check the logs").correction, 0.0)
