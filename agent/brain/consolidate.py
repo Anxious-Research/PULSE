@@ -224,7 +224,12 @@ def relink_mentions(
     dry_run: bool = False,
     now: Optional[float] = None,
 ) -> List[Dict[str, Any]]:
-    """Scan active semantic notes and ensure references to known entities are [[wikilinked]]."""
+    """Scan active semantic notes and create 'related' edges from entity mentions.
+    
+    Uses entity extraction (capitalized phrases, technical terms, proper nouns) instead of
+    full-title matching, so "PULSE has a cognitive Brain" → entities ["PULSE", "Brain"] →
+    links to nodes about those entities.
+    """
     if vault is None:
         return []
 
@@ -236,29 +241,24 @@ def relink_mentions(
     if len(active_nodes) < 2:
         return []
 
-    # Map entity terms -> target node_id
-    targets: List[Tuple[str, re.Pattern, str]] = []
-    for node in active_nodes:
-        # Title as entity
-        t = (node.title or "").strip()
-        if len(t) >= 4 and not re.match(r"^\d+$", t):
-            pat = re.compile(r"\b" + re.escape(t) + r"\b", re.IGNORECASE)
-            targets.append((node.id, pat, t))
+    # Build entity index from all active nodes
+    from .entities import build_entity_index, find_entity_mentions
+    entity_index = build_entity_index(active_nodes)
 
     relinked: List[Dict[str, Any]] = []
 
     for node in active_nodes:
         existing_related = set(node.frontmatter.related or [])
         content = node.content or ""
+        
+        # Find entities mentioned in this node's content
+        mentioned = find_entity_mentions(content, entity_index)
         new_related_to_add: List[str] = []
-
-        for target_id, pat, term in targets:
+        
+        for target_id, matched_entity in mentioned:
             if target_id == node.id or target_id in existing_related:
                 continue
-
-            # Does the content mention this entity?
-            if pat.search(content):
-                new_related_to_add.append(target_id)
+            new_related_to_add.append(target_id)
 
         if new_related_to_add:
             combined_related = sorted(set(existing_related) | set(new_related_to_add))
