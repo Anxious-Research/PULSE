@@ -292,7 +292,7 @@ learning.
 | Desktop `src/app/settings` + `src/app/brain-graph` (vitest) | **57 files / 446 tests passed** |
 | `tsc -p tsconfig.json --noEmit` | 11 errors, **all pre-existing** in `src/store/brain-events.ts`; **0 new** |
 | Production build (`apps/desktop` → `node scripts/build.mjs`) | clean; fresh artifacts in `dist/` |
-| Distributable agent payload (`npm run payload`) | stages the Brain **byte-identically**: `agent/brain/vault.py`, `agent/brain/encoding.py`, `docs/brain-evolution.md` and `docs/brain-operations.md` all md5-match the repo in `build/agent-payload/pulse-agent/` (`tests/` is excluded from the payload by design) |
+| Distributable agent payload (`npm run payload`) | **builds to completion** (exit 0): a 4.4 GB `build/agent-payload` with `manifest.json` (schema 1, `darwin-arm64`) and baked bytecode over 27,095 modules. The staged `pulse-agent/` carries the Brain code **byte-identically** — `agent/brain/vault.py` and `agent/brain/encoding.py` md5-match the repo; `tests/` is excluded from the payload by design. (The snapshot is `git archive HEAD` taken when the build *starts*, so a doc edited mid-build can post-date it.) |
 
 Interpreter note: the repo requires Python ≥3.10 (`str | object` annotations); the system `python3`
 is 3.9, so the suite runs under the scratch interpreter at
