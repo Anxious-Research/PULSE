@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { Tip } from '@/components/ui/tooltip'
 import { useThemeEpoch } from '@/hooks/use-theme-epoch'
 import { createRendererLoopPauseController } from '@/lib/renderer-loop-pause'
 import { cn } from '@/lib/utils'
@@ -668,28 +669,32 @@ export function BrainGraph({
 
         <div className="h-4 w-[1px] bg-white/10 mx-0.5" />
 
-        <button
-          className={cn(
-            'flex h-7 items-center gap-1.5 rounded-full px-2.5 text-xs transition-colors',
-            showForcesPanel ? 'bg-cyan-500/20 text-cyan-300' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-          )}
-          onClick={() => setShowForcesPanel(v => !v)}
-          title="Force Parameters"
-          type="button"
-        >
-          <Sliders className="h-3.5 w-3.5" />
-          <span className="text-[0.7rem] font-medium">Forces</span>
-        </button>
-
-        {onRefresh && (
+        <Tip label="Force Parameters">
           <button
-            className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-white/5 hover:text-slate-200 transition-colors"
-            onClick={onRefresh}
-            title="Refresh Vault Graph"
+            aria-label="Force Parameters"
+            className={cn(
+              'flex h-7 items-center gap-1.5 rounded-full px-2.5 text-xs transition-colors',
+              showForcesPanel ? 'bg-cyan-500/20 text-cyan-300' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+            )}
+            onClick={() => setShowForcesPanel(v => !v)}
             type="button"
           >
-            <RotateCcw className="h-3.5 w-3.5" />
+            <Sliders className="h-3.5 w-3.5" />
+            <span className="text-[0.7rem] font-medium">Forces</span>
           </button>
+        </Tip>
+
+        {onRefresh && (
+          <Tip label="Refresh Vault Graph">
+            <button
+              aria-label="Refresh Vault Graph"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-white/5 hover:text-slate-200 transition-colors"
+              onClick={onRefresh}
+              type="button"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
+          </Tip>
         )}
       </div>
 
@@ -802,31 +807,37 @@ export function BrainGraph({
         </div>
 
         <div className="flex flex-col items-center rounded-2xl border border-white/10 bg-[#0c111e]/85 p-1 shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl">
-          <button
-            className="flex h-7 w-7 items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-cyan-300 transition-colors"
-            onClick={() => fitView(true)}
-            title="Recenter Camera"
-            type="button"
-          >
-            <Compass className="h-3.5 w-3.5" />
-          </button>
+          <Tip label="Recenter Camera">
+            <button
+              aria-label="Recenter Camera"
+              className="flex h-7 w-7 items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-cyan-300 transition-colors"
+              onClick={() => fitView(true)}
+              type="button"
+            >
+              <Compass className="h-3.5 w-3.5" />
+            </button>
+          </Tip>
           <div className="my-1 h-[1px] w-4 bg-white/10" />
-          <button
-            className="flex h-7 w-7 items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-cyan-300 transition-colors"
-            onClick={() => zoomBy(1.25)}
-            title="Zoom In"
-            type="button"
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </button>
-          <button
-            className="flex h-7 w-7 items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-cyan-300 transition-colors"
-            onClick={() => zoomBy(0.8)}
-            title="Zoom Out"
-            type="button"
-          >
-            <Minus className="h-3.5 w-3.5" />
-          </button>
+          <Tip label="Zoom In">
+            <button
+              aria-label="Zoom In"
+              className="flex h-7 w-7 items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-cyan-300 transition-colors"
+              onClick={() => zoomBy(1.25)}
+              type="button"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          </Tip>
+          <Tip label="Zoom Out">
+            <button
+              aria-label="Zoom Out"
+              className="flex h-7 w-7 items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-cyan-300 transition-colors"
+              onClick={() => zoomBy(0.8)}
+              type="button"
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </button>
+          </Tip>
         </div>
       </div>
     </div>

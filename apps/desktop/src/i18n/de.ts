@@ -698,6 +698,7 @@ export const deOverrides = {
       'nav.messaging': 'Messaging öffnen',
       'nav.artifacts': 'Artefakte öffnen',
       'nav.cron': 'Geplante Jobs öffnen',
+      'nav.starmap': 'Memory-Graph öffnen',
       'nav.agents': 'Agenten öffnen',
       'session.new': 'Neue Session',
       'session.newTab': 'Neuer Session-Tab',

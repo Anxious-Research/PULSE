@@ -6,7 +6,7 @@
  * reconciles with authoritative state when the gap is too large (§15).
  */
 import { getStarmapGraph } from '@/pulse'
-import type { StarmapGraph } from '@/types/pulse'
+import type { StarmapGraph, StarmapNode } from '@/types/pulse'
 import { $starmapGraph } from './starmap'
 
 interface BrainEvent {
@@ -122,7 +122,7 @@ function applyEvent(event: BrainEvent): void {
       if (graph.nodes.some((n) => n.id === node_id || n.vaultId === node_id)) {
         break // already present (duplicate event or catch-up overlap)
       }
-      const newNode = {
+      const newNode: StarmapNode = {
         id: `memory:${graph.nodes.length}`,
         vaultId: node_id,
         label: payload?.title || node_id.split('/').pop()?.replace(/-/g, ' ') || node_id,
@@ -130,8 +130,9 @@ function applyEvent(event: BrainEvent): void {
         category: payload?.category || 'concept',
         state: 'active',
         useCount: 0,
+        createdBy: null,
         pinned: false,
-        timestamp: event.timestamp,
+        timestamp: typeof event.timestamp === 'number' ? event.timestamp : null,
       }
       $starmapGraph.set({
         ...graph,

@@ -869,6 +869,9 @@ export interface UsageStats {
 /** One graph node in the star map (learned skill or memory chunk). */
 export interface StarmapNode {
   id: string
+  /** The vault node id (`category/slug`) the backend emits as `vaultId`; absent on
+   *  purely synthetic nodes. Real-time events (brain-events.ts) match on it. */
+  vaultId?: null | string
   label: string
   kind: 'ghost' | 'memory' | 'skill'
   memorySource?: 'memory' | 'profile'

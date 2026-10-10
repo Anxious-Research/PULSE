@@ -699,6 +699,7 @@ export const esOverrides = {
       'nav.messaging': 'Abrir mensajería',
       'nav.artifacts': 'Abrir artefactos',
       'nav.cron': 'Abrir tareas programadas',
+      'nav.starmap': 'Abrir el grafo de memoria',
       'nav.agents': 'Abrir agentes',
       'session.new': 'Nueva sesión',
       'session.newTab': 'Nueva pestaña de sesión',
