@@ -163,8 +163,19 @@ near-duplicate scan already ran lower down `encode_turn`, over the same nodes at
 threshold and differing only by a category restriction, i.e. a strict subset of the new check |
 every surviving candidate was scanned **twice**; `encode_turn` cost **1,359 ms** at 3,000 nodes | removed the now-dead duplicate block; added a provably non-lossy length prefilter (Jaccard > 0.85 implies token counts within ~18%, so a very different length cannot match). **1,359 → 953 ms** |
 
-G10–G16 are now locked by `tests/test_brain_live_loop.py` (15 tests), which asserts them through the
-same production functions the agent calls — not through internal helpers.
+| G17 | `revise_attribute` appended the in-place correction record as a **raw dict**, the only
+record-list writer in the module to do so (beliefs, outcomes and corroborations all use
+`encode_record`) | frontmatter does not round-trip nested mappings, so the record was persisted as
+its Python `repr` — and `decode_record` returns `{}` for that form. A temporal correction therefore
+*looked* like it preserved history while the prior assertion was in fact unreadable, and no reader
+existed to notice | append via `encode_record`; add `corrections_of()`, the missing decoder, which
+also recovers legacy `repr` entries so history written before the fix is not lost |
+
+G10–G17 are now locked by `tests/test_brain_live_loop.py` (19 tests), which asserts them through the
+same production functions the agent calls — not through internal helpers. G17 is the case for
+testing at this level rather than the unit level: `revise_attribute` passed its own unit tests,
+because writing the dict *does* preserve the text on disk — it is only unreadable through the API,
+which only a test that reads the node back through the API can catch.
 
 ---
 
@@ -270,13 +281,13 @@ learning.
 
 | Suite | Result |
 |---|---|
-| Full brain + memory suite | **565 passed** (485 at the start of this work; two consecutive clean runs) |
+| Full brain + memory suite | **571 passed** (485 at the start of this work) |
 | `tests/test_brain_beliefs.py` (new) | 16 tests |
 | `tests/test_brain_outcomes.py` (new) | 14 tests |
 | `tests/test_brain_reflection.py` (new) | 15 tests |
 | `tests/test_brain_cognition.py` (new) | 5 tests (the production wiring seam) |
 | `tests/test_brain_evaluation.py` (new) | 17 tests — the §11 scenarios |
-| `tests/test_brain_live_loop.py` (new) | 15 tests — the G10–G16 defects, asserted through the production entry points |
+| `tests/test_brain_live_loop.py` (new) | 19 tests — the G10–G17 defects and the correction-over-the-wire path, asserted through the production entry points |
 | Scale benchmark (`bench_learning.py`, 500–5,000 nodes) | every stage linear in N; encode `1,359 → 953 ms` at 3,000 nodes after the G16 fix — see `docs/brain-operations.md` §6 |
 | Desktop `src/app/settings` + `src/app/brain-graph` (vitest) | **57 files / 446 tests passed** |
 | `tsc -p tsconfig.json --noEmit` | 11 errors, **all pre-existing** in `src/store/brain-events.ts`; **0 new** |
@@ -389,7 +400,7 @@ $PY ~/.pulse/cache/scratch/verify_backup_restore.py
 | `agent/brain/reflection.py` | **new** — bounded evidence-based reflection with conflict detection |
 | `agent/brain/session.py` | `brain_reflect()` production entry point; wiring into the per-turn background worker; `reflect_enabled`/`reflect_every` settings; `_procedure_guidance_block()` so a learned procedure reaches the turn context (G14) |
 | `agent/brain/encoding.py` | `_DECLARATIVE_VERBS` broadened and `_CODED_NAME_HEADS` added (G10, G11); restatements recognised before the salience gate and recorded as corroboration (G12, G13) |
-| `agent/brain/vault.py` | `record_corroboration()` / `corroborations_of()` — a restatement is evidence about an existing memory, not a new one (G12) |
+| `agent/brain/vault.py` | `record_corroboration()` / `corroborations_of()` — a restatement is evidence about an existing memory, not a new one (G12); `revise_attribute()` now encodes its history and `corrections_of()` reads it back, including legacy records (G17) |
 | `agent/brain/reflection.py` | `_goal_from_question()` goal derivation (G14); `_evidence_refs()` counts independent assertions, not nodes |
 | `agent/brain/recall.py` | opt-in deep/historical retrieval; `RecallHit.historical` |
 | `agent/brain/relations.py` | six new relationship types |
@@ -398,6 +409,6 @@ $PY ~/.pulse/cache/scratch/verify_backup_restore.py
 | `pulse_cli/config_defaults.py` | `brain.reflect_enabled`, `brain.reflect_every` |
 | `apps/desktop/src/app/settings/constants.ts` | labels + descriptions + curated keys for the new settings |
 | `tests/test_brain_{beliefs,outcomes,reflection,cognition,evaluation}.py` | **new** — 67 tests across the five files (16+14+15+5+17) |
-| `tests/test_brain_live_loop.py` | **new** — 15 tests locking G10–G16 against the production entry points |
+| `tests/test_brain_live_loop.py` | **new** — 19 tests locking G10–G17 against the production entry points |
 | `docs/brain-operations.md` | **new** — backup / restore / recovery / migration, with the measured scale table |
 | `docs/brain-architecture.html` | **new** — the architecture diagram (self-contained; verified for box overlap, out-of-bounds and arrow/box crossings, and that every box is labelled) |

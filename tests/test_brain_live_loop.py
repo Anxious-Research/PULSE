@@ -252,5 +252,142 @@ class ProcedureReachesTheAgentTest(unittest.TestCase):
         self.assertIn("Learned procedures", self.session.brain_turn_context(fresh, self.question))
 
 
+class CorrectionOverTheWireTest(unittest.TestCase):
+    """§3 — a correction stated in conversation must change what the brain recalls next.
+
+    `tests/test_brain_correction.py` proves the predicates (`contradicts`,
+    `find_temporal_revisions`). These prove the *wire*: that a correction typed into a turn
+    actually supersedes or revises the vault, that the corrected value is what later recall reads,
+    and that the prior assertion survives on disk as history rather than being deleted or
+    silently overwritten.
+    """
+
+    FACT = "The billing service retries a failed charge three times."
+    CORRECTION = "Correction: the billing service retries a failed charge five times."
+    EVENT = "The atlas service deployed to the staging cluster yesterday."
+    EVENT_FIX = "Correction: the atlas service deployed to the staging cluster today."
+
+    def setUp(self):
+        self._home = tempfile.mkdtemp(prefix="pulse-brain-corr-")
+        self._prev = os.environ.get("PULSE_HOME")
+        os.environ["PULSE_HOME"] = self._home
+        from agent.brain import encoding, recall, vault as vault_mod
+        self.encoding, self.recall = encoding, recall
+        self.vault = vault_mod.BrainVault(vault_mod.get_brain_vault_dir())
+        self.vault.ensure_vault_structure()
+
+    def tearDown(self):
+        if self._prev is None:
+            os.environ.pop("PULSE_HOME", None)
+        else:
+            os.environ["PULSE_HOME"] = self._prev
+        shutil.rmtree(self._home, ignore_errors=True)
+
+    def _correct(self):
+        first = self.encoding.encode_turn(self.vault, self.FACT, turn_id="t1", now=1_700_000_000.0)
+        second = self.encoding.encode_turn(
+            self.vault, self.CORRECTION, turn_id="t2", now=1_700_000_100.0
+        )
+        return first, second
+
+    def test_a_correction_supersedes_the_claim_it_contradicts(self):
+        _, second = self._correct()
+        self.assertTrue(second["superseded"], "the correction superseded nothing")
+        self.assertEqual(len(second["semantic"]), 1)
+
+    def test_the_prior_assertion_is_kept_as_history_not_deleted(self):
+        first, second = self._correct()
+        old_id = first["semantic"][0]["node_id"]
+        new_id = second["semantic"][0]["node_id"]
+
+        old = self.vault.read_node(old_id)
+        self.assertIsNotNone(old, "the superseded memory was deleted instead of superseded")
+        self.assertEqual(old.frontmatter.status, "superseded")
+
+        new = self.vault.read_node(new_id)
+        assert new is not None
+        self.assertIn(old_id, list(new.frontmatter.supersedes))
+
+    def test_recall_returns_the_corrected_value_and_not_the_stale_one(self):
+        first, second = self._correct()
+        old_id = first["semantic"][0]["node_id"]
+        new_id = second["semantic"][0]["node_id"]
+
+        result = self.recall.recall(
+            "how many times does the billing service retry a failed charge", vault=self.vault
+        )
+        ids = result.node_ids()
+        self.assertIn(new_id, ids)
+        self.assertNotIn(old_id, ids, "the superseded claim is still recalled as current")
+        self.assertNotIn("three times", " ".join(h.snippet for h in result.hits))
+
+    def test_a_temporal_correction_revises_in_place_without_a_twin_node(self):
+        # "yesterday" -> "today" is not a contradiction: the event still happened, only one
+        # attribute is wrong, so superseding it would throw away correct knowledge.
+        self.encoding.encode_turn(self.vault, self.EVENT, turn_id="t1", now=1_700_000_000.0)
+        report = self.encoding.encode_turn(
+            self.vault, self.EVENT_FIX, turn_id="t2", now=1_700_000_100.0
+        )
+
+        self.assertTrue(report["revised"], "the temporal correction was not applied")
+        self.assertEqual(report["semantic"], [], "a twin node was written for a pure time fix")
+
+        node_id = report["revised"][0]["nodes"][0]
+        node = self.vault.read_node(node_id)
+        assert node is not None
+        self.assertIn("today", node.content)
+        self.assertNotIn("yesterday", node.content)
+        # ...and the prior assertion itself is kept as history on the node, readable as structured
+        # data, so "what did this say before, and why did it change" stays answerable.
+        history = self.vault.corrections_of(node)
+        self.assertEqual(len(history), 1, "the in-place correction left no readable provenance")
+        self.assertIn("yesterday", history[0]["from"])
+        self.assertEqual(history[0]["reason"], "temporal correction")
+
+    def test_a_correction_record_survives_the_frontmatter_round_trip(self):
+        # Frontmatter does not round-trip nested mappings, so the record must be encoded — a raw
+        # dict reads back as its repr and is lost to every structured reader.
+        self.encoding.encode_turn(self.vault, self.EVENT, turn_id="t1", now=1_700_000_000.0)
+        report = self.encoding.encode_turn(
+            self.vault, self.EVENT_FIX, turn_id="t2", now=1_700_000_100.0
+        )
+        node_id = report["revised"][0]["nodes"][0]
+
+        node = self.vault.read_node(node_id)          # re-read from disk
+        assert node is not None
+        stored = node.frontmatter.extra["corrections"][0]
+        self.assertIsInstance(stored, str)
+        self.assertFalse(stored.startswith("{"), "the record was persisted as a dict repr")
+        self.assertIn("yesterday", self.vault.corrections_of(node)[0]["from"])
+
+    def test_legacy_correction_records_are_still_readable(self):
+        # Vaults written before the encoding fix hold the repr of a dict. That history must still
+        # be recoverable rather than silently reported as absent.
+        from agent.brain.parser import decode_record
+
+        self.encoding.encode_turn(self.vault, self.EVENT, turn_id="t1", now=1_700_000_000.0)
+        report = self.encoding.encode_turn(
+            self.vault, self.EVENT_FIX, turn_id="t2", now=1_700_000_100.0
+        )
+        node_id = report["revised"][0]["nodes"][0]
+        node = self.vault.read_node(node_id)
+        assert node is not None
+
+        encoded = node.frontmatter.extra["corrections"][0]
+        legacy = repr({"at": 1_700_000_100, "from": "prior claim yesterday", "reason": "temporal correction"})
+        with open(node.path) as fh:
+            raw = fh.read().replace(encoded, f'"{legacy}"')
+        with open(node.path, "w") as fh:
+            fh.write(raw)
+
+        # precondition: the structured decoder alone cannot read this form
+        self.assertEqual(decode_record(legacy), {})
+        reread = self.vault.read_node(node_id)
+        assert reread is not None
+        recovered = self.vault.corrections_of(reread)
+        self.assertEqual(len(recovered), 1)
+        self.assertEqual(recovered[0]["from"], "prior claim yesterday")
+
+
 if __name__ == "__main__":
     unittest.main()

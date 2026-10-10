@@ -480,7 +480,18 @@ class BrainVault:
             return False
         fm = node.frontmatter
         history = list(fm.extra.get("corrections") or [])
-        history.append({"at": ts, "from": prior_content, "reason": reason or "temporal correction"})
+        # Encoded with encode_record, like every other list-of-records field (a belief's revisions,
+        # a procedure's outcomes, this node's corroborations). Frontmatter here round-trips scalars
+        # and lists of scalars but *not* nested mappings, so appending a raw dict wrote its Python
+        # repr: the prior assertion reached the file but could never be read back as structured
+        # history, which is the same as losing it.
+        from .parser import encode_record
+
+        history.append(encode_record({
+            "at": ts,
+            "from": prior_content,
+            "reason": reason or "temporal correction",
+        }))
         fm.extra["corrections"] = history
         if source_turn is not None:
             fm.source_turn = str(source_turn)
@@ -556,6 +567,40 @@ class BrainVault:
             except Exception:
                 continue
             if isinstance(decoded, dict):
+                out.append(decoded)
+        return out
+
+    def corrections_of(self, node: Any) -> List[Dict[str, Any]]:
+        """Decoded in-place correction history for a node, oldest first (``[]`` when there is none).
+
+        The *previous* text is kept, not merely the fact that something changed, so "what did this
+        claim before, and why was it changed" stays answerable after a temporal correction.
+        """
+        from .parser import decode_record
+
+        try:
+            raw = node.frontmatter.extra.get("corrections") or []
+        except Exception:
+            return []
+        out: List[Dict[str, Any]] = []
+        for item in raw:
+            try:
+                decoded = decode_record(item) if isinstance(item, str) else item
+            except Exception:
+                decoded = {}
+            if not isinstance(decoded, dict) or not decoded:
+                # Entries written before this used encode_record were stored as the repr of a
+                # dict, which decode_record cannot read. Recover the history rather than report
+                # that none exists.
+                try:
+                    import ast
+
+                    legacy = ast.literal_eval(str(item))
+                except Exception:
+                    legacy = {}
+                if isinstance(legacy, dict):
+                    decoded = legacy
+            if isinstance(decoded, dict) and decoded:
                 out.append(decoded)
         return out
 
