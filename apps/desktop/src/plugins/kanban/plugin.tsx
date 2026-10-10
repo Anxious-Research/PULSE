@@ -14,12 +14,12 @@ import './kanban.css'
 import {
   cn,
   Codicon,
-  type PULSEPlugin,
   host,
   type KeybindContribution,
   KEYBINDS_AREA,
   PALETTE_AREA,
   type PaletteContribution,
+  type PULSEPlugin,
   type RouteContribution,
   ROUTES_AREA,
   SIDEBAR_NAV_AREA,

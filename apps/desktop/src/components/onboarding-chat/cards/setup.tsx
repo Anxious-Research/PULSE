@@ -11,8 +11,8 @@ import {
   AccentSwatch,
   LayoutPreviewCard,
   LAYOUTS,
-  PULSE_ACCENT,
-  orderConnectorPicks
+  orderConnectorPicks,
+  PULSE_ACCENT
 } from '@/components/onboarding-chat/options'
 import type { LayoutNode } from '@/components/pane-shell/tree/model'
 import { ConnectorLogo } from '@/components/ui/connector-logo'

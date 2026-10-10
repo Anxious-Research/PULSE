@@ -34,9 +34,10 @@ export function drawGraph(input: DrawInput): boolean {
   const { adjacency, births, ctx, dpr, hoverId, links, nodes, now, palette, query, selectedId, size, vp } = input
   const { h, w } = size
 
-  if (w <= 0 || h <= 0) return false
+  if (w <= 0 || h <= 0) {return false}
 
   const byId = new Map<string, GNode>()
+
   for (const n of nodes) {
     byId.set(n.id, n)
   }
@@ -61,13 +62,18 @@ export function drawGraph(input: DrawInput): boolean {
 
   const bornOf = (id: string): number => {
     const start = births.get(id)
-    if (start == null) return 1
+
+    if (start == null) {return 1}
     const t = (now - start) / BIRTH_MS
+
     if (t >= 1) {
       births.delete(id)
+
       return 1
     }
+
     animating = true
+
     return easeOut(t)
   }
 
@@ -76,17 +82,19 @@ export function drawGraph(input: DrawInput): boolean {
   // 2. Render Outer Hub Glows (Pre-pass for cluster blooms)
   for (const n of nodes) {
     const degree = n.degree ?? 0
-    if (degree < 3 && !n.pinned) continue
+
+    if (degree < 3 && !n.pinned) {continue}
 
     const born = bornOf(n.id)
-    if (born < 0.05) continue
+
+    if (born < 0.05) {continue}
 
     const X = sx(n.x)
     const Y = sy(n.y)
     const r = nodeRadius(n) * vp.k * (0.5 + 0.5 * born)
 
     // Cull off-screen blooms
-    if (X < -150 || X > w + 150 || Y < -150 || Y > h + 150) continue
+    if (X < -150 || X > w + 150 || Y < -150 || Y > h + 150) {continue}
 
     const colorSet = getNodeColorSet(n)
     const bloomRadius = r * (degree >= 8 ? 6 : 4)
@@ -107,11 +115,13 @@ export function drawGraph(input: DrawInput): boolean {
   for (const link of links) {
     const s = endpoint(link.source, byId)
     const t = endpoint(link.target, byId)
-    if (!s || !t) continue
+
+    if (!s || !t) {continue}
 
     const lit = !!focusId && (s.id === focusId || t.id === focusId || (!!focusSet && focusSet.has(s.id) && focusSet.has(t.id)))
     const born = Math.min(bornOf(s.id), bornOf(t.id))
-    if (born < 0.05) continue
+
+    if (born < 0.05) {continue}
 
     const sX = sx(s.x)
     const sY = sy(s.y)
@@ -164,14 +174,15 @@ export function drawGraph(input: DrawInput): boolean {
 
   for (const n of nodes) {
     const born = bornOf(n.id)
-    if (born < 0.02) continue
+
+    if (born < 0.02) {continue}
 
     const X = sx(n.x)
     const Y = sy(n.y)
     const r = Math.max(1.8, nodeRadius(n) * vp.k * (0.3 + 0.7 * born))
 
     // Cull off-screen nodes
-    if (X < -80 || X > w + 80 || Y < -80 || Y > h + 80) continue
+    if (X < -80 || X > w + 80 || Y < -80 || Y > h + 80) {continue}
 
     const isFocus = n.id === focusId
     const isNeighbor = !!focusSet && focusSet.has(n.id)
@@ -179,9 +190,11 @@ export function drawGraph(input: DrawInput): boolean {
     const matched = isMatch(n)
 
     let alpha = 1
+
     if (focusId) {
       alpha = isFocus || isNeighbor ? 1 : 0.12
     }
+
     if (query && !matched && !isFocus && !isNeighbor) {
       alpha *= 0.25
     }
@@ -211,6 +224,7 @@ export function drawGraph(input: DrawInput): boolean {
     } else {
       // 3D Spherical Orb Gradient
       ctx.globalAlpha = alpha
+
       // Off-center highlight (top-left) for 3D sphere illusion
       const sphereGrad = ctx.createRadialGradient(
         X - r * 0.35,
@@ -220,6 +234,7 @@ export function drawGraph(input: DrawInput): boolean {
         Y,
         r
       )
+
       sphereGrad.addColorStop(0, rgba(colorSet.highlight, 1))
       sphereGrad.addColorStop(0.35, rgba(colorSet.glow, 0.95))
       sphereGrad.addColorStop(0.85, rgba(colorSet.base, 0.9))
@@ -274,6 +289,7 @@ export function drawGraph(input: DrawInput): boolean {
   }
 
   ctx.globalAlpha = 1
+
   return animating
 }
 
@@ -286,13 +302,14 @@ export function drawMinimap(
   vp: Viewport,
   mainSize: { w: number; h: number }
 ) {
-  if (w <= 0 || h <= 0 || !nodes.length) return
+  if (w <= 0 || h <= 0 || !nodes.length) {return}
 
   ctx.clearRect(0, 0, w, h)
   ctx.fillStyle = 'rgba(6, 10, 20, 0.85)'
   ctx.fillRect(0, 0, w, h)
 
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+
   for (const n of nodes) {
     minX = Math.min(minX, n.x)
     minY = Math.min(minY, n.y)

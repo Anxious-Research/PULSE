@@ -1,5 +1,5 @@
-import { forceRedraw, useInput } from '@pulse/ink'
 import { useStore } from '@nanostores/react'
+import { forceRedraw, useInput } from '@pulse/ink'
 import { useEffect, useRef } from 'react'
 
 import { DASHBOARD_TUI_MODE } from '../config/env.js'

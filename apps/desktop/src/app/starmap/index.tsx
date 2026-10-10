@@ -25,6 +25,7 @@ export function StarmapView({ onClose }: { onClose: () => void }) {
   // §14: subscribe to real-time Brain events on mount; unsubscribe on unmount.
   useEffect(() => {
     const unsubscribe = subscribeBrainEvents()
+
     return unsubscribe
   }, [])
 

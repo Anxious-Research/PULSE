@@ -1,7 +1,6 @@
 import type { PromptSubmitResult } from '@pulse/shared'
 import { type MutableRefObject, useCallback } from 'react'
 
-import { PROMPT_SUBMIT_REQUEST_TIMEOUT_MS } from '@/pulse'
 import { translateNow, type Translations } from '@/i18n'
 import { type ChatMessage, finalizeInterruptedMessages, textPart } from '@/lib/chat-messages'
 import { optimisticAttachmentRef } from '@/lib/chat-runtime'
@@ -14,6 +13,7 @@ import {
   stopVoicePlayback,
   takeVoicePlaybackInterrupted
 } from '@/lib/voice-playback'
+import { PROMPT_SUBMIT_REQUEST_TIMEOUT_MS } from '@/pulse'
 import {
   $composerAttachments,
   type ComposerAttachment,

@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 
-import { type ProfileScope, savePULSEConfigRecord } from '@/pulse'
 import { useI18n } from '@/i18n'
+import { type ProfileScope, savePULSEConfigRecord } from '@/pulse'
 import { notify, notifyError } from '@/store/notifications'
 
 import { pulseConfigCacheWriter, usePULSEConfigRecord } from '../hooks/use-config-record'

@@ -314,7 +314,7 @@ import {
 import { assertNoSecondLocalBackend, assertNotPassiveSpawn } from './host-backend-singleton'
 import { lookupPublishedSessionToken } from './host-published-token'
 import { claimHostSpawnGate } from './host-spawn-gate'
-import { PULSE_HUB_FALLBACK_ORIGIN, PULSE_HUB_ORIGIN, isPULSEHubClipboardWrite } from './hub-iframe-policy'
+import { isPULSEHubClipboardWrite, PULSE_HUB_FALLBACK_ORIGIN, PULSE_HUB_ORIGIN } from './hub-iframe-policy'
 import { requestHudClose } from './hud-close'
 import { cursorPointInWindow } from './hud-cursor'
 import { startHudGameOverlayWatch } from './hud-game-overlay'
