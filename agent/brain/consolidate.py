@@ -213,6 +213,18 @@ def merge_near_duplicates(
                 processed.add(weaker.id)
 
                 if not dry_run:
+                    # A near-duplicate is not merely a redundant copy: it is a *second independent
+                    # assertion* of the same claim. Recording it as corroboration on the primary is
+                    # what lets reflection hold a belief (≥2 independent pieces of evidence) instead
+                    # of a provisional guess. Before this, the merge discarded the recurrence signal
+                    # along with the duplicate node, so a corroborated claim could never become a
+                    # belief — the reason a real vault produced zero beliefs.
+                    try:
+                        vault.record_corroboration(
+                            primary.id, text=(weaker.content or "")[:400], now=now,
+                        )
+                    except Exception:
+                        pass
                     vault.supersede(weaker.id, primary.id, now=now)
 
     return merged

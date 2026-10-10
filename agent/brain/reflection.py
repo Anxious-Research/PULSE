@@ -33,7 +33,7 @@ from typing import Any, Dict, List, Optional, Sequence
 
 from . import beliefs as belief_mod
 from . import outcomes as outcome_mod
-from .correction import contradicts, polarity, topic_overlap
+from .correction import contradicts, polarity, topic_overlap, numbers
 from .recall import recall
 
 # ── trigger policy (§7 "Do not force every conversation through an expensive reflection cycle") ─
@@ -186,9 +186,23 @@ def _same_claim(a_text: str, b_text: str) -> bool:
 
     if polarity(a_text) != polarity(b_text):
         return False
-    if similarity(a_text, b_text) >= CLUSTER_SIMILARITY:
+    # Raised from 0.72 → 0.60: after consolidation two restatements become one memory, so clustering
+    # must recognize paraphrases or beliefs never form. "gateway runs on 8791" vs "gateway listens
+    # on 8791" scores 0.53 — below the old threshold, so two supporting memories were never clustered.
+    if similarity(a_text, b_text) >= 0.60:
         return True
-    return topic_overlap(a_text, b_text) >= CLUSTER_TOPIC_OVERLAP
+    # Entity+number anchor: statements sharing a core entity and a number (port, version, count)
+    # are the same factual claim even when the verb differs. Without this, "gateway runs on 8791"
+    # and "gateway listens on 8791" form separate clusters (0.2 topic overlap, different verbs).
+    a_nums = numbers(a_text)
+    b_nums = numbers(b_text)
+    if a_nums and b_nums and a_nums & b_nums:
+        # Both mention the same number(s); check if they share a subject.
+        if topic_overlap(a_text, b_text) >= 0.15:  # lowered bar when numbers anchor
+            return True
+    if topic_overlap(a_text, b_text) >= CLUSTER_TOPIC_OVERLAP:
+        return True
+    return False
 
 
 def _cluster(evidence: Sequence[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:

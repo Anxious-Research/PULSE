@@ -175,13 +175,18 @@ class Belief:
 
 
 def list_beliefs(vault: Any) -> List[Belief]:
-    """Every belief node in the vault, active ones first, then by confidence."""
+    """Every belief node in the vault, active ones first, then by confidence.
+    
+    Superseded beliefs are excluded: a superseded belief was replaced by a correction and is no
+    longer current — it remains on disk as history but is not retrieved as a held belief.
+    """
     if vault is None:
         return []
     beliefs = [
         Belief.from_node(node)
         for node in vault.list_all_nodes()
         if node.frontmatter.category == BELIEF_CATEGORY
+        and node.frontmatter.status != NodeStatus.SUPERSEDED.value
     ]
     beliefs.sort(key=lambda b: (b.status != "active", -b.confidence, b.id))
     return beliefs
@@ -422,6 +427,7 @@ def supersede_belief(
     new_statement: str,
     *,
     evidence_refs: Sequence[str] = (),
+    asserted: bool = False,
     now: Optional[float] = None,
 ) -> Dict[str, Any]:
     """Replace a belief with a revised one, keeping the old belief as history.
@@ -429,11 +435,15 @@ def supersede_belief(
     The old node is marked ``superseded`` (excluded from active recall, still on disk and still
     linked), and the new belief carries a ``supersedes`` edge back to it — the correction chain
     the UI renders (§13.4).
+
+    ``asserted`` marks the corrected statement as one the user stated directly: a correction is a
+    first-hand assertion, so the new belief carries :data:`BELIEF_ASSERTED` confidence rather than
+    the near-zero confidence an evidence-free inference would get.
     """
     ts = int(now if now is not None else time.time())
     if vault is None:
         return {"ok": False, "reason": "no vault"}
-    formed = form_belief(vault, new_statement, evidence_refs=evidence_refs, now=ts)
+    formed = form_belief(vault, new_statement, evidence_refs=evidence_refs, asserted=asserted, now=ts)
     if not formed.get("ok"):
         return formed
     new_id = formed["belief_id"]

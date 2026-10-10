@@ -35,10 +35,13 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from .correction import find_contradictions, find_temporal_revisions
+from .correction import contradicts, find_contradictions, find_temporal_revisions
 from .models import NodeCategory, NodeStatus
 from .parser import slugify
 from .similarity import similarity
+
+# Import belief helpers to route corrections properly when they target a belief node.
+from . import beliefs as belief_mod
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +84,15 @@ CORRECTION_FLOOR = 0.95
 #: merge them.
 RECURRENCE_SIMILARITY = 0.5
 RECURRENCE_SATURATION = 3
+#: Similarity at which a new statement is treated as a *restatement* of an existing memory — i.e.
+#: recorded as a corroboration rather than kept as a separate node. Set below pure verbatim (1.0)
+#: to catch paraphrases (reordered clauses, articles, synonyms: "the API endpoint is /v1/users" vs
+#: "Endpoint: /v1/users" ≈ 0.76), yet above "same verb, different object" (("deploy via ftp" vs
+#: "deploy via docker") ≈ 0.61), which must stay distinct. The 0.5–0.72 band is the *dead zone*
+#: this replaces: such statements were not restatements (>0.85) and their corpus overlap pushed
+#: salience below the gate, so they were discarded — discarding the corroborating evidence that
+#: beliefs are built from. That is why a real vault accumulated notes but zero beliefs.
+RESTATEMENT_SIMILARITY = 0.72
 
 # ── signal lexicons ────────────────────────────────────────────────────────
 #
@@ -571,6 +583,13 @@ def extract_candidates(
         signals = detect_signals(statement, corpus=corpus_texts, embedder=embedder)
         salience = score_salience(signals)
 
+        # A correction is NOT a restatement: it contradicts what it resembles and must supersede it.
+        # Check for the correction signal before the restatement check, because a correction and the
+        # claim it contradicts are highly similar (~0.77) — within the restatement band — yet treating
+        # it as a restatement would record corroboration instead of supersession, so the contradiction
+        # would never be resolved and recall would continue returning the stale value.
+        is_correction = signals.correction >= 0.5
+
         # A restatement of something already known is checked BEFORE the salience gate. It is not a
         # new memory to be scored — it is another assertion of an existing one, and its entire value
         # is corroboration. Left to the gate it would be dropped: a verbatim repeat has novelty 0.0
@@ -584,6 +603,11 @@ def extract_candidates(
         # the vault, but the constant drops sharply because most memories are unrelated and of a
         # different length. Bounds are deliberately loose (0.5–2.0x on characters) so this can only
         # ever skip a comparison that could not have matched.
+        # A restatement is the *same claim* asserted again. A statement that resembles an existing
+        # memory but contradicts it ("…was migrated to GCP" vs "…was NOT migrated to GCP" — 0.96
+        # similar) is its opposite, not its support: recording it as corroboration would let a denial
+        # reinforce the very claim it denies. Such a statement falls through to contradiction
+        # handling below (and, when it carries a correction marker, supersedes the claim instead).
         statement_len = len(statement)
         lo, hi = 0.5 * statement_len, 2.0 * statement_len
         for node_id, content in existing:
@@ -591,10 +615,13 @@ def extract_candidates(
                 continue
             if not (lo <= len(content) <= hi):
                 continue
-            if similarity(statement, content, embedder=embedder) > 0.85:
-                restates = node_id
-                break
-        if restates:
+            if similarity(statement, content, embedder=embedder) < RESTATEMENT_SIMILARITY:
+                continue
+            if contradicts(statement, content):
+                continue
+            restates = node_id
+            break
+        if restates and not is_correction:
             candidates.append(
                 MemoryCandidate(
                     text=statement,
@@ -771,6 +798,41 @@ def encode_turn(
         if dry_run:
             report["semantic"].append({"node_id": node_id, **candidate.as_dict()})
             continue
+
+        # When a correction supersedes a belief, route through the belief layer so confidence,
+        # evidence, and revision history are preserved and the corrected claim itself becomes a
+        # belief (with asserted=True — the user stated the correction directly). Without this,
+        # a corrected belief is discarded and the corrected claim becomes a plain concept, so the
+        # system never holds it as truth and recall continues returning the stale value.
+        belief_targets = [
+            old_id for old_id in candidate.supersedes
+            if vault.read_node(old_id) and vault.read_node(old_id).frontmatter.category == belief_mod.BELIEF_CATEGORY
+        ]
+        if belief_targets:
+            # The corrected claim *is* the new belief — write it through the belief layer and skip
+            # the generic concept write below (which would otherwise overwrite the belief node with
+            # category="concept" and drop it from list_beliefs entirely).
+            new_belief_id = ""
+            for old_belief_id in belief_targets:
+                formed = belief_mod.supersede_belief(
+                    vault, old_belief_id, candidate.text, asserted=True, now=ts
+                )
+                if formed.get("ok"):
+                    new_belief_id = formed["belief_id"]
+                    report["superseded"].append(old_belief_id)
+            # Any non-belief twin (e.g. the concept/ note carrying the same claim) is superseded by
+            # the new belief too, so the stale claim reflects as superseded everywhere.
+            for old_id in candidate.supersedes:
+                if old_id in belief_targets or not new_belief_id:
+                    continue
+                if vault.supersede(old_id, new_belief_id, now=ts):
+                    report["superseded"].append(old_id)
+            report.setdefault("beliefs", []).append(
+                {"node_id": new_belief_id, "text": candidate.text, "correction": True}
+            )
+            report["semantic"].append({"node_id": new_belief_id or node_id, **candidate.as_dict()})
+            continue
+
         vault.write_node(
             node_id,
             candidate.text,

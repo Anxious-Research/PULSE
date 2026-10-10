@@ -20,6 +20,7 @@ import type { StarmapGraph } from '@/types/pulse'
 import { registerStarMapContextMenu } from '../starmap/context-menu-handle'
 import { NodeContextMenu, type NodeMenuTarget } from '../starmap/node-context-menu'
 
+import { BrainInspector } from './brain-inspector'
 import { applyForces, bounds, buildGraph, nodeRadius, warmUp } from './force'
 import { computePalette, CATEGORY_COLORS, resolveRgb, rgba } from './palette'
 import { drawGraph, drawMinimap } from './render'
@@ -108,6 +109,26 @@ export function BrainGraph({
 
   const [selectedId, setSelectedId] = useState<null | string>(null)
   const [menuTarget, setMenuTarget] = useState<NodeMenuTarget | null>(null)
+
+  // The vault id + label of the selected node, for the evidence inspector. A skill/ghost node has
+  // no vaultId, so the inspector only opens for real memory nodes.
+  const selectedBrain = useMemo(() => {
+    if (!selectedId) return null
+    const node = graph.nodes.find(n => n.id === selectedId)
+    if (!node || !node.vaultId) return null
+    return { vaultId: node.vaultId, label: node.label }
+  }, [graph, selectedId])
+
+  const selectByVaultId = useCallback(
+    (vaultId: string) => {
+      const node = graph.nodes.find(n => n.vaultId === vaultId)
+      if (node) {
+        selectedIdRef.current = node.id
+        setSelectedId(node.id)
+      }
+    },
+    [graph]
+  )
   const [size, setSize] = useState({ h: 0, w: 0 })
   const [params, setParams] = useState<ForceParams>(DEFAULT_FORCES)
   const [showForcesPanel, setShowForcesPanel] = useState(false)
@@ -624,7 +645,7 @@ export function BrainGraph({
   const edgeCount = graph.edges.length
 
   return (
-    <div className="relative flex h-full w-full min-h-0 flex-1 overflow-hidden bg-[#020307] select-none font-sans" ref={wrapRef}>
+    <div className="relative flex h-full w-full min-h-0 flex-1 overflow-hidden bg-background select-none font-sans" ref={wrapRef}>
       <canvas
         className="block touch-none select-none text-foreground"
         onContextMenu={onContextMenu}
@@ -645,6 +666,17 @@ export function BrainGraph({
           setSelectedId(null)
         }}
         target={menuTarget}
+      />
+
+      {/* MEMORY EVIDENCE INSPECTOR — opens when a real memory node is selected (P4). */}
+      <BrainInspector
+        label={selectedBrain?.label}
+        onClose={() => {
+          selectedIdRef.current = null
+          setSelectedId(null)
+        }}
+        onSelectNode={selectByVaultId}
+        vaultId={selectedBrain?.vaultId ?? null}
       />
 
       {/* TOP BAR */}

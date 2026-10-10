@@ -7,6 +7,10 @@ import type { GraphPalette, Rgb } from './types'
 
 export const DEEP_SPACE_BG: Rgb = { r: 6, g: 8, b: 15 } // #06080f
 export const FOREGROUND_TEXT: Rgb = { r: 240, g: 244, b: 255 }
+// Light-theme canvas: a near-white paper the themed `--background` resolves to when a light skin
+// is active. The graph was previously painted on a hardcoded deep-space fill regardless of theme,
+// so a light theme rendered dark nodes on a near-black canvas — unreadable. See computePalette.
+export const LIGHT_PAPER_BG: Rgb = { r: 248, g: 250, b: 253 } // #f8fafd
 
 let _probe: CanvasRenderingContext2D | null = null
 
@@ -104,18 +108,26 @@ export function getNodeColorSet(n: StarmapNode): { base: Rgb; glow: Rgb; highlig
   return (cat && CATEGORY_COLORS[cat]) ? CATEGORY_COLORS[cat] : DEFAULT_CATEGORY
 }
 
+/** Pure palette decision from already-resolved colours — the testable core of computePalette.
+ *  `dark` follows the BACKGROUND luminance (what nodes sit on), which is what drives contrast;
+ *  the canvas fill is the deep-space look for a dark theme and a light paper for a light one. */
+export function paletteForColors(bg: Rgb, fg: Rgb): GraphPalette {
+  const dark = luminance(bg) < 0.5
+  return {
+    bg: dark ? DEEP_SPACE_BG : LIGHT_PAPER_BG,
+    dark,
+    fg,
+    nodeInk: (n: StarmapNode) => getNodeColorSet(n).base
+  }
+}
+
 export function computePalette(canvas: HTMLCanvasElement): GraphPalette {
   const style = getComputedStyle(canvas)
   const fg = resolveRgb(style.color || '#f0f4ff')
-  const dark = luminance(fg) > 0.4
-
-  return {
-    bg: DEEP_SPACE_BG,
-    dark,
-    fg,
-    nodeInk: (n: StarmapNode) => {
-      const set = getNodeColorSet(n)
-      return set.base
-    }
-  }
+  // Theme-aware canvas: read the real themed `--background` so the graph paints on the app's
+  // actual surface instead of a hardcoded deep-space fill. A light theme resolves to a light
+  // paper; a dark theme keeps the deep-space look.
+  const bgVar = style.getPropertyValue('--background').trim()
+  const resolvedBg = bgVar ? resolveRgb(bgVar) : DEEP_SPACE_BG
+  return paletteForColors(resolvedBg, fg)
 }

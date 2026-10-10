@@ -743,6 +743,26 @@ def finalize_turn(
     if _should_review_skills:
         agent._iters_since_skill = 0
 
+    # Brain outcome recording: fold this turn's outcome into a procedure when evidence is
+    # sufficient. Reads the committed transcript for the turn's tool results (the observability
+    # harness resets its buffer each round, so it only holds the last round here). Fail-open.
+    try:
+        from agent.brain.outcome_recorder import record_turn_outcome
+
+        record_turn_outcome(
+            agent,
+            original_user_message=original_user_message,
+            final_response=final_response,
+            interrupted=interrupted,
+            failed=failed,
+            turn_exit_reason=_turn_exit_reason,
+            session_id=agent.session_id or "",
+            turn_id=str(turn_id or ""),
+            messages=messages,
+        )
+    except Exception:
+        logger.debug("brain outcome recording skipped", exc_info=True)
+
     # External memory provider: sync the completed turn + queue next prefetch.
     agent._sync_external_memory_for_turn(
         original_user_message=original_user_message, final_response=final_response,

@@ -48,11 +48,17 @@ export function drawGraph(input: DrawInput): boolean {
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
-  // 1. Deep Space Background with radial vignette
+  // 1. Background with radial vignette. Theme-aware: a dark theme keeps the deep-space look; a
+  // light theme paints a light paper (from palette.bg, resolved from the themed `--background`),
+  // so dark nodes are not drawn on a near-black canvas. Previously the fill was hardcoded dark.
+  const bg = palette.bg ?? { r: 6, g: 8, b: 15 }
+  const bgCenter = rgba(palette.dark ? { r: 12, g: 16, b: 32 } : { r: Math.min(255, bg.r + 4), g: Math.min(255, bg.g + 4), b: Math.min(255, bg.b + 6) }, 1)
+  const bgMid = rgba(bg, 1)
+  const bgEdge = rgba(palette.dark ? { r: 2, g: 3, b: 6 } : { r: Math.max(0, bg.r - 10), g: Math.max(0, bg.g - 10), b: Math.max(0, bg.b - 8) }, 1)
   const bgGrad = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.1, w / 2, h / 2, Math.max(w, h) * 0.75)
-  bgGrad.addColorStop(0, '#0c1020') // Deep subtle navy center
-  bgGrad.addColorStop(0.5, '#070913')
-  bgGrad.addColorStop(1, '#020306') // Jet dark vignette at edges
+  bgGrad.addColorStop(0, bgCenter)
+  bgGrad.addColorStop(0.5, bgMid)
+  bgGrad.addColorStop(1, bgEdge)
   ctx.fillStyle = bgGrad
   ctx.fillRect(0, 0, w, h)
 
@@ -259,8 +265,9 @@ export function drawGraph(input: DrawInput): boolean {
 
       const label = n.label.length > 36 ? `${n.label.slice(0, 35)}…` : n.label
       
-      // Crisp text shadow for readability over dense nodes
-      ctx.shadowColor = 'rgba(2, 4, 10, 0.9)'
+      // Crisp text shadow for readability over dense nodes — tinted to the theme so a light
+      // canvas gets a light halo (a dark halo on light paper muddies the text).
+      ctx.shadowColor = palette.dark ? 'rgba(2, 4, 10, 0.9)' : 'rgba(248, 250, 253, 0.92)'
       ctx.shadowBlur = 4
       ctx.shadowOffsetX = 0
       ctx.shadowOffsetY = 1

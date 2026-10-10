@@ -35,6 +35,11 @@ DEFAULT_DUPLICATE_THRESHOLD = 0.86
 _STOPWORDS = frozenset(
     """a an and are as at be by for from has have he her his i if in is it its me my not of on
     or our she that the their them there they this to was were will with you your""".split()
+) | frozenset(
+    # Filler/function words that carry no task content. Without these, two different methods of
+    # the same task ("deploy via ftp" / "deploy via docker") share the filler and score as near-
+    # identical, merging distinct procedures. Kept to unambiguous function words only.
+    """via using into onto per then also please across within without toward towards""".split()
 )
 
 

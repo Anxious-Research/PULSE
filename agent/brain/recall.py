@@ -436,6 +436,7 @@ def recall(
     extra_cues: Optional[Iterable[str]] = None,
     embedder: Any = None,
     now: Optional[float] = None,
+    hybrid: bool = True,
 ) -> RecallResult:
     """Cue-based associative recall over the vault.
 
@@ -531,16 +532,95 @@ def recall(
             if deep_hits:
                 hits, historical = deep_hits, True
 
-    hits = hits[: max(1, int(limit))]
-    # Gate: a weak best hit means the vault has nothing worth saying this turn. A historical hit is
-    # exempt — it was admitted precisely because it is a direct, relevant match.
+    # Gate: a weak best *associative* hit means the vault has nothing worth saying this turn. The
+    # gate is evaluated on the associative score (the admission signal), BEFORE hybrid reordering —
+    # so hybrid can never pull in a memory the gate would have rejected. A historical hit is exempt;
+    # it was admitted precisely because it is a direct, relevant match.
     if not hits or (not historical and hits[0].score < float(min_score)):
         return RecallResult(cues=cues, seeded=len(seeds), candidates=len(entries))
 
     for hit in hits:
         hit.historical = historical
+
+    # Hybrid reranking (§6, §9.4). The associative pipeline above decides *which* memories are
+    # admitted (the gate) and *whether* this turn recalls anything — hybrid never relaxes that, so
+    # selectivity and provenance are untouched. It reorders the admitted hits by fusing three
+    # independent rankings so the most-relevant memory leads: the associative score, a global BM25
+    # lexical score, and — only when a real embedding model is installed — semantic cosine. Crucially
+    # this runs on the full admitted set BEFORE the top-k cut, so fusion can promote a lexically
+    # stronger memory into the window that associative ranking alone placed just outside it. RRF
+    # needs no cross-channel score calibration and is robust to an empty channel, so with no
+    # semantic backend the fusion is simply associative+BM25 and nothing degrades below baseline.
+    if hybrid and len(hits) > 1:
+        try:
+            hits = _rerank_hybrid(hits, eligible, query, embedder=embedder)
+        except Exception:
+            pass  # fail-open: a reranking error must never lose a valid recall
+
+    # Top-k AFTER reranking, so the fused order decides which memories make the window.
+    hits = hits[: max(1, int(limit))]
+
     # Never let the rendered block exceed the budget, even if more hits were found.
     return RecallResult(hits=hits, cues=cues, seeded=len(seeds), candidates=len(entries))
+
+
+def _rerank_hybrid(
+    hits: List[RecallHit],
+    eligible: Sequence[Any],
+    query: str,
+    *,
+    embedder: Any = None,
+) -> List[RecallHit]:
+    """Tie-aware reranking: associative order is primary; lexical/semantic break its ties.
+
+    The associative pipeline is the admission signal and is usually right, so it must stay
+    primary — a blanket RRF that mixes it with BM25 at equal weight was *measured* to regress
+    ranking when associative was already confident (it inherited the other channels' mistakes).
+    But associative has one structural blind spot: its cue-coverage term saturates at 1.0 for any
+    note containing all the query words, so a short focused note and a long term-stuffed note tie.
+    That is exactly where a length-normalised lexical score (BM25) and, when available, semantic
+    cosine add real signal.
+
+    So: hits are grouped into tiers of near-equal associative score, and *within* each tier they
+    are reordered by RRF over BM25 + semantic. Confident associative orderings are untouched (no
+    regression); ambiguous ties are resolved toward the lexically/semantically stronger memory.
+    BM25/semantic are computed over the whole eligible corpus so their statistics are correct.
+    """
+    from .hybrid import bm25_rank, semantic_rank, rrf_fuse
+
+    if len(hits) < 2:
+        return hits
+
+    # Lexical + semantic ranks over the FULL eligible corpus (correct IDF / norms), then an
+    # order map restricted to the ids we actually hold.
+    all_entries = [(n.id, n) for n in eligible]
+    admitted = {h.node_id for h in hits}
+    bm25 = [(nid, s) for nid, s in bm25_rank(all_entries, query, limit=len(all_entries) or 1) if nid in admitted]
+    sem = [(nid, s) for nid, s in semantic_rank(all_entries, query, limit=len(all_entries) or 1, embedder=embedder)
+           if nid in admitted]
+    fused = rrf_fuse([bm25, sem])
+    if not fused:
+        return hits
+    fused_rank = {nid: i for i, (nid, _) in enumerate(fused)}
+
+    # Tier boundary: hits whose associative scores are within TIE_EPS of each other (relative) are
+    # considered tied and may be reordered. A clearly higher associative score is never demoted.
+    TIE_EPS = 0.02
+    original_pos = {h.node_id: i for i, h in enumerate(hits)}
+    reordered: List[RecallHit] = []
+    i = 0
+    n = len(hits)
+    while i < n:
+        j = i + 1
+        anchor = hits[i].score
+        while j < n and abs(hits[j].score - anchor) <= TIE_EPS * max(anchor, 1e-9):
+            j += 1
+        tier = hits[i:j]
+        # Within the tie group, prefer the lexical/semantic winner; fall back to original order.
+        tier.sort(key=lambda h: (fused_rank.get(h.node_id, len(fused_rank)), original_pos[h.node_id]))
+        reordered.extend(tier)
+        i = j
+    return reordered
 
 
 def recall_block(query: str, *, max_tokens: int = DEFAULT_MAX_TOKENS, **kwargs: Any) -> str:

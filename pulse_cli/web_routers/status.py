@@ -723,6 +723,27 @@ async def get_learning_node(id: str, profile: Optional[str] = None):
     return await _learning_mutation(profile, lambda: node_detail(id), 404, "not found")
 
 
+@router.get("/api/brain/node")
+async def get_brain_node_detail(id: str, profile: Optional[str] = None):
+    """Full evidence provenance for one brain vault node, for the graph's memory inspector.
+
+    Returns the memory content, type, source evidence, timestamps, confidence justification,
+    provenance, revision/supersession history and resolved relationships — read straight from the
+    canonical vault model (agent.brain.inspect), nothing duplicated in the frontend. ``id`` is the
+    vault node id (``category/slug``), which the graph carries on each node as ``vaultId``.
+    """
+    def _run():
+        from agent.brain.inspect import inspect_node
+        from agent.brain.session import get_agent_vault
+
+        vault = get_agent_vault()
+        if vault is None:
+            return {"ok": False, "message": "brain vault unavailable"}
+        return inspect_node(vault, id)
+
+    return await _learning_mutation(profile, _run, 404, "node not found")
+
+
 @router.delete("/api/learning/node")
 async def delete_learning_node(body: LearningNodeRef):
     """Delete a journey node — skills are archived (restorable), memories removed."""

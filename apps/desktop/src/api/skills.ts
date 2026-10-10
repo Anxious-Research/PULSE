@@ -66,6 +66,71 @@ export function getLearningNode(id: string, profile?: ProfileScope): Promise<Lea
   })
 }
 
+/** A resolved reference to another node (evidence, counter-evidence, relationship), with a
+ *  human label so the inspector can render it without a second round-trip. */
+export interface BrainNodeRef {
+  id: string
+  label: string
+  missing: boolean
+  category?: string
+  status?: string
+  snippet?: string
+  kind?: string
+  provenance?: string
+  confidence?: number
+}
+
+/** Full evidence provenance for one brain vault node, from GET /api/brain/node. Shape mirrors
+ *  agent.brain.inspect.inspect_node — fields present depend on `kind` (belief/procedure/memory). */
+export interface BrainNodeDetail {
+  ok: boolean
+  message?: string
+  id?: string
+  label?: string
+  kind?: 'belief' | 'memory' | 'procedure'
+  category?: string
+  content?: string
+  status?: string
+  confidence?: number
+  salience?: number
+  stability?: number
+  timestamps?: { created_at?: null | number; updated_at?: null | number; last_accessed?: null | number; access_count?: number }
+  source_turn?: null | string
+  superseded_by?: BrainNodeRef
+  supersedes?: BrainNodeRef[]
+  corroborations?: { at?: number; text?: string; turn?: string }[]
+  corrections?: Record<string, unknown>[]
+  relationships?: BrainNodeRef[]
+  // belief
+  belief_status?: string
+  confidence_justification?: string
+  evidence?: BrainNodeRef[]
+  counter_evidence?: BrainNodeRef[]
+  revisions?: { at?: number; reason?: string; from?: number; to?: number }[]
+  asserted?: boolean
+  // procedure
+  goal?: string
+  procedure_status?: string
+  success_rate?: number
+  counts?: { success: number; failure: number; partial: number }
+  steps?: string[]
+  preconditions?: string[]
+  failure_modes?: string[]
+  discouraged?: string[]
+  reconsider_when?: string[]
+  outcomes?: Record<string, unknown>[]
+  experience_refs?: BrainNodeRef[]
+}
+
+/** Inspector data for a selected brain node — content, evidence, provenance, history. `id` is the
+ *  vault node id (the graph node's `vaultId`). */
+export function getBrainNodeDetail(id: string, profile?: ProfileScope): Promise<BrainNodeDetail> {
+  return window.pulseDesktop.api<BrainNodeDetail>({
+    ...capabilityScoped(profile),
+    path: `/api/brain/node?id=${encodeURIComponent(id)}`
+  })
+}
+
 export function deleteLearningNode(id: string, profile?: ProfileScope): Promise<{ message: string; ok: boolean }> {
   return window.pulseDesktop.api<{ message: string; ok: boolean }>({
     ...capabilityScoped(profile),

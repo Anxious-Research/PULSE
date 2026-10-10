@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { luminance, mix, rgba } from './palette'
+import { DEEP_SPACE_BG, LIGHT_PAPER_BG, luminance, mix, paletteForColors, rgba } from './palette'
 
 describe('palette', () => {
   describe('rgba', () => {
@@ -63,6 +63,25 @@ describe('palette', () => {
 
       expect(l).toBeGreaterThan(0.4)
       expect(l).toBeLessThan(0.6)
+    })
+  })
+
+  describe('computePalette theme-awareness', () => {
+    // The canvas background must follow the themed --background, not a hardcoded dark fill, so a
+    // light theme paints a light canvas (readable dark-on-light) and a dark theme stays deep-space.
+    // paletteForColors is the pure core computePalette delegates to after resolving CSS vars.
+    it('picks a light canvas for a light theme background', () => {
+      const p = paletteForColors({ r: 255, g: 255, b: 255 }, { r: 17, g: 17, b: 17 })
+      expect(p.dark).toBe(false)
+      expect(p.bg).toEqual(LIGHT_PAPER_BG)
+      expect(luminance(p.bg)).toBeGreaterThan(0.8)
+    })
+
+    it('picks the deep-space canvas for a dark theme background', () => {
+      const p = paletteForColors({ r: 6, g: 8, b: 15 }, { r: 240, g: 244, b: 255 })
+      expect(p.dark).toBe(true)
+      expect(p.bg).toEqual(DEEP_SPACE_BG)
+      expect(luminance(p.bg)).toBeLessThan(0.2)
     })
   })
 })

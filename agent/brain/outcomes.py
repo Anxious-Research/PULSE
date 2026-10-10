@@ -35,7 +35,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from .models import NodeCategory, NodeStatus
 from .parser import decode_record, encode_record, slugify
 from .relations import Relation, RelationType, Provenance, dump_relations, merge_into, parse_relations
-from .similarity import similarity
+from .similarity import token_set
 
 # ── confidence model for a procedure (documented anchors, not invented precision) ───────────
 PROCEDURE_CEILING = 0.9      #: a method, however often it worked, is never a certainty
@@ -215,10 +215,58 @@ def find_procedure(vault: Any, goal: str) -> Optional[Any]:
         if node.frontmatter.category != PROCEDURE_CATEGORY:
             continue
         candidate_goal = str((node.frontmatter.extra or {}).get("goal") or node.title or node.content or "")
-        score = similarity(goal, candidate_goal)
+        score = goal_relevance(goal, candidate_goal)
         if score >= SAME_GOAL_SIMILARITY and score > best_score:
             best, best_score = node, score
     return best
+
+
+#: Score floor at which a procedure counts as "relevant to this goal" for retrieval (§8).
+RELEVANT_MIN = 0.35
+#: Score given to two goals that open with the same action token — the same *task class*.
+#: Set above :data:`RELEVANT_MIN` so a shared action verb is sufficient on its own, and below
+#: :data:`SAME_GOAL_SIMILARITY` so it never merges two distinct procedures into one.
+SHARED_ACTION_SCORE = 0.45
+#: How much of the shorter goal's content tokens may differ while still counting as the same goal.
+#: Containment is scaled below 1.0 so only a strong overlap reaches :data:`SAME_GOAL_SIMILARITY`.
+_CONTAINMENT_WEIGHT = 0.9
+
+
+def goal_relevance(query: str, procedure_goal: str) -> float:
+    """How relevant a procedure is to a query goal, in ``[0, 1]``.
+
+    Built on **content tokens** (stopwords dropped), because the lexical-hash embedder is
+    dominated by shared function words: *"deploy via ftp"* and *"deploy via docker"* scored 0.61
+    on it and were wrongly merged into one procedure, while *"deploy the app"* vs *"deploy via
+    docker"* scored 0.35 and were wrongly missed. Two signals, no keyword table:
+
+    * **content-token containment** — the fraction of the shorter goal's content words present in
+      the other. Identical goals give 1.0; a restatement gives a high value; two different objects
+      of the same verb give a low one.
+    * a **shared leading action token** ("deploy", "fix", "build") — imperative task goals are
+      verb-initial, so equal first tokens mean the same *class* of task even when the objects
+      differ. Floored at :data:`SHARED_ACTION_SCORE`, which is enough to retrieve but not to merge.
+    """
+    q = str(query or "").strip().lower()
+    p = str(procedure_goal or "").strip().lower()
+    if not q or not p:
+        return 0.0
+    if q == p:
+        return 1.0
+    a, b = token_set(q), token_set(p)
+    if not a or not b:
+        return 0.0
+    shared = len(a & b)
+    if shared == 0:
+        return 0.0
+    jaccard = shared / float(len(a | b))
+    containment = shared / float(min(len(a), len(b)))
+    score = max(jaccard, _CONTAINMENT_WEIGHT * containment)
+    q_lead = q.split()[0] if q.split() else ""
+    p_lead = p.split()[0] if p.split() else ""
+    if q_lead and q_lead == p_lead:
+        score = max(score, SHARED_ACTION_SCORE)
+    return round(min(1.0, score), 4)
 
 
 # ── write path ─────────────────────────────────────────────────────────────
@@ -265,12 +313,18 @@ def record_outcome(
     failure_mode: Optional[str] = None,
     now: Optional[float] = None,
     source_turn: Optional[str] = None,
+    event_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Record the outcome of an attempt at ``goal``, folding it into the procedure that owns it.
 
     ``verdict`` is one of ``success`` / ``failure`` / ``partial``. Returns
     ``{ok, procedure_id, created|updated, verdict, success_rate, confidence, status,
-    recommended}``. Idempotent per (goal, action, result, verdict) — a replayed event is a no-op.
+    recommended}``.
+
+    Idempotent per **event**: when ``event_id`` is supplied, re-recording the same event (a
+    replayed turn, a retried write) is a no-op. Without it, two records with the same timestamp,
+    action, result and verdict are treated as the same event. Two genuinely distinct attempts at
+    the same goal are *not* collapsed — repetition is how confidence legitimately grows.
     """
     goal = (goal or "").strip()
     if not goal or vault is None:
@@ -299,13 +353,16 @@ def record_outcome(
     outcomes = [decode_record(t) for t in (extra.get("outcomes") or [])]
     outcome = {"at": ts, "goal": goal, "action": action.strip(), "result": result.strip(),
                "verdict": verdict, "evidence": refs}
+    if event_id:
+        outcome["event_id"] = str(event_id)
     if failure_mode:
         outcome["failure_mode"] = failure_mode.strip()
-    # Idempotency: the *same event* replayed is one outcome, not two. Identity is the exact
-    # timestamp (a replay carries the original event's time) or an explicit event_id — not a
-    # time window, because two genuinely distinct attempts can share a minute.
-    if any((outcome.get("event_id") and o.get("event_id") == outcome.get("event_id"))
-           or (int(o.get("at", -1)) == ts and o.get("action") == outcome["action"]
+    # Idempotency: the *same event* replayed is one outcome, not two. Identity is an explicit
+    # event_id (preferred — a replayed/retried turn carries the same one) or, absent that, the
+    # exact timestamp plus action/result/verdict. Not a time window, because two genuinely
+    # distinct attempts can share a minute.
+    if any((event_id and o.get("event_id") == str(event_id))
+           or (not event_id and int(o.get("at", -1)) == ts and o.get("action") == outcome["action"]
                and o.get("result") == outcome["result"] and o.get("verdict") == verdict)
            for o in outcomes):
         return {"ok": True, "procedure_id": node_id, "updated": False, "duplicate": True,
@@ -389,8 +446,8 @@ def procedures_for_goal(vault: Any, goal: str, *, limit: int = 3) -> List[Proced
         if node.frontmatter.category != PROCEDURE_CATEGORY:
             continue
         proc = Procedure.from_node(node)
-        sim = similarity(goal, proc.goal)
-        if sim < 0.35:
+        sim = goal_relevance(goal, proc.goal)
+        if sim < RELEVANT_MIN:
             continue
         ranked.append((order.get(proc.status, 2), -sim, -proc.confidence, proc))
     ranked.sort(key=lambda t: (t[0], t[1], t[2]))
