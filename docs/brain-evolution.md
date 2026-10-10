@@ -156,7 +156,12 @@ modules — nothing was wrong inside any single module.
 | G14 | `brain_reflect()` never passed a `goal`, and `reflect()` filled `procedural_guidance` only `if goal:` — the outcome→strategy loop stored a learned procedure and could never surface it | guidance stayed empty after successful learning | `_goal_from_question()` derives the goal from the turn text; `session.py` injects `_procedure_guidance_block()` into the turn context |
 | G15 | The injected guidance named a failure's *symptom* but never the *action* that caused it | `avoid: 502s during the restart window` — nothing told the agent what not to do | `Procedure.discouraged`, derived from the outcome log (no migration), renders `avoid: in-place restart` |
 
-G10–G15 are now locked by `tests/test_brain_live_loop.py` (13 tests), which asserts them through the
+| G16 | Adding the restatement check created an O(N) similarity scan — but a second, pre-existing
+near-duplicate scan already ran lower down `encode_turn`, over the same nodes at the same 0.85
+threshold and differing only by a category restriction, i.e. a strict subset of the new check |
+every surviving candidate was scanned **twice**; `encode_turn` cost **1,359 ms** at 3,000 nodes | removed the now-dead duplicate block; added a provably non-lossy length prefilter (Jaccard > 0.85 implies token counts within ~18%, so a very different length cannot match). **1,359 → 953 ms** |
+
+G10–G16 are now locked by `tests/test_brain_live_loop.py` (15 tests), which asserts them through the
 same production functions the agent calls — not through internal helpers.
 
 ---
@@ -263,13 +268,14 @@ learning.
 
 | Suite | Result |
 |---|---|
-| Full brain + memory suite | **563 passed** (485 at the start of this work) |
+| Full brain + memory suite | **565 passed** (485 at the start of this work; two consecutive clean runs) |
 | `tests/test_brain_beliefs.py` (new) | 16 tests |
 | `tests/test_brain_outcomes.py` (new) | 14 tests |
 | `tests/test_brain_reflection.py` (new) | 15 tests |
 | `tests/test_brain_cognition.py` (new) | 5 tests (the production wiring seam) |
 | `tests/test_brain_evaluation.py` (new) | 17 tests — the §11 scenarios |
-| `tests/test_brain_live_loop.py` (new) | 13 tests — the G10–G15 defects, asserted through the production entry points |
+| `tests/test_brain_live_loop.py` (new) | 15 tests — the G10–G16 defects, asserted through the production entry points |
+| Scale benchmark (`bench_learning.py`, 500–5,000 nodes) | every stage linear in N; encode `1,359 → 953 ms` at 3,000 nodes after the G16 fix — see `docs/brain-operations.md` §6 |
 | Desktop `src/app/settings` + `src/app/brain-graph` (vitest) | **57 files / 446 tests passed** |
 | `tsc -p tsconfig.json --noEmit` | 11 errors, **all pre-existing** in `src/store/brain-events.ts`; **0 new** |
 | Production build (`apps/desktop` → `node scripts/build.mjs`) | clean; fresh artifacts in `dist/` |
@@ -326,9 +332,12 @@ up as one specific number dropping.
    beliefs that a human might consider unremarkable. `brain.reflect_enabled=false` is the lever.
 3. **No knowledge-page / mental-model layer** (§4.5). Beliefs and procedures cover most of the
    requirement; the curated "how does this project work" synthesis layer is not implemented.
-4. **Recall seeding is still O(N) per turn** at very large N. The index rebuild is fixed
-   (O(N²) → ~O(N)); wiring the FTS5 cache prefilter into the *seed* stage would change IDF/ranking
-   and was deliberately left out of scope.
+4. **The per-turn path is still O(N)**, and it is now *measured* rather than assumed: recall is
+   585 ms and `encode_turn` ~2.9 s at 5,000 nodes, both linear in vault size (full table in
+   `docs/brain-operations.md` §6). At the live vault's 426 nodes this is ~50 ms and invisible.
+   Wiring the FTS5 cache prefilter into the *seed* stage would make it a lookup, but it changes
+   IDF/ranking and was deliberately left out of scope. The duplicated O(N) scan found during this
+   work (G16) *was* removed, at a 30% saving.
 5. **`provider`-independence** (§10) is architecturally satisfied (the vault is the store, the core
    imports zero third-party packages) but there is no pluggable second provider to prove it.
 6. **Outcome capture has no automatic caller.** `record_outcome` is implemented, tested and
@@ -356,6 +365,15 @@ cd apps/desktop && ../node_modules/.bin/vitest run --config vitest.config.ts src
 
 # Production build (build script lives in apps/desktop, not the repo root)
 cd apps/desktop && node scripts/build.mjs
+
+# Scale benchmark (isolated PULSE_HOME per size; never touches the live vault)
+$PY ~/.pulse/cache/scratch/bench_learning.py 500 1500 3000 5000
+
+# End-to-end live loop through the production entry points
+$PY ~/.pulse/cache/scratch/live_brain_e2e.py
+
+# Backup/restore/recovery round trip (asserts it is not the live vault)
+$PY ~/.pulse/cache/scratch/verify_backup_restore.py
 ```
 
 ---
@@ -378,4 +396,5 @@ cd apps/desktop && node scripts/build.mjs
 | `pulse_cli/config_defaults.py` | `brain.reflect_enabled`, `brain.reflect_every` |
 | `apps/desktop/src/app/settings/constants.ts` | labels + descriptions + curated keys for the new settings |
 | `tests/test_brain_{beliefs,outcomes,reflection,cognition,evaluation}.py` | **new** — 67 tests across the five files (16+14+15+5+17) |
-| `tests/test_brain_live_loop.py` | **new** — 13 tests locking G10–G15 against the production entry points |
+| `tests/test_brain_live_loop.py` | **new** — 15 tests locking G10–G16 against the production entry points |
+| `docs/brain-operations.md` | **new** — backup / restore / recovery / migration, with the measured scale table |

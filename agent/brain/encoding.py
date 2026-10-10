@@ -577,8 +577,21 @@ def extract_candidates(
         # and recurrence alone (1 hit / RECURRENCE_SATURATION) cannot reach the threshold, so the
         # strongest evidence the system can gather was being discarded before it was ever seen.
         restates = ""
+        # Cheap length prefilter before the expensive comparison. Jaccard J = |A∩B| / |A∪B| is
+        # bounded by min(|A|,|B|) / max(|A|,|B|), so J > 0.85 implies the two token counts are
+        # within ~18% of each other. A memory whose length is wildly different therefore cannot be
+        # a restatement, and rejecting it here avoids tokenizing it at all. The scan stays linear in
+        # the vault, but the constant drops sharply because most memories are unrelated and of a
+        # different length. Bounds are deliberately loose (0.5–2.0x on characters) so this can only
+        # ever skip a comparison that could not have matched.
+        statement_len = len(statement)
+        lo, hi = 0.5 * statement_len, 2.0 * statement_len
         for node_id, content in existing:
-            if content.strip() and similarity(statement, content, embedder=embedder) > 0.85:
+            if not content.strip():
+                continue
+            if not (lo <= len(content) <= hi):
+                continue
+            if similarity(statement, content, embedder=embedder) > 0.85:
                 restates = node_id
                 break
         if restates:
@@ -748,39 +761,12 @@ def encode_turn(
                 report["revised"].append({"candidate": candidate.as_dict(), "nodes": revised_ids})
                 continue  # correction folded into the existing event; no new node
 
-        # Immediate duplicate check: skip if content is >85% similar to an existing node in
-        # the same category (fixes -2/-3 suffix proliferation).
-        existing_similar = [
-            node for node in nodes
-            if node.category == candidate.category
-            and (node.content or "").strip()
-            and similarity(candidate.text, node.content, embedder=embedder) > 0.85
-        ]
-        if existing_similar:
-            # A restatement is not a second memory, but it is not nothing: it is an independent
-            # corroboration of the existing claim, and reflection needs ≥2 independent memories to
-            # hold a belief rather than a provisional guess. Previously this branch detected the
-            # recurrence and then discarded it, which made a corroborated belief unreachable from
-            # real conversation.
-            target = existing_similar[0]
-            corroborated = False
-            if not dry_run:
-                try:
-                    corroborated = bool(vault.record_corroboration(
-                        target.id, text=candidate.text, source_turn=turn_id, now=ts,
-                    ))
-                except Exception:
-                    logger.debug("corroboration record failed", exc_info=True)
-            report["skipped"].append({
-                "reason": "near_duplicate",
-                "candidate": candidate.as_dict(),
-                "existing_node": target.id,
-                "corroborated": corroborated,
-            })
-            if corroborated:
-                report["corroborated"].append({"node_id": target.id, "text": candidate.text})
-            continue
-        
+        # Duplicate detection happens in extract_candidates(), before the salience gate, where a
+        # restatement is reported as `kind="restatement"` and handled above. It scans the same
+        # nodes (minus the category restriction, so a superset) at the same 0.85 threshold, which
+        # makes a second check here dead work — and an O(N) similarity scan per surviving candidate
+        # is not free: at 3,000 nodes it cost ~0.6 s per turn of pure duplicated effort.
+
         node_id = vault.unique_node_id(candidate.category, slugify(candidate.title))
         if dry_run:
             report["semantic"].append({"node_id": node_id, **candidate.as_dict()})
