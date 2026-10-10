@@ -209,8 +209,11 @@ class TestStatementExtraction(unittest.TestCase):
         payload = candidate.as_dict()
         self.assertEqual(
             set(payload),
-            {"text", "kind", "category", "title", "salience", "signals", "supersedes", "temporal_revisions"},
+            {"text", "kind", "category", "title", "salience", "signals", "supersedes", "restates",
+             "temporal_revisions"},
         )
+        # A statement that restates nothing carries no corroboration target.
+        self.assertEqual(payload["restates"], "")
 
 
 class EncodingTestCase(unittest.TestCase):

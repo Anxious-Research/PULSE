@@ -140,6 +140,25 @@ The write/read path was traced in source, not inferred from the UI (`agent/brain
 | G8 | Index rebuild was O(N²) (`~6.9 s` @3000 nodes) and recall re-parsed the vault every turn | benchmark | **Fixed** (earlier mandate) — `~215 ms`, recall `7340 → 568 ms` |
 | G9 | No evaluation framework — success was asserted from unit tests | — | **Fixed** — 17-scenario suite + metrics |
 
+### 2.1 Defects that only running the real path revealed
+
+The first commit passed **552 tests** while the layers it added were **unreachable in production**.
+Driving the real entry points (`agent/brain/session.py`) against a real on-disk vault found six
+defects that no unit test had covered, because every one of them lives in the seam *between*
+modules — nothing was wrong inside any single module.
+
+| # | Defect | How it showed up | Fix |
+|---|---|---|---|
+| G10 | A plain declarative fact encoded **nothing**. `_declarative_signal` matched a closed verb list missing `writes`/`pushes`/`runs`, so the most common opener ("The X <verb> …") scored 0 and — carrying only `novelty=0.10` — fell under the `0.4` gate | four turns of ordinary project facts produced **one** node | broadened `_DECLARATIVE_VERBS` to the durable-fact verbs actually used |
+| G11 | The entity anchor accepted only PULSE's own vocabulary, so a fact about the user's world had no anchor even after the verb matched | *"The payments service writes to the ledger every night"* still scored 0 | added `_CODED_NAME_HEADS` — the "coded name" anchor the module's own docstring promised |
+| G12 | A restated claim was dropped as a `near_duplicate` and the evidence thrown away, so `MIN_EVIDENCE_FOR_BELIEF = 2` was **structurally unreachable** and a belief could never form from conversation | belief count stayed 0 however often a claim was repeated | `vault.record_corroboration()` — a restatement is recorded as evidence on the existing node; the node count stays flat |
+| G13 | A **verbatim** repeat was dropped *before* the duplicate handling ran: novelty is `0.0` for a repeat and recurrence alone (`1` hit / saturation `3`) cannot clear the gate | the strongest evidence available was discarded unnoticed | restatements are detected **before** the salience gate (`kind="restatement"`); `MODIFIER_RECURRENCE` `0.05 → 0.08` |
+| G14 | `brain_reflect()` never passed a `goal`, and `reflect()` filled `procedural_guidance` only `if goal:` — the outcome→strategy loop stored a learned procedure and could never surface it | guidance stayed empty after successful learning | `_goal_from_question()` derives the goal from the turn text; `session.py` injects `_procedure_guidance_block()` into the turn context |
+| G15 | The injected guidance named a failure's *symptom* but never the *action* that caused it | `avoid: 502s during the restart window` — nothing told the agent what not to do | `Procedure.discouraged`, derived from the outcome log (no migration), renders `avoid: in-place restart` |
+
+G10–G15 are now locked by `tests/test_brain_live_loop.py` (13 tests), which asserts them through the
+same production functions the agent calls — not through internal helpers.
+
 ---
 
 ## 3. Architecture decisions
@@ -244,12 +263,13 @@ learning.
 
 | Suite | Result |
 |---|---|
-| Full brain + memory suite | **552 passed** (was 485) |
+| Full brain + memory suite | **563 passed** (485 at the start of this work) |
 | `tests/test_brain_beliefs.py` (new) | 16 tests |
 | `tests/test_brain_outcomes.py` (new) | 14 tests |
 | `tests/test_brain_reflection.py` (new) | 15 tests |
 | `tests/test_brain_cognition.py` (new) | 5 tests (the production wiring seam) |
 | `tests/test_brain_evaluation.py` (new) | 17 tests — the §11 scenarios |
+| `tests/test_brain_live_loop.py` (new) | 13 tests — the G10–G15 defects, asserted through the production entry points |
 | Desktop `src/app/settings` + `src/app/brain-graph` (vitest) | **57 files / 446 tests passed** |
 | `tsc -p tsconfig.json --noEmit` | 11 errors, **all pre-existing** in `src/store/brain-events.ts`; **0 new** |
 | Production build (`apps/desktop` → `node scripts/build.mjs`) | clean; fresh artifacts in `dist/` |
@@ -278,6 +298,17 @@ up as one specific number dropping.
 
 * The production seam is exercised: `brain_reflect()` writes beliefs into an isolated vault and
   honours the `reflect_enabled` disable lever.
+* **`Runtime-observed` — the full loop, end to end.** `~/.pulse/cache/scratch/live_brain_e2e.py`
+  drives the real `agent/brain/session.py` entry points against an on-disk vault inside an isolated
+  `PULSE_HOME` (asserted never to touch the live vault). On a real run: a four-turn conversation
+  produced three nodes plus one recorded corroboration; reflection formed a belief at confidence
+  `0.725` with `supporting = 2`; a matching question then injected the three memories; after
+  recording three successes and three failures the *same* question injected
+  `- [situational] deploy the atlas service — worked: blue/green swap | avoid: in-place restart |
+  why: 502s during the restart window`; two counter-examples moved the belief `0.725 → 0.471 →
+  0.306` and its status `active → uncertain` while keeping the statement and a 2-entry revision log;
+  and a brand-new vault object saw the same belief and procedure. That is the mandate's
+  "outcome→strategy learning demonstrably changes future behaviour", observed rather than asserted.
 * **NOT VERIFIED this session:** driving the built desktop app to observe belief/procedure nodes in
   the graph UI; a packaged-DMG fresh-install walkthrough; benchmarks above 3,000 nodes; and any
   LLM-assisted reflection path (none exists — deliberately).
@@ -336,7 +367,10 @@ cd apps/desktop && node scripts/build.mjs
 | `agent/brain/beliefs.py` | **new** — belief/observation layer: evidence-grounded confidence, revision history, counter-evidence, supersession |
 | `agent/brain/outcomes.py` | **new** — procedural memory: outcome recording, lesson derivation, reliability status, retrieval priority |
 | `agent/brain/reflection.py` | **new** — bounded evidence-based reflection with conflict detection |
-| `agent/brain/session.py` | `brain_reflect()` production entry point; wiring into the per-turn background worker; `reflect_enabled`/`reflect_every` settings |
+| `agent/brain/session.py` | `brain_reflect()` production entry point; wiring into the per-turn background worker; `reflect_enabled`/`reflect_every` settings; `_procedure_guidance_block()` so a learned procedure reaches the turn context (G14) |
+| `agent/brain/encoding.py` | `_DECLARATIVE_VERBS` broadened and `_CODED_NAME_HEADS` added (G10, G11); restatements recognised before the salience gate and recorded as corroboration (G12, G13) |
+| `agent/brain/vault.py` | `record_corroboration()` / `corroborations_of()` — a restatement is evidence about an existing memory, not a new one (G12) |
+| `agent/brain/reflection.py` | `_goal_from_question()` goal derivation (G14); `_evidence_refs()` counts independent assertions, not nodes |
 | `agent/brain/recall.py` | opt-in deep/historical retrieval; `RecallHit.historical` |
 | `agent/brain/relations.py` | six new relationship types |
 | `agent/brain/models.py` | `procedure` node category |
@@ -344,3 +378,4 @@ cd apps/desktop && node scripts/build.mjs
 | `pulse_cli/config_defaults.py` | `brain.reflect_enabled`, `brain.reflect_every` |
 | `apps/desktop/src/app/settings/constants.ts` | labels + descriptions + curated keys for the new settings |
 | `tests/test_brain_{beliefs,outcomes,reflection,cognition,evaluation}.py` | **new** — 67 tests across the five files (16+14+15+5+17) |
+| `tests/test_brain_live_loop.py` | **new** — 13 tests locking G10–G15 against the production entry points |

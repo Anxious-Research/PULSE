@@ -135,6 +135,24 @@ class Procedure:
     def success_rate(self) -> float:
         return success_rate_of(self.success_count, self.failure_count, self.partial_count)
 
+    @property
+    def discouraged(self) -> List[str]:
+        """The actions that failed for this goal — what not to reach for again (§4.3).
+
+        Derived from the outcome log rather than stored, so an older node needs no migration. A
+        failure *mode* ("502s during the restart") describes a symptom; the *action* that produced
+        it ("in-place restart") is the part an agent can act on, and it was previously not exposed
+        anywhere in the procedure view.
+        """
+        seen: List[str] = []
+        for outcome in self.outcomes:
+            if str(outcome.get("verdict") or "") != VERDICT_FAILURE:
+                continue
+            action = str(outcome.get("action") or "").strip()
+            if action and action not in seen:
+                seen.append(action)
+        return seen
+
     @classmethod
     def from_node(cls, node: Any) -> "Procedure":
         fm = node.frontmatter
@@ -161,6 +179,7 @@ class Procedure:
             "id": self.id,
             "goal": self.goal,
             "steps": list(self.steps),
+            "discouraged": self.discouraged,
             "failure_modes": list(self.failure_modes),
             "preconditions": list(self.preconditions),
             "outcomes": len(self.outcomes),

@@ -496,6 +496,69 @@ class BrainVault:
             logger.debug("revise event emit skipped", exc_info=True)
         return True
 
+    def record_corroboration(
+        self,
+        node_id: str,
+        *,
+        text: str = "",
+        source_turn: Optional[str] = None,
+        now: Optional[float] = None,
+        limit: int = 50,
+    ) -> bool:
+        """Record that a memory was asserted *again* — corroborating evidence, not a new memory.
+
+        A restated claim should not become a second node (that is duplicate proliferation), but it
+        is not nothing either: it is a second independent assertion of the same thing, which is
+        exactly what lets reflection hold a belief instead of a provisional guess. Before this, the
+        repeat was detected as a near-duplicate and discarded along with the recurrence signal it
+        carried, which made a corroborated belief unreachable from real conversation.
+
+        Returns ``True`` when a corroboration was added. The record is encoded with
+        :func:`~agent.brain.parser.encode_record`, because frontmatter here does not round-trip
+        nested mappings.
+        """
+        from .parser import encode_record
+
+        node = self.read_node(node_id)
+        if node is None:
+            return False
+        ts = int(now if now is not None else time.time())
+        fm = node.frontmatter
+        history = list(fm.extra.get("corroborations") or [])
+        record = encode_record({
+            "at": ts,
+            "text": str(text or "")[:400],
+            "turn": str(source_turn or ""),
+        })
+        if record in history:
+            return False                     # the same assertion, replayed — a no-op
+        history.append(record)
+        fm.extra["corroborations"] = history[-max(1, int(limit)):]
+        fm.updated_at = ts
+        text_body = node.content or ""
+        composed = compose_markdown(fm.to_dict(include_empty=False), text_body)
+        with _vault_lock(self.vault_dir):
+            self._atomic_write(node.path, composed)
+        return True
+
+    def corroborations_of(self, node: Any) -> List[Dict[str, Any]]:
+        """Decoded corroboration records for a node (``[]`` when there are none)."""
+        from .parser import decode_record
+
+        try:
+            raw = node.frontmatter.extra.get("corroborations") or []
+        except Exception:
+            return []
+        out: List[Dict[str, Any]] = []
+        for item in raw:
+            try:
+                decoded = decode_record(item) if isinstance(item, str) else item
+            except Exception:
+                continue
+            if isinstance(decoded, dict):
+                out.append(decoded)
+        return out
+
     def supersede(self, old_id: str, new_id: str, *, now: Optional[float] = None) -> bool:
         """Mark ``old_id`` as replaced by ``new_id`` — the correction path.
 

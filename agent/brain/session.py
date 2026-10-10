@@ -29,6 +29,7 @@ from typing import Any, Dict, Optional, Tuple
 
 from . import consolidate as consolidate_mod
 from . import encoding as encoding_mod
+from . import outcomes as outcome_mod
 from . import prefix as prefix_mod
 from . import reflection as reflection_mod
 from .index import BrainIndex
@@ -300,6 +301,35 @@ def _is_trivial(text: str) -> bool:
         return False
 
 
+def _procedure_guidance_block(vault: Any, query: str) -> str:
+    """Rendered learned-procedure lines for a turn, or ``""`` (§8).
+
+    Outcome learning is only real if it reaches the agent: a method whose reliability was learned
+    earlier must show up the next time the agent faces that goal. Ordinary recall cannot do this
+    job — it ranks by lexical cue, so a procedure that is *relevant* but shares few words with the
+    question never surfaces, and its status ("avoid") is not something a snippet conveys.
+    """
+    try:
+        procedures = outcome_mod.procedures_for_goal(vault, query, limit=2)
+    except Exception:
+        logger.debug("procedure guidance failed", exc_info=True)
+        return ""
+    if not procedures:
+        return ""
+    lines = ["Learned procedures (from recorded outcomes):"]
+    for proc in procedures:
+        detail = []
+        if proc.steps:
+            detail.append("worked: " + "; ".join(proc.steps[:2]))
+        if proc.discouraged:
+            detail.append("avoid: " + "; ".join(proc.discouraged[:2]))
+        if proc.failure_modes:
+            detail.append("why: " + "; ".join(proc.failure_modes[:1]))
+        suffix = (" — " + " | ".join(detail)) if detail else ""
+        lines.append(f"- [{proc.status}] {proc.goal}{suffix}")
+    return "\n".join(lines)
+
+
 def brain_turn_context(agent: Any, user_message: Any, *, settings: Optional[BrainSettings] = None) -> str:
     """Layer-2 recall for this turn: the rendered memory block, or ``""``.
 
@@ -340,27 +370,34 @@ def brain_turn_context(agent: Any, user_message: Any, *, settings: Optional[Brai
         logger.debug("brain recall failed", exc_info=True)
         return ""
 
-    if result.empty:
-        return ""
+    block = ""
+    if not result.empty:
+        if settings.reconsolidate:
+            # Recall is what makes a memory stick: strengthen exactly the notes that were used.
+            try:
+                # §25: hand the real activation values to the graph so it renders actual cognition.
+                vault.record_access(
+                    result.node_ids(),
+                    activation={h.node_id: h.activation for h in result.hits},
+                )
+                # Our own metadata write must not look like a structural vault change.
+                restamp_index_cache(agent, vault)
+            except Exception:
+                logger.debug("brain reconsolidation skipped", exc_info=True)
 
-    if settings.reconsolidate:
-        # Recall is what makes a memory stick: strengthen exactly the notes that were used.
         try:
-            # §25: hand the real activation values to the graph so it renders actual cognition.
-            vault.record_access(
-                result.node_ids(),
-                activation={h.node_id: h.activation for h in result.hits},
-            )
-            # Our own metadata write must not look like a structural vault change.
-            restamp_index_cache(agent, vault)
+            block = result.render(max_tokens=settings.recall_max_tokens)
         except Exception:
-            logger.debug("brain reconsolidation skipped", exc_info=True)
+            logger.debug("brain recall render failed", exc_info=True)
+            block = ""
 
-    try:
-        return result.render(max_tokens=settings.recall_max_tokens)
-    except Exception:
-        logger.debug("brain recall render failed", exc_info=True)
-        return ""
+    # §8: a procedure learned from past outcomes must reach the agent on the next turn that faces
+    # the same goal — including when ordinary cue recall found nothing worth injecting. Without
+    # this the outcome→strategy loop stores what worked and never changes what the agent does.
+    guidance = _procedure_guidance_block(vault, query)
+    if block and guidance:
+        return f"{block}\n{guidance}"
+    return block or guidance
 
 
 def brain_stable_prefix(agent: Any, *, settings: Optional[BrainSettings] = None) -> str:

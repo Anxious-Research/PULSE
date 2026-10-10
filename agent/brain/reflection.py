@@ -26,6 +26,7 @@ exists only reinforces it, so re-reflecting on the same evidence is a no-op.
 
 from __future__ import annotations
 
+import re
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence
@@ -137,14 +138,39 @@ def _gather_evidence(vault: Any, query: str, *, index: Any, now: Optional[float]
         if hit.node_id in seen:
             continue
         seen.add(hit.node_id)
-        text = _node_text(vault, hit.node_id) or hit.snippet
+        try:
+            node = vault.read_node(hit.node_id)
+        except Exception:
+            node = None
+        text = (node.content if node else "") or hit.snippet
+        corroborations = 0
+        if node is not None:
+            try:
+                corroborations = len(vault.corroborations_of(node))
+            except Exception:
+                corroborations = 0
         out.append({
             "id": hit.node_id,
             "category": hit.category,
             "score": round(float(hit.score), 6),
             "text": text[:600],
+            "corroborations": corroborations,
         })
     return out
+
+
+def _evidence_refs(cluster: Sequence[Dict[str, Any]]) -> List[str]:
+    """The independent *assertions* behind a cluster: each memory, plus each restatement of it.
+
+    Counting nodes alone made a corroborated belief unreachable: a restated claim is folded into
+    the existing node rather than duplicated, so its recurrence never raised the count.
+    """
+    refs: List[str] = []
+    for entry in cluster:
+        refs.append(entry["id"])
+        for index in range(int(entry.get("corroborations") or 0)):
+            refs.append(f"{entry['id']}#c{index + 1}")
+    return refs
 
 
 def _same_claim(a_text: str, b_text: str) -> bool:
@@ -180,6 +206,43 @@ def _cluster(evidence: Sequence[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
     return clusters
 
 
+#: Interrogative scaffolding stripped to recover the *goal* a question is about. Procedural memory
+#: is keyed by a goal, and the production path only ever has the turn's text — so the goal is
+#: derived here rather than demanded from every caller (§8).
+_GOAL_STRIP_RE = re.compile(
+    r"^(?:(?:hi|hey|hello|ok(?:ay)?|so|now|please|pulse)\b[\s,]*)?"
+    r"(?:how\s+(?:do|can|should|would|might|could)\s+(?:i|we|you)\b|how\s+to\b|"
+    r"what(?:'s|\s+is)\s+the\s+(?:best|right|correct|proper)\s+way\s+to\b|"
+    r"(?:the\s+)?(?:best|right|correct|proper)\s+way\s+to\b|"
+    r"what\s+should\s+(?:i|we)\s+do\s+to\b|"
+    r"can\s+you\b|could\s+you\b|would\s+you\b|will\s+you\b|"
+    r"i\s+(?:need|want|have)\s+to\b|i(?:'m|\s+am)\s+trying\s+to\b|"
+    r"help\s+me\b|let'?s\b|we\s+(?:need|want|have)\s+to\b|"
+    r"is\s+there\s+a\s+way\s+to\b)\s*",
+    re.IGNORECASE,
+)
+
+
+def _goal_from_question(question: str) -> str:
+    """The action phrase a question is *about* — ``"How should I deploy the atlas service?"``
+    becomes ``"deploy the atlas service"``.
+
+    Without this the production path could store a learned procedure and never reach it again:
+    :func:`reflect` is called with the turn's text, not with a goal.
+    """
+    text = " ".join((question or "").split()).strip()
+    if not text:
+        return ""
+    text = text.rstrip("?.! ").strip()
+    # Strip repeatedly: "ok, so how should I deploy X?" needs both the opener and the scaffolding.
+    for _ in range(3):
+        stripped = _GOAL_STRIP_RE.sub("", text).strip(" ,:-—")
+        if stripped == text or not stripped:
+            break
+        text = stripped
+    return text
+
+
 def reflect(
     vault: Any,
     *,
@@ -198,7 +261,11 @@ def reflect(
     """
     ts = int(now if now is not None else time.time())
     question = (question or "").strip()
-    result = Reflection(question=question, goal=goal)
+    # Procedural memory is keyed by a goal, and the production path only has the turn's text — so
+    # derive the goal when the caller does not supply one. Without this, a learned procedure is
+    # stored and never surfaced again (§8).
+    goal = (goal or "").strip() or _goal_from_question(question)
+    result = Reflection(question=question, goal=goal or None)
     if not question or vault is None:
         result.uncertainty = "nothing to reflect on"
         return result
@@ -250,7 +317,7 @@ def reflect(
     # The best-supported cluster is the provisional conclusion.
     best = max(clusters, key=lambda c: (len(c), max(e["score"] for e in c)))
     result.conclusion = _conclusion_of(best)
-    result.supporting = [e["id"] for e in best]
+    result.supporting = _evidence_refs(best)
     losing_ids = _losing_sides(result.contradictions)
     result.counter = [i for i in losing_ids]
 
@@ -258,12 +325,16 @@ def reflect(
     if apply:
         # (a) a cluster of ≥2 independent memories is a belief PULSE may hold.
         for cluster in sorted(clusters, key=lambda c: -len(c))[:MAX_BELIEF_UPDATES]:
-            if len(cluster) < MIN_EVIDENCE_FOR_BELIEF:
-                continue
             statement = _conclusion_of(cluster)
             if not statement:
                 continue
-            supporting_ids = [e["id"] for e in cluster]
+            # Evidence is independent *assertions*, not independent nodes: a memory the user
+            # restated carries corroboration records, and each is a separate assertion of the same
+            # claim. Counting nodes alone made a corroborated belief unreachable, because a
+            # restatement is folded into the existing node rather than duplicated.
+            supporting_ids = list(dict.fromkeys(_evidence_refs(cluster)))
+            if len(supporting_ids) < MIN_EVIDENCE_FOR_BELIEF:
+                continue
             counters = [e["id"] for e in cluster if e["id"] in losing_ids]
             formed = belief_mod.form_belief(
                 vault, statement, evidence_refs=supporting_ids, now=ts, source_turn=source_turn,

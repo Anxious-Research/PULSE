@@ -61,7 +61,13 @@ PRIMARY_DECLARATIVE = 0.34
 #: novelty alone (0.38 + 0.10 = 0.48) so the event is an addressable, correctable node.
 PRIMARY_STATE_CHANGE = 0.38
 MODIFIER_NOVELTY = 0.10
-MODIFIER_RECURRENCE = 0.05
+#: Restating something already known. Weighted so that a repeated declarative fact clears the gate
+#: (0.34 + 0.08 = 0.42): recurrence is the strongest corroboration there is, and at 0.05 it summed
+#: to 0.39 and could never tip a declarative statement over, so a verbatim restatement was dropped
+#: before it could be recorded as evidence — which left the belief layer with no way to accumulate
+#: corroboration. Only repeats of already-known material can benefit, since recurrence fires on
+#: overlap with the corpus and nothing else.
+MODIFIER_RECURRENCE = 0.08
 
 #: A weak signal with a novel topic maxes out at 0.15, so trivia cannot cross this — something
 #: must actually be asserted, corrected or decided for a turn to be remembered. Raised to 0.40
@@ -138,11 +144,42 @@ _CORRECTION_OPENER_RE = re.compile(
 # and it is *about* something recallable (a proper noun, a coded name, or a domain concept).
 # Spec/doc prose is already gated by ``_is_specification_prose`` before this runs, so a plain
 # sentence that survives that gate and has this shape is genuine conversational knowledge.
+# A *stable relational verb* links a subject to a predicate durably. The list must cover the
+# verbs people actually use for durable facts, not a handful of programming nouns: an earlier
+# list omitted `writes` / `pushes` / `runs`, so "The atlas deploy pipeline pushes to staging
+# before production" scored 0 on this signal and — carrying only the 0.10 novelty modifier — fell
+# under the 0.4 gate and was never remembered. A closed list is never complete, so it is kept
+# broad and includes the regular third-person forms.
 _DECLARATIVE_VERBS = re.compile(
-    r"\b(?:is|are|was|were|has|have|had|uses?|used|requires?|required|"
-    r"depends?\s+on|contains?|includes?|provides?|stores?|connects?|links?|"
-    r"supports?|exposes?|represents?|means?|equals?|consists?\s+of|"
-    r"should|must|will|needs?\s+to|serves?|powers?|runs?\s+on)\b",
+    r"\b(?:is|are|was|were|has|have|had|does|do|"
+    r"uses?|used|requires?|required|depends?\s+on|contains?|includes?|provides?|"
+    r"connects?|links?|supports?|exposes?|represents?|means?|equals?|consists?\s+of|"
+    r"serves?|powers?|runs?|run|"
+    # Common transitive / stative verbs people state durable facts with.
+    r"writes?|write|reads?|read|sends?|send|pushes?|push|pulls?|pull|"
+    r"calls?|call|creates?|create|deletes?|delete|removes?|remove|adds?|add|"
+    r"updates?|update|triggers?|trigger|returns?|return|accepts?|accept|"
+    r"emits?|emit|listens?|listen|starts?|start|stops?|stop|checks?|check|"
+    r"validates?|validate|process(?:es)?|handles?|handle|manages?|manage|"
+    r"owns?|own|holds?|hold|keeps?|keep|allows?|allow|prevents?|prevent|"
+    r"takes?|take|gets?|get|makes?|make|moves?|move|lives?|live|sits?|sit|"
+    r"points?|point|maps?|map|routes?|route|renders?|render|parses?|parse|"
+    r"loads?|load|saves?|save|stores?|store|cach(?:es|e)|index(?:es)?|tracks?|track|"
+    r"records?|record|logs?|log|reports?|report|counts?|count|measures?|measure|"
+    r"limits?|limit|caps?|cap|wraps?|wrap|guards?|guard|gates?|gate|"
+    r"fails?|fail|pass(?:es)?|breaks?|break|fix(?:es)?|changes?|change|"
+    r"replaces?|replace|merges?|merge|splits?|split|sorts?|sort|filters?|filter|"
+    r"matches?|match|search(?:es)?|finds?|find|resolves?|resolve|computes?|compute|"
+    r"generates?|generate|builds?|build|deploys?|deploy|installs?|install|"
+    r"configures?|configure|enables?|enable|disables?|disable|sets?|set|"
+    r"opens?|open|closes?|close|binds?|bind|registers?|register|"
+    r"subscribes?|subscribe|publishes?|publish|consumes?|consume|"
+    r"dispatch(?:es)?|schedules?|schedule|retries|retry|awaits?|await|"
+    r"expects?|expect|assumes?|assume|asserts?|assert|denies|deny|"
+    r"permits?|permit|blocks?|block|isolates?|isolate|shares?|share|syncs?|sync|"
+    r"imports?|import|exports?|export|extends?|extend|inherits?|inherit|"
+    r"overrides?|override|implements?|implement|defines?|define|describes?|describe|"
+    r"should|must|will|needs?\s+to)\b",
     re.IGNORECASE,
 )
 
@@ -157,19 +194,48 @@ _DECLARATIVE_DOMAIN_NOUNS = frozenset({
 })
 
 
+#: A *coded name* — the third anchor the docstring promises — is a compound technical noun phrase:
+#: "the payments service", "our deploy pipeline", "the ledger table". The head noun is what makes
+#: the phrase a name rather than prose, and the set is technical vocabulary common to any project,
+#: so this does not depend on PULSE's own subject matter the way the domain-noun list does.
+_CODED_NAME_HEADS = (
+    "service", "services", "module", "modules", "system", "systems", "pipeline", "pipelines",
+    "api", "apis", "server", "servers", "database", "databases", "db", "repo", "repos",
+    "repository", "component", "components", "layer", "layers", "engine", "engines",
+    "store", "stores", "index", "indexes", "indices", "cache", "caches", "queue", "queues",
+    "worker", "workers", "job", "jobs", "scheduler", "cluster", "clusters", "node", "nodes",
+    "table", "tables", "schema", "schemas", "endpoint", "endpoints", "gateway", "gateways",
+    "proxy", "proxies", "client", "clients", "backend", "backends", "frontend", "frontends",
+    "daemon", "daemons", "bot", "bots", "app", "apps", "application", "applications",
+    "ledger", "ledgers", "account", "accounts", "invoice", "invoices", "payment", "payments",
+    "user", "users", "tenant", "tenants", "team", "teams", "org", "orgs", "project", "projects",
+    "framework", "library", "sdk", "cli", "tool", "tools", "script", "scripts", "file", "files",
+    "directory", "folder", "bucket", "container", "image", "images", "pod", "pods", "vm",
+    "host", "hosts", "domain", "environment", "environments", "stage", "stages", "region",
+    "bucket", "stream", "streams", "topic", "topics", "event", "events", "webhook", "webhooks",
+)
+_CODED_NAME_RE = re.compile(
+    r"\b\w[\w-]*\s+(?:" + "|".join(re.escape(h) for h in sorted(set(_CODED_NAME_HEADS))) + r")\b",
+    re.IGNORECASE,
+)
+
+
 def _has_entity_anchor(statement: str) -> bool:
     """True when a statement is *about* an entity PULSE could later recall it by.
 
-    Two anchors count: a proper noun / acronym (a capitalised token after the first word —
-    "Project Alpha", "PULSE", "architecture B"), or a domain concept word ("the graph", "the
-    Brain"). The first-word capital of "The graph…" is sentence case, not a proper noun, so it
-    is deliberately not treated as an anchor.
+    Three anchors count: a proper noun / acronym (a capitalised token after the first word —
+    "Project Alpha", "PULSE", "architecture B"), a coded name ("the payments service", "our deploy
+    pipeline"), or a domain concept word ("the graph", "the Brain"). The first-word capital of
+    "The graph…" is sentence case, not a proper noun, so it is deliberately not treated as an
+    anchor.
     """
     words = statement.split()
     for i, word in enumerate(words):
         core = word.strip("\"'(),.;:!?")
         if i > 0 and len(core) >= 2 and core[0].isupper() and (core.isupper() or core[1:].islower()):
             return True
+    if _CODED_NAME_RE.search(statement):
+        return True
     lower = statement.lower()
     return any(re.search(rf"\b{re.escape(noun)}\b", lower) for noun in _DECLARATIVE_DOMAIN_NOUNS)
 
@@ -452,6 +518,10 @@ class MemoryCandidate:
     salience: float
     signals: SalienceSignals
     supersedes: List[str] = field(default_factory=list)
+    #: Set when this statement restates an existing node (``kind == "restatement"``): the id of the
+    #: memory it corroborates. A restatement is not written as a second node — it is recorded as
+    #: evidence on the existing one.
+    restates: str = ""
     #: Attribute-level corrections: ``[(node_id, corrected_text)]`` for existing nodes whose
     #: temporal attribute this statement revises (e.g. "happened yesterday" fixing "changed today").
     #: These are updated in place — the event is not superseded, only its attribute is corrected.
@@ -466,6 +536,7 @@ class MemoryCandidate:
             "salience": round(self.salience, 4),
             "signals": self.signals.as_dict(),
             "supersedes": list(self.supersedes),
+            "restates": self.restates,
             "temporal_revisions": list(self.temporal_revisions),
         }
 
@@ -499,6 +570,31 @@ def extract_candidates(
     for statement in _statements(text):
         signals = detect_signals(statement, corpus=corpus_texts, embedder=embedder)
         salience = score_salience(signals)
+
+        # A restatement of something already known is checked BEFORE the salience gate. It is not a
+        # new memory to be scored — it is another assertion of an existing one, and its entire value
+        # is corroboration. Left to the gate it would be dropped: a verbatim repeat has novelty 0.0
+        # and recurrence alone (1 hit / RECURRENCE_SATURATION) cannot reach the threshold, so the
+        # strongest evidence the system can gather was being discarded before it was ever seen.
+        restates = ""
+        for node_id, content in existing:
+            if content.strip() and similarity(statement, content, embedder=embedder) > 0.85:
+                restates = node_id
+                break
+        if restates:
+            candidates.append(
+                MemoryCandidate(
+                    text=statement,
+                    kind="restatement",
+                    category=category_for(statement),
+                    title=title_for(statement),
+                    salience=salience,
+                    signals=signals,
+                    restates=restates,
+                )
+            )
+            continue
+
         if salience < float(threshold):
             continue
 
@@ -597,6 +693,7 @@ def encode_turn(
         "semantic": [],
         "superseded": [],
         "revised": [],
+        "corroborated": [],
         "skipped": [],
         "dry_run": bool(dry_run),
     }
@@ -607,6 +704,28 @@ def encode_turn(
 
     episodic = [candidate for candidate in candidates if candidate.kind == "episodic"]
     semantic = [candidate for candidate in candidates if candidate.kind == "semantic"]
+    restatements = [candidate for candidate in candidates if candidate.kind == "restatement"]
+
+    # A restatement is evidence about an existing memory, not a new one: record the corroboration
+    # and write nothing. Keeping the node count flat is what lets a belief accumulate independent
+    # support without the vault filling up with the same sentence said twice.
+    for candidate in restatements:
+        corroborated = False
+        if not dry_run and candidate.restates:
+            try:
+                corroborated = bool(vault.record_corroboration(
+                    candidate.restates, text=candidate.text, source_turn=turn_id, now=ts,
+                ))
+            except Exception:
+                logger.debug("corroboration record failed", exc_info=True)
+        report["skipped"].append({
+            "reason": "near_duplicate",
+            "candidate": candidate.as_dict(),
+            "existing_node": candidate.restates,
+            "corroborated": corroborated,
+        })
+        if corroborated:
+            report["corroborated"].append({"node_id": candidate.restates, "text": candidate.text})
 
     if episodic:
         report["episodic"] = _append_episodic(vault, episodic, turn_id=turn_id, now=ts, dry_run=dry_run)
@@ -638,11 +757,28 @@ def encode_turn(
             and similarity(candidate.text, node.content, embedder=embedder) > 0.85
         ]
         if existing_similar:
+            # A restatement is not a second memory, but it is not nothing: it is an independent
+            # corroboration of the existing claim, and reflection needs ≥2 independent memories to
+            # hold a belief rather than a provisional guess. Previously this branch detected the
+            # recurrence and then discarded it, which made a corroborated belief unreachable from
+            # real conversation.
+            target = existing_similar[0]
+            corroborated = False
+            if not dry_run:
+                try:
+                    corroborated = bool(vault.record_corroboration(
+                        target.id, text=candidate.text, source_turn=turn_id, now=ts,
+                    ))
+                except Exception:
+                    logger.debug("corroboration record failed", exc_info=True)
             report["skipped"].append({
                 "reason": "near_duplicate",
                 "candidate": candidate.as_dict(),
-                "existing_node": existing_similar[0].id,
+                "existing_node": target.id,
+                "corroborated": corroborated,
             })
+            if corroborated:
+                report["corroborated"].append({"node_id": target.id, "text": candidate.text})
             continue
         
         node_id = vault.unique_node_id(candidate.category, slugify(candidate.title))
