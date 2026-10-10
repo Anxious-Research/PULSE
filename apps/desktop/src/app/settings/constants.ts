@@ -559,7 +559,9 @@ export const FIELD_LABELS: Record<string, string> = defineFieldCopy({
   },
   brain: {
     recallMaxTokens: 'Recall Context Budget',
-    prefixMaxChars: 'Stable Prefix Budget'
+    prefixMaxChars: 'Stable Prefix Budget',
+    reflectEnabled: 'Learning (Reflection)',
+    reflectEvery: 'Reflect Every N Turns'
   },
   context: {
     engine: 'Context Engine'
@@ -644,7 +646,11 @@ export const FIELD_DESCRIPTIONS: Record<string, string> = defineFieldCopy({
     recallMaxTokens:
       'Tokens of recalled memory injected into the prompt for ONE turn (per-request). This is not a storage cap — the Brain grows without a fixed limit. Default 600.',
     prefixMaxChars:
-      'Character budget for the always-on identity/profile block. Per-turn injection only; it never limits how much durable memory PULSE keeps. Default 6000.'
+      'Character budget for the always-on identity/profile block. Per-turn injection only; it never limits how much durable memory PULSE keeps. Default 6000.',
+    reflectEnabled:
+      'After each turn is encoded, reflect over memory to form evidence-backed beliefs and learn from outcomes. Turn off to freeze learning while keeping memory readable.',
+    reflectEvery:
+      'Reflect at most once every N encoded turns, in the background — never on the reply path. Default 6.'
   },
   context: {
     engine: 'Strategy for managing long conversations near the context limit.'
@@ -760,6 +766,8 @@ export const SECTIONS: DesktopConfigSection[] = [
       'memory.user_profile_enabled',
       'brain.recall_max_tokens',
       'brain.prefix_max_chars',
+      'brain.reflect_enabled',
+      'brain.reflect_every',
       'memory.provider',
       'context.engine',
       'compression.enabled',

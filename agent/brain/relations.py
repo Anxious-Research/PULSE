@@ -46,6 +46,16 @@ class RelationType(str, Enum):
     RELATED_TO = "related_to"      # a general association (default for derived links)
     MENTIONS = "mentions"          # A's text names the entity that B is about
     SUPERSEDES = "supersedes"      # A corrects/replaces B (the correction chain)
+    # ── §3.3 relationship semantics beyond plain association ────────────────────────────
+    # Each of these asserts a *specific* claim about how A and B relate; they exist so the graph
+    # can distinguish support from contradiction from derivation rather than showing one
+    # undifferentiated "related" edge for every kind of connection.
+    SUPPORTS = "supports"          # A is evidence for B (B is a conclusion A backs)
+    CONTRADICTS = "contradicts"    # A asserts the opposite of B (unresolved disagreement)
+    DERIVED_FROM = "derived_from"  # A was produced from B (summary/belief from an episode)
+    CAUSED_BY = "caused_by"        # A resulted from B — only when causal evidence justifies it
+    PRECEDES = "precedes"          # A happened before B (temporal order)
+    LEARNED_FROM = "learned_from"  # A (a procedure) was learned from outcome B
 
     @classmethod
     def coerce(cls, value: Any) -> "RelationType":

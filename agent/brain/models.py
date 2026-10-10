@@ -30,6 +30,10 @@ class NodeCategory(str, Enum):
     PROJECT = "project"
     BELIEF = "belief"
     DAILY = "daily"
+    #: §4.3 procedural memory — a learned method, with its outcomes and failure modes. A distinct
+    #: layer because a procedure is *actionable knowledge* ("when X, do Y"), not a fact and not a
+    #: position: it is judged by whether it worked, which is what its outcome record carries.
+    PROCEDURE = "procedure"
 
     @classmethod
     def all_values(cls) -> List[str]:

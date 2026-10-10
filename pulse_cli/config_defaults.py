@@ -1341,6 +1341,13 @@ DEFAULT_CONFIG = {
         # Character budget for the always-on identity/profile block (Layer 1 stable prefix). Per-turn
         # injection only — it never limits durable memory. Clamped 200..60000.
         "prefix_max_chars": 6000,
+        # Cognition layer (§7/§8): after each turn is encoded, a background pass may reflect over
+        # memory and persist evidence-backed beliefs / learned procedures. This creates memory from
+        # evidence — it is NOT a per-turn context budget. Turn it off to freeze learning while
+        # leaving encoding and recall running.
+        "reflect_enabled": True,
+        # Reflect at most once every N encoded turns (off the reply path). Clamped 1..1000.
+        "reflect_every": 6,
     },
     # Subagent delegation — override the provider:model used by delegate_task so children run on a
     # cheaper/faster model. Uses the same runtime provider resolution as CLI/gateway startup, so

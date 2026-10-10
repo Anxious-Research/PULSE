@@ -110,6 +110,9 @@ class RecallHit:
     salience: float
     snippet: str
     links: List[str] = field(default_factory=list)
+    #: True when this hit came from the deep/historical route (§6.7) — a dormant older memory
+    #: recovered because nothing fresher answered the cue. Lets the caller/UI say "from history".
+    historical: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -121,6 +124,7 @@ class RecallHit:
             "retrievability": round(self.retrievability, 6),
             "salience": round(self.salience, 4),
             "links": list(self.links),
+            "historical": self.historical,
         }
 
 
@@ -428,6 +432,7 @@ def recall(
     min_score: float = DEFAULT_MIN_SCORE,
     max_tokens: int = DEFAULT_MAX_TOKENS,
     include_dormant: bool = False,
+    deep: bool = False,
     extra_cues: Optional[Iterable[str]] = None,
     embedder: Any = None,
     now: Optional[float] = None,
@@ -464,52 +469,76 @@ def recall(
 
     activation = idx.activate(seeds, hops=hops, decay=spread_decay)
 
-    hits: List[RecallHit] = []
-    for node_id, act in activation.items():
-        node = by_id.get(node_id)
-        if node is None:
-            continue
-        if node.frontmatter.status in _STATUS_EXCLUDED:
-            continue
-        fm = node.frontmatter
-        score = decay_mod.rank_score(act, fm.stability, fm.last_accessed, fm.salience, now=now)
-        if score <= 0.0:
-            continue
-        retriev = decay_mod.retrievability(fm.stability, fm.last_accessed, now=now)
-        if not include_dormant and decay_mod.is_dormant(fm.stability, fm.last_accessed, now=now):
-            continue
-        # The snippet is injected into a prompt, so it must read as prose: ``[[a/b|c]]`` -> ``c``.
-        # Bracket syntax and path separators are vault plumbing, and the associations they encode
-        # are already surfaced by the ``related:`` line. Leaving them in spends tokens on
-        # punctuation and reads as noise (or worse, as a literal instruction to fetch a path).
-        snippet = strip_title_overlap(" ".join(wikilinks_to_text(node.content).split()), node.title)
-        if len(snippet) > SNIPPET_CHARS:
-            snippet = snippet[:SNIPPET_CHARS].rstrip() + "…"
-        hits.append(
-            RecallHit(
-                node_id=node_id,
-                title=node.title,
-                category=node.category,
-                score=score,
-                activation=act,
-                retrievability=retriev,
-                salience=fm.salience,
-                snippet=snippet,
-                links=[n for n in idx.links_of(node_id) if n in by_id][:4],
+    def _collect(allow_dormant: bool) -> List[RecallHit]:
+        """Rank activated nodes into hits. ``allow_dormant`` includes faded older memories."""
+        out: List[RecallHit] = []
+        for node_id, act in activation.items():
+            node = by_id.get(node_id)
+            if node is None:
+                continue
+            if node.frontmatter.status in _STATUS_EXCLUDED:
+                continue
+            fm = node.frontmatter
+            score = decay_mod.rank_score(act, fm.stability, fm.last_accessed, fm.salience, now=now)
+            if score <= 0.0:
+                continue
+            if not allow_dormant and decay_mod.is_dormant(fm.stability, fm.last_accessed, now=now):
+                continue
+            retriev = decay_mod.retrievability(fm.stability, fm.last_accessed, now=now)
+            # The snippet is injected into a prompt, so it must read as prose: ``[[a/b|c]]`` -> ``c``.
+            # Bracket syntax and path separators are vault plumbing, and the associations they encode
+            # are already surfaced by the ``related:`` line. Leaving them in spends tokens on
+            # punctuation and reads as noise (or worse, as a literal instruction to fetch a path).
+            snippet = strip_title_overlap(" ".join(wikilinks_to_text(node.content).split()), node.title)
+            if len(snippet) > SNIPPET_CHARS:
+                snippet = snippet[:SNIPPET_CHARS].rstrip() + "…"
+            out.append(
+                RecallHit(
+                    node_id=node_id,
+                    title=node.title,
+                    category=node.category,
+                    score=score,
+                    activation=act,
+                    retrievability=retriev,
+                    salience=fm.salience,
+                    snippet=snippet,
+                    links=[n for n in idx.links_of(node_id) if n in by_id][:4],
+                )
             )
-        )
+        out.sort(key=lambda h: (-h.score, h.node_id))
+        return out
 
-    hits.sort(key=lambda h: (-h.score, h.node_id))
+    hits = _collect(include_dormant)
     # Drop also-rans: keep only hits in the same league as the best one.
     if hits:
         floor = hits[0].score * RELATIVE_FLOOR
         hits = [h for h in hits if h.score >= floor]
-    hits = hits[: max(1, int(limit))]
 
-    # Gate: a weak best hit means the vault has nothing worth saying this turn.
-    if not hits or hits[0].score < float(min_score):
+    historical = False
+    if deep and (not hits or hits[0].score < float(min_score)) and not include_dormant:
+        # §6.7 deep / historical retrieval: the ordinary window has nothing convincing, so rather
+        # than stay silent reach for older memories that decay has buried — but ONLY those the cue
+        # matched *directly* (a seed), so recovery is anchored in real relevance and cannot dredge
+        # up unrelated history through a weak graph hop.
+        #
+        # Opt-in on purpose: injecting a faded memory on every ordinary turn is exactly the
+        # "recall is not selective" failure the default path guards against, so the caller asks to
+        # dig (a "what happened months ago" question, or the reflection engine's deeper round).
+        deep_hits = [h for h in _collect(True) if h.node_id in seeds]
+        if deep_hits:
+            floor = deep_hits[0].score * RELATIVE_FLOOR
+            deep_hits = [h for h in deep_hits if h.score >= floor]
+            if deep_hits:
+                hits, historical = deep_hits, True
+
+    hits = hits[: max(1, int(limit))]
+    # Gate: a weak best hit means the vault has nothing worth saying this turn. A historical hit is
+    # exempt — it was admitted precisely because it is a direct, relevant match.
+    if not hits or (not historical and hits[0].score < float(min_score)):
         return RecallResult(cues=cues, seeded=len(seeds), candidates=len(entries))
 
+    for hit in hits:
+        hit.historical = historical
     # Never let the rendered block exceed the budget, even if more hits were found.
     return RecallResult(hits=hits, cues=cues, seeded=len(seeds), candidates=len(entries))
 

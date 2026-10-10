@@ -30,6 +30,7 @@ from typing import Any, Dict, Optional, Tuple
 from . import consolidate as consolidate_mod
 from . import encoding as encoding_mod
 from . import prefix as prefix_mod
+from . import reflection as reflection_mod
 from .index import BrainIndex
 from .recall import (
     DEFAULT_DECAY,
@@ -51,6 +52,9 @@ DEFAULT_RECALL_MIN_SCORE = DEFAULT_MIN_SCORE
 DEFAULT_SPREAD_DECAY = DEFAULT_DECAY
 # Consolidation cadence (§3.2) — a pass every N encoded turns, never on the reply path.
 DEFAULT_CONSOLIDATE_EVERY = 8
+#: Cognition pass (§7/§8): reflect on recent turns every N encoded turns. Off the turn's critical
+#: path, and gated so reflection runs periodically rather than on every message.
+DEFAULT_REFLECT_EVERY = 6
 
 
 def _truthy(value: Any, *, default: bool = True) -> bool:
@@ -125,6 +129,11 @@ class BrainSettings:
     # without config (§11.1). A new install writes self/identity on first session.
     prefix_enabled: bool = True
     prefix_max_chars: int = prefix_mod.DEFAULT_MAX_CHARS
+    # Cognition (§7/§8): after encoding, periodically reflect over recent memory to form evidence-
+    # backed beliefs and revise them. The rollback lever for the learning layer, separate from
+    # recall and from encoding so each can be turned off independently.
+    reflect_enabled: bool = True
+    reflect_every: int = DEFAULT_REFLECT_EVERY
 
     @classmethod
     def from_config(cls, config: Optional[Dict[str, Any]] = None) -> "BrainSettings":
@@ -147,6 +156,10 @@ class BrainSettings:
             prefix_enabled=_truthy(section.get("prefix_enabled"), default=True),
             prefix_max_chars=_positive_int(
                 section.get("prefix_max_chars"), prefix_mod.DEFAULT_MAX_CHARS, minimum=200, maximum=60000
+            ),
+            reflect_enabled=_truthy(section.get("reflect_enabled"), default=True),
+            reflect_every=_positive_int(
+                section.get("reflect_every"), DEFAULT_REFLECT_EVERY, minimum=1, maximum=1000
             ),
         )
 
@@ -412,7 +425,7 @@ def brain_status(agent: Any = None) -> Dict[str, Any]:
 # top of each other; skipping a pass costs one turn's episodic line, which consolidation
 # would have merged anyway.
 _encode_lock = threading.Lock()
-_encode_state: Dict[str, Any] = {"running": False, "since_consolidate": 0}
+_encode_state: Dict[str, Any] = {"running": False, "since_consolidate": 0, "since_reflect": 0}
 _legacy_migrated: set = set()
 
 
@@ -527,18 +540,67 @@ def brain_consolidate(agent: Any = None, *, vault: Any = None, dry_run: bool = F
     return report
 
 
+def brain_reflect(
+    agent: Any = None,
+    *,
+    text: str = "",
+    vault: Any = None,
+    now: Optional[float] = None,
+    dry_run: bool = False,
+) -> Dict[str, Any]:
+    """Run one cognition pass (§7/§8): reflect over memory and persist justified beliefs.
+
+    This is the write side of the learning loop — the counterpart to :func:`brain_recall`. Given
+    the text of recent turns it asks what the stored evidence actually supports, records any
+    belief that ≥2 independent memories corroborate, flags contradictions as counter-evidence, and
+    surfaces a learned procedure for the goal. It never invents a conclusion: with thin evidence it
+    writes nothing and reports the uncertainty instead. Never raises (runs on the encode thread).
+    """
+    settings = resolve_settings(agent)
+    if not settings.enabled or not settings.reflect_enabled:
+        return {"reflect": "disabled"}
+    vault = vault if vault is not None else get_write_vault(agent)
+    if vault is None:
+        return {"reflect": "no vault"}
+    try:
+        result = reflection_mod.reflect(vault, question=text, now=now, apply=not dry_run)
+    except Exception:
+        logger.debug("brain reflection failed", exc_info=True)
+        return {"reflect": "failed"}
+    if not dry_run:
+        restamp_index_cache(agent, vault)
+    report = {
+        "reflect": "ok",
+        "evidence": len(result.evidence),
+        "contradictions": len(result.contradictions),
+        "updates": len(result.updates),
+        "beliefs_formed": sum(1 for u in result.updates if u.get("kind") == "belief" and u.get("created")),
+        "uncertainty": result.uncertainty,
+    }
+    if result.conclusion:
+        report["conclusion"] = result.conclusion
+    return report
+
+
 def _encode_worker(agent: Any, user_text: str, assistant_text: str, session_id: str) -> None:
-    """Body of the background encode thread: encode, then consolidate when due."""
+    """Body of the background encode thread: encode, then consolidate/reflect when due."""
     try:
         brain_encode_turn(agent, user_text, assistant_text, session_id=session_id)
         settings = resolve_settings(agent)
         with _encode_lock:
             _encode_state["since_consolidate"] += 1
-            due = _encode_state["since_consolidate"] >= max(1, int(settings.consolidate_every))
-            if due:
+            _encode_state["since_reflect"] += 1
+            due_consolidate = _encode_state["since_consolidate"] >= max(1, int(settings.consolidate_every))
+            due_reflect = _encode_state["since_reflect"] >= max(1, int(settings.reflect_every))
+            if due_consolidate:
                 _encode_state["since_consolidate"] = 0
-        if due:
+            if due_reflect:
+                _encode_state["since_reflect"] = 0
+        if due_consolidate:
             brain_consolidate(agent)
+        if due_reflect:
+            # Consolidate first so reflection reasons over merged, non-duplicated memory.
+            brain_reflect(agent, text=user_text)
     except Exception:
         logger.debug("brain encode worker failed", exc_info=True)
     finally:

@@ -219,6 +219,41 @@ def compose_markdown(meta: Dict[str, Any], body: str) -> str:
     return f"---\n{render_frontmatter(meta)}\n---\n\n{body}".rstrip("\n") + "\n"
 
 
+def encode_record(record: Dict[str, Any]) -> str:
+    """Encode one structured record as a single frontmatter scalar that round-trips exactly.
+
+    Frontmatter here is a deliberately small YAML subset: it round-trips scalars and lists of
+    scalars, but **not** nested mappings. A JSON *object* is not safe either — it begins with
+    ``{``, which ``render_scalar`` deliberately quotes, and ``parse_scalar`` removes the quotes
+    without unescaping the inner ones. So a record is serde'd to JSON and then base64url-encoded:
+    the result is ``[A-Za-z0-9_-]`` only, which this parser keeps verbatim. Used for any
+    list-of-records field (a belief's revision log, a procedure's outcome history).
+    """
+    import base64
+    import json
+
+    try:
+        payload = json.dumps(record, separators=(",", ":"), sort_keys=True, default=str).encode("utf-8")
+    except (TypeError, ValueError):
+        return ""
+    return base64.urlsafe_b64encode(payload).decode("ascii")
+
+
+def decode_record(text: Any) -> Dict[str, Any]:
+    """Inverse of :func:`encode_record`. Tolerates already-decoded dicts and junk (returns {})."""
+    if isinstance(text, dict):
+        return dict(text)
+    import base64
+    import json
+
+    try:
+        raw = base64.urlsafe_b64decode(str(text).encode("ascii"))
+        value = json.loads(raw.decode("utf-8"))
+    except Exception:
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
 def load_frontmatter(raw: str) -> Dict[str, Any]:
     return parse_frontmatter_and_body(raw)[0]
 
