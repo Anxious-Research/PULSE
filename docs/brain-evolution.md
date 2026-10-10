@@ -298,6 +298,13 @@ Interpreter note: the repo requires Python ≥3.10 (`str | object` annotations);
 is 3.9, so the suite runs under the scratch interpreter at
 `~/.pulse/cache/scratch/brainenv/bin/python` (3.14.7).
 
+Runner note: run the Python suite through **`./scripts/run_tests.sh`**, never bare `pytest`
+(`AGENTS.md` requires it for CI parity). From an agent shell this is not cosmetic: the session
+inherits the live agent's environment, the bundled provider plugins then probe the installed tree,
+and `tests/home_io_guard.py` correctly converts that into an error at *setup* for every test — a
+561-error run that looks catastrophic but is the guard refusing to let tests touch the production
+home. Through the runner the same 30 brain suites report `561 tests passed, 0 failed`.
+
 **Build blocker found and fixed while producing the payload.** `npm run payload` failed before it
 reached the agent at all, in the icon generator. `scripts/generate_icons.py`'s `girl_path()`
 deliberately returns *either* a `<path>` (vector art) *or* an `<image>` (a PNG-based source), but
