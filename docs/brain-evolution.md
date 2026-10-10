@@ -328,9 +328,26 @@ up as one specific number dropping.
   0.306` and its status `active → uncertain` while keeping the statement and a 2-entry revision log;
   and a brand-new vault object saw the same belief and procedure. That is the mandate's
   "outcome→strategy learning demonstrably changes future behaviour", observed rather than asserted.
-* **NOT VERIFIED this session:** driving the built desktop app to observe belief/procedure nodes in
-  the graph UI; a packaged-DMG fresh-install walkthrough; benchmarks above 3,000 nodes; and any
-  LLM-assisted reflection path (none exists — deliberately).
+* **`Runtime-observed` — the learning layers reach the desktop surface.** The graph the desktop
+  panel renders is produced by `agent.learning_graph.build_learning_graph()`, which is what
+  `GET /api/learning/graph` returns. Seeding an isolated vault with one belief and one procedure and
+  calling that function directly
+  (`~/.pulse/cache/scratch/probe_desktop_graph.py`, `EXIT=0`) returns both as first-class nodes:
+
+  ```
+  {"category": "procedure", "label": "Procedure: deploy the atlas service", "confidence": 0.425,
+   "tags": ["procedure", "situational"], "vaultId": "procedure/deploy-the-atlas-service"}
+  {"category": "belief",    "label": "The atlas deploy pipeline pushes to the staging cluster
+   before production", "confidence": 0.725, "tags": ["belief"],
+   "vaultId": "belief/the-atlas-deploy-pipeline-pushes-to-the-staging-cluster-before-production"}
+  ```
+
+  So the new layers are not Python-only: they carry their own category, label, tags and confidence
+  into the structure the UI draws. (Node ids are fingerprinted — `memory:memory:2:6f305d79bef4` —
+  not category-prefixed; `category`, `label` and `vaultId` are the fields to key on.)
+* **NOT VERIFIED this session:** clicking through the *running* Electron app to see belief/procedure
+  nodes rendered (the data producer above is verified; the rendering is not); a packaged-DMG
+  fresh-install walkthrough; and any LLM-assisted reflection path (none exists — deliberately).
 
 ---
 
