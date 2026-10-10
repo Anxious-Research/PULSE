@@ -345,6 +345,21 @@ up as one specific number dropping.
   So the new layers are not Python-only: they carry their own category, label, tags and confidence
   into the structure the UI draws. (Node ids are fingerprinted — `memory:memory:2:6f305d79bef4` —
   not category-prefixed; `category`, `label` and `vaultId` are the fields to key on.)
+
+  Confirmed a second time **over real HTTP**, from the app's own backend process rather than in
+  process — `PULSE_HOME=<isolated> python -m pulse_cli.main serve --host 127.0.0.1 --port 8791`,
+  then `GET /api/learning/graph` → `200`, and inside the returned JSON:
+
+  ```
+  nodes 8  edges 6  clusters 3  categories {'procedure': 1, 'concept': 1, 'belief': 1, 'ghost': 5}
+    procedure | Procedure: deploy the atlas service | conf 0.425 | procedure/deploy-the-atlas-service
+    belief    | The atlas deploy pipeline pushes ... | conf 0.725 | belief/the-atlas-deploy-pipeline-...
+  ```
+
+  `GET /api/brain/events/recent` also returned `200` (`seq 0, events 0` — the vault was seeded by a
+  *different* process, so that process's in-memory event bus is correctly empty; the endpoint works,
+  there was simply nothing in its history). The server was killed and its temporary `PULSE_HOME`
+  removed afterwards.
 * **NOT VERIFIED this session:** clicking through the *running* Electron app to see belief/procedure
   nodes rendered (the data producer above is verified; the rendering is not); a packaged-DMG
   fresh-install walkthrough; and any LLM-assisted reflection path (none exists — deliberately).
