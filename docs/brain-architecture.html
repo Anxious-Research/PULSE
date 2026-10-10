@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PULSE Brain Architecture</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: #020617;
+      min-height: 100vh;
+      padding: 2rem;
+      color: white;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .header { margin-bottom: 2rem; }
+    .header-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
+    .pulse-dot {
+      width: 12px; height: 12px; background: #22d3ee; border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; }
+    .subtitle { color: #94a3b8; font-size: 0.875rem; margin-left: 1.75rem; }
+    .diagram-container {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 1rem;
+      border: 1px solid #1e293b;
+      padding: 1.5rem;
+      overflow-x: auto;
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .card {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 0.75rem;
+      border: 1px solid #1e293b;
+      padding: 1.25rem;
+    }
+    .card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .card-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .card-dot.cyan { background: #22d3ee; }
+    .card-dot.emerald { background: #34d399; }
+    .card-dot.violet { background: #a78bfa; }
+    .card-dot.amber { background: #fbbf24; }
+    .card-dot.rose { background: #fb7185; }
+    .card h3 { font-size: 0.875rem; font-weight: 600; }
+    .card ul { list-style: none; color: #94a3b8; font-size: 0.75rem; }
+    .card li { margin-bottom: 0.375rem; }
+    .footer { text-align: center; margin-top: 1.5rem; color: #475569; font-size: 0.75rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-row">
+        <div class="pulse-dot"></div>
+        <h1>PULSE Brain Architecture</h1>
+      </div>
+      <p class="subtitle">One entity, one brain, one source of truth — zero dependencies, offline-first</p>
+    </div>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 1160 700">
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
+          </marker>
+          <marker id="arrow-violet" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#a78bfa" />
+          </marker>
+          <marker id="arrow-rose" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185" />
+          </marker>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid)" />
+
+        <!-- ============ ARROWS (drawn first, behind boxes) ============ -->
+
+        <!-- write path -->
+        <line x1="180" y1="91" x2="211" y2="91" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="410" y1="91" x2="436" y2="91" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="424" y="78" fill="#94a3b8" font-size="8" text-anchor="middle">write</text>
+
+        <!-- read path -->
+        <line x1="690" y1="80" x2="726" y2="80" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="708" y="72" fill="#94a3b8" font-size="8" text-anchor="middle">read</text>
+        <line x1="905" y1="80" x2="921" y2="80" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <!-- vault -> reflection -->
+        <line x1="560" y1="172" x2="548" y2="248" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="576" y="212" fill="#94a3b8" font-size="8">background pass</text>
+
+        <!-- reflection -> beliefs / procedures -->
+        <path d="M 500 340 C 460 370 300 372 225 396" fill="none" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrow-violet)"/>
+        <path d="M 600 340 C 620 366 530 372 492 396" fill="none" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <!-- outcomes -> procedures -->
+        <path d="M 245 340 C 300 370 400 372 442 396" fill="none" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <!-- procedures -> guidance -> agent -->
+        <line x1="612" y1="443" x2="646" y2="443" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="862" y1="443" x2="906" y2="443" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <!-- guidance -> turn context -->
+        <path d="M 770 398 C 770 250 1010 230 1010 121" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#arrowhead)"/>
+        <text x="856" y="268" fill="#fbbf24" font-size="8">injected</text>
+
+        <!-- the loop: agent reply -> next turn -->
+        <!-- Routed outside every box: an earlier path at x=1002 ran straight through Turn context. -->
+        <path d="M 1095 443 L 1130 443 L 1130 8 L 100 8 L 100 56" fill="none" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="5,5" marker-end="url(#arrow-rose)"/>
+        <text x="545" y="32" fill="#fb7185" font-size="8" text-anchor="middle">the next turn &#8212; learning changes behaviour, not just stored text</text>
+
+        <!-- ============ COMPONENTS ============ -->
+
+        <!-- Write path -->
+        <rect x="25" y="60" width="155" height="62" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="102" y="86" fill="white" font-size="11" font-weight="600" text-anchor="middle">Conversation</text>
+        <text x="102" y="102" fill="#94a3b8" font-size="9" text-anchor="middle">user turn</text>
+
+        <rect x="213" y="60" width="197" height="62" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="311" y="82" fill="white" font-size="11" font-weight="600" text-anchor="middle">Encoding gate</text>
+        <text x="311" y="98" fill="#94a3b8" font-size="8" text-anchor="middle">salience &#8805; 0.40</text>
+        <text x="311" y="111" fill="#94a3b8" font-size="8" text-anchor="middle">restatement &#8594; corroboration</text>
+
+        <!-- Vault -->
+        <rect x="438" y="55" width="252" height="117" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="564" y="80" fill="white" font-size="12" font-weight="700" text-anchor="middle">VAULT</text>
+        <text x="564" y="99" fill="#94a3b8" font-size="8" text-anchor="middle">canonical Markdown + frontmatter</text>
+        <text x="564" y="118" fill="#94a3b8" font-size="9" text-anchor="middle">concept/ &#183; belief/ &#183; procedure/</text>
+        <text x="564" y="135" fill="#94a3b8" font-size="9" text-anchor="middle">user/ &#183; project/ &#183; daily/</text>
+        <text x="564" y="157" fill="#a78bfa" font-size="8" text-anchor="middle">single source of truth &#8212; no second DB</text>
+
+        <!-- Read path -->
+        <rect x="728" y="45" width="177" height="72" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="816" y="70" fill="white" font-size="11" font-weight="600" text-anchor="middle">Recall</text>
+        <text x="816" y="88" fill="#94a3b8" font-size="8" text-anchor="middle">cue + spreading activation</text>
+        <text x="816" y="102" fill="#94a3b8" font-size="8" text-anchor="middle">deep = opt-in</text>
+
+        <rect x="923" y="45" width="172" height="72" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="1009" y="70" fill="white" font-size="11" font-weight="600" text-anchor="middle">Turn context</text>
+        <text x="1009" y="88" fill="#94a3b8" font-size="8" text-anchor="middle">recalled memories +</text>
+        <text x="1009" y="102" fill="#94a3b8" font-size="8" text-anchor="middle">procedure guidance</text>
+
+        <!-- Learning -->
+        <rect x="120" y="250" width="230" height="88" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="235" y="274" fill="white" font-size="11" font-weight="600" text-anchor="middle">Outcomes recorded</text>
+        <text x="235" y="292" fill="#94a3b8" font-size="8" text-anchor="middle">success / failure +</text>
+        <text x="235" y="306" fill="#94a3b8" font-size="8" text-anchor="middle">failure mode</text>
+        <text x="235" y="323" fill="#fbbf24" font-size="7" text-anchor="middle">explicit &#8212; never inferred</text>
+
+        <rect x="420" y="250" width="250" height="88" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="545" y="274" fill="white" font-size="11" font-weight="600" text-anchor="middle">Reflection</text>
+        <text x="545" y="292" fill="#94a3b8" font-size="8" text-anchor="middle">background &#183; every 6 turns</text>
+        <text x="545" y="306" fill="#94a3b8" font-size="8" text-anchor="middle">deterministic, evidence-citing</text>
+        <text x="545" y="323" fill="#94a3b8" font-size="8" text-anchor="middle">goal derived from the turn</text>
+
+        <rect x="90" y="400" width="230" height="86" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="205" y="424" fill="white" font-size="11" font-weight="600" text-anchor="middle">Beliefs</text>
+        <text x="205" y="442" fill="#94a3b8" font-size="8" text-anchor="middle">evidence-weighted confidence</text>
+        <text x="205" y="456" fill="#94a3b8" font-size="8" text-anchor="middle">counter-evidence lowers it</text>
+        <text x="205" y="473" fill="#a78bfa" font-size="7" text-anchor="middle">superseded, never deleted</text>
+
+        <rect x="360" y="400" width="250" height="86" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="485" y="424" fill="white" font-size="11" font-weight="600" text-anchor="middle">Procedures</text>
+        <text x="485" y="442" fill="#94a3b8" font-size="8" text-anchor="middle">one node per goal</text>
+        <text x="485" y="456" fill="#94a3b8" font-size="8" text-anchor="middle">steps / failure modes</text>
+        <text x="485" y="473" fill="#fbbf24" font-size="7" text-anchor="middle">status: situational &#183; avoid</text>
+
+        <rect x="650" y="400" width="212" height="86" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="756" y="424" fill="white" font-size="11" font-weight="600" text-anchor="middle">Guidance block</text>
+        <text x="756" y="442" fill="#94a3b8" font-size="8" text-anchor="middle">worked: blue/green swap</text>
+        <text x="756" y="456" fill="#94a3b8" font-size="8" text-anchor="middle">avoid: in-place restart</text>
+        <text x="756" y="473" fill="#94a3b8" font-size="8" text-anchor="middle">why: 502s during restart</text>
+
+        <rect x="910" y="400" width="185" height="86" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="1002" y="424" fill="white" font-size="11" font-weight="600" text-anchor="middle">Agent</text>
+        <text x="1002" y="442" fill="#94a3b8" font-size="8" text-anchor="middle">answers with the</text>
+        <text x="1002" y="456" fill="#94a3b8" font-size="8" text-anchor="middle">learned procedure</text>
+
+        <!-- Legend -->
+        <text x="880" y="566" fill="white" font-size="10" font-weight="600">Legend</text>
+
+        <rect x="880" y="578" width="16" height="10" rx="2" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="904" y="586" fill="#94a3b8" font-size="8">Read path</text>
+
+        <rect x="880" y="594" width="16" height="10" rx="2" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="904" y="602" fill="#94a3b8" font-size="8">Write / learning pass</text>
+
+        <rect x="880" y="610" width="16" height="10" rx="2" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="904" y="618" fill="#94a3b8" font-size="8">Canonical store / belief</text>
+
+        <rect x="880" y="626" width="16" height="10" rx="2" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="904" y="634" fill="#94a3b8" font-size="8">Outcome-derived knowledge</text>
+
+        <line x1="880" y1="650" x2="896" y2="650" stroke="#fb7185" stroke-width="1" stroke-dasharray="3,3"/>
+        <text x="904" y="653" fill="#94a3b8" font-size="8">Behaviour-changing loop</text>
+      </svg>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot violet"></div>
+          <h3>The vault is the only truth</h3>
+        </div>
+        <ul>
+          <li>&#8226; Plain Markdown + YAML frontmatter</li>
+          <li>&#8226; Zero third-party dependencies</li>
+          <li>&#8226; SQLite is an accelerator, never the authority</li>
+          <li>&#8226; A backup is a <code>tar</code> of one directory</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot emerald"></div>
+          <h3>Learning off the reply path</h3>
+        </div>
+        <ul>
+          <li>&#8226; Encoding and reflection run in a background worker</li>
+          <li>&#8226; Reflection is deterministic and evidence-citing</li>
+          <li>&#8226; No model call in the memory core</li>
+          <li>&#8226; <code>reflect_enabled</code> freezes learning, keeps memory</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot amber"></div>
+          <h3>Judged by outcomes, not assertions</h3>
+        </div>
+        <ul>
+          <li>&#8226; A restatement is evidence, not a second memory</li>
+          <li>&#8226; Brains form on &#8805;2 independent assertions</li>
+          <li>&#8226; Contradiction lowers confidence, deletes nothing</li>
+          <li>&#8226; A learned procedure changes the next turn</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="footer">
+      PULSE Brain &#8226; Anxious Research &#8226; verified end to end at 565 tests, live harness, and 500&#8211;5,000 node benchmark
+    </p>
+  </div>
+</body>
+</html>

@@ -1,7 +1,9 @@
 # PULSE Brain evolution — research, decisions, and what was actually built
 
 This document is the deliverable for the *"MASTER ENGINEERING PROMPT — PULSE BRAIN EVOLUTION"*
-mandate. It is deliberately written after the code, not before it: every claim below is marked with
+mandate. The architecture diagram is `docs/brain-architecture.html` (open it in a browser); the
+operational companion — backup, restore, recovery, migration and measured scale — is
+`docs/brain-operations.md`. It is deliberately written after the code, not before it: every claim below is marked with
 how it was verified, and anything not verified says so.
 
 **Legend used throughout:** `Implemented` · `Unit-tested` · `Integration-tested` ·
@@ -398,3 +400,4 @@ $PY ~/.pulse/cache/scratch/verify_backup_restore.py
 | `tests/test_brain_{beliefs,outcomes,reflection,cognition,evaluation}.py` | **new** — 67 tests across the five files (16+14+15+5+17) |
 | `tests/test_brain_live_loop.py` | **new** — 15 tests locking G10–G16 against the production entry points |
 | `docs/brain-operations.md` | **new** — backup / restore / recovery / migration, with the measured scale table |
+| `docs/brain-architecture.html` | **new** — the architecture diagram (self-contained; verified for box overlap, out-of-bounds and arrow/box crossings, and that every box is labelled) |
