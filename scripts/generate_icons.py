@@ -333,9 +333,16 @@ def drag_bottom_nodes(path: ET.Element, *, cutoff: float, band: float, distance:
         if b != 0 or c != 0 or y_scale <= 0:
             raise ValueError("bottom node edits require an upright axis-aligned matrix")
 
+    # girl_path() returns either a <path> (vector art) or an <image> (a PNG-based source).
+    # An image carries no path data, so it has no bottom nodes to drag — skip it instead of
+    # crashing the whole icon build on a KeyError.
+    data = path.attrib.get("d")
+    if not data:
+        return
+
     # The brand exports use explicit absolute M/L/C commands. Reject other
     # commands rather than silently corrupting relative coordinates or arcs.
-    tokens = re.findall(r"[A-Za-z]|[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:[eE][-+]?\d+)?", path.attrib["d"])
+    tokens = re.findall(r"[A-Za-z]|[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:[eE][-+]?\d+)?", data)
     counts = {"M": 2, "L": 2, "C": 6, "z": 0, "Z": 0}
     index = 0
     while index < len(tokens):
