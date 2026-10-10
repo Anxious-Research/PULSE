@@ -292,10 +292,20 @@ learning.
 | Desktop `src/app/settings` + `src/app/brain-graph` (vitest) | **57 files / 446 tests passed** |
 | `tsc -p tsconfig.json --noEmit` | 11 errors, **all pre-existing** in `src/store/brain-events.ts`; **0 new** |
 | Production build (`apps/desktop` → `node scripts/build.mjs`) | clean; fresh artifacts in `dist/` |
+| Distributable agent payload (`npm run payload`) | stages the Brain **byte-identically**: `agent/brain/vault.py`, `agent/brain/encoding.py`, `docs/brain-evolution.md` and `docs/brain-operations.md` all md5-match the repo in `build/agent-payload/pulse-agent/` (`tests/` is excluded from the payload by design) |
 
 Interpreter note: the repo requires Python ≥3.10 (`str | object` annotations); the system `python3`
 is 3.9, so the suite runs under the scratch interpreter at
 `~/.pulse/cache/scratch/brainenv/bin/python` (3.14.7).
+
+**Build blocker found and fixed while producing the payload.** `npm run payload` failed before it
+reached the agent at all, in the icon generator. `scripts/generate_icons.py`'s `girl_path()`
+deliberately returns *either* a `<path>` (vector art) *or* an `<image>` (a PNG-based source), but
+`drag_bottom_nodes()` read `path.attrib["d"]` unconditionally, so an image-based source raised
+`KeyError: 'd'` and killed the build. An `<image>` has no path data and therefore no bottom nodes to
+drag, so it now returns early. This is unrelated to the Brain work (its own commit) but it blocked
+the packaged product, which is why it is recorded here. `stage.py` also requires `PULSE_PYTHON` to be
+set to a runtime interpreter that has Pillow and `resvg-py`.
 
 ### The fifteen mandated scenarios — all `Benchmark-verified`
 
