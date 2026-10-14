@@ -89,7 +89,7 @@ def _vault_lock(vault_dir: Path, timeout: float = LOCK_TIMEOUT_SECONDS) -> Itera
     with _process_lock(lock_path):
         handle = None
         try:
-            handle = open(lock_path, "a+")
+            handle = open(lock_path, "a+", encoding="utf-8")
         except OSError:
             handle = None
         if handle is not None:
