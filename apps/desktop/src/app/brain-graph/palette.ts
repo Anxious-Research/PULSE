@@ -84,6 +84,13 @@ export const CATEGORY_COLORS: Record<string, { base: Rgb; glow: Rgb; highlight: 
     glow: { r: 65, g: 245, b: 175 },
     highlight: { r: 205, g: 255, b: 235 }
   },
+  // Prospect / Intention (Prospective Memory) — warm gold/amber, distinct from concept's
+  // golden orange so the pending/due nature is immediately readable.
+  prospect: {
+    base: { r: 255, g: 195, b: 0 },
+    glow: { r: 255, g: 215, b: 40 },
+    highlight: { r: 255, g: 245, b: 160 }
+  },
   // Violet / Rose (Beliefs & Principles)
   belief: {
     base: { r: 240, g: 70, b: 170 },

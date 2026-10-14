@@ -1044,6 +1044,11 @@ brain:
   prefix_enabled: false
   prefix_max_chars: 6000    # ~1.5k tokens
 
+  # Prospective memory (§3.6): due/cue-triggered intentions surface on their own
+  # without word overlap with the current question. High-precision detection only
+  # ("remember to", "remind me to"); never converts casual mentions to commitments.
+  prospective_enabled: true
+
 # =============================================================================
 # Session Continuity (Messaging Platforms)
 # =============================================================================

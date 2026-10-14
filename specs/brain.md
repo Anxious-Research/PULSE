@@ -131,6 +131,63 @@ If new information contradicts an existing node, the old node is **superseded**,
 the user always supersede. This is the mechanism that fixes "galat direction me knowledge store
 kar raha hai".
 
+### 3.6 Prospective memory — intentions for the future
+*Added v4.*
+
+Episodic memory recalls what happened; procedural memory recalls how to do something;
+prospective memory recalls *that something needs to be done*. A commitment stated once must
+surface when due — even when the current question shares no words with it. Without this, a
+"remind me to X on Friday" is just a note that can only be found by asking for it again in
+the same words.
+
+**Node category: `prospect/`** (`NodeCategory.PROSPECT`). Lifecycle owned by code:
+
+```
+captured  →  active  →  completed | cancelled | expired
+```
+
+- `captured`: an explicit commitment was detected; details may still be unresolved.
+- `active`: has a resolved trigger (due time or cue phrase).
+- `completed`, `cancelled`: terminal — explicit operations only, never inferred from inactivity.
+  History is preserved; the node is never deleted.
+- `expired`: closed by policy, never by silent decay.
+
+**Two trigger kinds** (Einstein & McDaniel 2005; PM-Bench 2026):
+
+- `time`: a due timestamp. Due/overdue intentions surface on their own, regardless of query wording.
+- `event`: a cue phrase. Surfaced when the current message token-overlaps the cue.
+
+A natural-language condition with no parseable time ("when CI is green") is stored as an
+unresolved `condition` trigger — visible in the prospect list, surfaced only by cue match.
+
+**Capture path**: `brain_encode_turn` calls `prospects_mod.detect_intention()` on user text.
+High-precision deterministic patterns only: `remember to X`, `remind me to X`. Questions and
+casual mentions are not commitments (§10: preserve the unresolved state). Trigger type derives
+from the capture call signature (`due=` or `cue=`).
+
+**Recall path**: `brain_turn_context` calls `guidance_block()` — the same architectural
+pattern as `_procedure_guidance_block`. Due/overdue items surface unconditionally; cue items
+surface on token overlap. Bounded to 3 lines; failure is silent.
+
+**Integration**:
+- `agent/brain/prospects.py`: pure stdlib module; 0 third-party imports.
+- `agent/brain/session.py`: `_prospective_guidance_block()` + wired in `brain_turn_context`
+  and `brain_encode_turn`.
+- `agent/brain/models.py`: `NodeCategory.PROSPECT = "prospect"`.
+- `agent/brain/inspect.py`: `_prospect_detail()` for the evidence inspector.
+- `agent/brain/cleanup.py`: prospect nodes are never junk.
+- `apps/desktop/src/app/brain-graph/palette.ts`: `prospect` gold color.
+- `cli-config.yaml.example`: `prospective_enabled` toggle.
+- `tests/test_brain_prospects.py`: 21 tests covering capture, lifecycle, triggers, detection,
+  turn wiring, and restart persistence.
+
+**Not implemented** (v4 scope):
+- Scheduler integration for autonomous nudge delivery (requires cron alignment).
+- Project-level intention grouping.
+- Automatic cancellation on completion of a parent goal.
+
+---
+
 ---
 
 ## 4. Single source of truth (storage)

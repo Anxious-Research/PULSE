@@ -281,7 +281,8 @@ learning.
 
 | Suite | Result |
 |---|---|
-| Full brain + memory suite | **571 passed** (485 at the start of this work) |
+| Full brain + memory suite | **623 passed** (571 at previous mandate; 485 at first mandate start) |
+| `tests/test_brain_prospects.py` (new v4) | 21 tests — capture, lifecycle, time/event triggers, detection precision, turn wiring, restart persistence |
 | `tests/test_brain_beliefs.py` (new) | 16 tests |
 | `tests/test_brain_outcomes.py` (new) | 14 tests |
 | `tests/test_brain_reflection.py` (new) | 15 tests |
@@ -406,6 +407,12 @@ up as one specific number dropping.
    reachable, but nothing in the conversation loop currently infers "this task succeeded/failed"
    from a turn — a domain judgement that should not be guessed at. This is the honest boundary of
    Phase D.
+7. **Prospective memory capture is intentionally narrow.** Only "remind me to X" / "remember to X"
+   are detected (high precision, no LLM call); anything subtler ("I ought to get to X this week")
+   is not captured, and times of day, "next month", or relative weekdays without a day name are
+   not parsed. Undetected phrasings fall through to ordinary episodic encoding — nothing is
+   lost, it is just not actionable. Timezone is local time; no per-user timezone yet. Scheduler
+   integration (proactive nudges without a user turn) is explicitly out of scope for v4.
 
 ---
 
@@ -444,20 +451,23 @@ $PY ~/.pulse/cache/scratch/verify_backup_restore.py
 
 | File | What changed |
 |---|---|
-| `agent/brain/beliefs.py` | **new** — belief/observation layer: evidence-grounded confidence, revision history, counter-evidence, supersession |
-| `agent/brain/outcomes.py` | **new** — procedural memory: outcome recording, lesson derivation, reliability status, retrieval priority |
-| `agent/brain/reflection.py` | **new** — bounded evidence-based reflection with conflict detection |
-| `agent/brain/session.py` | `brain_reflect()` production entry point; wiring into the per-turn background worker; `reflect_enabled`/`reflect_every` settings; `_procedure_guidance_block()` so a learned procedure reaches the turn context (G14) |
+| `agent/brain/beliefs.py` | **new (v3)** — belief/observation layer: evidence-grounded confidence, revision history, counter-evidence, supersession |
+| `agent/brain/outcomes.py` | **new (v3)** — procedural memory: outcome recording, lesson derivation, reliability status, retrieval priority |
+| `agent/brain/reflection.py` | **new (v3)** — bounded evidence-based reflection with conflict detection |
+| `agent/brain/prospects.py` | **new (v4)** — prospective memory: typed intention store with time/event triggers, explicit lifecycle, guidance injection, and deterministic high-precision capture |
+| `agent/brain/session.py` | `brain_reflect()` production entry point; wiring into the per-turn background worker; `reflect_enabled`/`reflect_every`/`prospective_enabled` settings; `_procedure_guidance_block()` + `_prospective_guidance_block()` so learned procedures and due intentions reach the turn context; intention capture in `brain_encode_turn` |
 | `agent/brain/encoding.py` | `_DECLARATIVE_VERBS` broadened and `_CODED_NAME_HEADS` added (G10, G11); restatements recognised before the salience gate and recorded as corroboration (G12, G13) |
-| `agent/brain/vault.py` | `record_corroboration()` / `corroborations_of()` — a restatement is evidence about an existing memory, not a new one (G12); `revise_attribute()` now encodes its history and `corrections_of()` reads it back, including legacy records (G17) |
-| `agent/brain/reflection.py` | `_goal_from_question()` goal derivation (G14); `_evidence_refs()` counts independent assertions, not nodes |
+| `agent/brain/models.py` | `NodeCategory.PROSPECT = "prospect"` (v4) |
+| `agent/brain/inspect.py` | `_prospect_detail()` for the evidence inspector (v4) |
+| `agent/brain/cleanup.py` | prospect nodes excluded from junk detection (v4) |
+| `agent/brain/vault.py` | `record_corroboration()` / `corroborations_of()` (G12); `revise_attribute()` history (G17); `ensure_vault_structure()` auto-creates `prospect/` via `NodeCategory.all_values()` |
 | `agent/brain/recall.py` | opt-in deep/historical retrieval; `RecallHit.historical` |
-| `agent/brain/relations.py` | six new relationship types |
-| `agent/brain/models.py` | `procedure` node category |
-| `agent/brain/parser.py` | `encode_record`/`decode_record` — records that survive the frontmatter format |
-| `pulse_cli/config_defaults.py` | `brain.reflect_enabled`, `brain.reflect_every` |
-| `apps/desktop/src/app/settings/constants.ts` | labels + descriptions + curated keys for the new settings |
-| `tests/test_brain_{beliefs,outcomes,reflection,cognition,evaluation}.py` | **new** — 67 tests across the five files (16+14+15+5+17) |
-| `tests/test_brain_live_loop.py` | **new** — 19 tests locking G10–G17 against the production entry points |
-| `docs/brain-operations.md` | **new** — backup / restore / recovery / migration, with the measured scale table |
-| `docs/brain-architecture.html` | **new** — the architecture diagram (self-contained; verified for box overlap, out-of-bounds and arrow/box crossings, and that every box is labelled) |
+| `agent/brain/relations.py` | six new relationship types; `merge_into()` accepts bare `List[Relation]` (used by prospects) |
+| `agent/brain/parser.py` | `encode_record`/`decode_record` — records survive the frontmatter format; `normalize_node_id` re-exported |
+| `agent/brain/__init__.py` | lazy re-exports for `Intention`, `capture_intention`, `complete_intention`, `cancel_intention`, `due_intentions`, `cue_intentions` |
+| `pulse_cli/config_defaults.py` | `brain.reflect_enabled`, `brain.reflect_every`; `brain.prospective_enabled` (future) |
+| `apps/desktop/src/app/brain-graph/palette.ts` | `prospect` gold color entry |
+| `cli-config.yaml.example` | `brain.prospective_enabled: true` documented |
+| `specs/brain.md` | §3.6 prospective memory specification added |
+| `docs/brain-evolution.md` | limitation #7 added; test count updated; change summary updated |
+| `tests/test_brain_prospects.py` | **new** — 21 tests: capture, lifecycle (complete/cancel/reopen), time/event/condition triggers, detection precision, turn wiring, restart persistence |

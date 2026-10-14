@@ -50,7 +50,9 @@ def is_junk_node(node_id: str, content: str, frontmatter: Any) -> tuple[bool, st
         return False, "already non-active"
     
     # Self/user category → never junk (core identity/preferences)
-    if frontmatter.category in ("self", "user"):
+    # Prospect category → never junk (has an explicit completion/cancellation lifecycle; junk
+    # logic should not accidentally expire a due intention based on short content length).
+    if frontmatter.category in ("self", "user", "prospect"):
         return False, "core category"
     
     # High access count → valuable regardless of content

@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional
 from .beliefs import Belief, belief_status, BELIEF_BASE, BELIEF_CEILING, EVIDENCE_GAIN, CONFLICT_PENALTY
 from .models import NodeCategory, NodeStatus
 from .outcomes import Procedure, PROCEDURE_CATEGORY
+from .prospects import PROSPECT_CATEGORY, Intention, _intention_from_node
 
 
 def _label_of(vault: Any, node_id: str) -> str:
@@ -188,6 +189,30 @@ def _procedure_detail(vault: Any, node: Any) -> Dict[str, Any]:
     return detail
 
 
+def _prospect_detail(vault: Any, node: Any) -> Dict[str, Any]:
+    """Full provenance for a prospective-memory (prospect/) node."""
+    detail = _common(vault, node)
+    item = _intention_from_node(node)
+    if item is None:
+        detail["kind"] = "prospect"
+        return detail
+    detail["kind"] = "prospect"
+    detail["prospect_status"] = item.status
+    detail["trigger_kind"] = item.trigger_kind
+    detail["due"] = item.due
+    detail["cue"] = item.cue
+    detail["source_event"] = item.source_event
+    detail["completed_at"] = item.completed_at
+    detail["completion_evidence"] = item.completion_evidence
+    detail["cancel_reason"] = item.cancel_reason
+    detail["is_open"] = item.is_open
+    if item.due:
+        detail["due_state"] = item.due_state()
+    # Lifecycle history
+    detail["history"] = list(item.history)
+    return detail
+
+
 def _memory_detail(vault: Any, node: Any) -> Dict[str, Any]:
     detail = _common(vault, node)
     detail["kind"] = "memory"
@@ -199,7 +224,8 @@ def inspect_node(vault: Any, node_id: str) -> Dict[str, Any]:
 
     Dispatches on category: beliefs carry supporting/counter evidence + confidence justification +
     revision history; procedures carry outcomes, applicability conditions and known limitations;
-    everything else is an ordinary memory with its corroborations, corrections and relationships.
+    prospects carry trigger, due state and lifecycle history; everything else is an ordinary
+    memory with its corroborations, corrections and relationships.
     """
     if vault is None or not str(node_id or "").strip():
         return {"ok": False, "message": "no node id"}
@@ -215,4 +241,6 @@ def inspect_node(vault: Any, node_id: str) -> Dict[str, Any]:
         return _belief_detail(vault, node)
     if category == PROCEDURE_CATEGORY:
         return _procedure_detail(vault, node)
+    if category == PROSPECT_CATEGORY:
+        return _prospect_detail(vault, node)
     return _memory_detail(vault, node)

@@ -81,6 +81,13 @@ __all__ = [
     "find_promotion_candidates",
     "merge_near_duplicates",
     "relink_mentions",
+    # prospective memory
+    "Intention",
+    "capture_intention",
+    "complete_intention",
+    "cancel_intention",
+    "due_intentions",
+    "cue_intentions",
     # memory store adapter
     "BrainStore",
 ]
@@ -131,6 +138,12 @@ _LAZY: dict = {
     "find_promotion_candidates": ("consolidate", "find_promotion_candidates"),
     "merge_near_duplicates": ("consolidate", "merge_near_duplicates"),
     "relink_mentions": ("consolidate", "relink_mentions"),
+    "due_intentions": ("prospects", "due_intentions"),
+    "cue_intentions": ("prospects", "cue_intentions"),
+    "capture_intention": ("prospects", "capture_intention"),
+    "complete_intention": ("prospects", "complete_intention"),
+    "cancel_intention": ("prospects", "cancel_intention"),
+    "Intention": ("prospects", "Intention"),
 }
 
 

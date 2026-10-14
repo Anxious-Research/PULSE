@@ -31,6 +31,7 @@ from . import consolidate as consolidate_mod
 from . import encoding as encoding_mod
 from . import outcomes as outcome_mod
 from . import prefix as prefix_mod
+from . import prospects as prospects_mod
 from . import reflection as reflection_mod
 from .index import BrainIndex
 from .recall import (
@@ -135,6 +136,9 @@ class BrainSettings:
     # recall and from encoding so each can be turned off independently.
     reflect_enabled: bool = True
     reflect_every: int = DEFAULT_REFLECT_EVERY
+    # Prospective memory (§10): due/cue-triggered intentions surface on their own, even when
+    # they share no words with the current question. The rollback lever, separate from recall.
+    prospective_enabled: bool = True
 
     @classmethod
     def from_config(cls, config: Optional[Dict[str, Any]] = None) -> "BrainSettings":
@@ -162,6 +166,7 @@ class BrainSettings:
             reflect_every=_positive_int(
                 section.get("reflect_every"), DEFAULT_REFLECT_EVERY, minimum=1, maximum=1000
             ),
+            prospective_enabled=_truthy(section.get("prospective_enabled"), default=True),
         )
 
 
@@ -330,6 +335,22 @@ def _procedure_guidance_block(vault: Any, query: str) -> str:
     return "\n".join(lines)
 
 
+def _prospective_guidance_block(vault: Any, query: str, now: float) -> str:
+    """Rendered prospective-memory lines for a turn, or ``""`` (§10).
+
+    Mirrors the procedure block: ordinary recall ranks by lexical overlap with the current
+    question, so a commitment that is *due* but shares no words with the current query would
+    never surface. Einstein & McDaniel: prospective memory recall is cue-driven — the due
+    time IS itself a cue. This block surfaces time-triggered items regardless of wording,
+    and event-cue items on token overlap with the query.
+    """
+    try:
+        return prospects_mod.guidance_block(vault, query, now=now, limit=3)
+    except Exception:
+        logger.debug("prospective guidance failed", exc_info=True)
+        return ""
+
+
 def brain_turn_context(agent: Any, user_message: Any, *, settings: Optional[BrainSettings] = None) -> str:
     """Layer-2 recall for this turn: the rendered memory block, or ``""``.
 
@@ -395,9 +416,16 @@ def brain_turn_context(agent: Any, user_message: Any, *, settings: Optional[Brai
     # the same goal — including when ordinary cue recall found nothing worth injecting. Without
     # this the outcome→strategy loop stores what worked and never changes what the agent does.
     guidance = _procedure_guidance_block(vault, query)
-    if block and guidance:
-        return f"{block}\n{guidance}"
-    return block or guidance
+    # §10: a commitment that is due must surface on its own — even when it shares no words with
+    # the current question. This is the time-trigger half of prospective memory.
+    prospect_block = ""
+    if settings.prospective_enabled:
+        prospect_block = _prospective_guidance_block(vault, query, now=time.time())
+    if block and guidance and prospect_block:
+        return f"{block}\n{guidance}\n{prospect_block}"
+    if block and (guidance or prospect_block):
+        return f"{block}\n{guidance or prospect_block}"
+    return block or guidance or prospect_block
 
 
 def brain_stable_prefix(agent: Any, *, settings: Optional[BrainSettings] = None) -> str:
@@ -552,6 +580,26 @@ def brain_encode_turn(
         return {"encode": "failed"}
     if not dry_run:
         restamp_index_cache(agent, vault)
+
+    # §10: prospective memory — detect and capture explicit commitments from user text.
+    # This runs at encode time (not at recall time) because the source is the user statement.
+    # Status defaults to ``captured`` for ambiguous cases; explicit markers -> ``active``.
+    # Failures are silent: a missed intention capture does not break encoding.
+    if settings.prospective_enabled and not dry_run and text:
+        try:
+            detected = prospects_mod.detect_intention(text)
+            if detected:
+                prospects_mod.capture_intention(
+                    vault,
+                    detected["intention"],
+                    due=detected.get("due"),
+                    cue=detected.get("cue") or "",
+                    source_turn=session_id or "",
+                    now=time.time(),
+                )
+        except Exception:
+            logger.debug("prospective capture failed", exc_info=True)
+
     return report
 
 

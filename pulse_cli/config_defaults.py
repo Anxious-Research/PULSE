@@ -1348,6 +1348,10 @@ DEFAULT_CONFIG = {
         "reflect_enabled": True,
         # Reflect at most once every N encoded turns (off the reply path). Clamped 1..1000.
         "reflect_every": 6,
+        # Prospective memory (§3.6): due/cue-triggered intentions surface on their own, even when
+        # they share no words with the current question. Detection is high-precision deterministic
+        # ("remember to", "remind me to") — never converts casual mentions into commitments.
+        "prospective_enabled": True,
     },
     # Subagent delegation — override the provider:model used by delegate_task so children run on a
     # cheaper/faster model. Uses the same runtime provider resolution as CLI/gateway startup, so

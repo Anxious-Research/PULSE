@@ -34,6 +34,11 @@ class NodeCategory(str, Enum):
     #: layer because a procedure is *actionable knowledge* ("when X, do Y"), not a fact and not a
     #: position: it is judged by whether it worked, which is what its outcome record carries.
     PROCEDURE = "procedure"
+    #: Prospective memory — an intention about the future ("remind me to X on Friday"), with a
+    #: due time or cue trigger and a lifecycle of its own. Actionable like a procedure but
+    #: judged by *whether it gets done*, not by whether it worked; kept apart so a commitment
+    #: never reads as a fact or an episode.
+    PROSPECT = "prospect"
 
     @classmethod
     def all_values(cls) -> List[str]:
