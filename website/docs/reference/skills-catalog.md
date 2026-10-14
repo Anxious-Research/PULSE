@@ -28,8 +28,8 @@ If a skill is missing from this list but present in the repo, the catalog is reg
 | [`claude-code`](../user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-claude-code.md) | Delegate coding to Claude Code CLI (features, PRs). | `autonomous-ai-agents/claude-code` |
 | [`codex`](../user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-codex.md) | Delegate coding to OpenAI Codex CLI (features, PRs). | `autonomous-ai-agents/codex` |
 | [`computer-use`](../user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-computer-use.md) | Drive the desktop background-first; escalate on signal. | `autonomous-ai-agents/computer-use` |
-| [`pulse-agent`](../user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-pulse-agent.md) | Use, configure, theme, extend, and orchestrate PULSE Agent. | `autonomous-ai-agents/pulse-agent` |
 | [`opencode`](../user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-opencode.md) | Delegate coding to OpenCode CLI (features, PR review). | `autonomous-ai-agents/opencode` |
+| [`pulse-agent`](../user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-pulse-agent.md) | Use, configure, theme, extend, and orchestrate PULSE Agent. | `autonomous-ai-agents/pulse-agent` |
 
 ## creative
 
@@ -114,9 +114,9 @@ If a skill is missing from this list but present in the repo, the catalog is reg
 | [`codebase-inspection`](../user-guide/skills/bundled/software-development/software-development-codebase-inspection.md) | Inspect codebases w/ pygount: LOC, languages, ratios. | `software-development/codebase-inspection` |
 | [`dogfood`](../user-guide/skills/bundled/software-development/software-development-dogfood.md) | Exploratory QA of web apps: find bugs, evidence, reports. | `software-development/dogfood` |
 | [`github`](../user-guide/skills/bundled/software-development/software-development-github.md) | GitHub via gh CLI: PRs, issues, reviews, repos, auth. | `software-development/github` |
-| [`pulse-agent-skill-authoring`](../user-guide/skills/bundled/software-development/software-development-pulse-agent-skill-authoring.md) | Author in-repo SKILL.md files: frontmatter and structure. | `software-development/pulse-agent-skill-authoring` |
 | [`inspecting-pulse-desktop-dom`](../user-guide/skills/bundled/software-development/software-development-inspecting-pulse-desktop-dom.md) | Read the live PULSE desktop DOM/CSS over CDP. | `software-development/inspecting-pulse-desktop-dom` |
 | [`node-inspect-debugger`](../user-guide/skills/bundled/software-development/software-development-node-inspect-debugger.md) | Debug Node.js via --inspect + Chrome DevTools Protocol CLI. | `software-development/node-inspect-debugger` |
+| [`pulse-agent-skill-authoring`](../user-guide/skills/bundled/software-development/software-development-pulse-agent-skill-authoring.md) | Author in-repo SKILL.md files: frontmatter and structure. | `software-development/pulse-agent-skill-authoring` |
 | [`python-debugpy`](../user-guide/skills/bundled/software-development/software-development-python-debugpy.md) | Debug Python: pdb REPL + debugpy remote (DAP). | `software-development/python-debugpy` |
 | [`requesting-code-review`](../user-guide/skills/bundled/software-development/software-development-requesting-code-review.md) | Pre-commit review: security scan, quality gates, auto-fix. | `software-development/requesting-code-review` |
 | [`simplify-code`](../user-guide/skills/bundled/software-development/software-development-simplify-code.md) | Parallel 4-agent cleanup of recent code changes. | `software-development/simplify-code` |

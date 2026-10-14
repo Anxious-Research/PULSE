@@ -1,12 +1,12 @@
 ---
-title: "PULSE S6 Container Supervision — Modify or debug s6 services in the PULSE Docker image"
-sidebar_label: "PULSE S6 Container Supervision"
+title: "Pulse S6 Container Supervision — Modify or debug s6 services in the PULSE Docker image"
+sidebar_label: "Pulse S6 Container Supervision"
 description: "Modify or debug s6 services in the PULSE Docker image"
 ---
 
 {/* This page is auto-generated from the skill's SKILL.md by website/scripts/generate-skill-docs.py. Edit the source SKILL.md, not this page. */}
 
-# PULSE S6 Container Supervision
+# Pulse S6 Container Supervision
 
 Modify or debug s6 services in the PULSE Docker image.
 

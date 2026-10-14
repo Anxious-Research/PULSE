@@ -1,12 +1,12 @@
 ---
-title: "PULSE Agent — Use, configure, theme, extend, and orchestrate PULSE Agent"
-sidebar_label: "PULSE Agent"
+title: "Pulse Agent — Use, configure, theme, extend, and orchestrate PULSE Agent"
+sidebar_label: "Pulse Agent"
 description: "Use, configure, theme, extend, and orchestrate PULSE Agent"
 ---
 
 {/* This page is auto-generated from the skill's SKILL.md by website/scripts/generate-skill-docs.py. Edit the source SKILL.md, not this page. */}
 
-# PULSE Agent
+# Pulse Agent
 
 Use, configure, theme, extend, and orchestrate PULSE Agent.
 
