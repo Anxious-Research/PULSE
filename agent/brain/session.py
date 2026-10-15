@@ -600,6 +600,24 @@ def brain_encode_turn(
         except Exception:
             logger.debug("prospective capture failed", exc_info=True)
 
+    # §9: user model — detect explicit preference/goal/constraint statements for the user model.
+    # Runs after the primary encoding so the user's statement is preserved as an episodic/daily
+    # note first. A missed user-model classification is silent — it costs one fact, not a crash.
+    if not dry_run:
+        try:
+            from . import user_model as user_model_mod
+            for classified in user_model_mod.extract_from_text(text):
+                user_model_mod.record_user_fact(
+                    vault,
+                    classified["content"],
+                    fact_type=classified["fact_type"],
+                    source="explicit",
+                    evidence_id=session_id or "",
+                    now=int(time.time()),
+                )
+        except Exception:
+            logger.debug("user model capture failed", exc_info=True)
+
     return report
 
 
