@@ -28,6 +28,7 @@ Everything here is stdlib-only and imports nothing from ``agent.*``.
 
 from __future__ import annotations
 
+import logging
 import re
 import time
 from dataclasses import dataclass
@@ -37,6 +38,8 @@ from .models import NodeCategory, NodeStatus
 from .parser import decode_record, encode_record, slugify, normalize_node_id
 from .relations import Relation, RelationType, Provenance, dump_relations, merge_into, parse_relations
 from .similarity import token_set
+
+logger = logging.getLogger("agent.brain.prospects")
 
 __all__ = [
     "PROSPECT_CATEGORY",
@@ -455,6 +458,10 @@ def capture_intention(
         relations=dump_relations(relations) or None,
         source_turn=source_turn, extra=extra, now=ts,
     )
+    # §6.2: a time-triggered intention must reach the scheduler, not merely sit in the
+    # vault awaiting the next user message. Fail-soft: a scheduler problem never fails
+    # the capture — the commitment is durable either way.
+    _sync_scheduler(vault, node_id, reason="captured")
     return {"ok": True, "intention_id": node_id, "created": True, "status": status,
             "trigger": trigger_kind, "due": due or None, "cue": cue or ""}
 
@@ -496,13 +503,25 @@ def _transition(vault: Any, node_id: str, *, to_status: str, now: Optional[float
 
 
 def complete_intention(vault: Any, node_id: str, *, evidence_ref: str = "", now: Optional[float] = None) -> Dict[str, Any]:
-    """Mark an intention completed. Explicit only — never inferred from inactivity."""
-    return _transition(vault, node_id, to_status=STATUS_COMPLETED, now=now, evidence=evidence_ref)
+    """Mark an intention completed. Explicit only — never inferred from inactivity.
+
+    Any pending reminder job is removed, so a completed commitment cannot fire later.
+    """
+    result = _transition(vault, node_id, to_status=STATUS_COMPLETED, now=now, evidence=evidence_ref)
+    if result.get("ok"):
+        _sync_scheduler(vault, node_id, reason="completed")
+    return result
 
 
 def cancel_intention(vault: Any, node_id: str, *, reason: str = "", now: Optional[float] = None) -> Dict[str, Any]:
-    """Cancel an intention. The record and its history are preserved, never deleted."""
-    return _transition(vault, node_id, to_status=STATUS_CANCELLED, now=now, reason=reason)
+    """Cancel an intention. The record and its history are preserved, never deleted.
+
+    Any pending reminder job is removed, so a cancelled commitment cannot fire later.
+    """
+    result = _transition(vault, node_id, to_status=STATUS_CANCELLED, now=now, reason=reason)
+    if result.get("ok"):
+        _sync_scheduler(vault, node_id, reason="cancelled")
+    return result
 
 
 def reopen_intention(vault: Any, node_id: str, *, now: Optional[float] = None) -> Dict[str, Any]:
@@ -522,6 +541,22 @@ def reopen_intention(vault: Any, node_id: str, *, now: Optional[float] = None) -
     extra["completion_evidence"] = ""
     extra["history"] = [encode_record(h) for h in history]
     vault.write_node(item.node_id, node.content, extra=extra, now=ts)
+    # Reopen may restore a schedulable trigger (e.g. a due time still recorded); reconcile
+    # the reminder job to the reopened state.
+    _sync_scheduler(vault, node_id, reason="reopened")
     return {"ok": True, "intention_id": item.node_id, "status": STATUS_CAPTURED}
+
+
+def _sync_scheduler(vault: Any, node_id: str, *, reason: str = "") -> None:
+    """Reconcile the reminder job after a lifecycle change. Fail-soft by design: a
+    scheduler problem must never corrupt a lifecycle transition that already succeeded."""
+    try:
+        from .prospect_scheduler import sync_intention_job
+
+        report = sync_intention_job(vault, node_id)
+        if report.get("action") in ("failed",):
+            logger.debug("prospect scheduler sync after %s: %s", reason, report)
+    except Exception:
+        logger.debug("prospect scheduler sync failed for %s", node_id, exc_info=True)
 
 

@@ -54,6 +54,19 @@ VERDICT_SUCCESS = "success"
 VERDICT_FAILURE = "failure"
 VERDICT_PARTIAL = "partial"
 
+# ── verification vocabulary (§7.2) ──────────────────────────────────────────
+#: A tool returning zero exit status is not proof the user's objective was achieved. The
+#: verification field records WHO established the objective outcome, kept separate from
+#: whether the individual actions succeeded.
+VERIFICATION_UNVERIFIED = "unverified"          # no independent verifier evidence (default)
+VERIFICATION_TOOL_SUCCESS = "tool-success"      # actions succeeded; objective unchecked
+VERIFICATION_VERIFIED = "verified"              # an independent verifier confirmed the objective
+VERIFICATION_USER_CONFIRMED = "user-confirmed"  # the user accepted the result
+VERIFICATIONS = (
+    VERIFICATION_UNVERIFIED, VERIFICATION_TOOL_SUCCESS,
+    VERIFICATION_VERIFIED, VERIFICATION_USER_CONFIRMED,
+)
+
 
 def _clamp(value: Any, lo: float = 0.0, hi: float = 1.0) -> float:
     try:
@@ -314,11 +327,18 @@ def record_outcome(
     now: Optional[float] = None,
     source_turn: Optional[str] = None,
     event_id: Optional[str] = None,
+    verification: str = VERIFICATION_UNVERIFIED,
 ) -> Dict[str, Any]:
     """Record the outcome of an attempt at ``goal``, folding it into the procedure that owns it.
 
-    ``verdict`` is one of ``success`` / ``failure`` / ``partial``. Returns
-    ``{ok, procedure_id, created|updated, verdict, success_rate, confidence, status,
+    ``verdict`` is one of ``success`` / ``failure`` / ``partial``. ``verification`` separates
+    *tool execution* from *objective achievement* (§7.2): ``unverified`` (default — the caller
+    has no independent verifier evidence), ``verified`` (an independent verifier confirmed the
+    objective), ``user-confirmed`` (the user accepted the result), or ``tool-success`` (tools
+    succeeded but the objective was not independently checked). A tool returning zero exit
+    status is NOT objective success, so the default must be ``unverified``.
+
+    Returns ``{ok, procedure_id, created|updated, verdict, success_rate, confidence, status,
     recommended}``.
 
     Idempotent per **event**: when ``event_id`` is supplied, re-recording the same event (a
@@ -330,6 +350,8 @@ def record_outcome(
     if not goal or vault is None:
         return {"ok": False, "reason": "empty goal or no vault"}
     verdict = verdict if verdict in (VERDICT_SUCCESS, VERDICT_FAILURE, VERDICT_PARTIAL) else VERDICT_FAILURE
+    verification = verification if verification in VERIFICATIONS else VERIFICATION_UNVERIFIED
+    verified = verification in (VERIFICATION_VERIFIED, VERIFICATION_USER_CONFIRMED)
     ts = int(now if now is not None else time.time())
     refs = sorted({str(e) for e in evidence_refs if str(e).strip()})
 
@@ -352,7 +374,7 @@ def record_outcome(
 
     outcomes = [decode_record(t) for t in (extra.get("outcomes") or [])]
     outcome = {"at": ts, "goal": goal, "action": action.strip(), "result": result.strip(),
-               "verdict": verdict, "evidence": refs}
+               "verdict": verdict, "evidence": refs, "verification": verification}
     if event_id:
         outcome["event_id"] = str(event_id)
     if failure_mode:
@@ -390,6 +412,10 @@ def record_outcome(
     })
     if verdict == VERDICT_SUCCESS:
         extra["last_verified"] = ts
+        if verified:
+            extra["verified_success_count"] = int(extra.get("verified_success_count") or 0) + 1
+    elif verified is False:
+        extra["verified_failure_count"] = extra.get("verified_failure_count", 0) + 1
 
     # Each piece of evidence is a real edge: the procedure was learned from these outcomes.
     for ev_id in refs:

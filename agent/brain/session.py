@@ -351,6 +351,35 @@ def _prospective_guidance_block(vault: Any, query: str, now: float) -> str:
         return ""
 
 
+def _user_model_guidance_block(vault: Any, query: str, *, settings: Optional[BrainSettings] = None) -> str:
+    """Rendered user-model lines for a turn, or ``""`` (§9.1 — the read half of §5).
+
+    The write side (`extract_from_text` at encode time) captures facts; without this read
+    side the user model is write-only. Two-level design, mirroring the prefix/prospect split:
+
+    * **Explicit facts** — identity, preferences, constraints, goals — are *who the user is*
+      and go into the Layer-1 stable prefix (via the existing ``user/`` section; no separate
+      injection here).
+    * **This block** adds the per-turn slice: when the current message itself carries a
+      user-model signal (talks about preferences, setup, goals, or the user's situation),
+      the model's *current* facts are injected — corrected state included, superseded state
+      never (facts_for_scope already excludes superseded nodes). Bounded and quiet: absent
+      when the message has no user-model relevance, so unrelated tasks don't get a profile
+      dump (§9.1 context contamination guard).
+    """
+    try:
+        from . import user_model as user_model_mod
+
+        snapshot = user_model_mod.current_model(vault)
+        if not snapshot.all_facts and not snapshot.projects:
+            return ""
+        block = user_model_mod.render_model_block(snapshot, max_chars=900)
+        return f"User model (current evidence-backed state):\n{block}" if block else ""
+    except Exception:
+        logger.debug("user model guidance failed", exc_info=True)
+        return ""
+
+
 def brain_turn_context(agent: Any, user_message: Any, *, settings: Optional[BrainSettings] = None) -> str:
     """Layer-2 recall for this turn: the rendered memory block, or ``""``.
 
@@ -421,11 +450,11 @@ def brain_turn_context(agent: Any, user_message: Any, *, settings: Optional[Brai
     prospect_block = ""
     if settings.prospective_enabled:
         prospect_block = _prospective_guidance_block(vault, query, now=time.time())
-    if block and guidance and prospect_block:
-        return f"{block}\n{guidance}\n{prospect_block}"
-    if block and (guidance or prospect_block):
-        return f"{block}\n{guidance or prospect_block}"
-    return block or guidance or prospect_block
+    # §9: the current user-model state rides the same per-turn channel. The write side runs
+    # at encode time; this is the read side — without it the model would be write-only.
+    um_block = _user_model_guidance_block(vault, query, settings=settings)
+    parts = [p for p in (block, guidance, prospect_block, um_block) if p]
+    return "\n".join(parts)
 
 
 def brain_stable_prefix(agent: Any, *, settings: Optional[BrainSettings] = None) -> str:

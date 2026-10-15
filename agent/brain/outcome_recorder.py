@@ -205,6 +205,33 @@ def _derive_verdict(
     return None
 
 
+def _derive_verification(
+    verdict: str,
+    tool_outcomes: Sequence[Tuple[str, bool]],
+    verified: Optional[bool],
+) -> str:
+    """Who established the *objective* outcome (§7.2) — never assumed from tool success.
+
+    ``verified=True`` from a caller who ran an independent verifier → ``verified``.
+    Otherwise an all-green turn is recorded as ``tool-success`` (actions worked; the
+    objective was not independently checked), and anything else as ``unverified``.
+    """
+    from agent.brain.outcomes import (
+        VERIFICATION_TOOL_SUCCESS,
+        VERIFICATION_UNVERIFIED,
+        VERIFICATION_VERIFIED,
+    )
+
+    if verified is True:
+        return VERIFICATION_VERIFIED
+    if verified is False:
+        return VERIFICATION_UNVERIFIED
+    errors = sum(1 for _, err in tool_outcomes if err)
+    if verdict == "success" and errors == 0:
+        return VERIFICATION_TOOL_SUCCESS
+    return VERIFICATION_UNVERIFIED
+
+
 def _action_summary(tool_outcomes: Sequence[Tuple[str, bool]]) -> str:
     """Observed action: which tools the turn used (deduped, order preserved)."""
     seen: List[str] = []
@@ -252,11 +279,14 @@ def record_turn_outcome(
     turn_id: str = "",
     messages: Any = None,
     tool_outcomes: Optional[Sequence[Tuple[str, bool]]] = None,
+    verified: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Record a completed turn's outcome as a procedure when evidence is sufficient.
 
     ``tool_outcomes`` overrides transcript extraction when supplied (tests / callers that already
-    have the signal). Returns ``{recorded, reason, ...}``. Never raises.
+    have the signal). ``verified`` carries an *independent* verifier's verdict on the user's
+    objective when one ran (None = none ran — the record is then explicitly unverified, §7.2).
+    Returns ``{recorded, reason, ...}``. Never raises.
     """
     try:
         from agent.brain.session import get_write_vault, resolve_settings
@@ -295,6 +325,8 @@ def record_turn_outcome(
         # Stable per-turn identity so a retry/replay cannot inflate the success count.
         event_id = f"{session_id or 'session'}:{turn_id}" if (session_id or turn_id) else None
 
+        verification = _derive_verification(verdict, outcomes, verified)
+
         outcome = record_outcome(
             vault,
             goal=goal,
@@ -306,14 +338,17 @@ def record_turn_outcome(
             now=time.time(),
             source_turn=session_id or None,
             event_id=event_id,
+            verification=verification,
         )
         if outcome.get("ok"):
             logger.info(
-                "brain outcome: %s %r → %s (procedure %s, %s)",
+                "brain outcome: %s %r → %s (procedure %s, %s, %s)",
                 verdict, goal[:48], outcome.get("status"), outcome.get("procedure_id"),
                 "created" if outcome.get("created") else ("duplicate" if outcome.get("duplicate") else "updated"),
+                verification,
             )
-        return {"recorded": outcome.get("ok", False), "verdict": verdict, **outcome}
+        return {"recorded": outcome.get("ok", False), "verdict": verdict,
+                "verification": verification, **outcome}
 
     except Exception:
         logger.debug("brain outcome recording failed", exc_info=True)

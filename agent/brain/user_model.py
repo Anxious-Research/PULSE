@@ -149,6 +149,64 @@ def _find_existing_fact(vault: Any, content: str, scope: str = "") -> Optional[A
     return None
 
 
+#: Markers of an explicit revision ("I now prefer X", "actually...", "no longer..."). Only a
+#: statement that reads as a correction may supersede an existing fact — an ordinary new
+#: statement never overwrites an unrelated one (§9: changed preferences must not stay current,
+#: but casual statements must not destroy unrelated facts either).
+_CORRECTION_MARKERS = (
+    "actually", "now prefer", "now like", "now use", "no longer", "instead of",
+    "changed my mind", "anymore", "from now on", "not anymore",
+)
+
+#: Content-token overlap (of the smaller set) between a correction and an existing same-type
+#: fact for the correction to count as revising it. Measured conservative: "I now prefer light
+#: mode everywhere" vs "I prefer dark mode for all interfaces" shares {prefer, mode} → 0.4 ✓;
+#: an unrelated "I prefer vim keybindings" shares only {prefer} → 0.33 and does NOT supersede.
+CORRECTION_TOPIC_OVERLAP = 0.4
+
+
+def _looks_like_correction(text: str) -> bool:
+    low = (text or "").lower()
+    return any(marker in low for marker in _CORRECTION_MARKERS)
+
+
+def _find_supersede_target(vault: Any, content: str, fact_type: str, scope: str = "") -> Optional[Any]:
+    """The best existing same-type fact this correction most likely revises, or ``None``.
+
+    Deterministic and conservative: same fact_type, compatible scope, not already superseded,
+    and a meaningful content-token overlap with the new statement. Ties break on recency.
+    """
+    try:
+        nodes = [n for n in vault.list_all_nodes() if getattr(n, "category", "") == USER_CATEGORY]
+    except Exception:
+        return None
+    tokens = token_set(content)
+    if not tokens:
+        return None
+    best = None
+    best_key = (0.0, -1)
+    for node in nodes:
+        fm = getattr(node, "frontmatter", None)
+        if fm is None or getattr(fm, "status", "") in ("superseded", "archived"):
+            continue
+        extra = getattr(fm, "extra", {}) or {}
+        if extra.get("fact_type", FACT_TYPE_PREFERENCE) != fact_type:
+            continue
+        node_scope = extra.get("scope", "")
+        if scope and node_scope and scope != node_scope:
+            continue
+        node_tokens = token_set(getattr(node, "content", "") or "")
+        if not node_tokens:
+            continue
+        overlap = len(tokens & node_tokens) / max(1, min(len(tokens), len(node_tokens)))
+        if overlap < CORRECTION_TOPIC_OVERLAP:
+            continue
+        recency = int(getattr(fm, "updated_at", 0) or getattr(fm, "created_at", 0) or 0)
+        if (overlap, recency) > best_key:
+            best, best_key = node, (overlap, recency)
+    return best
+
+
 def record_user_fact(
     vault: Any,
     content: str,
@@ -158,10 +216,11 @@ def record_user_fact(
     scope: str = "",
     evidence_id: str = "",
     now: Optional[int] = None,
+    _skip_correction: bool = False,
 ) -> Dict[str, Any]:
-    """Record a fact about the user, or reinforce an existing one.
+    """Record a fact about the user, or reinforce/supersede an existing one.
 
-    Returns a report dict: ``{"action": "created"|"reinforced"|"skipped", ...}``.
+    Returns a report dict: ``{"action": "created"|"reinforced"|"superseded"|"skipped", ...}``.
     Never raises.
     """
     now_ts = int(now if now is not None else time.time())
@@ -173,6 +232,24 @@ def record_user_fact(
         existing = _find_existing_fact(vault, content, scope=scope)
     except Exception:
         existing = None
+
+    # An explicit correction that is not a restatement revises the fact it is about: the new
+    # statement becomes current and the old one is superseded (history preserved). This is the
+    # §9 "a preference that changed must not be retrieved as unconditionally current" rule.
+    if existing is None and not _skip_correction and _looks_like_correction(content):
+        try:
+            target = _find_supersede_target(vault, content, fact_type, scope)
+        except Exception:
+            target = None
+        if target is not None:
+            return supersede_user_fact(
+                vault,
+                target.id,
+                content,
+                source=FACT_SOURCE_CORRECTED,
+                evidence_id=evidence_id,
+                now=now_ts,
+            )
 
     if existing is not None:
         # Reinforce the existing fact's evidence count
@@ -285,6 +362,7 @@ def supersede_user_fact(
         scope=scope,
         evidence_id=evidence_id,
         now=now_ts,
+        _skip_correction=True,  # this call IS the supersede; do not look for another target
     )
     new_node_id = result.get("node_id", "")
 
@@ -333,6 +411,7 @@ def supersede_user_fact(
 
     return {
         "action": "superseded",
+        "node_id": new_node_id,
         "old_node_id": old_node_id,
         "new_node_id": new_node_id,
     }
@@ -570,10 +649,14 @@ def render_model_block(snapshot: UserModelSnapshot, *, max_chars: int = 2000) ->
 #: Tooling facts ("I use vim") are classified as context, not preference — liking
 #: and using are different claims.
 _PREFERENCE_PATTERNS = (
-    re.compile(r"\bi (?:really )?(?:prefer|like|love|hate|dislike|favor|favour)\b.{3,}", re.IGNORECASE),
+    re.compile(
+        r"\bi (?:(?:really|now|actually|currently|still|just|personally|definitely|only)\s+)*"
+        r"(?:prefer|like|love|hate|dislike|favor|favour)\b.{3,}",
+        re.IGNORECASE,
+    ),
     re.compile(r"\b(?:always|never) (?:use|respond|reply|answer|write)\b.{3,}", re.IGNORECASE),
     re.compile(r"\b(?:please )?(?:always|never)\b.{3,}", re.IGNORECASE),
-    re.compile(r"\bi (?:don'?t|do not) (?:like|want|use)\b.{3,}", re.IGNORECASE),
+    re.compile(r"\bi (?:no longer|don'?t|do not) (?:like|prefer|want|use|need)\b.{2,}", re.IGNORECASE),
     re.compile(r"\bmy (?:favorite|preferred)\b.{3,}", re.IGNORECASE),
 )
 
