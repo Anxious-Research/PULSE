@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 
-import type { ProfileScope } from '@/pulse'
 import { queryClient } from '@/lib/query-client'
+import type { ProfileScope } from '@/pulse'
 
 import type { ConnectorCardModel } from '../types'
 

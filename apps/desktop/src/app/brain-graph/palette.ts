@@ -32,6 +32,7 @@ export function resolveRgb(color: string): Rgb {
   _probe.fillRect(0, 0, 1, 1)
 
   const d = _probe.getImageData(0, 0, 1, 1).data
+
   return { r: d[0] ?? 0, g: d[1] ?? 0, b: d[2] ?? 0 }
 }
 
@@ -41,6 +42,7 @@ export function rgba(c: Rgb, a: number): string {
 
 export function mix(a: Rgb, b: Rgb, t: number): Rgb {
   const p = Math.max(0, Math.min(1, t))
+
   return {
     r: Math.round(a.r + (b.r - a.r) * p),
     g: Math.round(a.g + (b.g - a.g) * p),
@@ -111,7 +113,9 @@ export function getNodeColorSet(n: StarmapNode): { base: Rgb; glow: Rgb; highlig
   if (n.kind === 'ghost') {
     return CATEGORY_COLORS.ghost
   }
+
   const cat = n.category?.toLowerCase()
+
   return (cat && CATEGORY_COLORS[cat]) ? CATEGORY_COLORS[cat] : DEFAULT_CATEGORY
 }
 
@@ -120,6 +124,7 @@ export function getNodeColorSet(n: StarmapNode): { base: Rgb; glow: Rgb; highlig
  *  the canvas fill is the deep-space look for a dark theme and a light paper for a light one. */
 export function paletteForColors(bg: Rgb, fg: Rgb): GraphPalette {
   const dark = luminance(bg) < 0.5
+
   return {
     bg: dark ? DEEP_SPACE_BG : LIGHT_PAPER_BG,
     dark,
@@ -136,5 +141,6 @@ export function computePalette(canvas: HTMLCanvasElement): GraphPalette {
   // paper; a dark theme keeps the deep-space look.
   const bgVar = style.getPropertyValue('--background').trim()
   const resolvedBg = bgVar ? resolveRgb(bgVar) : DEEP_SPACE_BG
+
   return paletteForColors(resolvedBg, fg)
 }

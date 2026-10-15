@@ -1,6 +1,6 @@
+import { useStore } from '@nanostores/react'
 import type { ModelOptionProvider, ModelPricing } from '@pulse/shared'
 import { fuzzyRank, modelSearchText } from '@pulse/shared'
-import { useStore } from '@nanostores/react'
 import { useQuery } from '@tanstack/react-query'
 import { type ReactElement, useMemo, useRef, useState } from 'react'
 

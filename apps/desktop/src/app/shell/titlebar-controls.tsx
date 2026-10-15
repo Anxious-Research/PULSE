@@ -1,5 +1,5 @@
-import { compactNumber } from '@pulse/shared'
 import { useStore } from '@nanostores/react'
+import { compactNumber } from '@pulse/shared'
 import { type ComponentProps, type MouseEvent, type ReactNode, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 

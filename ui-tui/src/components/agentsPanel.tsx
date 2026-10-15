@@ -1,6 +1,6 @@
+import { useStore } from '@nanostores/react'
 import { Box, stringWidth, Text, useStdout } from '@pulse/ink'
 import { mix } from '@pulse/shared/color'
-import { useStore } from '@nanostores/react'
 import { useEffect, useState } from 'react'
 
 import { $agentDockCollapsed, useAgentRoster } from '../app/agentRoster.js'

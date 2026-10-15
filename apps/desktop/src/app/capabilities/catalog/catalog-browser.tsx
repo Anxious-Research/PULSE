@@ -1,5 +1,5 @@
-import { compactNumber, groupCatalogPlugins, PLUGIN_CATEGORIES } from '@pulse/shared'
 import { useStore } from '@nanostores/react'
+import { compactNumber, groupCatalogPlugins, PLUGIN_CATEGORIES } from '@pulse/shared'
 import { memo, type ReactNode, useDeferredValue, useEffect, useRef, useState } from 'react'
 
 import { PageLoader } from '@/components/page-loader'

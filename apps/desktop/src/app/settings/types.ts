@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 
-import type { PulseGateway } from '@/pulse'
 import type { IconComponent } from '@/lib/icons'
+import type { PulseGateway } from '@/pulse'
 import type { EnvVarInfo } from '@/types/pulse'
 
 export type SettingsView =

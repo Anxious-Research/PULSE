@@ -1,14 +1,14 @@
-import { compactNumber } from '@pulse/shared'
 import { useStore } from '@nanostores/react'
+import { compactNumber } from '@pulse/shared'
 import { useCallback, useMemo, useState } from 'react'
 
 import { CountSkeleton } from '@/components/ui/skeleton'
-import { type ProfileScope, setToolsetEnabled } from '@/pulse'
 import { useI18n } from '@/i18n'
 import { isDesktopToolsetVisible } from '@/lib/desktop-toolsets'
 import { Codecs, persistentAtom } from '@/lib/persisted'
 import { queryClient } from '@/lib/query-client'
 import { invalidateSlashCompletions } from '@/lib/slash-completion-cache'
+import { type ProfileScope, setToolsetEnabled } from '@/pulse'
 import { notify, notifyError } from '@/store/notifications'
 import type { ToolsetInfo } from '@/types/pulse'
 

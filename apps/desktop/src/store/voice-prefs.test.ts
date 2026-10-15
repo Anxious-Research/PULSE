@@ -5,8 +5,8 @@ vi.mock('@/pulse', () => ({
   savePULSEConfig: vi.fn(async () => undefined)
 }))
 
-import { savePULSEConfig } from '@/pulse'
 import { isVoiceStopCommand } from '@/lib/voice-stop-word'
+import { savePULSEConfig } from '@/pulse'
 
 import {
   $bargeInEnabled,

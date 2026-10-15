@@ -1,5 +1,5 @@
-import { applyDocumentLocale, isRecord } from '@pulse/shared/i18n'
 import { useStore } from '@nanostores/react'
+import { applyDocumentLocale, isRecord } from '@pulse/shared/i18n'
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 import { getPULSEConfigRecord, type PULSEConfigRecord, retainConfigReadOrigin, savePULSEConfig } from '@/pulse'

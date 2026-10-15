@@ -1,6 +1,7 @@
 import { useStore } from '@nanostores/react'
 import { replaceEqualDeep, useQuery } from '@tanstack/react-query'
 
+import { queryClient } from '@/lib/query-client'
 import {
   getPULSEConfigRecord,
   peekConfigReadOrigin,
@@ -8,7 +9,6 @@ import {
   profileScopeKey,
   retainConfigReadOrigin
 } from '@/pulse'
-import { queryClient } from '@/lib/query-client'
 import { $activeConnectionId } from '@/store/connections'
 import type { PULSEConfigRecord } from '@/types/pulse'
 

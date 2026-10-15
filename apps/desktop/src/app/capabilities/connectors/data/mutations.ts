@@ -1,9 +1,9 @@
 import type { ConnectionAnswer, ConnectorPolicyGetResult } from '@pulse/shared'
 import { useCallback, useRef, useState } from 'react'
 
-import type { ProfileScope } from '@/pulse'
 import { translateNow } from '@/i18n'
 import { queryClient } from '@/lib/query-client'
+import type { ProfileScope } from '@/pulse'
 import { notifyError } from '@/store/notifications'
 
 import type { SaveResult } from '../use-tools-editor'

@@ -2,8 +2,8 @@ import { compactNumber } from '@pulse/shared'
 import { useNavigate } from 'react-router'
 
 import { Button } from '@/components/ui/button'
-import { type ProfileScope, profileScopeKey } from '@/pulse'
 import { useI18n } from '@/i18n'
+import { type ProfileScope, profileScopeKey } from '@/pulse'
 import type { ToolsetInfo } from '@/types/pulse'
 
 import { ToolChip } from '../../master-detail'
