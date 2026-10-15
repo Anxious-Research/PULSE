@@ -14,7 +14,9 @@ function makeRecordingCtx() {
     lineWidth: [] as number[],
     globalAlphaStops: [] as number[]
   }
+
   const gradient = { addColorStop: () => {} }
+
   const ctx = {
     arc: () => {},
     beginPath: () => {},
@@ -38,6 +40,7 @@ function makeRecordingCtx() {
       return calls.lineWidth[calls.lineWidth.length - 1] ?? 0
     }
   } as unknown as CanvasRenderingContext2D
+
   return { calls, ctx }
 }
 
@@ -59,6 +62,7 @@ function node(id: string, x: number): GNode {
 
 function baseInput(links: GLink[], ctx: CanvasRenderingContext2D): DrawInput {
   const nodes = [node('a', -100), node('b', 100)]
+
   return {
     adjacency: new Map(),
     births: new Map(),

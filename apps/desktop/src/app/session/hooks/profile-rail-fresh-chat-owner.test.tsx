@@ -1,5 +1,5 @@
-import { type GatewayEvent, registryBackendScopeKey } from '@pulse/shared'
 import { useStore } from '@nanostores/react'
+import { type GatewayEvent, registryBackendScopeKey } from '@pulse/shared'
 import { act, cleanup, render, waitFor } from '@testing-library/react'
 import { useEffect, useMemo, useRef } from 'react'
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'

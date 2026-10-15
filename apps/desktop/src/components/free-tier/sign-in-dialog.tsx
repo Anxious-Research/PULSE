@@ -15,9 +15,9 @@ import {
   DialogTitle,
   preventCloseButtonAutoFocus
 } from '@/components/ui/dialog'
-import { getGlobalModelOptions } from '@/pulse'
 import { type Translations, useI18n } from '@/i18n'
 import { CheckCircle2, Loader2 } from '@/lib/icons'
+import { getGlobalModelOptions } from '@/pulse'
 import { FREE_TIER_MODEL, friendlyWait, PULSE_PROVIDER_ID, refreshFreeTierStatus } from '@/store/free-tier'
 import {
   $freeTierSignIn,

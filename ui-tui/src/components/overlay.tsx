@@ -1,5 +1,5 @@
-import { Box, Text, useStdout } from '@pulse/ink'
 import { useStore } from '@nanostores/react'
+import { Box, Text, useStdout } from '@pulse/ink'
 import { type ReactNode } from 'react'
 
 import { $uiTheme } from '../app/uiStore.js'

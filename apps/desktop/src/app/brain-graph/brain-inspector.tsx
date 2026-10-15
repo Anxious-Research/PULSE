@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 import { type BrainNodeDetail, type BrainNodeRef, getBrainNodeDetail } from '@/api/skills'
 import { cn } from '@/lib/utils'
@@ -29,14 +29,17 @@ export function BrainInspector({
     if (!vaultId) {
       setDetail(null)
       setError(null)
+
       return
     }
+
     let cancelled = false
     setLoading(true)
     setError(null)
     getBrainNodeDetail(vaultId)
       .then(d => {
-        if (cancelled) return
+        if (cancelled) {return}
+
         if (!d.ok) {
           setError(d.message ?? 'not found')
           setDetail(null)
@@ -46,12 +49,13 @@ export function BrainInspector({
       })
       .catch(e => !cancelled && setError(e instanceof Error ? e.message : String(e)))
       .finally(() => !cancelled && setLoading(false))
+
     return () => {
       cancelled = true
     }
   }, [vaultId])
 
-  if (!vaultId) return null
+  if (!vaultId) {return null}
 
   return (
     <div
@@ -62,7 +66,7 @@ export function BrainInspector({
         <div className="min-w-0">
           <div className="truncate text-sm font-semibold text-foreground">{detail?.label ?? label ?? vaultId}</div>
           {detail?.kind ? (
-            <KindBadge kind={detail.kind} status={detail.status} beliefStatus={detail.belief_status} procStatus={detail.procedure_status} />
+            <KindBadge beliefStatus={detail.belief_status} kind={detail.kind} procStatus={detail.procedure_status} status={detail.status} />
           ) : null}
         </div>
         <button aria-label="Close inspector" className="rounded-full p-1 text-muted-foreground hover:bg-accent hover:text-foreground" onClick={onClose} type="button">
@@ -85,6 +89,7 @@ export function BrainInspector({
 
 function KindBadge({ kind, status, beliefStatus, procStatus }: { kind: string; status?: string; beliefStatus?: string; procStatus?: string }) {
   const extra = kind === 'belief' ? beliefStatus : kind === 'procedure' ? procStatus : status
+
   return (
     <div className="mt-0.5 flex items-center gap-1.5">
       <span className="rounded-full bg-accent px-1.5 py-0.5 text-[0.6rem] font-medium uppercase tracking-wide text-accent-foreground">{kind}</span>
@@ -104,6 +109,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function RefRow({ r, onSelectNode }: { r: BrainNodeRef; onSelectNode?: (id: string) => void }) {
   const clickable = !r.missing && !!onSelectNode
+
   return (
     <button
       className={cn(
@@ -131,7 +137,8 @@ function RefRow({ r, onSelectNode }: { r: BrainNodeRef; onSelectNode?: (id: stri
 }
 
 function fmtTime(ts?: null | number): string {
-  if (!ts) return '—'
+  if (!ts) {return '—'}
+
   try {
     return new Date(ts * 1000).toLocaleString()
   } catch {

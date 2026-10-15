@@ -10,8 +10,8 @@ import {
   attachmentPreviewDataUrl,
   type DroppedFile,
   extractDroppedFiles,
-  PULSE_PATHS_MIME,
   partitionDroppedFiles,
+  PULSE_PATHS_MIME,
   resolveImageAttachmentPreview,
   useComposerActions
 } from './use-composer-actions'

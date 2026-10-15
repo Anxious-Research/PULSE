@@ -1,9 +1,9 @@
 import { type MutableRefObject, useCallback, useRef, useState } from 'react'
 
 import { setTerminalFontFamilyFromConfig } from '@/app/right-sidebar/terminal/terminal-font'
-import { getPULSEConfig, getPULSEConfigDefaults } from '@/pulse'
 import { BUILTIN_PERSONALITIES, normalizePersonalityValue, personalityNamesFromConfig } from '@/lib/chat-runtime'
 import { normalize } from '@/lib/text'
+import { getPULSEConfig, getPULSEConfigDefaults } from '@/pulse'
 import { setDisplayTimestampsFromConfig } from '@/store/display-timestamps'
 import { setShowReasoningFromConfig } from '@/store/reasoning-disclosure'
 import {

@@ -3,7 +3,7 @@ import { reconnectBackoffDelayMs } from '@pulse/shared'
 import type { PULSEConnection } from '@/global'
 import { RECONNECT_ATTEMPT_TIMEOUT_MS, withTimeout } from '@/lib/with-timeout'
 
-import { getApiRequestConnection, getApiRequestProfile, pulseApi, profileScoped } from './client'
+import { getApiRequestConnection, getApiRequestProfile, profileScoped, pulseApi } from './client'
 
 /** Resolve the ACTIVE backend's connection descriptor, (connectionId,
  *  profile)-scoped — mirroring how store/profile resolves $connection: a
