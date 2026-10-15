@@ -182,9 +182,16 @@ def _procedure_detail(vault: Any, node: Any) -> Dict[str, Any]:
     # experience ids they came from — the distinction between what was observed and what was inferred.
     detail["outcomes"] = list(proc.outcomes)
     detail["experience_refs"] = [_ref(vault, eid, kind="experience") for eid in proc.evidence_refs]
+    # §7.2: how many of those outcomes were *independently verified* vs merely tool-successful.
+    # The inspector must distinguish "the actions worked" from "the objective was confirmed".
+    verified = sum(1 for o in proc.outcomes if o.get("verification") in ("verified", "user-confirmed"))
+    total = len(proc.outcomes)
+    detail["verified_count"] = verified
+    detail["unverified_count"] = max(0, total - verified)
     detail["confidence_justification"] = (
         f"{proc.success_count} success / {proc.failure_count} failure / {proc.partial_count} partial "
-        f"outcome(s) → success rate {proc.success_rate:g}, status '{proc.status}'."
+        f"outcome(s) → success rate {proc.success_rate:g}, status '{proc.status}'. "
+        f"{verified} of {total} outcome(s) independently verified; the rest record tool-level evidence only."
     )
     return detail
 
