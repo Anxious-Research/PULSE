@@ -2,9 +2,9 @@ import { act, cleanup, render } from '@testing-library/react'
 import { useRef } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as PULSEModule from '@/pulse'
 import { textPart } from '@/lib/chat-messages'
 import { createClientSessionState } from '@/lib/chat-runtime'
+import type * as PULSEModule from '@/pulse'
 import { $sessionTiles, publishSessionState } from '@/store/session-states'
 
 vi.mock('@/pulse', async importOriginal => {

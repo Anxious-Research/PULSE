@@ -1,6 +1,6 @@
 import type { PULSEGitBranch, PULSEGitWorktree } from '@/global'
-import type { ProjectInfo, SessionInfo } from '@/pulse'
 import { normalize } from '@/lib/text'
+import type { ProjectInfo, SessionInfo } from '@/pulse'
 
 import { rankSessions } from '../order'
 

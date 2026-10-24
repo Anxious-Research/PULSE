@@ -1,5 +1,5 @@
-import { compactNumber } from '@pulse/shared'
 import { useStore } from '@nanostores/react'
+import { compactNumber } from '@pulse/shared'
 import { Fragment, type ReactNode, useEffect, useMemo, useState } from 'react'
 
 import { useElapsedSeconds } from '@/components/chat/activity-timer'

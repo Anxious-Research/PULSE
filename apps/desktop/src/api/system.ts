@@ -16,12 +16,12 @@ import type {
 
 import {
   capabilityScoped,
-  pulseApi,
-  pulseApiAs,
   type OwnerScope,
   ownerScoped,
   type ProfileScope,
   profileScoped,
+  pulseApi,
+  pulseApiAs,
   type ResolvedOwner
 } from './client'
 

@@ -8,8 +8,8 @@
  */
 import { useEffect, useMemo, useState } from 'react'
 
-import { getSession } from '@/pulse'
 import { parseSessionRefValue, sessionRefCacheKey, sessionRefFallbackLabel } from '@/lib/session-refs'
+import { getSession } from '@/pulse'
 import { $sessions, sessionMatchesStoredId } from '@/store/session'
 import type { SessionInfo } from '@/types/pulse'
 

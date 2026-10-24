@@ -1,5 +1,5 @@
-import { type ProfileScope, profileScopeKey } from '@/pulse'
 import { queryClient } from '@/lib/query-client'
+import { type ProfileScope, profileScopeKey } from '@/pulse'
 
 export type ConnectorRead = 'accounts' | 'catalog' | 'list' | 'policy' | 'tools'
 

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   normalizePULSEOpenString,
-  pathFromPULSEDeepLink,
   pathFromOpenDeepLink,
+  pathFromPULSEDeepLink,
   resolvePULSEOpenPath
 } from './pulse-open-target'
 

@@ -2,7 +2,6 @@ import { LOCAL_CONNECTION_ID, registryBackendScopeKey } from '@pulse/shared'
 import { atom, batch, computed } from 'nanostores'
 
 import type { PULSEConnection } from '@/global'
-import { getProfiles, pulseApi, setApiRequestProfile, STARTUP_REQUEST_TIMEOUT_MS } from '@/pulse'
 import { sortByProfileOrder as sortProfilesByOrder } from '@/lib/profile-order'
 import { invalidateProfileScopedQueries } from '@/lib/query-client'
 import {
@@ -15,6 +14,7 @@ import {
   storedStringRecord
 } from '@/lib/storage'
 import { withTimeout } from '@/lib/with-timeout'
+import { getProfiles, pulseApi, setApiRequestProfile, STARTUP_REQUEST_TIMEOUT_MS } from '@/pulse'
 import { registryConnectionKind } from '@/store/connection-registry-state'
 import {
   $gateway,

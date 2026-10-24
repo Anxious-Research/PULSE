@@ -1,6 +1,6 @@
+import { translateNow } from '@/i18n'
 import type { SessionInfo } from '@/pulse'
 import { getAllSessionMessages } from '@/pulse'
-import { translateNow } from '@/i18n'
 import { notify, notifyError } from '@/store/notifications'
 
 interface ExportSessionParams {
