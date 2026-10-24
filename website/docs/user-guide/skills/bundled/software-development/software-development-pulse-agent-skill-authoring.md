@@ -1,12 +1,12 @@
 ---
-title: "PULSE Agent Skill Authoring — Author in-repo SKILL.md files: frontmatter and structure"
-sidebar_label: "PULSE Agent Skill Authoring"
+title: "Pulse Agent Skill Authoring — Author in-repo SKILL.md files: frontmatter and structure"
+sidebar_label: "Pulse Agent Skill Authoring"
 description: "Author in-repo SKILL.md files: frontmatter and structure"
 ---
 
 {/* This page is auto-generated from the skill's SKILL.md by website/scripts/generate-skill-docs.py. Edit the source SKILL.md, not this page. */}
 
-# PULSE Agent Skill Authoring
+# Pulse Agent Skill Authoring
 
 Author in-repo SKILL.md files: frontmatter and structure.
 
