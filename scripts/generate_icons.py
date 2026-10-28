@@ -9,7 +9,8 @@ Sources of truth — two axes, composed per target:
   Girl art (vector):  assets/pulse-girl-black.svg  (black positive space)
                       assets/pulse-girl-white.svg  (white positive space)
                       straight from the PULSE brand kit (Inkscape exports,
-                      5487^2 viewBox, one path each).
+                      one path each; the canvas viewBox is read from the
+                      asset, never hardcoded).
 
   Backgrounds (per platform surface, light/dark):
                       assets/backgrounds/squircle-light.svg   white rounded
@@ -126,8 +127,9 @@ GIRL_BOXES = {
     "squircle-mac-light.svg": (122.43, 144.84, 786.83, 786.83),
     "squircle-mac-dark.svg": (122.43, 144.84, 786.83, 786.83),
 }
-# The brand-kit SVG canvas (both girl svgs share this viewBox).
-GIRL_VIEWBOX = 5487.0615
+# The girl art is authored on its own canvas; never assume a size here — it is
+# read from each asset's root viewBox (the 5487^2 brand-kit exports were later
+# re-exported at 1254^2, and a hardcoded canvas silently shrank the artwork).
 
 # Target sizes for --check's structural verification: relpath -> (format, size)
 CHECK_SIZES: dict[str, tuple[str, tuple[int, int]]] = {
@@ -210,6 +212,7 @@ class IconArt:
         self.girls = {color: assets / f"pulse-girl-{color}.svg" for color in ("black", "white")}
         self.backgrounds = assets / "backgrounds"
         self.paths: dict[str, str] = {}
+        self.viewboxes: dict[str, tuple[float, float, float, float]] = {}
         self.bboxes: dict[str, tuple[float, float, float, float]] = {}
         self.master = compose_svg(self, "black", "squircle-light.svg")
         self.master_dark = compose_svg(self, "white", "squircle-dark.svg")
@@ -239,15 +242,40 @@ def girl_path(art: IconArt, girl: str) -> str:
     return art.paths[girl]
 
 
+def girl_viewbox(art: IconArt, girl: str) -> tuple[float, float, float, float]:
+    """The girl asset's own user space — its root `viewBox`, parsed once.
+
+    Bounding boxes are measured in this space, so re-exporting the art at a
+    different canvas size (or resolution) can never shift the composition."""
+    if girl not in art.viewboxes:
+        name = art.girls[girl].name
+        text = art.girls[girl].read_text(encoding="utf-8-sig")
+        root = re.search(r"<svg\b[^>]*>", text)
+        assert root, f"no root <svg> in {name}"
+        box = re.search(r'viewBox="([^"]+)"', root.group(0))
+        if box:
+            values = tuple(float(v) for v in re.split(r"[,\s]+", box.group(1).strip()) if v)
+        else:
+            # Older exports declare only pixel dimensions.
+            dims = [re.search(rf'\b{axis}="([\d.]+)(?:px)?"', root.group(0)) for axis in ("width", "height")]
+            assert all(dims), f"no viewBox or width/height in {name}"
+            values = (0.0, 0.0, float(dims[0].group(1)), float(dims[1].group(1)))  # type: ignore[union-attr]
+        assert len(values) == 4, f"unsupported viewBox in {name}"
+        art.viewboxes[girl] = values
+    return art.viewboxes[girl]
+
+
 def girl_bbox(art: IconArt, girl: str) -> tuple[float, float, float, float]:
     """Art bounding box in the girl SVG's coordinate space, measured by
     rendering once and taking the alpha bbox (robust to art changes)."""
     if girl not in art.bboxes:
-        data = resvg_py.svg_to_bytes(svg_path=str(art.girls[girl]), width=512, height=512)
+        width = height = 512
+        data = resvg_py.svg_to_bytes(svg_path=str(art.girls[girl]), width=width, height=height)
         im = Image.open(io.BytesIO(data))
         bx, by, bx2, by2 = im.getchannel("A").point(lambda v: 255 if v > 0 else 0).getbbox()
-        s = GIRL_VIEWBOX / 512.0
-        art.bboxes[girl] = (bx * s, by * s, (bx2 - bx) * s, (by2 - by) * s)
+        _, _, vb_w, vb_h = girl_viewbox(art, girl)
+        sx, sy = vb_w / width, vb_h / height
+        art.bboxes[girl] = (bx * sx, by * sy, (bx2 - bx) * sx, (by2 - by) * sy)
     return art.bboxes[girl]
 
 

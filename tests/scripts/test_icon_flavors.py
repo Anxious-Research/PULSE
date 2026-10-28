@@ -91,17 +91,72 @@ def frames(path):
         yield Image.open(path).convert("RGBA")
 
 
-def tile_color(image):
-    # The flavor background is the tile fill. Tiles carry an inward contrasting
-    # border (black or white) and the artwork sits above the centre, both of
-    # which LANCZOS smears across tiny frames — so read the most chromatic pixel
-    # of the tile's lower half instead of one fixed coordinate: on a flavored
-    # tile that is the fill colour, on a stable tile every candidate is grey.
+def _geometry():
+    """Generator constants this test measures against, imported without a renderer."""
+    import importlib.util
+    import types
+
+    spec = importlib.util.spec_from_file_location("generate_icons_geometry", ROOT / "scripts/generate_icons.py")
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    saved = sys.modules.get("resvg_py")
+    sys.modules["resvg_py"] = types.ModuleType("resvg_py")
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        if saved is None:
+            sys.modules.pop("resvg_py", None)
+        else:
+            sys.modules["resvg_py"] = saved
+    return module
+
+
+def tile_fill_strip(image, rel):
+    """The tile fill the flavor repaints: the band between the inward border and
+    the top of the artwork, mapped to this frame. The portrait owns the centre
+    (and bleeds over the bottom border), so this band is the only place the fill
+    survives; the second return value is its height in master pixels."""
+    import xml.etree.ElementTree as ET
+
+    module = _geometry()
+    mac = rel.suffix == ".icns" or "mac" in rel.name
+    background = ET.parse(ROOT / "assets/backgrounds" / ("squircle-mac-light.svg" if mac else "squircle-light.svg"))
+    tile = background.find("{http://www.w3.org/2000/svg}rect")
+    assert tile is not None
+    master = {key: float(tile.attrib[key]) for key in ("x", "y", "width", "height")}
+    # Wide tiles paste a 100px squircle onto a larger canvas: map master
+    # coordinates through the rendered tile instead of assuming 1024px frames.
     x0, y0, x1, y1 = image.getchannel("A").point(lambda a: 255 if a >= 128 else 0).getbbox()
-    pixels = [rgba[:3] for rgba in image.crop((x0, (y0 + y1) // 2, x1, y1)).getdata() if rgba[3] >= 128]
-    # Saturation weighted by chroma: a near-black anti-aliased edge pixel has high HSV
+    scale = (x1 - x0) / master["width"]
+    thickness = master["width"] * module.BORDER_FRACTION
+    strip_top = master["y"] + thickness + 1
+    strip_bottom = module.GIRL_BOXES["squircle-mac-light.svg" if mac else "squircle-light.svg"][1] - 1
+    left = master["x"] + thickness + 1
+    right = master["x"] + master["width"] - thickness - 1
+    box = (
+        x0 + round((left - master["x"]) * scale),
+        y0 + round((strip_top - master["y"]) * scale),
+        x0 + round((right - master["x"]) * scale),
+        y0 + round((strip_bottom - master["y"]) * scale),
+    )
+    return box, strip_bottom - strip_top
+
+
+def tile_fill(image, rel):
+    """(most chromatic fill pixel, rendered rows of exposed fill).
+
+    The colour is None when this frame cannot hold a pure row; the row count
+    lets callers decide how much tint can physically survive at this size."""
+    (x0, y0, x1, y1), _ = tile_fill_strip(image, rel)
+    rows = y1 - y0
+    if rows < 2:
+        return None, rows
+    pixels = [rgba[:3] for rgba in image.crop((x0, y0, x1, y1)).getdata() if rgba[3] >= 255]
+    if not pixels:
+        return None, rows
+    # Chroma, not HSV saturation: a near-black anti-aliased edge pixel has high
     # saturation but almost no colour, the fill has both.
-    return max(pixels, key=lambda rgb: max(rgb) - min(rgb))
+    return max(pixels, key=lambda rgb: max(rgb) - min(rgb)), rows
 
 
 def assert_same_geometry(original, flavored):
@@ -147,9 +202,12 @@ def test_canary_changes_only_desktop_background_preserving_art_and_native_geomet
         assert len(original_frames) == len(canary_frames)
         for original, yellow in zip(original_frames, canary_frames, strict=True):
             assert_same_geometry(original, yellow)
-            hue, saturation, value = colorsys.rgb_to_hsv(*(v / 255 for v in tile_color(yellow)))
-            assert 0.10 < hue < 0.18 and saturation > 0.65, (path, yellow.size, tile_color(yellow))
-            assert (value < 0.4) if "dark" in path.name else (value > 0.8), (path, yellow.size, tile_color(yellow))
+            fill, _ = tile_fill(yellow, path.relative_to(stable))
+            if fill is None:
+                continue
+            hue, saturation, value = colorsys.rgb_to_hsv(*(v / 255 for v in fill))
+            assert 0.10 < hue < 0.18 and saturation > 0.65, (path, yellow.size, fill)
+            assert (value < 0.4) if "dark" in path.name else (value > 0.8), (path, yellow.size, fill)
             # Compare art in direct renders. Tiny container frames use LANCZOS,
             # whose ringing legitimately depends on adjacent background colors.
             if path.suffix == ".png" and original.width >= 256:
@@ -173,9 +231,18 @@ def test_commit_icons_are_red_and_print_only_the_actual_seven_digit_prefix(gener
         stable_frames = list(frames(stable / rel))
         for original, red, other in zip(stable_frames, first_frames, other_frames, strict=True):
             assert_same_geometry(original, red)
-            hue, saturation, value = colorsys.rgb_to_hsv(*(v / 255 for v in tile_color(red)))
-            assert (hue < 0.05 or hue > 0.95) and saturation > 0.6, (rel, tile_color(red))
-            assert (value < 0.4) if "dark" in path.name else (value > 0.8), (rel, red.size, tile_color(red))
+            fill, rows = tile_fill(red, rel)
+            # The commit badge sits on the only exposed fill strip: on the mac
+            # grid (~11 master pixels deep) it covers that strip outright, and
+            # below ~128px its rounded corners plus LANCZOS leave no pure fill
+            # row. Those frames assert geometry only; the badge itself is read
+            # back at full resolution below.
+            mac = rel.suffix == ".icns" or "mac" in rel.name
+            if fill is None or mac or rows < 8:
+                continue
+            hue, saturation, value = colorsys.rgb_to_hsv(*(v / 255 for v in fill))
+            assert (hue < 0.05 or hue > 0.95) and saturation > 0.6, (rel, fill)
+            assert (value < 0.4) if "dark" in path.name else (value > 0.8), (rel, red.size, fill)
             # No SHA change may move the tile/art or alter the region below its top quarter.
             bbox = red.getchannel("A").point(lambda a: 255 if a >= 128 else 0).getbbox()
             diff = ImageChops.difference(red.convert("RGB"), other.convert("RGB")).convert("L")
@@ -193,23 +260,25 @@ def test_commit_icons_are_red_and_print_only_the_actual_seven_digit_prefix(gener
         (14, 16, 16, 30, 17, 17, 14),
     )
     # The portrait renders in front of the badge (her hair crosses its lower rows), so a
-    # cell is only judged where the stable icon shows no art at that spot; every glyph
-    # must still be identified by a majority of its uncovered cells.
+    # cell is only judged where the unbadged icon still shows bare tile fill: the
+    # artwork is identical in both renders, so no portrait pixel can reach the glyph.
     for name in ("icon.png", "icon-dark.png"):
         image = Image.open(first / "apps/desktop/assets" / name).convert("RGB")
         unbadged = Image.open(stable / "apps/desktop/assets" / name).convert("RGB")
-        art = (0, 0, 0) if name == "icon.png" else (255, 255, 255)
+        tile = (255, 255, 255) if name == "icon.png" else (13, 17, 23)
         for digit, rows in enumerate(expected):
             judged = 0
             for y, row in enumerate(rows):
                 for x in range(5):
                     point = (184 + (digit * 6 + x) * 16 + 8, 48 + y * 16 + 8)
-                    if unbadged.getpixel(point) == art:
+                    if unbadged.getpixel(point) != tile:
                         continue
                     judged += 1
                     pixel = image.getpixel(point)
                     assert (min(pixel) > 240) == bool(row & (1 << (4 - x))), (name, digit, x, y)
-            assert judged >= 18, (name, digit, judged)
+            # The portrait reaches y=104.7 of the 1024 master, so the badge's
+            # first three glyph rows (15 cells) stay readable; the rest is art.
+            assert judged >= 15, (name, digit, judged)
     assert_unbranded_outputs(stable, first)
 
 
