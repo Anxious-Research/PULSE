@@ -1,9 +1,8 @@
 name: Bootstrap installer build
 
-# Hand-dispatched, signed builds of the Tauri bootstrap installer
-# (apps/bootstrap-installer, "PULSE-Setup"): Windows x64 exe signed with
-# Azure Trusted Signing, macOS arm64 dmg signed with the Developer ID cert and
-# notarized. Uploaded as run artifacts only; nothing is published.
+# Hand-dispatched builds of the Tauri bootstrap installer ("PULSE-Setup").
+# Signed/notarized builds are the default. The explicit unsigned option skips
+# signing and replaces the Pulse-For-Mac release assets with a clear warning.
 #
 # No caches of any kind: no actions/cache, no setup-node cache, and fresh
 # npm/cargo/electron-builder cache dirs under RUNNER_TEMP.
@@ -23,6 +22,11 @@ on:
         description: Optional commit pin baked in instead (PULSE_BUILD_PIN_COMMIT)
         required: false
         default: ''
+      unsigned:
+        description: Skip signing and replace Pulse-For-Mac assets with unsigned builds
+        type: boolean
+        required: true
+        default: false
 
 permissions:
   contents: read
@@ -66,6 +70,7 @@ jobs:
           echo "$USERPROFILE/.cargo/bin" >> "$GITHUB_PATH"
 
       - name: Require Azure signing vars
+        if: ${{ inputs.unsigned != true }}
         shell: bash
         env:
           AZURE_SIGN_ENDPOINT: ${{ vars.AZURE_SIGN_ENDPOINT }}
@@ -95,6 +100,7 @@ jobs:
           cp "$exe" "$RUNNER_TEMP/out/PULSE-Setup.exe"
 
       - name: Azure login (OIDC)
+        if: ${{ inputs.unsigned != true }}
         uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
@@ -102,6 +108,7 @@ jobs:
           allow-no-subscriptions: true
 
       - name: Mint federated token for the signing dlib
+        if: ${{ inputs.unsigned != true }}
         shell: bash
         run: |
           file="$RUNNER_TEMP/azure-federated-token"
@@ -115,6 +122,7 @@ jobs:
           echo "AZURE_FEDERATED_TOKEN_FILE=$file" >> "$GITHUB_ENV"
 
       - name: Sign (same Azure Trusted Signing path as the desktop MSIX)
+        if: ${{ inputs.unsigned != true }}
         shell: bash
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
@@ -136,6 +144,7 @@ jobs:
           '
 
       - name: Verify signature
+        if: ${{ inputs.unsigned != true }}
         shell: pwsh
         run: |
           $sig = Get-AuthenticodeSignature "$env:RUNNER_TEMP\out\PULSE-Setup.exe"
@@ -174,6 +183,7 @@ jobs:
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
       - name: Import Developer ID certificate
+        if: ${{ inputs.unsigned != true }}
         env:
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
@@ -221,6 +231,7 @@ jobs:
           npx tauri build --target aarch64-apple-darwin --bundles app,dmg
 
       - name: Sign, notarize and staple the dmg
+        if: ${{ inputs.unsigned != true }}
         run: |
           shopt -s nullglob
           bundle="$CARGO_TARGET_DIR/aarch64-apple-darwin/release/bundle"
@@ -237,7 +248,18 @@ jobs:
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
 
+      - name: Stage unsigned dmg
+        if: ${{ inputs.unsigned == true }}
+        run: |
+          shopt -s nullglob
+          bundle="$CARGO_TARGET_DIR/aarch64-apple-darwin/release/bundle"
+          dmgs=("$bundle"/dmg/*.dmg)
+          test ${#dmgs[@]} -eq 1
+          mkdir -p "$RUNNER_TEMP/out"
+          cp "${dmgs[0]}" "$RUNNER_TEMP/out/PULSE-Setup.dmg"
+
       - name: Verify the app and dmg are signed and notarized
+        if: ${{ inputs.unsigned != true }}
         run: |
           shopt -s nullglob
           apps=("$CARGO_TARGET_DIR"/aarch64-apple-darwin/release/bundle/macos/*.app)
@@ -255,3 +277,39 @@ jobs:
           name: PULSE-Setup-macos-arm64
           path: ${{ runner.temp }}/out/PULSE-Setup.dmg
           if-no-files-found: error
+
+  publish-unsigned:
+    name: Replace release assets with explicitly requested unsigned builds
+    if: ${{ inputs.unsigned == true }}
+    needs: [windows-x64, macos-arm64]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          pattern: PULSE-Setup-*
+          path: ${{ runner.temp }}/unsigned-artifacts
+
+      - name: Mark release unsigned and replace installer downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          dmg="$RUNNER_TEMP/unsigned-artifacts/PULSE-Setup-macos-arm64/PULSE-Setup.dmg"
+          exe="$RUNNER_TEMP/unsigned-artifacts/PULSE-Setup-windows-x64/PULSE-Setup.exe"
+          test -s "$dmg"
+          test -s "$exe"
+
+          gh release view Pulse-For-Mac --repo "$GITHUB_REPOSITORY" --json body --jq .body > "$RUNNER_TEMP/release-notes.md"
+          if ! grep -Fq 'UNSIGNED INSTALLER NOTICE' "$RUNNER_TEMP/release-notes.md"; then
+            cat >> "$RUNNER_TEMP/release-notes.md" <<'NOTICE'
+
+## UNSIGNED INSTALLER NOTICE
+
+The PULSE-Setup.dmg and PULSE-Setup.exe downloads in this release are unsigned. macOS Gatekeeper and Windows SmartScreen may show security warnings. Only proceed if you trust this source.
+NOTICE
+          fi
+          gh release edit Pulse-For-Mac --repo "$GITHUB_REPOSITORY" --notes-file "$RUNNER_TEMP/release-notes.md"
+          gh release upload Pulse-For-Mac "$dmg" "$exe" --clobber --repo "$GITHUB_REPOSITORY"
