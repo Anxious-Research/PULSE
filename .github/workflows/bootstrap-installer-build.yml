@@ -2,7 +2,9 @@ name: Bootstrap installer build
 
 # Hand-dispatched builds of the Tauri bootstrap installer ("PULSE-Setup").
 # Signed/notarized builds are the default. The explicit unsigned option skips
-# signing and replaces the Pulse-For-Mac release assets with a clear warning.
+# Developer ID signing/notarization remains the default. The explicit
+# unsigned option ad-hoc-signs the macOS app so it remains launchable after a
+# user approves it in Gatekeeper, and replaces the release assets with a warning.
 #
 # No caches of any kind: no actions/cache, no setup-node cache, and fresh
 # npm/cargo/electron-builder cache dirs under RUNNER_TEMP.
@@ -253,7 +255,7 @@ jobs:
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
 
-      - name: Stage unsigned dmg
+      - name: Stage ad-hoc-signed dmg
         if: ${{ inputs.unsigned == true }}
         run: |
           shopt -s nullglob
@@ -262,14 +264,11 @@ jobs:
           test ${#apps[@]} -eq 1
           app="${apps[0]}"
           executable=$(/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "$app/Contents/Info.plist")
-          binary="$app/Contents/MacOS/$executable"
-          if otool -l "$binary" | grep -q LC_CODE_SIGNATURE; then
-            codesign --remove-signature "$binary"
-          fi
-          if otool -l "$binary" | grep -q LC_CODE_SIGNATURE; then
-            echo "::error::unsigned app executable still has a code signature"
-            exit 1
-          fi
+          codesign --force --deep --sign - \
+            --entitlements "$GITHUB_WORKSPACE/apps/bootstrap-installer/src-tauri/entitlements.plist" \
+            "$app"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          codesign -dv --verbose=2 "$app" 2>&1 | grep -F 'Signature=adhoc'
           staging="$RUNNER_TEMP/unsigned-dmg"
           mkdir -p "$staging" "$RUNNER_TEMP/out"
           cp -R "$app" "$staging/"
@@ -280,12 +279,9 @@ jobs:
           mountpoint="$RUNNER_TEMP/unsigned-dmg-mounted"
           mkdir -p "$mountpoint"
           hdiutil attach -nobrowse -readonly -mountpoint "$mountpoint" "$dmg"
-          mounted_binary="$mountpoint/$(basename "$app")/Contents/MacOS/$executable"
-          test -f "$mounted_binary"
-          if otool -l "$mounted_binary" | grep -q LC_CODE_SIGNATURE; then
-            echo "::error::staged app executable still has a code signature"
-            exit 1
-          fi
+          mounted_app="$mountpoint/$(basename "$app")"
+          test -f "$mounted_app/Contents/MacOS/$executable"
+          codesign --verify --deep --strict --verbose=2 "$mounted_app"
           hdiutil detach "$mountpoint"
 
       - name: Verify the app and dmg are signed and notarized
@@ -333,9 +329,27 @@ jobs:
           test -s "$exe"
 
           gh release view Pulse-For-Mac --repo "$GITHUB_REPOSITORY" --json body --jq .body > "$RUNNER_TEMP/release-notes.md"
-          if ! grep -Fq 'UNSIGNED INSTALLER NOTICE' "$RUNNER_TEMP/release-notes.md"; then
-            printf '\n\n## UNSIGNED INSTALLER NOTICE\n\n' >> "$RUNNER_TEMP/release-notes.md"
-            printf '%s\n' 'The PULSE-Setup.dmg and PULSE-Setup.exe downloads in this release are unsigned. macOS Gatekeeper and Windows SmartScreen may show security warnings. Only proceed if you trust this source.' >> "$RUNNER_TEMP/release-notes.md"
-          fi
+          python3 - "$RUNNER_TEMP/release-notes.md" <<'PY'
+          from pathlib import Path
+          import sys
+
+          path = Path(sys.argv[1])
+          notes = path.read_text()
+          for marker in (
+              "\n\n## UNSIGNED INSTALLER NOTICE\n",
+              "\n\n## INSTALLER SECURITY NOTICE\n",
+          ):
+              if marker in notes:
+                  notes = notes.split(marker, 1)[0].rstrip()
+          notes += (
+              "\n\n## INSTALLER SECURITY NOTICE\n\n"
+              "The macOS app has a valid ad-hoc signature, but it does not have "
+              "a Developer ID signature and is not notarized. Windows installer "
+              "is unsigned. macOS Gatekeeper or "
+              "Windows SmartScreen may show security warnings. Only proceed if "
+              "you trust this source.\n"
+          )
+          path.write_text(notes)
+          PY
           gh release edit Pulse-For-Mac --repo "$GITHUB_REPOSITORY" --notes-file "$RUNNER_TEMP/release-notes.md"
           gh release upload Pulse-For-Mac "$dmg" "$exe" --clobber --repo "$GITHUB_REPOSITORY"
