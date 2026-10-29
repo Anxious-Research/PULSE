@@ -513,6 +513,33 @@ def test_build_system_prompt_records_stable_prefix():
     assert prompt[len(agent._cached_system_prompt_static):].startswith("\n\ncontext")
 
 
+def test_core_creator_identity_survives_soul_override():
+    from agent.prompt_builder import PULSE_CORE_ORIGIN
+
+    agent = _make_agent(load_soul_identity=True)
+    with (
+        patch("agent.prompt_builder.load_soul_md", return_value="Custom persona"),
+        patch("agent.prompt_builder.build_environment_hints", return_value=""),
+        patch("agent.prompt_builder.build_context_files_prompt", return_value=""),
+    ):
+        parts = build_system_prompt_parts(agent)
+
+    assert "Custom persona" in parts["stable"]
+    assert PULSE_CORE_ORIGIN in parts["stable"]
+
+
+def test_memory_and_skill_tools_get_reasoning_led_learning_guidance():
+    from agent.prompt_builder import SKILLS_GUIDANCE
+    from agent.system_prompt import _tool_guidance_block
+
+    guidance = _tool_guidance_block(_make_agent(valid_tool_names=["memory", "skill_manage"]))
+
+    assert guidance is not None
+    assert "Use judgment over the whole conversation, not keyword matching" in guidance
+    assert "Automatic learning reviews completed turns after the answer" in SKILLS_GUIDANCE
+    assert "do not delay a reply" in SKILLS_GUIDANCE
+
+
 def test_coding_prompt_orders_shared_context_before_workspace(monkeypatch):
     """Keep workspace guidance intact after the shared context."""
     import agent.system_prompt as system_prompt

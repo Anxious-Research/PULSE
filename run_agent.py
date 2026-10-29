@@ -783,11 +783,12 @@ class AIAgent(
 
     def _spawn_background_review(self, messages_snapshot: List[Dict], review_memory: bool = False,
                                  review_skills: bool = False, focus: Optional[str] = None, explicit: bool = False) -> None:
-        """Post-turn review entry point: decide WHEN, then spawn.
+        """Post-reply learning entry point: gate, coalesce, then spawn.
 
-        A review whose runtime is the MANAGED LOCAL llama-server is queued for machine idle (``defer: auto``)
-        instead of hitting the user's GPU mid-session; everything else spawns immediately. ``explicit``
-        (/refine) is never deferred but does not touch the ``focus``-keyed delegate/enabled gates.
+        Combined automatic reviews are coalesced per session until idle unless ``defer: never``;
+        this avoids paying for a full-history review that the next turn would immediately cancel.
+        Other automatic reviews defer for a managed local runtime under ``defer: auto``. Explicit
+        (/refine) reviews are never deferred.
         """
         # Gates run at enqueue/spawn time; the idle dispatcher re-checks `enabled` at dispatch time.
         if focus is None and getattr(self, "_delegate_depth", 0) > 0:
@@ -807,7 +808,14 @@ class AIAgent(
         kwargs = dict(messages_snapshot=_clone_background_review_messages(messages_snapshot),
                       review_memory=review_memory, review_skills=review_skills, focus=focus, task_cfg=task_cfg,
                       explicit=explicit)
-        if focus is None and not explicit and _review_should_defer(self, task_cfg):
+        defer = _review_should_defer(self, task_cfg)
+        if review_memory and review_skills and not explicit:
+            from agent.review_idle_queue import defer_mode
+
+            # Combined learning passes replay the full history and are coalesced until idle,
+            # so rapid follow-up turns do not repeatedly cancel expensive analysis.
+            defer = defer or defer_mode(task_cfg) != "never"
+        if focus is None and not explicit and defer:
             from agent.review_idle_queue import QUEUE
             QUEUE.enqueue(self, _review_queue_key(self), kwargs)
             return
@@ -856,19 +864,24 @@ class AIAgent(
     _REVIEW_REQUEUE_MAX_ATTEMPTS = 3
 
     def _maybe_requeue_preempted_review(self, review_run, kwargs) -> None:
-        """Requeue a deferred-mode review that a live turn cancelled.
-
-        Only for automatic reviews on the managed local runtime; bounded attempts stop a busy box cycling
-        forever.
-        """
+        """Requeue an automatic learning review cancelled by a new live turn."""
         try:
             # Not cancelled == ran to completion (or was never admitted).
-            if not review_run.cancel_requested.is_set() or kwargs.get("focus") is not None:
+            if (
+                not review_run.cancel_requested.is_set()
+                or kwargs.get("focus") is not None
+                or kwargs.get("explicit", False)
+            ):
                 return
             if kwargs.get("_requeue_attempts", 0) > self._REVIEW_REQUEUE_MAX_ATTEMPTS:
                 logger.info("Preempted background review dropped after %d requeues", self._REVIEW_REQUEUE_MAX_ATTEMPTS)
                 return
-            if not _review_should_defer(self, kwargs.get("task_cfg")):
+            from agent.review_idle_queue import defer_mode
+
+            _learning_review = kwargs.get("review_memory") and kwargs.get("review_skills")
+            if not _learning_review and not _review_should_defer(self, kwargs.get("task_cfg")):
+                return
+            if defer_mode(kwargs.get("task_cfg")) == "never":
                 return
             from agent.review_idle_queue import QUEUE
             # kwargs carries the incremented _requeue_attempts through the queue so the cap survives.
@@ -936,18 +949,6 @@ class AIAgent(
         response_text = _summarize_user_message_for_log(final_response, sep="\n")
         if not (user_text and response_text):
             return
-        # Native brain: encode this turn (specs/brain.md §3.1). It owns its own config gate
-        # (``brain.enabled`` / ``brain.encode_enabled``) and does its work on a background
-        # thread, so it runs even when no external provider is configured — the brain is an
-        # organ of PULSE, not a memory provider. Best-effort by construction.
-        try:
-            from agent.brain.session import brain_encode_turn_async
-
-            brain_encode_turn_async(
-                self, user_text, response_text, session_id=self.session_id or ""
-            )
-        except Exception:
-            logger.debug("brain encode hook failed", exc_info=True)
         if not self._memory_manager:
             return
         try:

@@ -649,10 +649,24 @@ def _finish_codex_turn(agent, turn, messages: List[Dict[str, Any]], *, original_
         _call_guarded(getattr(agent, "_sync_external_memory_for_turn", None), "external memory sync raised", kwargs=dict(
             original_user_message=original_user_message, final_response=turn.final_text, interrupted=False, messages=messages,
         ))
-    # Background review fork: only when a trigger tripped AND a real final response exists.
-    if turn.final_text and not turn.interrupted and (should_review_memory or should_review_skills):
+    # Background learning analyzes every completed response; it remains off the live reply path.
+    try:
+        from agent.background_review import automatic_review_scopes
+
+        review_memory, review_skills = automatic_review_scopes(agent)
+        review_memory = review_memory or should_review_memory
+        review_skills = review_skills or should_review_skills
+    except Exception:
+        logger.warning("background learning scope resolution failed", exc_info=True)
+        review_memory, review_skills = False, False
+    if (
+        turn.final_text
+        and not turn.interrupted
+        and not getattr(agent, "skip_background_review", False)
+        and (review_memory or review_skills)
+    ):
         _call_guarded(getattr(agent, "_spawn_background_review", None), "background review spawn raised", kwargs=dict(
-            messages_snapshot=list(messages), review_memory=should_review_memory, review_skills=should_review_skills,
+            messages_snapshot=list(messages), review_memory=review_memory, review_skills=review_skills,
         ))
     return usage_result
 

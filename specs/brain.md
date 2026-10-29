@@ -58,9 +58,12 @@ Each guardrail below traces to one of these four.
 
 This is the part that must be real. Each mechanism maps to a concrete, testable function.
 
-### 3.1 Encoding — what becomes a memory
-Not every turn writes a memory (that produces noise, which is exactly what "faltu knowledge"
-looks like). At turn end, candidate memories are extracted and **salience-scored**:
+### 3.1 Optional native encoding — what can become a memory
+The native deterministic encoder remains available for explicit/internal use and tests, but it
+is **not** the live-turn learning path. Automatic conversation learning is handled by the
+reasoning-led review in §3.1.1; it must not depend on phrase triggers or fixed preference rules.
+When the optional encoder is called, it does not write every turn: candidates are extracted and
+**salience-scored**:
 
 ```
 salience = w1·explicit      (user stated a fact/decision/preference directly)
@@ -76,8 +79,36 @@ Only candidates above threshold are written. Two record kinds are produced:
 - **Semantic** — "what is true": durable, decontextualised → `concept/`, `user/`, `project/`,
   `belief/`. Created mostly by consolidation (§3.2), not directly.
 
-### 3.2 Consolidation — episodic → semantic
-A background pass (after a turn, debounced; never in the response path) does what sleep does:
+### 3.1.1 The conversation loop — recall first, learn after
+Each turn follows a strict order:
+
+1. **Before the first model call**, cue recall runs against the current user message and a bounded
+   slice of recent visible user/assistant dialogue (last eight messages, up to 3,000 characters;
+   tool payloads are excluded). The selected evidence is injected into the per-turn context.
+2. **The assistant answers normally.** Recall and post-turn learning must not hold the response
+   open or imply that PULSE has human consciousness.
+3. **After the completed response is delivered**, an asynchronous review fork examines the
+   conversation, including the assistant's answer and observed tool outcomes. The model uses
+   semantic judgment to decide whether there is durable user information or a verified, reusable
+   lesson, then writes only through the guarded memory/skill tools. No user-facing tool call is
+   required, and the reply does not wait.
+4. **The review is selective.** A completed turn may produce no memory change. Explicit user facts,
+   cautious evidence-backed inferences, successful procedures, corrections, and verified failures
+   are evaluated from the full context—not from phrase triggers. Unsupported assistant claims,
+   private reasoning, and transient details are not learning evidence.
+5. **Recall on a later turn** uses the updated vault/skills. There is no second retrieval after the
+   answer that could retroactively change what the user already received.
+
+Automatic reviews are gated by `auxiliary.background_review.enabled` and available memory/skill
+tools. Combined reviews coalesce per session and wait for an idle window; preempted reviews are
+requeued. The queue is in-memory, not a durable job journal, so process shutdown can still interrupt
+learning. Background analysis uses the configured review model and incurs additional API usage, but
+never holds the delivered response open. The review fork is restricted to guarded memory/skill
+operations and read-only local inspection; it cannot run shell commands, browse the internet, or
+take external actions.
+
+### 3.2 Optional consolidation — episodic → semantic
+When the optional native encoder schedules consolidation, a background pass does what sleep does:
 
 - Cluster recent episodic entries by shared entities/links.
 - Promote repeated or important facts into a semantic node (`concept/<slug>.md`) with links.
@@ -259,6 +290,19 @@ Hard invariant from the PULSE skill: **never break prompt caching.** Two layers:
   context**, never the system prompt. Bounded (~400–800 tokens, hard cap). Omitted when below
   threshold.
 
+Pulse's origin is a separate, source-controlled core identity fact: **PULSE was created by Ankit
+Singh.** It is included in the default identity and appended to the stable prefix when a custom
+`SOUL.md` replaces that identity. It is not stored in the editable memory vault and is unaffected
+by memory settings. This makes it durable across ordinary personalization and memory edits; no
+software prompt or binary can guarantee survival if someone deliberately changes or replaces the
+application itself.
+
+**Learning path:** after delivery, the background review fork reasons over the finished turn and
+selectively updates the native vault and skill library through their existing guarded tools. This
+uses an additional asynchronous model request, so it adds API usage but does not delay the reply.
+The low-level deterministic encoder remains available for explicit/internal use; it is not the
+automatic live-turn learning path.
+
 Silence rule: PULSE never narrates memory activity, exactly as it never narrates reading its
 own system prompt. No "brain dekh raha hoon". If recall is used, it simply informs the answer.
 
@@ -268,6 +312,7 @@ own system prompt. No "brain dekh raha hoon". If recall is used, it simply infor
 | --- | --- | --- |
 | Layer 2 — per-turn recall | `agent/turn_context.py::_brain_recall_block`, appended to `ext_prefetch_cache` | Reuses the existing per-turn injection channel, so the `api_content` sidecar, replay and multimodal handling are shared. No second channel, no drift. |
 | Layer 1 — stable prefix | `agent/system_prompt.py::_memory_parts` → `brain_stable_prefix` | Off unless `brain.prefix_enabled`. Memoized per session; cleared by `reset_agent_cache` on the same boundary the legacy store reloads. |
+| Post-reply learning | `agent/turn_finalizer.py` / `agent/codex_runtime.py` → `AIAgent._spawn_background_review` | One asynchronous, guarded review for each completed turn with an available memory or skill tool; no response delay. |
 | Config → behaviour | `agent/brain/session.py::BrainSettings.from_config` | Reads the `brain` section of `config.yaml` (documented in `cli-config.yaml.example`). |
 
 Both call sites assign a default **before** any risky call and use `except` with an explicit

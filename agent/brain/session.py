@@ -23,9 +23,10 @@ from __future__ import annotations
 import logging
 import threading
 import time
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Deque, Dict, Optional, Tuple
 
 from . import consolidate as consolidate_mod
 from . import encoding as encoding_mod
@@ -380,7 +381,13 @@ def _user_model_guidance_block(vault: Any, query: str, *, settings: Optional[Bra
         return ""
 
 
-def brain_turn_context(agent: Any, user_message: Any, *, settings: Optional[BrainSettings] = None) -> str:
+def brain_turn_context(
+    agent: Any,
+    user_message: Any,
+    *,
+    recent_context: str = "",
+    settings: Optional[BrainSettings] = None,
+) -> str:
     """Layer-2 recall for this turn: the rendered memory block, or ``""``.
 
     Returns the block **unfenced** — the caller wraps it with ``build_memory_context_block`` so
@@ -394,8 +401,12 @@ def brain_turn_context(agent: Any, user_message: Any, *, settings: Optional[Brai
     if not settings.enabled or not settings.recall_enabled:
         return ""
 
-    query = _query_text(user_message)
-    if not query or _is_trivial(query):
+    current_query = _query_text(user_message)
+    if not current_query or _is_trivial(current_query):
+        return ""
+    recent_context = str(recent_context or "").strip()
+    query = f"{current_query}\n{recent_context[-3000:]}" if recent_context else current_query
+    if _is_trivial(query):
         return ""
 
     vault = get_agent_vault(agent)
@@ -515,10 +526,10 @@ def brain_status(agent: Any = None) -> Dict[str, Any]:
 # turn, so a slow disk can never delay a reply. The same three rules hold — fail-open,
 # silent, and absent-by-default in effect.
 
-# One encode in flight at a time. A burst of quick turns must not stack vault writers on
-# top of each other; skipping a pass costs one turn's episodic line, which consolidation
-# would have merged anyway.
+# One ordered worker owns vault writes. A burst of quick turns queues behind it rather than
+# stacking concurrent writers or dropping newer turns.
 _encode_lock = threading.Lock()
+_encode_queue: Deque[Tuple[Any, str, str, str]] = deque()
 _encode_state: Dict[str, Any] = {"running": False, "since_consolidate": 0, "since_reflect": 0}
 _legacy_migrated: set = set()
 
@@ -714,30 +725,39 @@ def brain_reflect(
     return report
 
 
-def _encode_worker(agent: Any, user_text: str, assistant_text: str, session_id: str) -> None:
-    """Body of the background encode thread: encode, then consolidate/reflect when due."""
-    try:
-        brain_encode_turn(agent, user_text, assistant_text, session_id=session_id)
-        settings = resolve_settings(agent)
-        with _encode_lock:
-            _encode_state["since_consolidate"] += 1
-            _encode_state["since_reflect"] += 1
-            due_consolidate = _encode_state["since_consolidate"] >= max(1, int(settings.consolidate_every))
-            due_reflect = _encode_state["since_reflect"] >= max(1, int(settings.reflect_every))
-            if due_consolidate:
-                _encode_state["since_consolidate"] = 0
-            if due_reflect:
-                _encode_state["since_reflect"] = 0
+def _process_encode_task(agent: Any, user_text: str, assistant_text: str, session_id: str) -> None:
+    """Encode one completed turn and run scheduled cognition passes."""
+    brain_encode_turn(agent, user_text, assistant_text, session_id=session_id)
+    settings = resolve_settings(agent)
+    with _encode_lock:
+        _encode_state["since_consolidate"] += 1
+        _encode_state["since_reflect"] += 1
+        due_consolidate = _encode_state["since_consolidate"] >= max(1, int(settings.consolidate_every))
+        due_reflect = _encode_state["since_reflect"] >= max(1, int(settings.reflect_every))
         if due_consolidate:
-            brain_consolidate(agent)
+            _encode_state["since_consolidate"] = 0
         if due_reflect:
-            # Consolidate first so reflection reasons over merged, non-duplicated memory.
-            brain_reflect(agent, text=user_text)
-    except Exception:
-        logger.debug("brain encode worker failed", exc_info=True)
-    finally:
+            _encode_state["since_reflect"] = 0
+    if due_consolidate:
+        brain_consolidate(agent)
+    if due_reflect:
+        # Consolidate first so reflection reasons over merged, non-duplicated memory.
+        brain_reflect(agent, text=user_text)
+
+
+def _encode_worker() -> None:
+    """Drain completed turns in order; an active encode must not discard newer turns."""
+    while True:
         with _encode_lock:
-            _encode_state["running"] = False
+            if not _encode_queue:
+                _encode_state["running"] = False
+                return
+            agent, user_text, assistant_text, session_id = _encode_queue.popleft()
+
+        try:
+            _process_encode_task(agent, user_text, assistant_text, session_id)
+        except Exception:
+            logger.debug("brain encode worker failed", exc_info=True)
 
 
 def brain_encode_turn_async(
@@ -746,16 +766,16 @@ def brain_encode_turn_async(
     """Turn-end entry point (§3.1). Returns whether a pass was scheduled.
 
     Never blocks the caller and never raises: this runs *after* a reply has been sent, so a
-    failure here must be invisible to the user. At most one pass at a time.
+    failure here must be invisible to the user. A single worker drains the queue in order.
     """
     with _encode_lock:
+        _encode_queue.append((agent, user_text, assistant_text, session_id))
         if _encode_state["running"]:
-            return False
+            return True
         _encode_state["running"] = True
     try:
         threading.Thread(
             target=_encode_worker,
-            args=(agent, user_text, assistant_text, session_id),
             name="brain-encode",
             daemon=True,
         ).start()

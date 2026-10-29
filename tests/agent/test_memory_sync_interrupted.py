@@ -17,7 +17,7 @@ These tests exercise the helper directly on a bare ``AIAgent`` built
 via ``__new__`` so the full ``run_conversation`` machinery isn't needed
 — the method is pure logic and three state arguments.
 """
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 
 def _bare_agent():
@@ -51,6 +51,18 @@ class TestSyncExternalMemoryForTurn:
         )
         agent._memory_manager.sync_all.assert_not_called()
         agent._memory_manager.queue_prefetch_all.assert_not_called()
+
+    def test_completed_turn_does_not_use_deterministic_brain_encoder(self):
+        agent = _bare_agent()
+
+        with patch("agent.brain.session.brain_encode_turn_async") as encode:
+            agent._sync_external_memory_for_turn(
+                original_user_message="The task is complete.",
+                final_response="I verified the change and its tests.",
+                interrupted=False,
+            )
+
+        encode.assert_not_called()
 
     # --- Per-turn author (stashed by build_turn_context) -----------------
 

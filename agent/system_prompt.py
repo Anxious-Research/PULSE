@@ -25,6 +25,7 @@ from agent.prompt_builder import (
     SKILLS_GUIDANCE, STEER_CHANNEL_NOTE, TASK_COMPLETION_GUIDANCE, TELEGRAM_RICH_MESSAGES_HINT,
     TOOL_USE_ENFORCEMENT_GUIDANCE, TOOL_USE_ENFORCEMENT_MODELS, drain_truncation_warnings,
 )
+from agent.prompt_builder import PULSE_CORE_ORIGIN
 from agent import prompt_builder as _pb
 from agent.runtime_cwd import resolve_agent_cwd, resolve_context_cwd
 from pulse_constants import get_default_pulse_root, get_pulse_home
@@ -755,6 +756,8 @@ def build_system_prompt_parts(agent: Any, system_message: Optional[str] = None) 
     _ctx_len = _cc_len if isinstance(_cc_len, int) and _cc_len > 0 else None
     # ── Stable tier ────────────────────────────────────────────────
     stable_parts, _soul_loaded = _identity_parts(agent, _ctx_len)
+    if _soul_loaded:
+        stable_parts.append(PULSE_CORE_ORIGIN)
     # The skill_view() pointer dangles without skill tools OR without the
     # pulse-agent skill installed, so the variant is chosen after the skills
     # index is built; this slot holds its position.

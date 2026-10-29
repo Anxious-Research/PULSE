@@ -82,6 +82,28 @@ class TestRunConversationCodexPath:
         assert result["codex_thread_id"] == "thread-stub-1"
         assert result["codex_turn_id"] == "turn-stub-1"
 
+    def test_completed_turn_schedules_learning_without_a_nudge(self, fake_session):
+        agent = _make_codex_agent()
+        agent.valid_tool_names = {"skill_manage"}
+        agent._iters_since_skill = 0
+        agent._skill_nudge_interval = 10
+
+        with patch.object(agent, "_spawn_background_review", return_value=None) as review:
+            agent.run_conversation("a completed task")
+
+        review.assert_called_once()
+        assert review.call_args.kwargs["review_memory"] is False
+        assert review.call_args.kwargs["review_skills"] is True
+
+    def test_completed_turn_respects_skip_background_review(self, fake_session):
+        agent = _make_codex_agent(skip_background_review=True)
+        agent.valid_tool_names = {"skill_manage"}
+
+        with patch.object(agent, "_spawn_background_review", return_value=None) as review:
+            agent.run_conversation("a completed task")
+
+        review.assert_not_called()
+
     def test_codex_app_server_token_usage_updates_session_accounting(self, monkeypatch):
         def fake_run_turn(self, user_input: str, **kwargs):
             return TurnResult(
@@ -241,19 +263,16 @@ class TestRunConversationCodexPath:
         )
         assert user_count == 1, f"user message appeared {user_count}× in {result['messages']}"
 
-    def test_background_review_NOT_invoked_below_threshold(self, fake_session):
-        """A single turn shouldn't trigger background review — counters
-        haven't reached the nudge interval (default 10)."""
+    def test_background_review_not_invoked_without_learning_surface(self, fake_session):
+        """A completed turn with no enabled memory or skill surface cannot be reviewed."""
         agent = _make_codex_agent()
         agent._memory_nudge_interval = 10
         agent._skill_nudge_interval = 10
         agent._iters_since_skill = 0
+        agent.valid_tool_names = set()
         with patch.object(agent, "_spawn_background_review",
                           return_value=None) as spawn:
             agent.run_conversation("ping")
-        # Below threshold → review should NOT fire (was a real bug:
-        # the helper was calling _spawn_background_review() with no
-        # args after every turn, which would crash with TypeError).
         assert not spawn.called
 
     def test_background_review_skill_trigger_fires_above_threshold(

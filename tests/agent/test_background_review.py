@@ -8,6 +8,16 @@ import run_agent as run_agent_module
 from run_agent import AIAgent
 
 
+def test_learning_prompts_reason_over_completed_turn_without_forced_writes():
+    from agent.background_review import _COMBINED_REVIEW_PROMPT
+
+    assert "assistant's completed answer" in _COMBINED_REVIEW_PROMPT
+    assert "Use semantic judgment" in _COMBINED_REVIEW_PROMPT
+    assert "not phrase matching" in _COMBINED_REVIEW_PROMPT
+    assert "It is correct to make no changes" in _COMBINED_REVIEW_PROMPT
+    assert "Be ACTIVE" not in _COMBINED_REVIEW_PROMPT
+
+
 _REAL_THREAD = threading.Thread
 
 

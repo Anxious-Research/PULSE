@@ -60,7 +60,7 @@ def _stub_agent_for_finalize(agent: AIAgent) -> None:
     agent._db_flush_scan_prefix = None
 
 
-def _run_finalize(agent: AIAgent) -> None:
+def _run_finalize(agent: AIAgent, *, should_review_memory: bool = True) -> None:
     """Call finalize_turn with conditions that would trigger background review."""
     finalize_turn(
         agent,
@@ -74,7 +74,7 @@ def _run_finalize(agent: AIAgent) -> None:
         turn_id="test-turn",
         user_message="test",
         original_user_message="test",
-        _should_review_memory=True,
+        _should_review_memory=should_review_memory,
         _turn_exit_reason="text_response(1)",
     )
 
@@ -101,6 +101,19 @@ def test_finalize_turn_fires_review_when_flag_unset() -> None:
     _stub_agent_for_finalize(agent)
     _run_finalize(agent)
     agent._spawn_background_review.assert_called_once()
+
+
+def test_finalize_turn_learns_without_waiting_for_a_nudge() -> None:
+    agent = _make_agent(skip_background_review=False)
+    _stub_agent_for_finalize(agent)
+    agent._iters_since_skill = 0
+    _run_finalize(agent, should_review_memory=False)
+
+    agent._spawn_background_review.assert_called_once_with(
+        messages_snapshot=[{"role": "assistant", "content": "ok"}],
+        review_memory=False,
+        review_skills=True,
+    )
 
 
 

@@ -769,21 +769,31 @@ def finalize_turn(
         interrupted=interrupted, messages=messages,
     )
 
-    # Background memory/skill review runs AFTER delivery so it never competes with the
-    # user's task. Suppressed by skip_background_review (e.g. cron): the fork costs
-    # ~30K tokens / event with no human-in-the-loop benefit. Best-effort; the review
-    # clones the snapshot structurally so its sanitizers can't reach the live transcript.
+    # Background learning runs after delivery on every completed turn with a usable memory or
+    # skill surface. The reviewer reasons over the finished transcript and writes only through
+    # its guarded memory/skill tools; it cannot delay or mutate the live turn.
+    try:
+        from agent.background_review import automatic_review_scopes
+
+        _learning_memory, _learning_skills = automatic_review_scopes(agent)
+        _learning_memory = _learning_memory or _should_review_memory
+        _learning_skills = _learning_skills or _should_review_skills
+    except Exception:
+        logger.warning("background learning scope resolution failed", exc_info=True)
+        _learning_memory, _learning_skills = False, False
     if (
         final_response
         and not interrupted
         and not getattr(agent, "skip_background_review", False)
-        and (_should_review_memory or _should_review_skills)
+        and (_learning_memory or _learning_skills)
     ):
-        with suppress(Exception):
+        try:
             agent._spawn_background_review(
-                messages_snapshot=list(messages), review_memory=_should_review_memory,
-                review_skills=_should_review_skills,
+                messages_snapshot=list(messages), review_memory=_learning_memory,
+                review_skills=_learning_skills,
             )
+        except Exception:
+            logger.warning("background learning review could not be scheduled", exc_info=True)
 
     # Memory provider on_session_end()/shutdown_all() are NOT called here:
     # run_conversation() runs once per message; CLI/gateway own session-end cleanup.

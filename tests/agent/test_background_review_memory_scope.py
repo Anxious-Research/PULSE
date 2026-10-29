@@ -50,6 +50,26 @@ class TestReviewToolWhitelistScope:
         assert "memory" not in whitelist
 
 
+class TestAutomaticReviewScopes:
+    def test_available_memory_and_skill_tools_are_reviewed(self):
+        memory, skills = bg.automatic_review_scopes(SimpleNamespace(
+            valid_tool_names={"memory", "skill_manage"},
+            _memory_enabled=True,
+            _user_profile_enabled=False,
+        ))
+        assert memory is True
+        assert skills is True
+
+    def test_disabled_memory_store_is_not_granted_for_learning(self):
+        memory, skills = bg.automatic_review_scopes(SimpleNamespace(
+            valid_tool_names={"memory"},
+            _memory_enabled=False,
+            _user_profile_enabled=False,
+        ))
+        assert memory is False
+        assert skills is False
+
+
 class TestSpawnForwardsScope:
     def test_target_passes_review_memory_to_worker(self):
         captured = {}

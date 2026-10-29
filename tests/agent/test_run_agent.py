@@ -847,7 +847,10 @@ class TestBuildSystemPrompt:
         agent_with_memory_tool._memory_enabled = True
         prompt = agent_with_memory_tool._build_system_prompt()
         from agent.prompt_builder import build_memory_guidance
-        assert build_memory_guidance(True, True, skill_manage_available=False) in prompt
+        guidance = build_memory_guidance(True, True, skill_manage_available=False)
+        assert guidance in prompt
+        assert "Use judgment over the whole conversation, not keyword matching" in guidance
+        assert "smallest evidence-grounded note" in guidance
 
     def test_no_memory_guidance_when_both_builtin_stores_disabled(
         self, agent_with_memory_tool

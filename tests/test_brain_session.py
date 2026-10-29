@@ -203,6 +203,22 @@ class TestRecallInjection(BridgeTestCase):
         self.seed()
         self.assertEqual(brain_turn_context(self.agent, "kubernetes ingress tls termination"), "")
 
+    def test_follow_up_recall_uses_recent_dialogue_context(self):
+        self.seed()
+        block = brain_turn_context(
+            self.agent,
+            "what about that?",
+            recent_context="User: explain the forgetting curve. Assistant: Retrievability decays over time."
+        )
+        self.assertIn("Forgetting Curve", block)
+
+    def test_trivial_prompt_does_not_recall_from_recent_context(self):
+        self.seed()
+        self.assertEqual(
+            brain_turn_context(self.agent, "thanks!", recent_context="forgetting curve memory decay"),
+            ""
+        )
+
     def test_block_is_returned_unfenced(self):
         """The pipeline owns the fence; a second one would be a malformed prompt."""
         self.seed()

@@ -983,9 +983,9 @@ prompt_caching:
 #                                 # window. Each substantive event re-arms it; a slow but
 #                                 # progressing reasoning/summary stream is not affected.
 #
-#   # Post-turn memory/skill self-improvement review fork. Runs after a turn
-#   # when the nudge intervals fire; writes skills/memories in a daemon thread.
-#   # Usage is recorded under session_model_usage task='background_review'.
+#   # Post-reply memory/skill learning. Reviews each completed turn asynchronously;
+#   # combined reviews coalesce per session and run after an idle window.
+#   # This adds model usage, recorded as session_model_usage task='background_review'.
 #   background_review:
 #     enabled: true            # false = skip automatic forks (/refine still works)
 #     provider: "auto"         # or pin a cheaper model (see memory.md)
@@ -1011,8 +1011,8 @@ memory:
   memory_char_limit: 2200   # ~800 tokens
   user_char_limit: 1375     # ~500 tokens
 
-  # Periodic memory nudge: remind the agent to consider saving memories
-  # every N user turns. Set to 0 to disable. Only active when memory is enabled.
+  # Legacy periodic in-turn memory nudge. Automatic post-reply learning is
+  # controlled by auxiliary.background_review.enabled, not this interval.
   nudge_interval: 10        # Nudge every 10 user turns (0 = disabled)
 
 # =============================================================================

@@ -890,7 +890,24 @@ def _memory_turn_start_and_prefetch(
     return ext_prefetch_cache
 
 
-def _brain_recall_block(agent: Any, original_user_message: Any) -> str:
+def _recent_brain_recall_context(messages: List[Any]) -> str:
+    """Bounded visible dialogue context for follow-up recall; tool payloads are excluded."""
+    from agent.message_content import flatten_message_text
+
+    recent = []
+
+    for message in messages[-8:]:
+        if not isinstance(message, dict) or message.get("role") not in {"user", "assistant"}:
+            continue
+
+        text = flatten_message_text(message.get("content")).strip()
+        if text:
+            recent.append(text)
+
+    return "\n".join(recent)[-3000:]
+
+
+def _brain_recall_block(agent: Any, original_user_message: Any, recent_context: str = "") -> str:
     """Layer-2 memory recall for this turn (specs/brain.md §6); ``""`` when nothing qualifies.
 
     Rides the same per-turn channel as the external-memory prefetch: appended to the current
@@ -905,7 +922,7 @@ def _brain_recall_block(agent: Any, original_user_message: Any) -> str:
     try:
         from agent.brain.session import brain_turn_context
 
-        return brain_turn_context(agent, original_user_message) or ""
+        return brain_turn_context(agent, original_user_message, recent_context=recent_context) or ""
     except Exception:
         logger.debug("brain recall unavailable for this turn", exc_info=True)
         return ""
@@ -1165,7 +1182,11 @@ def build_turn_context(
     # the wire bytes, the ``api_content`` sidecar and replay all read ``ext_prefetch_cache``, so
     # a second channel could drift out of sync with them (and a drifting prefix is a cache miss
     # plus a lie about what the model was shown).
-    _brain_block = _brain_recall_block(agent, original_user_message)
+    _brain_block = _brain_recall_block(
+        agent,
+        original_user_message,
+        _recent_brain_recall_context(messages[:current_turn_user_idx]),
+    )
     if _brain_block:
         ext_prefetch_cache = f"{ext_prefetch_cache}\n\n{_brain_block}" if ext_prefetch_cache else _brain_block
 

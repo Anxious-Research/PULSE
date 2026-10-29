@@ -215,6 +215,16 @@ def test_wrapper_spawns_immediately_for_non_managed(monkeypatch):
     assert len(calls["spawned"]) == 1
 
 
+def test_combined_learning_is_coalesced_until_idle_even_for_cloud(monkeypatch):
+    spawn, calls = _wrapper_agent(monkeypatch, defer="auto", managed=False)
+    spawn([{"role": "user", "content": "completed turn"}], review_memory=True, review_skills=True)
+
+    assert len(calls["enqueued"]) == 1
+    assert calls["spawned"] == []
+    assert calls["enqueued"][0][1]["review_memory"] is True
+    assert calls["enqueued"][0][1]["review_skills"] is True
+
+
 def test_wrapper_defer_never_is_old_behavior(monkeypatch):
     spawn, calls = _wrapper_agent(monkeypatch, defer="never", managed=True)
     spawn([{"role": "user", "content": "hi"}], review_memory=True)
@@ -344,6 +354,18 @@ def test_requeue_skips_non_managed(monkeypatch):
             {"task_cfg": {"defer": "auto"}, "focus": None,
              "_requeue_attempts": 1})
     assert calls["enqueued"] == []
+
+
+def test_preempted_learning_review_requeues_for_cloud(monkeypatch):
+    requeue, calls = _requeue_agent(monkeypatch, managed=False)
+    requeue(_Run(cancelled=True), {
+        "task_cfg": {"defer": "auto"},
+        "focus": None,
+        "review_memory": True,
+        "review_skills": True,
+        "_requeue_attempts": 1,
+    })
+    assert len(calls["enqueued"]) == 1
 
 
 def test_dispatch_runs_under_the_enqueuing_profile_context(tmp_path, monkeypatch):

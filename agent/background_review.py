@@ -242,6 +242,16 @@ def load_background_review_settings() -> tuple[bool, Dict[str, Any]]:
         return True, {}
 
 
+def automatic_review_scopes(agent: Any) -> Tuple[bool, bool]:
+    """Return the memory and skill surfaces an unattended learning pass can safely use."""
+    names = set(getattr(agent, "valid_tool_names", ()) or ())
+    review_memory = (
+        "memory" in names
+        and bool(getattr(agent, "_memory_enabled", False) or getattr(agent, "_user_profile_enabled", False))
+    )
+    return review_memory, "skill_manage" in names
+
+
 def _resolve_review_runtime(agent: Any, task_cfg: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Resolve provider/model/credentials for the review fork. Default (auto / unset / same as
     parent): the parent's live runtime with ``routed=False`` (codex_app_server -> codex_responses
@@ -373,7 +383,11 @@ _MEMORY_ROUTING_BLOCK = (
 )
 
 _MEMORY_REVIEW_PROMPT = (
-    "Review the conversation above and consider saving to memory if appropriate.\n\n"
+    "Review the full conversation above, including the assistant's completed answer and observed "
+    "tool outcomes. Use semantic judgment, not phrase matching. Save only durable information that "
+    "is supported by what the user said or by verified evidence; distinguish explicit facts from "
+    "tentative inferences. Do not copy the answer wholesale or save speculation or private reasoning. "
+    "If there is nothing likely to help future turns, make no change.\n\n"
     "Memory has " + _MEMORY_ROUTING_BLOCK +
     "If something stands out, save it once, in the right store, using the memory tool with the "
     "matching target. If nothing is worth saving, just say 'Nothing to save.' and stop."
@@ -438,14 +452,15 @@ _DO_NOT_CAPTURE_BLOCK = (
 )
 
 _SKILL_REVIEW_PROMPT = (
-    "Review the conversation above and update the skill library. Be ACTIVE — most sessions produce "
-    "at least one skill update, even if small. A pass that does nothing is a missed learning "
-    "opportunity, not a neutral outcome.\n\n"
+    "Review the full conversation above, including the assistant's completed answer and observed "
+    "tool outcomes. Use semantic judgment, not phrase matching. Update a skill only when this turn "
+    "produced a verified, reusable procedure, technical lesson, or correction; do not force a change "
+    "when nothing durable was learned. Never treat an unverified claim or the assistant's unsupported "
+    "assertion as evidence.\n\n"
     "Target shape of the library: CLASS-LEVEL skills, each with a SKILL.md of always-on rules and a "
     "small `references/` set of topical depth. Not a flat list of narrow one-session skills, and "
-    "not an umbrella hoarding a references/ file per session. This shapes HOW you update, not "
-    "WHETHER you update.\n\n" + _LESSON_LAYER_BLOCK +
-    "Signals to look for (any one of these warrants action):\n"
+    "not an umbrella hoarding a references/ file per session.\n\n" + _LESSON_LAYER_BLOCK +
+    "Possible evidence to assess (examples, not keyword triggers):\n"
     "  • User corrected your style, tone, format, legibility, or verbosity. Frustration signals "
     "like 'stop doing X', 'this is too verbose', 'don't format like this', 'why are you "
     "explaining', 'just give me the answer', 'you always do Y and I hate it', or an explicit "
@@ -457,8 +472,8 @@ _SKILL_REVIEW_PROMPT = (
     "that a future session would benefit from. Capture it.\n"
     "  • A skill that got loaded or consulted this session turned out to be wrong, missing a step, "
     "or outdated. Patch it NOW.\n\n"
-    "Preference order — prefer the earliest action that fits, but do pick one when a signal above "
-    "fired:\n"
+    "Preference order — if a durable, reusable lesson was established, prefer the earliest action "
+    "that fits:\n"
     "  1. UPDATE A CURRENTLY-LOADED SKILL. Look back through the conversation for skills the user "
     "loaded via /skill-name or you read via skill_view. If any of them covers the territory of the "
     "new learning, PATCH that one first (re-load it with skill_view during this review — see "
@@ -518,21 +533,24 @@ _SKILL_REVIEW_PROMPT = (
     "If the only skills that need updating are protected, say\n"
     "'Nothing to save.' and stop.\n\n"
     "Do NOT capture" + _DO_NOT_CAPTURE_BLOCK +
-    "'Nothing to save.' is a real option but should NOT be the default. If the session ran "
-    "smoothly with no corrections and produced no new technique, just say 'Nothing to save.' and "
-    "stop. Otherwise, act."
+    "'Nothing to save.' is the correct outcome when the conversation contains no durable, "
+    "evidence-backed lesson."
 )
 
 _COMBINED_REVIEW_PROMPT = (
-    "Review the conversation above and update two things:\n\n"
+    "Review the full conversation above, including the assistant's completed answer and observed "
+    "tool outcomes. Use semantic judgment over the conversation, not phrase matching. Learn from "
+    "what the user revealed and from verified successes, failures, and corrections. Store only "
+    "durable, evidence-backed information or reusable task lessons; distinguish user statements "
+    "from tentative inferences. Do not copy the answer wholesale, invent facts, or store private "
+    "reasoning. It is correct to make no changes when nothing durable was learned.\n\n"
     "**Memory**: " + _MEMORY_ROUTING_BLOCK +
-    "**Skills**: how to do this class of task. Be ACTIVE — most sessions produce at least one "
-    "skill update. A pass that does nothing is a missed learning opportunity, not a neutral "
-    "outcome.\n\n"
+    "**Skills**: reusable knowledge about how to do a class of task. Update only when this turn "
+    "established a verified procedure, pitfall, or correction that would improve future work.\n\n"
     "Target shape of the skill library: CLASS-LEVEL skills with a SKILL.md of always-on rules and a "
     "small `references/` set of topical depth — not narrow one-session skills, and not an umbrella "
     "hoarding a references/ file per session.\n\n" + _LESSON_LAYER_BLOCK +
-    "Signals that warrant a skill update (any one is enough):\n"
+    "Possible skill evidence to assess (examples, not keyword triggers):\n"
     "  • User corrected your style, tone, format, legibility, verbosity, or approach. Frustration "
     "is a FIRST-CLASS skill signal, not just a memory signal. 'stop doing X', 'don't format like "
     "this', 'I hate when you Y' — embed the lesson in the skill that governs that task so the next "
@@ -585,8 +603,8 @@ _COMBINED_REVIEW_PROMPT = (
     "If the only skills that need updating are protected, say\n"
     "'Nothing to save.' and stop.\n\n"
     "Do NOT capture as skills" + _DO_NOT_CAPTURE_BLOCK +
-    "Act on whichever of the two dimensions has real signal. If genuinely nothing stands out on "
-    "either, say 'Nothing to save.' and stop — but don't reach for that conclusion as a default."
+    "Act only on dimensions with durable, evidence-backed learning. If neither has a useful lesson, "
+    "say 'Nothing to save.' and stop."
 )
 
 
