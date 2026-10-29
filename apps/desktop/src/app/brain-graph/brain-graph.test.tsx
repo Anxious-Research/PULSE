@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react'
+import { fireEvent, render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import type { StarmapGraph } from '@/types/pulse'
@@ -33,6 +33,22 @@ describe('BrainGraph', () => {
 
     expect(getByPlaceholderText('Search memories…')).toBeTruthy()
     expect(getByText('Forces')).toBeTruthy()
+  })
+
+  it('lets users pause and resume neural motion', () => {
+    const { getByRole, queryByRole } = render(<BrainGraph graph={mockGraph} />)
+    const initialMotion =
+      queryByRole('button', { name: 'Pause neural motion' }) ??
+      getByRole('button', { name: 'Resume neural motion' })
+    const wasEnabled = initialMotion.getAttribute('aria-pressed') === 'true'
+
+    fireEvent.click(initialMotion)
+    const toggledMotion = getByRole('button', { name: wasEnabled ? 'Resume neural motion' : 'Pause neural motion' })
+    expect(toggledMotion.getAttribute('aria-pressed')).toBe(String(!wasEnabled))
+
+    fireEvent.click(toggledMotion)
+    const restoredMotion = getByRole('button', { name: wasEnabled ? 'Pause neural motion' : 'Resume neural motion' })
+    expect(restoredMotion.getAttribute('aria-pressed')).toBe(String(wasEnabled))
   })
 
   it('renders legend with categories from the graph', () => {

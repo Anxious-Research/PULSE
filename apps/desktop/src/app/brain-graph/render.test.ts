@@ -10,6 +10,8 @@ import type { GLink, GNode } from './types'
 // render-path proof that the typed-edge contract reaches the pixels.
 function makeRecordingCtx() {
   const calls = {
+    curves: 0,
+    labels: [] as string[],
     setLineDash: [] as number[][],
     lineWidth: [] as number[],
     globalAlphaStops: [] as number[]
@@ -24,10 +26,12 @@ function makeRecordingCtx() {
     createRadialGradient: () => gradient,
     fill: () => {},
     fillRect: () => {},
-    fillText: () => {},
+    fillText: (text: string) => calls.labels.push(text),
     lineTo: () => {},
     measureText: () => ({ width: 10 }),
     moveTo: () => {},
+    closePath: () => {},
+    quadraticCurveTo: () => calls.curves++,
     restore: () => {},
     save: () => {},
     setLineDash: (d: number[]) => calls.setLineDash.push(d),
@@ -49,7 +53,9 @@ function node(id: string, x: number): GNode {
     category: 'concept',
     degree: 1,
     id,
+    kind: 'memory',
     label: id,
+    phase: 0,
     pinned: false,
     state: 'active',
     useCount: 0,
@@ -70,6 +76,7 @@ function baseInput(links: GLink[], ctx: CanvasRenderingContext2D): DrawInput {
     dpr: 1,
     hoverId: null,
     links,
+    motionEnabled: false,
     nodes,
     now: 10_000,
     palette: {} as DrawInput['palette'],
@@ -81,6 +88,27 @@ function baseInput(links: GLink[], ctx: CanvasRenderingContext2D): DrawInput {
 }
 
 describe('drawGraph typed-edge styling', () => {
+  it('draws category clouds and curved synapses', () => {
+    const recording = makeRecordingCtx()
+    const input = baseInput([{ source: 'a', target: 'b' } as GLink], recording.ctx)
+    input.nodes.push(node('c', 0))
+
+    drawGraph(input)
+
+    expect(recording.calls.curves).toBeGreaterThan(0)
+    expect(recording.calls.labels).toContain('concept')
+  })
+
+  it('keeps ambient neuron animation opt-in for reduced-motion users', () => {
+    const recording = makeRecordingCtx()
+    const input = baseInput([], recording.ctx)
+
+    expect(drawGraph(input)).toBe(false)
+
+    input.motionEnabled = true
+    expect(drawGraph(input)).toBe(true)
+  })
+
   it('dashes an inferred-entity edge and leaves an asserted edge solid', () => {
     const inferred = makeRecordingCtx()
     drawGraph(baseInput([{ confidence: 0.5, kind: 'mentions', provenance: 'inferred_entity', source: 'a', target: 'b' }], inferred.ctx))

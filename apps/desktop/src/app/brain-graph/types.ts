@@ -18,6 +18,7 @@ export interface Viewport {
  *  maps them to the screen (Obsidian's infinite-canvas model). */
 export interface GNode extends StarmapNode, SimulationNodeDatum {
   degree: number
+  phase: number
   x: number
   y: number
 }

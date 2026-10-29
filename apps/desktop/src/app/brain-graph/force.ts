@@ -19,6 +19,16 @@ export interface BuiltGraph {
   sim: Simulation<GNode, GLink>
 }
 
+function nodePhase(id: string): number {
+  let hash = 2166136261
+
+  for (let i = 0; i < id.length; i += 1) {
+    hash = Math.imul(hash ^ id.charCodeAt(i), 16777619)
+  }
+
+  return ((hash >>> 0) / 0xffffffff) * Math.PI * 2
+}
+
 /** Disc radius, Obsidian-style: a small base that grows with link count. */
 export function nodeRadius(n: StarmapNode & { degree?: number }): number {
   const degree = n.degree ?? 0
@@ -57,6 +67,7 @@ export function buildGraph(
     return {
       ...n,
       degree: adjacency.get(n.id) ?? 0,
+      phase: nodePhase(n.id),
       x: prev?.x ?? Math.cos(angle) * radius,
       y: prev?.y ?? Math.sin(angle) * radius
     }

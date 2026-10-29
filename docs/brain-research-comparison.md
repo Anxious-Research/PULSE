@@ -84,6 +84,13 @@ Sources: the paper *"Hindsight is 20/20: Building Agent Memory that Retains, Rec
 * **Storage:** PostgreSQL + pgvector, or Oracle AI Database 23ai — a hosted/self-hosted server
   product with 25+ LLM provider options. Mental models / knowledge pages are derived, refreshable
   artefacts organised like a wiki (README).
+* **Graph visualization:** Hindsight's Control Plane currently uses a *Constellation* view over
+  Hindsight bank graph data: softly grouped clusters, link-count heat, breathing nodes, curved
+  connections and animated signal beads on focus. The older Cytoscape "Graph" view was removed.
+  PULSE adopts those visual ideas in its desktop Brain graph, but keeps its own vault/API and
+  typed edge provenance/confidence; the Hindsight-specific bank graph is not a compatible data
+  source. The `Anxious-Research/rea` repository is an MIT reverse-engineering CLI/MCP toolkit,
+  not a graph-view component, so it is not added as a runtime dependency.
 * The claim that knowledge pages never cite other knowledge pages (a loop guard) is recorded in
   `docs/brain-evolution.md` §1.1 `[GENERAL]` — not re-verified against Hindsight docs this pass.
 * **Benchmarks** `[VENDOR]`: with a 20B open backbone, 39.0% → **83.6%** on LongMemEval and

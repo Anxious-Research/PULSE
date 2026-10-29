@@ -3,6 +3,8 @@ import {
   Activity,
   Compass,
   Minus,
+  Pause,
+  Play,
   Plus,
   RotateCcw,
   Search,
@@ -138,6 +140,11 @@ export function BrainGraph({
   const [showForcesPanel, setShowForcesPanel] = useState(false)
   const [query, setQuery] = useState('')
   const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set())
+  const [motionEnabled, setMotionEnabled] = useState(
+    () => typeof window === 'undefined' || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches !== true
+  )
+  const motionRef = useRef(motionEnabled)
+  motionRef.current = motionEnabled
   const themeEpoch = useThemeEpoch()
 
   const invalidate = useCallback(() => invalidateRef.current(), [])
@@ -603,6 +610,10 @@ export function BrainGraph({
   }, [invalidate, query])
 
   useEffect(() => {
+    invalidate()
+  }, [invalidate, motionEnabled])
+
+  useEffect(() => {
     let raf = 0
     let paused = false
     let pauseController: ReturnType<typeof createRendererLoopPauseController>
@@ -635,6 +646,7 @@ export function BrainGraph({
         dpr: dprRef.current,
         hoverId: hoverRef.current,
         links: linksRef.current,
+        motionEnabled: motionRef.current,
         nodes: nodesRef.current,
         now: performance.now(),
         palette,
@@ -773,6 +785,21 @@ export function BrainGraph({
           </button>
         </Tip>
 
+        <Tip label={motionEnabled ? 'Pause neural motion' : 'Resume neural motion'}>
+          <button
+            aria-label={motionEnabled ? 'Pause neural motion' : 'Resume neural motion'}
+            aria-pressed={motionEnabled}
+            className={cn(
+              'flex h-7 w-7 items-center justify-center rounded-full',
+              'text-slate-400 hover:bg-white/5 hover:text-cyan-300 transition-colors'
+            )}
+            onClick={() => setMotionEnabled(value => !value)}
+            type="button"
+          >
+            {motionEnabled ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+          </button>
+        </Tip>
+
         {onRefresh && (
           <Tip label="Refresh Vault Graph">
             <button
@@ -849,7 +876,7 @@ export function BrainGraph({
 
         <div className="flex items-center justify-between border-t border-white/10 pt-2 text-[0.68rem]">
           <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
-            <Activity className="h-3 w-3 animate-pulse" />
+            <Activity className={cn('h-3 w-3', motionEnabled && 'animate-pulse')} />
             <span>∿ Live</span>
           </div>
           <span className="text-[0.6rem] text-slate-500">Autonomous</span>

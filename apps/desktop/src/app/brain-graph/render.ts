@@ -13,6 +13,7 @@ export interface DrawInput {
   dpr: number
   hoverId: null | string
   links: GLink[]
+  motionEnabled: boolean
   nodes: GNode[]
   now: number
   palette: GraphPalette
@@ -30,8 +31,173 @@ function endpoint(v: GNode | string, byId: Map<string, GNode>): GNode | null {
 
 const easeOut = (t: number): number => 1 - (1 - t) ** 3
 
+interface Point {
+  x: number
+  y: number
+}
+
+function convexHull(points: Point[]): Point[] {
+  const sorted = [...points].sort((a, b) => a.x - b.x || a.y - b.y)
+
+  if (sorted.length < 3) {
+    return sorted
+  }
+
+  const cross = (o: Point, a: Point, b: Point) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x)
+  const lower: Point[] = []
+  const upper: Point[] = []
+
+  for (const point of sorted) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], point) <= 0) {
+      lower.pop()
+    }
+
+    lower.push(point)
+  }
+
+  for (const point of [...sorted].reverse()) {
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], point) <= 0) {
+      upper.pop()
+    }
+
+    upper.push(point)
+  }
+
+  lower.pop()
+  upper.pop()
+
+  return [...lower, ...upper]
+}
+
+function drawCategoryClouds(
+  ctx: CanvasRenderingContext2D,
+  nodes: GNode[],
+  toScreen: (x: number, y: number) => Point,
+  palette: GraphPalette,
+  zoom: number,
+  width: number,
+  height: number,
+  focusId: null | string,
+  focusSet: null | Set<string>
+): void {
+  const groups = new Map<string, GNode[]>()
+
+  for (const node of nodes) {
+    if (node.kind !== 'memory' || !node.category) {
+      continue
+    }
+
+    const members = groups.get(node.category) ?? []
+    members.push(node)
+    groups.set(node.category, members)
+  }
+
+  for (const [category, members] of groups) {
+    if (members.length < 2) {
+      continue
+    }
+
+    const points = members.map(node => toScreen(node.x, node.y))
+    let centerX = 0
+    let centerY = 0
+    let top = Infinity
+
+    for (const point of points) {
+      centerX += point.x / points.length
+      centerY += point.y / points.length
+      top = Math.min(top, point.y)
+    }
+
+    const center = { x: centerX, y: centerY }
+    const padding = 18 * Math.max(0.8, Math.min(zoom, 1.4))
+    let radius = padding
+
+    for (const point of points) {
+      radius = Math.max(radius, Math.hypot(point.x - center.x, point.y - center.y) + padding)
+    }
+
+    if (
+      center.x + radius < 0 ||
+      center.x - radius > width ||
+      center.y + radius < 0 ||
+      center.y - radius > height
+    ) {
+      continue
+    }
+
+    const hull = convexHull(points)
+    const color = getNodeColorSet(members[0])
+    const highlighted = !focusId || members.some(node => node.id === focusId || focusSet?.has(node.id))
+    const alpha = highlighted ? 1 : 0.25
+    const fill = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, radius)
+    fill.addColorStop(0, rgba(color.glow, (palette.dark ? 0.07 : 0.05) * alpha))
+    fill.addColorStop(1, rgba(color.glow, (palette.dark ? 0.015 : 0.01) * alpha))
+
+    ctx.save()
+    ctx.fillStyle = fill
+    ctx.strokeStyle = rgba(color.glow, (palette.dark ? 0.22 : 0.16) * alpha)
+    ctx.lineWidth = 1
+    ctx.beginPath()
+
+    if (hull.length < 3) {
+      ctx.arc(center.x, center.y, radius, 0, Math.PI * 2)
+    } else {
+      const expanded = hull.map(point => {
+        const dx = point.x - center.x
+        const dy = point.y - center.y
+        const distance = Math.hypot(dx, dy) || 1
+
+        return { x: point.x + dx / distance * padding, y: point.y + dy / distance * padding }
+      })
+
+      for (let i = 0; i < expanded.length; i += 1) {
+        const current = expanded[i]
+        const next = expanded[(i + 1) % expanded.length]
+        const midpoint = { x: (current.x + next.x) / 2, y: (current.y + next.y) / 2 }
+
+        if (i === 0) {
+          const previous = expanded[expanded.length - 1]
+          ctx.moveTo((previous.x + current.x) / 2, (previous.y + current.y) / 2)
+        }
+
+        ctx.quadraticCurveTo(current.x, current.y, midpoint.x, midpoint.y)
+      }
+
+      ctx.closePath()
+    }
+
+    ctx.fill()
+    ctx.stroke()
+
+    if (zoom >= 0.45) {
+      ctx.font = '600 10px "Inter", -apple-system, system-ui, sans-serif'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillStyle = rgba(palette.fg, (highlighted ? 0.76 : 0.3))
+      ctx.fillText(category, center.x, top - padding - 9)
+    }
+
+    ctx.restore()
+  }
+}
+
 export function drawGraph(input: DrawInput): boolean {
-  const { adjacency, births, ctx, dpr, hoverId, links, nodes, now, palette, query, selectedId, size, vp } = input
+  const {
+    adjacency,
+    births,
+    ctx,
+    dpr,
+    hoverId,
+    links,
+    motionEnabled,
+    nodes,
+    now,
+    palette,
+    query,
+    selectedId,
+    size,
+    vp
+  } = input
   const { h, w } = size
 
   if (w <= 0 || h <= 0) {return false}
@@ -45,7 +211,7 @@ export function drawGraph(input: DrawInput): boolean {
   const focusId = hoverId ?? selectedId
   const focusSet = focusId ? (adjacency.get(focusId) ?? new Set<string>()) : null
 
-  let animating = false
+  let animating = motionEnabled
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
@@ -65,6 +231,8 @@ export function drawGraph(input: DrawInput): boolean {
 
   const sx = (wx: number) => wx * vp.k + vp.x + w / 2
   const sy = (wy: number) => wy * vp.k + vp.y + h / 2
+  const toScreen = (x: number, y: number): Point => ({ x: sx(x), y: sy(y) })
+  drawCategoryClouds(ctx, nodes, toScreen, palette, vp.k, w, h, focusId, focusSet)
 
   const bornOf = (id: string): number => {
     const start = births.get(id)
@@ -104,7 +272,8 @@ export function drawGraph(input: DrawInput): boolean {
 
     const colorSet = getNodeColorSet(n)
     const bloomRadius = r * (degree >= 8 ? 6 : 4)
-    const bloomAlpha = Math.min(0.35, 0.08 + degree * 0.02) * born
+    const breathe = motionEnabled ? 0.88 + 0.12 * Math.sin(now * 0.001 + n.phase) : 1
+    const bloomAlpha = Math.min(0.35, 0.08 + degree * 0.02) * born * breathe
 
     const bloom = ctx.createRadialGradient(X, Y, 0, X, Y, bloomRadius)
     bloom.addColorStop(0, rgba(colorSet.glow, bloomAlpha))
@@ -118,7 +287,8 @@ export function drawGraph(input: DrawInput): boolean {
   }
 
   // 3. Render Filament Edges
-  for (const link of links) {
+  for (let linkIndex = 0; linkIndex < links.length; linkIndex += 1) {
+    const link = links[linkIndex]
     const s = endpoint(link.source, byId)
     const t = endpoint(link.target, byId)
 
@@ -146,6 +316,10 @@ export function drawGraph(input: DrawInput): boolean {
 
     const sColors = getNodeColorSet(s)
     const tColors = getNodeColorSet(t)
+    const dx = tX - sX
+    const dy = tY - sY
+    const controlX = (sX + tX) / 2 - dy * 0.075
+    const controlY = (sY + tY) / 2 + dx * 0.075
 
     // Typed-edge styling (no clutter): trust (confidence) modulates opacity so a weak
     // inferred link reads fainter than an asserted one; an inferred-entity edge is dashed
@@ -169,9 +343,27 @@ export function drawGraph(input: DrawInput): boolean {
     ctx.setLineDash(inferred ? [4, 3] : [])
     ctx.beginPath()
     ctx.moveTo(sX, sY)
-    ctx.lineTo(tX, tY)
+    ctx.quadraticCurveTo(controlX, controlY, tX, tY)
     ctx.stroke()
     ctx.restore()
+
+    if (motionEnabled && (s.id === focusId || t.id === focusId)) {
+      const progress = (now * 0.00024 + linkIndex * 0.173) % 1
+      const u = s.id === focusId ? progress : 1 - progress
+      const inverse = 1 - u
+      const x = inverse * inverse * sX + 2 * inverse * u * controlX + u * u * tX
+      const y = inverse * inverse * sY + 2 * inverse * u * controlY + u * u * tY
+
+      ctx.save()
+      ctx.globalAlpha = 0.9 * Math.sin(Math.PI * u)
+      ctx.fillStyle = rgba(sColors.highlight, 1)
+      ctx.shadowColor = rgba(sColors.glow, 1)
+      ctx.shadowBlur = 8
+      ctx.beginPath()
+      ctx.arc(x, y, 2, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.restore()
+    }
   }
 
   // 4. Render 3D Spherical Nodes
@@ -185,7 +377,8 @@ export function drawGraph(input: DrawInput): boolean {
 
     const X = sx(n.x)
     const Y = sy(n.y)
-    const r = Math.max(1.8, nodeRadius(n) * vp.k * (0.3 + 0.7 * born))
+    const breathe = motionEnabled ? 1 + 0.1 * Math.sin(now * 0.0012 + n.phase) : 1
+    const r = Math.max(1.8, nodeRadius(n) * vp.k * (0.3 + 0.7 * born) * breathe)
 
     // Cull off-screen nodes
     if (X < -80 || X > w + 80 || Y < -80 || Y > h + 80) {continue}
