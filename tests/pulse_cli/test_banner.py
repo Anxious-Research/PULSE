@@ -8,6 +8,21 @@ import pulse_cli.banner as banner
 import model_tools
 import tools.mcp_tool_discovery
 
+
+def test_default_banner_logo_uses_pulse_wordmark():
+    rows = [
+        line.split("]", 1)[1].removesuffix("[/]")
+        for line in banner.PULSE_AGENT_LOGO.splitlines()
+    ]
+
+    assert len(rows) == 7
+    assert all(len(row) == 102 for row in rows)
+    assert rows[0] == (
+        "████████  ██    ██  ██        ████████  ████████        "
+        "████    ████████  ████████  ██    ██  ████████"
+    )
+
+
 def test_banner_snapshot_accepts_bom_without_weakening_freshness(tmp_path, monkeypatch):
     import json
 
