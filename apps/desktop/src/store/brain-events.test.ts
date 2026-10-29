@@ -2,10 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { StarmapGraph } from '@/types/pulse'
 
-import { applyBrainEvent, replayPendingBrainEvents } from './brain-events'
+import { applyBrainEvent, fetchRecentEvents, replayPendingBrainEvents, resolveBrainEventsWsUrl } from './brain-events'
 import { $starmapActivity, $starmapGraph } from './starmap'
 
-vi.mock('@/pulse', () => ({ getStarmapGraph: vi.fn() }))
+vi.mock('@/pulse', () => ({
+  activeConnection: vi.fn(),
+  getApiRequestProfile: vi.fn(() => null),
+  getStarmapGraph: vi.fn(),
+  pulseApi: vi.fn()
+}))
 
 const graph: StarmapGraph = {
   clusters: [],
@@ -87,5 +92,44 @@ describe('brain event graph updates', () => {
 
     expect($starmapGraph.get()?.nodes.some(node => node.vaultId === 'concept/new')).toBe(true)
     expect($starmapActivity.get()).toHaveLength(1)
+  })
+
+  it('resolves brain events WebSocket URL via getGatewayWsUrl', async () => {
+    const originalDesktop = window.pulseDesktop
+    try {
+      window.pulseDesktop = {
+        ...originalDesktop,
+        getGatewayWsUrl: vi.fn(async () => ({ ok: true, wsUrl: 'ws://127.0.0.1:59126/api/ws?token=test-tok' }))
+      } as any
+
+      const url = await resolveBrainEventsWsUrl()
+      expect(url).toBe('ws://127.0.0.1:59126/api/events?token=test-tok&channel=brain')
+    } finally {
+      window.pulseDesktop = originalDesktop
+    }
+  })
+
+  it('fetches recent events via pulseApi in desktop mode', async () => {
+    const { pulseApi } = await import('@/pulse')
+    vi.mocked(pulseApi).mockResolvedValueOnce({
+      seq: 10,
+      events: [{ kind: 'MEMORY_CREATED', node_id: 'concept/test', seq: 10 }]
+    })
+
+    const originalDesktop = window.pulseDesktop
+    try {
+      window.pulseDesktop = {
+        ...originalDesktop,
+        api: vi.fn()
+      } as any
+
+      const result = await fetchRecentEvents(5)
+      expect(pulseApi).toHaveBeenCalledWith(
+        expect.objectContaining({ path: '/api/brain/events/recent?since=5' })
+      )
+      expect(result?.seq).toBe(10)
+    } finally {
+      window.pulseDesktop = originalDesktop
+    }
   })
 })

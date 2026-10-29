@@ -5,7 +5,8 @@
  * graph atom, catches up after reconnect via `/api/brain/events/recent?since=seq`, and
  * reconciles with authoritative state when the gap is too large (§15).
  */
-import { getStarmapGraph } from '@/pulse'
+import { profileScoped } from '@/api/client'
+import { activeConnection, getApiRequestProfile, getStarmapGraph, pulseApi } from '@/pulse'
 import type { StarmapActivity, StarmapNode } from '@/types/pulse'
 
 import { $starmapActivity, $starmapGraph } from './starmap'
@@ -28,7 +29,84 @@ let bufferedEvents: BrainEvent[] = []
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 let isSubscribed = false
 
-const API_BASE = import.meta.env.VITE_API_BASE || ''
+export async function resolveBrainEventsWsUrl(): Promise<string | null> {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  // 1. Electron Desktop mode: route through the main process to the active backend
+  if (window.pulseDesktop) {
+    try {
+      const profile = getApiRequestProfile()
+
+      // When getGatewayWsUrl is available, mint fresh WS URL (handles token & oauth tickets)
+      if (typeof window.pulseDesktop.getGatewayWsUrl === 'function') {
+        const res = await window.pulseDesktop.getGatewayWsUrl(profile)
+        const wsUrl = typeof res === 'string' ? res : res?.ok ? res.wsUrl : null
+        if (wsUrl) {
+          const url = new URL(wsUrl)
+          url.pathname = url.pathname.replace(/\/(api\/)?ws$/, '/api/events')
+          url.searchParams.set('channel', 'brain')
+          if (profile && !url.searchParams.has('profile')) {
+            url.searchParams.set('profile', profile)
+          }
+          return url.toString()
+        }
+      }
+
+      // Fallback: active connection baseUrl + token
+      const conn = await activeConnection().catch(() => null)
+      if (conn?.baseUrl) {
+        const base = conn.baseUrl.replace(/^http/, 'ws')
+        const tokenParam = conn.token ? `&token=${encodeURIComponent(conn.token)}` : ''
+        const profileParam = profile ? `&profile=${encodeURIComponent(profile)}` : ''
+        return `${base}/api/events?channel=brain${tokenParam}${profileParam}`
+      }
+    } catch (err) {
+      console.warn('[brain-events] failed to resolve desktop WS URL:', err)
+    }
+  }
+
+  // 2. Web / Dashboard / Vite Dev fallback
+  const apiBase = import.meta.env.VITE_API_BASE || ''
+  if (apiBase) {
+    const base = apiBase.replace(/^http/, 'ws')
+    return `${base}/api/events?channel=brain`
+  }
+
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    const loc = window.location
+    const proto = loc.protocol === 'https:' ? 'wss:' : 'ws:'
+    return `${proto}//${loc.host}/api/events?channel=brain`
+  }
+
+  return null
+}
+
+export async function fetchRecentEvents(since: number): Promise<{ seq: number; events: BrainEvent[] } | null> {
+  if (typeof window !== 'undefined' && typeof window.pulseDesktop?.api === 'function') {
+    try {
+      return await pulseApi<{ seq: number; events: BrainEvent[] }>({
+        ...profileScoped(),
+        path: `/api/brain/events/recent?since=${since}`
+      })
+    } catch (err) {
+      console.warn('[brain-events] pulseApi catch-up failed:', err)
+      return null
+    }
+  }
+
+  try {
+    const apiBase = import.meta.env.VITE_API_BASE || ''
+    const res = await fetch(`${apiBase}/api/brain/events/recent?since=${since}`)
+    if (res.ok) {
+      return await res.json()
+    }
+  } catch (err) {
+    console.warn('[brain-events] fetch catch-up failed:', err)
+  }
+  return null
+}
 
 /**
  * Subscribe to real-time Brain events. Call once on starmap mount; idempotent.
@@ -40,80 +118,111 @@ export function subscribeBrainEvents(): () => void {
 
   isSubscribed = true
 
-  connect()
+  void connect()
 
   return unsubscribe
 }
 
-function connect(): void {
-  if (ws) {
+async function connect(): Promise<void> {
+  if (ws || !isSubscribed) {
     return
   }
 
   catchingUp = true
   bufferedEvents = []
-  const wsUrl = `${API_BASE.replace(/^http/, 'ws')}/api/events?channel=brain`
-  ws = new WebSocket(wsUrl)
+  const wsUrl = await resolveBrainEventsWsUrl()
 
-  ws.onopen = async () => {
-    console.log('[brain-events] connected')
-
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer)
-      reconnectTimer = null
+  if (!wsUrl || !isSubscribed) {
+    catchingUp = false
+    if (isSubscribed && !reconnectTimer) {
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null
+        void connect()
+      }, 2000)
     }
+    return
+  }
 
-    // Catch up on missed events (§14: handle reconnect)
-    try {
-      const res = await fetch(`${API_BASE}/api/brain/events/recent?since=${lastSeq}`)
+  try {
+    const socket = new WebSocket(wsUrl)
+    ws = socket
 
-      if (res.ok) {
-        const { seq, events } = await res.json()
+    socket.onopen = async () => {
+      if (ws !== socket) {
+        socket.close()
+        return
+      }
+      console.log('[brain-events] connected')
 
-        for (const event of events || []) {
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer)
+        reconnectTimer = null
+      }
+
+      // Catch up on missed events (§14: handle reconnect)
+      try {
+        const recent = await fetchRecentEvents(lastSeq)
+        if (recent) {
+          const { seq, events } = recent
+          for (const event of events || []) {
+            consumeEvent(event)
+          }
+          lastSeq = Math.max(lastSeq, seq || lastSeq)
+        }
+      } catch (err) {
+        console.warn('[brain-events] catch-up failed:', err)
+      } finally {
+        catchingUp = false
+        const pending = bufferedEvents
+        bufferedEvents = []
+
+        for (const event of pending) {
           consumeEvent(event)
         }
-
-        lastSeq = Math.max(lastSeq, seq || lastSeq)
-      }
-    } catch (err) {
-      console.warn('[brain-events] catch-up failed:', err)
-    } finally {
-      catchingUp = false
-      const pending = bufferedEvents
-      bufferedEvents = []
-
-      for (const event of pending) {
-        consumeEvent(event)
       }
     }
-  }
 
-  ws.onmessage = msg => {
-    try {
-      const event: BrainEvent = JSON.parse(msg.data)
+    socket.onmessage = msg => {
+      try {
+        const event: BrainEvent = JSON.parse(msg.data)
 
-      if (catchingUp) {
-        bufferedEvents.push(event)
-      } else {
-        consumeEvent(event)
+        if (catchingUp) {
+          bufferedEvents.push(event)
+        } else {
+          consumeEvent(event)
+        }
+      } catch (err) {
+        console.warn('[brain-events] parse error:', err)
       }
-    } catch (err) {
-      console.warn('[brain-events] parse error:', err)
     }
-  }
 
-  ws.onerror = err => {
-    console.error('[brain-events] error:', err)
-  }
+    socket.onerror = err => {
+      console.error('[brain-events] error:', err)
+    }
 
-  ws.onclose = () => {
-    console.log('[brain-events] closed')
+    socket.onclose = () => {
+      console.log('[brain-events] closed')
+      if (ws === socket) {
+        ws = null
+      }
+
+      if (isSubscribed && !reconnectTimer) {
+        // Auto-reconnect with exponential backoff (§14)
+        reconnectTimer = setTimeout(() => {
+          reconnectTimer = null
+          void connect()
+        }, 2000)
+      }
+    }
+  } catch (err) {
+    console.error('[brain-events] socket init failed:', err)
     ws = null
-
-    if (isSubscribed) {
-      // Auto-reconnect with exponential backoff (§14)
-      reconnectTimer = setTimeout(connect, 2000)
+    catchingUp = false
+    if (isSubscribed && !reconnectTimer) {
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null
+        void connect()
+      }, 2000)
     }
   }
 }
