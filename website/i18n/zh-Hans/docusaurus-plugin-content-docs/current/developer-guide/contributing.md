@@ -90,8 +90,8 @@ npm ci --prefix website
 npm run build:fast --prefix website
 ```
 
-图标从 `assets/pulse-girl-*.svg` 和 `assets/backgrounds/` 生成。
-`node scripts/generate-icons.mjs` 使用 PULSE 运行时 Python（`PULSE_PYTHON`，否则为 PATH 上的 `python`）渲染图标：Pillow 和 resvg-py 是核心依赖。不要提交生成的 PNG/ICO/ICNS 文件。
+图标直接从 `assets/pulse-icon-source.png` 生成。
+`node scripts/generate-icons.mjs` 使用 PULSE 运行时 Python（`PULSE_PYTHON`，否则为 PATH 上的 `python`）和 Pillow 调整尺寸，不添加边框或遮罩。不要提交生成的 PNG/ICO/ICNS 文件。
 
 ### 运行测试
 

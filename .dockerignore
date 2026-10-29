@@ -93,10 +93,7 @@ website/
 assets/
 !assets/
 assets/*
-!assets/pulse-girl-black.svg
-!assets/pulse-girl-white.svg
-!assets/backgrounds/
-!assets/backgrounds/**
+!assets/pulse-icon-source.png
 infographic/
 
 # Plugin-level docs (pulse-achievements ships docs/ but the runtime doesn't read them)

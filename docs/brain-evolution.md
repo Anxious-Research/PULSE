@@ -306,14 +306,10 @@ and `tests/home_io_guard.py` correctly converts that into an error at *setup* fo
 561-error run that looks catastrophic but is the guard refusing to let tests touch the production
 home. Through the runner the same 30 brain suites report `561 tests passed, 0 failed`.
 
-**Build blocker found and fixed while producing the payload.** `npm run payload` failed before it
-reached the agent at all, in the icon generator. `scripts/generate_icons.py`'s `girl_path()`
-deliberately returns *either* a `<path>` (vector art) *or* an `<image>` (a PNG-based source), but
-`drag_bottom_nodes()` read `path.attrib["d"]` unconditionally, so an image-based source raised
-`KeyError: 'd'` and killed the build. An `<image>` has no path data and therefore no bottom nodes to
-drag, so it now returns early. This is unrelated to the Brain work (its own commit) but it blocked
-the packaged product, which is why it is recorded here. `stage.py` also requires `PULSE_PYTHON` to be
-set to a runtime interpreter that has Pillow and `resvg-py`.
+**Historical build blocker (superseded).** An earlier icon generator used SVG path transforms and
+could fail when its source was an embedded image. The current generator has replaced that pipeline:
+all icon assets are resized directly from `assets/pulse-icon-source.png` using Pillow, so builders
+only need the runtime Pillow dependency.
 
 ### The fifteen mandated scenarios — all `Benchmark-verified`
 

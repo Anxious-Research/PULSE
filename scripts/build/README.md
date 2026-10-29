@@ -180,8 +180,7 @@ The web builder reads `web/public/` beneath it and requires `favicon.ico`.
 The desktop builder reads `apps/desktop/public/` beneath it and requires
 `apple-touch-icon.png`.
 
-Run the generator with a PULSE runtime Python (Pillow and resvg-py are core
-dependencies):
+Run the generator with a PULSE runtime Python (Pillow is a core dependency):
 
 ```sh
 python scripts/generate_icons.py --source /work/source --out /work/products/icons

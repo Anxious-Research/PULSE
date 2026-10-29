@@ -1,8 +1,8 @@
 """Prepare an interpreter that can run the icon generator without a PULSE install.
 
-Pillow and resvg-py are core runtime dependencies, so builders that have no
-PULSE runtime environment (desktop bundles, product staging) render icons on
-the locked runtime dependencies alone, without installing the application.
+Pillow is a core runtime dependency, so builders that have no PULSE runtime
+environment (desktop bundles, product staging) generate icons using the locked
+runtime dependencies alone, without installing the application.
 """
 from __future__ import annotations
 

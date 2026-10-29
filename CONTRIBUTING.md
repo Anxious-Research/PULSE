@@ -194,11 +194,12 @@ npm run build:fast --prefix website
 Use a Node/npm version accepted by the corresponding `package.json` engines.
 Native desktop dependencies can also require the platform build toolchain.
 
-Logos and icons are generated from `assets/pulse-girl-*.svg` and
-`assets/backgrounds/`. `node scripts/generate-icons.mjs` renders them with the
-PULSE runtime Python (`PULSE_PYTHON`, else `python` on PATH): Pillow and
-resvg-py are core dependencies. Generated outputs are committed and CI fails if
-they are stale; rerun the generator and commit after changing any source SVG.
+Logos and icons are generated directly from `assets/pulse-icon-source.png`.
+`node scripts/generate-icons.mjs` uses the PULSE runtime Python
+(`PULSE_PYTHON`, else `python` on PATH) and Pillow to resize the source without
+adding borders or platform-specific artwork. Generated outputs are committed
+and CI fails if they are stale; rerun the generator and commit after changing
+the source image.
 
 ### Run tests
 

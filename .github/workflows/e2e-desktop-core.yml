@@ -53,7 +53,7 @@ jobs:
 
       - name: Build the desktop app
         working-directory: apps/desktop
-        # The generator uses the runtime's Pillow + resvg-py, not a build-only venv.
+        # The generator uses the runtime's Pillow, not a build-only venv.
         run: npm run build
 
       # Package the Linux app the way users get it (electron-builder --dir; no
