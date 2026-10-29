@@ -1,6 +1,6 @@
 import type { SimulationLinkDatum, SimulationNodeDatum } from 'd3-force'
 
-import type { StarmapGraph, StarmapNode } from '@/types/pulse'
+import type { StarmapActivity, StarmapGraph, StarmapNode } from '@/types/pulse'
 
 export interface Rgb {
   b: number
@@ -33,6 +33,8 @@ export interface GLink extends SimulationLinkDatum<GNode> {
   /** Trust 0–1: drives stroke opacity so weak inferred links read as fainter. */
   confidence?: number
 }
+
+export type GraphActivity = StarmapActivity
 
 /** Obsidian-style force knobs (the "Forces" section of its graph settings). */
 export interface ForceParams {

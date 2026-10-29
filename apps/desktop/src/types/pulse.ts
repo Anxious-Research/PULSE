@@ -924,6 +924,16 @@ export interface StarmapGraph {
   stats: Record<string, unknown>
 }
 
+/** A real Brain event received by the desktop, used for short-lived graph activity pulses. */
+export interface StarmapActivity {
+  id: number
+  kind: string
+  nodeId: string
+  receivedAt: number
+  targetId?: string
+  activation?: number
+}
+
 export interface ContextUsageCategory {
   color: string
   id: string

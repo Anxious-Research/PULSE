@@ -13,9 +13,36 @@ const mockGraph: StarmapGraph = {
   ],
   memory: [],
   nodes: [
-    { category: 'concept', createdBy: null, id: 'a', kind: 'memory', label: 'Alpha', pinned: false, state: 'active', useCount: 3 },
-    { category: 'user', createdBy: null, id: 'b', kind: 'memory', label: 'Beta', pinned: false, state: 'active', useCount: 1 },
-    { category: 'self', createdBy: null, id: 'c', kind: 'ghost', label: 'Gamma', pinned: false, state: 'active', useCount: 0 }
+    {
+      category: 'concept',
+      createdBy: null,
+      id: 'a',
+      kind: 'memory',
+      label: 'Alpha',
+      pinned: false,
+      state: 'active',
+      useCount: 3
+    },
+    {
+      category: 'user',
+      createdBy: null,
+      id: 'b',
+      kind: 'memory',
+      label: 'Beta',
+      pinned: false,
+      state: 'active',
+      useCount: 1
+    },
+    {
+      category: 'self',
+      createdBy: null,
+      id: 'c',
+      kind: 'ghost',
+      label: 'Gamma',
+      pinned: false,
+      state: 'active',
+      useCount: 0
+    }
   ],
   stats: {}
 }
@@ -38,8 +65,7 @@ describe('BrainGraph', () => {
   it('lets users pause and resume neural motion', () => {
     const { getByRole, queryByRole } = render(<BrainGraph graph={mockGraph} />)
     const initialMotion =
-      queryByRole('button', { name: 'Pause neural motion' }) ??
-      getByRole('button', { name: 'Resume neural motion' })
+      queryByRole('button', { name: 'Pause neural motion' }) ?? getByRole('button', { name: 'Resume neural motion' })
     const wasEnabled = initialMotion.getAttribute('aria-pressed') === 'true'
 
     fireEvent.click(initialMotion)
@@ -49,6 +75,17 @@ describe('BrainGraph', () => {
     fireEvent.click(toggledMotion)
     const restoredMotion = getByRole('button', { name: wasEnabled ? 'Pause neural motion' : 'Resume neural motion' })
     expect(restoredMotion.getAttribute('aria-pressed')).toBe(String(wasEnabled))
+  })
+
+  it('shows the most recent real Brain activity', () => {
+    const { getByText } = render(
+      <BrainGraph
+        activities={[{ id: 1, kind: 'MEMORY_ACTIVATED', nodeId: 'a', receivedAt: performance.now() }]}
+        graph={mockGraph}
+      />
+    )
+
+    expect(getByText('Memory recalled · Alpha')).toBeTruthy()
   })
 
   it('renders legend with categories from the graph', () => {

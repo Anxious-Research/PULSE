@@ -4,13 +4,14 @@
 
 import { nodeRadius } from './force'
 import { getNodeColorSet, rgba } from './palette'
-import type { GLink, GNode, GraphPalette, Viewport } from './types'
+import type { GLink, GNode, GraphActivity, GraphPalette, Viewport } from './types'
 
 export interface DrawInput {
   adjacency: Map<string, Set<string>>
   births: Map<string, number>
   ctx: CanvasRenderingContext2D
   dpr: number
+  activities: GraphActivity[]
   hoverId: null | string
   links: GLink[]
   motionEnabled: boolean
@@ -24,6 +25,8 @@ export interface DrawInput {
 }
 
 const BIRTH_MS = 600
+const ACTIVITY_MS = 900
+const SIGNAL_MS = 650
 
 function endpoint(v: GNode | string, byId: Map<string, GNode>): GNode | null {
   return typeof v === 'string' ? (byId.get(v) ?? null) : v
@@ -116,12 +119,7 @@ function drawCategoryClouds(
       radius = Math.max(radius, Math.hypot(point.x - center.x, point.y - center.y) + padding)
     }
 
-    if (
-      center.x + radius < 0 ||
-      center.x - radius > width ||
-      center.y + radius < 0 ||
-      center.y - radius > height
-    ) {
+    if (center.x + radius < 0 || center.x - radius > width || center.y + radius < 0 || center.y - radius > height) {
       continue
     }
 
@@ -147,7 +145,7 @@ function drawCategoryClouds(
         const dy = point.y - center.y
         const distance = Math.hypot(dx, dy) || 1
 
-        return { x: point.x + dx / distance * padding, y: point.y + dy / distance * padding }
+        return { x: point.x + (dx / distance) * padding, y: point.y + (dy / distance) * padding }
       })
 
       for (let i = 0; i < expanded.length; i += 1) {
@@ -173,7 +171,7 @@ function drawCategoryClouds(
       ctx.font = '600 10px "Inter", -apple-system, system-ui, sans-serif'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      ctx.fillStyle = rgba(palette.fg, (highlighted ? 0.76 : 0.3))
+      ctx.fillStyle = rgba(palette.fg, highlighted ? 0.76 : 0.3)
       ctx.fillText(category, center.x, top - padding - 9)
     }
 
@@ -187,6 +185,7 @@ export function drawGraph(input: DrawInput): boolean {
     births,
     ctx,
     dpr,
+    activities,
     hoverId,
     links,
     motionEnabled,
@@ -200,7 +199,9 @@ export function drawGraph(input: DrawInput): boolean {
   } = input
   const { h, w } = size
 
-  if (w <= 0 || h <= 0) {return false}
+  if (w <= 0 || h <= 0) {
+    return false
+  }
 
   const byId = new Map<string, GNode>()
 
@@ -210,6 +211,21 @@ export function drawGraph(input: DrawInput): boolean {
 
   const focusId = hoverId ?? selectedId
   const focusSet = focusId ? (adjacency.get(focusId) ?? new Set<string>()) : null
+  const activeByNode = new Map<string, GraphActivity>()
+
+  if (motionEnabled) {
+    for (const activity of activities) {
+      if (now - activity.receivedAt > ACTIVITY_MS) {
+        continue
+      }
+
+      const current = activeByNode.get(activity.nodeId)
+
+      if (!current || activity.id > current.id) {
+        activeByNode.set(activity.nodeId, activity)
+      }
+    }
+  }
 
   let animating = motionEnabled
 
@@ -219,9 +235,19 @@ export function drawGraph(input: DrawInput): boolean {
   // light theme paints a light paper (from palette.bg, resolved from the themed `--background`),
   // so dark nodes are not drawn on a near-black canvas. Previously the fill was hardcoded dark.
   const bg = palette.bg ?? { r: 6, g: 8, b: 15 }
-  const bgCenter = rgba(palette.dark ? { r: 12, g: 16, b: 32 } : { r: Math.min(255, bg.r + 4), g: Math.min(255, bg.g + 4), b: Math.min(255, bg.b + 6) }, 1)
+  const bgCenter = rgba(
+    palette.dark
+      ? { r: 12, g: 16, b: 32 }
+      : { r: Math.min(255, bg.r + 4), g: Math.min(255, bg.g + 4), b: Math.min(255, bg.b + 6) },
+    1
+  )
   const bgMid = rgba(bg, 1)
-  const bgEdge = rgba(palette.dark ? { r: 2, g: 3, b: 6 } : { r: Math.max(0, bg.r - 10), g: Math.max(0, bg.g - 10), b: Math.max(0, bg.b - 8) }, 1)
+  const bgEdge = rgba(
+    palette.dark
+      ? { r: 2, g: 3, b: 6 }
+      : { r: Math.max(0, bg.r - 10), g: Math.max(0, bg.g - 10), b: Math.max(0, bg.b - 8) },
+    1
+  )
   const bgGrad = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.1, w / 2, h / 2, Math.max(w, h) * 0.75)
   bgGrad.addColorStop(0, bgCenter)
   bgGrad.addColorStop(0.5, bgMid)
@@ -233,11 +259,21 @@ export function drawGraph(input: DrawInput): boolean {
   const sy = (wy: number) => wy * vp.k + vp.y + h / 2
   const toScreen = (x: number, y: number): Point => ({ x: sx(x), y: sy(y) })
   drawCategoryClouds(ctx, nodes, toScreen, palette, vp.k, w, h, focusId, focusSet)
+  const activityFor = (node: GNode) => activeByNode.get(node.vaultId ?? node.id) ?? activeByNode.get(node.id)
+  const isActivityEndpoint = (id: string, node: GNode) => id === node.id || id === node.vaultId
 
   const bornOf = (id: string): number => {
     const start = births.get(id)
 
-    if (start == null) {return 1}
+    if (start == null) {
+      return 1
+    }
+
+    if (!motionEnabled) {
+      births.delete(id)
+
+      return 1
+    }
     const t = (now - start) / BIRTH_MS
 
     if (t >= 1) {
@@ -257,18 +293,24 @@ export function drawGraph(input: DrawInput): boolean {
   for (const n of nodes) {
     const degree = n.degree ?? 0
 
-    if (degree < 3 && !n.pinned) {continue}
+    if (degree < 3 && !n.pinned) {
+      continue
+    }
 
     const born = bornOf(n.id)
 
-    if (born < 0.05) {continue}
+    if (born < 0.05) {
+      continue
+    }
 
     const X = sx(n.x)
     const Y = sy(n.y)
     const r = nodeRadius(n) * vp.k * (0.5 + 0.5 * born)
 
     // Cull off-screen blooms
-    if (X < -150 || X > w + 150 || Y < -150 || Y > h + 150) {continue}
+    if (X < -150 || X > w + 150 || Y < -150 || Y > h + 150) {
+      continue
+    }
 
     const colorSet = getNodeColorSet(n)
     const bloomRadius = r * (degree >= 8 ? 6 : 4)
@@ -292,12 +334,17 @@ export function drawGraph(input: DrawInput): boolean {
     const s = endpoint(link.source, byId)
     const t = endpoint(link.target, byId)
 
-    if (!s || !t) {continue}
+    if (!s || !t) {
+      continue
+    }
 
-    const lit = !!focusId && (s.id === focusId || t.id === focusId || (!!focusSet && focusSet.has(s.id) && focusSet.has(t.id)))
+    const lit =
+      !!focusId && (s.id === focusId || t.id === focusId || (!!focusSet && focusSet.has(s.id) && focusSet.has(t.id)))
     const born = Math.min(bornOf(s.id), bornOf(t.id))
 
-    if (born < 0.05) {continue}
+    if (born < 0.05) {
+      continue
+    }
 
     const sX = sx(s.x)
     const sY = sy(s.y)
@@ -347,15 +394,38 @@ export function drawGraph(input: DrawInput): boolean {
     ctx.stroke()
     ctx.restore()
 
-    if (motionEnabled && (s.id === focusId || t.id === focusId)) {
-      const progress = (now * 0.00024 + linkIndex * 0.173) % 1
-      const u = s.id === focusId ? progress : 1 - progress
+    const sourceActivity = activityFor(s)
+    const targetActivity = activityFor(t)
+    const pulseActivity =
+      sourceActivity && targetActivity
+        ? sourceActivity.id > targetActivity.id
+          ? sourceActivity
+          : targetActivity
+        : (sourceActivity ?? targetActivity)
+    const activityFromSource = pulseActivity ? isActivityEndpoint(pulseActivity.nodeId, s) : false
+    const activityTargetsEdge =
+      !pulseActivity?.targetId ||
+      isActivityEndpoint(pulseActivity.targetId, s) ||
+      isActivityEndpoint(pulseActivity.targetId, t)
+    const activityAge = pulseActivity ? now - pulseActivity.receivedAt : Infinity
+    const eventSignal =
+      motionEnabled && pulseActivity && activityAge >= 0 && activityAge < SIGNAL_MS && activityTargetsEdge
+
+    if (eventSignal || (motionEnabled && (s.id === focusId || t.id === focusId))) {
+      const progress = eventSignal ? activityAge / SIGNAL_MS : (now * 0.00024 + linkIndex * 0.173) % 1
+      const u = eventSignal
+        ? activityFromSource
+          ? progress
+          : 1 - progress
+        : s.id === focusId
+          ? progress
+          : 1 - progress
       const inverse = 1 - u
       const x = inverse * inverse * sX + 2 * inverse * u * controlX + u * u * tX
       const y = inverse * inverse * sY + 2 * inverse * u * controlY + u * u * tY
 
       ctx.save()
-      ctx.globalAlpha = 0.9 * Math.sin(Math.PI * u)
+      ctx.globalAlpha = eventSignal ? 1 - progress : 0.9 * Math.sin(Math.PI * u)
       ctx.fillStyle = rgba(sColors.highlight, 1)
       ctx.shadowColor = rgba(sColors.glow, 1)
       ctx.shadowBlur = 8
@@ -373,7 +443,9 @@ export function drawGraph(input: DrawInput): boolean {
   for (const n of nodes) {
     const born = bornOf(n.id)
 
-    if (born < 0.02) {continue}
+    if (born < 0.02) {
+      continue
+    }
 
     const X = sx(n.x)
     const Y = sy(n.y)
@@ -381,7 +453,30 @@ export function drawGraph(input: DrawInput): boolean {
     const r = Math.max(1.8, nodeRadius(n) * vp.k * (0.3 + 0.7 * born) * breathe)
 
     // Cull off-screen nodes
-    if (X < -80 || X > w + 80 || Y < -80 || Y > h + 80) {continue}
+    if (X < -80 || X > w + 80 || Y < -80 || Y > h + 80) {
+      continue
+    }
+
+    const colorSet = getNodeColorSet(n)
+    const activity = activeByNode.get(n.vaultId ?? n.id) ?? activeByNode.get(n.id)
+
+    if (activity) {
+      const age = now - activity.receivedAt
+
+      if (age >= 0 && age < ACTIVITY_MS) {
+        const progress = age / ACTIVITY_MS
+
+        ctx.save()
+        ctx.globalAlpha = 1 - progress
+        ctx.strokeStyle = rgba(colorSet.highlight, 1)
+        ctx.lineWidth = 1.8 - progress
+        ctx.beginPath()
+        ctx.arc(X, Y, r + 5 + progress * 24, 0, Math.PI * 2)
+        ctx.stroke()
+        ctx.restore()
+        animating = true
+      }
+    }
 
     const isFocus = n.id === focusId
     const isNeighbor = !!focusSet && focusSet.has(n.id)
@@ -397,8 +492,6 @@ export function drawGraph(input: DrawInput): boolean {
     if (query && !matched && !isFocus && !isNeighbor) {
       alpha *= 0.25
     }
-
-    const colorSet = getNodeColorSet(n)
 
     // Birth Halo Effect
     if (born < 1) {
@@ -425,19 +518,22 @@ export function drawGraph(input: DrawInput): boolean {
       ctx.globalAlpha = alpha
 
       // Off-center highlight (top-left) for 3D sphere illusion
-      const sphereGrad = ctx.createRadialGradient(
-        X - r * 0.35,
-        Y - r * 0.35,
-        r * 0.05,
-        X,
-        Y,
-        r
-      )
+      const sphereGrad = ctx.createRadialGradient(X - r * 0.35, Y - r * 0.35, r * 0.05, X, Y, r)
 
       sphereGrad.addColorStop(0, rgba(colorSet.highlight, 1))
       sphereGrad.addColorStop(0.35, rgba(colorSet.glow, 0.95))
       sphereGrad.addColorStop(0.85, rgba(colorSet.base, 0.9))
-      sphereGrad.addColorStop(1, rgba({ r: Math.round(colorSet.base.r * 0.4), g: Math.round(colorSet.base.g * 0.4), b: Math.round(colorSet.base.b * 0.4) }, 1))
+      sphereGrad.addColorStop(
+        1,
+        rgba(
+          {
+            r: Math.round(colorSet.base.r * 0.4),
+            g: Math.round(colorSet.base.g * 0.4),
+            b: Math.round(colorSet.base.b * 0.4)
+          },
+          1
+        )
+      )
 
       ctx.fillStyle = sphereGrad
       ctx.beginPath()
@@ -463,7 +559,8 @@ export function drawGraph(input: DrawInput): boolean {
     }
 
     // Node Labels
-    const wantLabel = (showAllLabels || (showFocusLabels && (isFocus || isNeighbor || matched))) && (alpha > 0.25 || matched)
+    const wantLabel =
+      (showAllLabels || (showFocusLabels && (isFocus || isNeighbor || matched))) && (alpha > 0.25 || matched)
 
     if (wantLabel) {
       ctx.globalAlpha = Math.min(1, alpha + 0.2) * (showAllLabels ? 0.95 : 1)
@@ -472,7 +569,7 @@ export function drawGraph(input: DrawInput): boolean {
       ctx.textBaseline = 'top'
 
       const label = n.label.length > 36 ? `${n.label.slice(0, 35)}…` : n.label
-      
+
       // Crisp text shadow for readability over dense nodes — tinted to the theme so a light
       // canvas gets a light halo (a dark halo on light paper muddies the text).
       ctx.shadowColor = palette.dark ? 'rgba(2, 4, 10, 0.9)' : 'rgba(248, 250, 253, 0.92)'
@@ -502,13 +599,18 @@ export function drawMinimap(
   vp: Viewport,
   mainSize: { w: number; h: number }
 ) {
-  if (w <= 0 || h <= 0 || !nodes.length) {return}
+  if (w <= 0 || h <= 0 || !nodes.length) {
+    return
+  }
 
   ctx.clearRect(0, 0, w, h)
   ctx.fillStyle = 'rgba(6, 10, 20, 0.85)'
   ctx.fillRect(0, 0, w, h)
 
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity
 
   for (const n of nodes) {
     minX = Math.min(minX, n.x)

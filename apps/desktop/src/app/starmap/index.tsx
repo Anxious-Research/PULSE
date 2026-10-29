@@ -3,8 +3,8 @@ import { useEffect } from 'react'
 
 import { PageLoader } from '@/components/page-loader'
 import { useI18n } from '@/i18n'
-import { subscribeBrainEvents } from '@/store/brain-events'
-import { $starmapError, $starmapGraph, $starmapLoading, loadStarmapGraph } from '@/store/starmap'
+import { replayPendingBrainEvents, subscribeBrainEvents } from '@/store/brain-events'
+import { $starmapActivity, $starmapError, $starmapGraph, $starmapLoading, loadStarmapGraph } from '@/store/starmap'
 
 import { BrainGraph } from '../brain-graph/brain-graph'
 import { Panel, PanelEmpty } from '../overlays/panel'
@@ -15,6 +15,7 @@ import { Panel, PanelEmpty } from '../overlays/panel'
 export function StarmapView({ onClose }: { onClose: () => void }) {
   const { t } = useI18n()
   const graph = useStore($starmapGraph)
+  const activities = useStore($starmapActivity)
   const loading = useStore($starmapLoading)
   const error = useStore($starmapError)
 
@@ -29,6 +30,12 @@ export function StarmapView({ onClose }: { onClose: () => void }) {
     return unsubscribe
   }, [])
 
+  useEffect(() => {
+    if (graph) {
+      replayPendingBrainEvents()
+    }
+  }, [graph])
+
   return (
     <Panel closeLabel={t.starmap.close} onClose={onClose}>
       {error ? (
@@ -38,7 +45,7 @@ export function StarmapView({ onClose }: { onClose: () => void }) {
       ) : graph && graph.nodes.length === 0 ? (
         <PanelEmpty description={t.starmap.emptyDesc} icon="lightbulb" title={t.starmap.emptyTitle} />
       ) : graph ? (
-        <BrainGraph graph={graph} onRefresh={() => void loadStarmapGraph(true)} />
+        <BrainGraph activities={activities} graph={graph} onRefresh={() => void loadStarmapGraph(true)} />
       ) : null}
     </Panel>
   )

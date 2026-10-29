@@ -1,12 +1,13 @@
 import { atom } from 'nanostores'
 
 import { getStarmapGraph } from '@/pulse'
-import type { StarmapGraph } from '@/types/pulse'
+import type { StarmapActivity, StarmapGraph } from '@/types/pulse'
 
 // On-demand cache for the star map. The graph scan touches the skills catalog +
 // usage ledger + memory files, so we fetch it only when the panel opens (and on
 // an explicit refresh), never on a turn boundary.
 export const $starmapGraph = atom<StarmapGraph | null>(null)
+export const $starmapActivity = atom<StarmapActivity[]>([])
 export const $starmapLoading = atom(false)
 export const $starmapError = atom<null | string>(null)
 
@@ -61,5 +62,6 @@ export function evictStarmapNode(id: string): () => void {
 export function resetStarmapGraph(): void {
   inflight = null
   $starmapGraph.set(null)
+  $starmapActivity.set([])
   $starmapError.set(null)
 }

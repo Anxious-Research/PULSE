@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { paletteForColors } from './palette'
 import { drawGraph } from './render'
 import type { DrawInput } from './render'
 import type { GLink, GNode } from './types'
@@ -10,6 +11,7 @@ import type { GLink, GNode } from './types'
 // render-path proof that the typed-edge contract reaches the pixels.
 function makeRecordingCtx() {
   const calls = {
+    arcs: 0,
     curves: 0,
     labels: [] as string[],
     setLineDash: [] as number[][],
@@ -20,7 +22,7 @@ function makeRecordingCtx() {
   const gradient = { addColorStop: () => {} }
 
   const ctx = {
-    arc: () => {},
+    arc: () => calls.arcs++,
     beginPath: () => {},
     createLinearGradient: () => gradient,
     createRadialGradient: () => gradient,
@@ -74,12 +76,13 @@ function baseInput(links: GLink[], ctx: CanvasRenderingContext2D): DrawInput {
     births: new Map(),
     ctx,
     dpr: 1,
+    activities: [],
     hoverId: null,
     links,
     motionEnabled: false,
     nodes,
     now: 10_000,
-    palette: {} as DrawInput['palette'],
+    palette: paletteForColors({ b: 15, g: 8, r: 6 }, { b: 255, g: 244, r: 240 }),
     query: '',
     selectedId: null,
     size: { h: 400, w: 400 },
@@ -109,24 +112,48 @@ describe('drawGraph typed-edge styling', () => {
     expect(drawGraph(input)).toBe(true)
   })
 
+  it('renders a live pulse for a newly received memory event', () => {
+    const recording = makeRecordingCtx()
+    const input = baseInput([], recording.ctx)
+    input.activities = [{ id: 1, kind: 'MEMORY_ACTIVATED', nodeId: 'a', receivedAt: 9_900 }]
+
+    drawGraph(input)
+
+    expect(recording.calls.arcs).toBeGreaterThan(2)
+  })
+
   it('dashes an inferred-entity edge and leaves an asserted edge solid', () => {
     const inferred = makeRecordingCtx()
-    drawGraph(baseInput([{ confidence: 0.5, kind: 'mentions', provenance: 'inferred_entity', source: 'a', target: 'b' }], inferred.ctx))
+    drawGraph(
+      baseInput(
+        [{ confidence: 0.5, kind: 'mentions', provenance: 'inferred_entity', source: 'a', target: 'b' }],
+        inferred.ctx
+      )
+    )
     // the inferred edge sets a dash pattern...
     expect(inferred.calls.setLineDash.some(d => d.length === 2)).toBe(true)
 
     const asserted = makeRecordingCtx()
-    drawGraph(baseInput([{ confidence: 1, kind: 'wikilink', provenance: 'asserted', source: 'a', target: 'b' }], asserted.ctx))
+    drawGraph(
+      baseInput([{ confidence: 1, kind: 'wikilink', provenance: 'asserted', source: 'a', target: 'b' }], asserted.ctx)
+    )
     // ...the asserted edge is drawn solid (empty dash array).
     expect(asserted.calls.setLineDash.every(d => d.length === 0)).toBe(true)
   })
 
   it('draws a supersedes edge thicker than a plain edge', () => {
     const plain = makeRecordingCtx()
-    drawGraph(baseInput([{ confidence: 1, kind: 'related', provenance: 'asserted', source: 'a', target: 'b' }], plain.ctx))
+    drawGraph(
+      baseInput([{ confidence: 1, kind: 'related', provenance: 'asserted', source: 'a', target: 'b' }], plain.ctx)
+    )
 
     const supersedes = makeRecordingCtx()
-    drawGraph(baseInput([{ confidence: 1, kind: 'supersedes', provenance: 'correction', source: 'a', target: 'b' }], supersedes.ctx))
+    drawGraph(
+      baseInput(
+        [{ confidence: 1, kind: 'supersedes', provenance: 'correction', source: 'a', target: 'b' }],
+        supersedes.ctx
+      )
+    )
 
     const maxPlain = Math.max(...plain.calls.lineWidth)
     const maxSuper = Math.max(...supersedes.calls.lineWidth)

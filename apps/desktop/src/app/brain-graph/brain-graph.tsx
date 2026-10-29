@@ -1,23 +1,12 @@
 import type { Simulation } from 'd3-force'
-import {
-  Activity,
-  Compass,
-  Minus,
-  Pause,
-  Play,
-  Plus,
-  RotateCcw,
-  Search,
-  Sliders,
-  Sparkles
-} from 'lucide-react'
+import { Activity, Compass, Minus, Pause, Play, Plus, RotateCcw, Search, Sliders, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Tip } from '@/components/ui/tooltip'
 import { useThemeEpoch } from '@/hooks/use-theme-epoch'
 import { createRendererLoopPauseController } from '@/lib/renderer-loop-pause'
 import { cn } from '@/lib/utils'
-import type { StarmapGraph } from '@/types/pulse'
+import type { StarmapActivity, StarmapGraph } from '@/types/pulse'
 
 import { registerStarMapContextMenu } from '../starmap/context-menu-handle'
 import { NodeContextMenu, type NodeMenuTarget } from '../starmap/node-context-menu'
@@ -33,6 +22,39 @@ const ZOOM_MAX = 6.0
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v))
+}
+
+function describeActivity(kind: string): string {
+  switch (kind) {
+    case 'MEMORY_CREATED':
+      return 'New memory'
+    case 'MEMORY_UPDATED':
+      return 'Memory updated'
+    case 'MEMORY_ACTIVATED':
+      return 'Memory recalled'
+    case 'MEMORY_REACTIVATED':
+      return 'Memory reactivated'
+    case 'MEMORY_REINFORCED':
+      return 'Memory strengthened'
+    case 'MEMORY_SUPERSEDED':
+      return 'Memory superseded'
+    case 'MEMORY_ARCHIVED':
+      return 'Memory archived'
+    case 'MEMORY_DECAYED':
+      return 'Memory faded'
+    case 'MEMORY_DELETED':
+      return 'Memory removed'
+    case 'RELATIONSHIP_CREATED':
+      return 'New connection'
+    case 'RELATIONSHIP_UPDATED':
+      return 'Connection updated'
+    case 'RELATIONSHIP_REMOVED':
+      return 'Connection removed'
+    case 'CONSOLIDATION_COMPLETED':
+      return 'Consolidation complete'
+    default:
+      return 'Brain activity'
+  }
 }
 
 function Slider({
@@ -67,9 +89,11 @@ function Slider({
 }
 
 export function BrainGraph({
+  activities = [],
   graph,
   onRefresh
 }: {
+  activities?: StarmapActivity[]
   graph: StarmapGraph
   onRefresh?: () => void
 }) {
@@ -97,8 +121,11 @@ export function BrainGraph({
   const dprRef = useRef(1)
   const dirtyRef = useRef(true)
   const invalidateRef = useRef<() => void>(() => {})
+  const activitiesRef = useRef(activities)
   const paramsRef = useRef<ForceParams>(DEFAULT_FORCES)
   const sigRef = useRef('')
+  const layoutPausedRef = useRef(false)
+  activitiesRef.current = activities
 
   const dragRef = useRef<{
     id: null | string
@@ -115,10 +142,14 @@ export function BrainGraph({
   // The vault id + label of the selected node, for the evidence inspector. A skill/ghost node has
   // no vaultId, so the inspector only opens for real memory nodes.
   const selectedBrain = useMemo(() => {
-    if (!selectedId) {return null}
+    if (!selectedId) {
+      return null
+    }
     const node = graph.nodes.find(n => n.id === selectedId)
 
-    if (!node || !node.vaultId) {return null}
+    if (!node || !node.vaultId) {
+      return null
+    }
 
     return { vaultId: node.vaultId, label: node.label }
   }, [graph, selectedId])
@@ -176,7 +207,9 @@ export function BrainGraph({
   }, [graph])
 
   useEffect(() => {
-    if (hiddenCategories.size === 0) {return}
+    if (hiddenCategories.size === 0) {
+      return
+    }
     const present = new Set(legendCategories)
     setHiddenCategories(prev => {
       const stale = [...prev].filter(c => !present.has(c))
@@ -195,13 +228,17 @@ export function BrainGraph({
   }, [])
 
   const visibleGraph = useMemo(() => {
-    if (hiddenCategories.size === 0) {return graph}
+    if (hiddenCategories.size === 0) {
+      return graph
+    }
 
     const hidden = new Set(
       graph.nodes.filter(n => n.kind === 'memory' && n.category && hiddenCategories.has(n.category)).map(n => n.id)
     )
 
-    if (hidden.size === 0) {return graph}
+    if (hidden.size === 0) {
+      return graph
+    }
 
     return {
       ...graph,
@@ -211,7 +248,9 @@ export function BrainGraph({
   }, [graph, hiddenCategories])
 
   const clusterCount = useMemo(() => {
-    if (graph.clusters && graph.clusters.length > 0) {return graph.clusters.length}
+    if (graph.clusters && graph.clusters.length > 0) {
+      return graph.clusters.length
+    }
 
     return legendCategories.length || 1
   }, [graph, legendCategories])
@@ -219,7 +258,9 @@ export function BrainGraph({
   useEffect(() => {
     const el = wrapRef.current
 
-    if (!el) {return}
+    if (!el) {
+      return
+    }
     const sync = () => setSize({ h: el.clientHeight, w: el.clientWidth })
     const ro = new ResizeObserver(sync)
     ro.observe(el)
@@ -233,7 +274,9 @@ export function BrainGraph({
       const { h, w } = sizeRef.current
       const nodes = nodesRef.current
 
-      if (w <= 0 || h <= 0 || !nodes.length) {return}
+      if (w <= 0 || h <= 0 || !nodes.length) {
+        return
+      }
 
       const b = bounds(nodes)
       const bw = Math.max(50, b.maxX - b.minX)
@@ -257,7 +300,9 @@ export function BrainGraph({
           }
           invalidate()
 
-          if (p < 1) {requestAnimationFrame(step)}
+          if (p < 1) {
+            requestAnimationFrame(step)
+          }
         }
 
         requestAnimationFrame(step)
@@ -290,17 +335,43 @@ export function BrainGraph({
   useEffect(() => {
     sizeRef.current = size
 
-    if (size.w === 0 || size.h === 0) {return}
+    if (size.w === 0 || size.h === 0) {
+      simRef.current?.stop()
+      layoutPausedRef.current = true
 
-    const signature = `${visibleGraph.nodes.length}:${visibleGraph.nodes.map(n => n.id).join(',')}`
+      return
+    }
 
-    if (signature === sigRef.current && simRef.current) {return}
+    const signature = JSON.stringify([visibleGraph.nodes.map(n => n.id), visibleGraph.edges])
+
+    if (signature === sigRef.current && simRef.current) {
+      for (const nextNode of visibleGraph.nodes) {
+        const node = byIdRef.current.get(nextNode.id)
+
+        if (!node) {
+          continue
+        }
+
+        const { degree, fx, fy, phase, vx, vy, x, y } = node
+        Object.assign(node, nextNode, { degree, fx, fy, phase, vx, vy, x, y })
+      }
+
+      if (layoutPausedRef.current) {
+        simRef.current.alpha(0.12).restart()
+        layoutPausedRef.current = false
+      }
+
+      invalidate()
+
+      return
+    }
 
     const firstBuild = sigRef.current === ''
     sigRef.current = signature
     simRef.current?.stop()
 
     const { byId, links, nodes, sim } = buildGraph(visibleGraph, posRef.current, invalidate)
+    applyForces(sim, links, paramsRef.current)
     const now = performance.now()
 
     if (!firstBuild) {
@@ -327,12 +398,17 @@ export function BrainGraph({
     }
 
     simRef.current = sim
+    layoutPausedRef.current = false
     nodesRef.current = nodes
     linksRef.current = links
     byIdRef.current = byId
     adjacencyRef.current = adjacency
 
-    warmUp(sim)
+    if (firstBuild) {
+      warmUp(sim)
+    } else {
+      sim.stop()
+    }
 
     for (const n of nodes) {
       posRef.current.set(n.id, { x: n.x, y: n.y })
@@ -357,15 +433,15 @@ export function BrainGraph({
       selectedIdRef.current = null
       setSelectedId(null)
     }
-
-    return () => {
-      sim.stop()
-
-      if (simRef.current === sim) {
-        simRef.current = null
-      }
-    }
   }, [visibleGraph, size, invalidate, fitView])
+
+  useEffect(
+    () => () => {
+      simRef.current?.stop()
+      simRef.current = null
+    },
+    []
+  )
 
   const toWorld = useCallback((cssX: number, cssY: number): { x: number; y: number } => {
     const { h, w } = sizeRef.current
@@ -428,7 +504,9 @@ export function BrainGraph({
   }, [openNodeMenuAt])
 
   const onMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (e.button !== 0) {return}
+    if (e.button !== 0) {
+      return
+    }
     const { x, y } = localXY(e)
     const node = pickNode(x, y)
     const sim = simRef.current
@@ -529,7 +607,9 @@ export function BrainGraph({
   const onWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
     const rect = canvasRef.current?.getBoundingClientRect()
 
-    if (!rect) {return}
+    if (!rect) {
+      return
+    }
 
     const { h, w } = sizeRef.current
     const px = e.clientX - rect.left
@@ -614,6 +694,10 @@ export function BrainGraph({
   }, [invalidate, motionEnabled])
 
   useEffect(() => {
+    invalidate()
+  }, [activities, invalidate])
+
+  useEffect(() => {
     let raf = 0
     let paused = false
     let pauseController: ReturnType<typeof createRendererLoopPauseController>
@@ -628,7 +712,9 @@ export function BrainGraph({
       const canvas = canvasRef.current
       const ctx = canvas?.getContext('2d')
 
-      if (!canvas || !ctx) {return false}
+      if (!canvas || !ctx) {
+        return false
+      }
 
       if (themeDirtyRef.current || !paletteRef.current) {
         paletteRef.current = computePalette(canvas)
@@ -637,13 +723,16 @@ export function BrainGraph({
 
       const palette = paletteRef.current
 
-      if (!palette) {return false}
+      if (!palette) {
+        return false
+      }
 
       const animating = drawGraph({
         adjacency: adjacencyRef.current,
         births: birthsRef.current,
         ctx,
         dpr: dprRef.current,
+        activities: activitiesRef.current,
         hoverId: hoverRef.current,
         links: linksRef.current,
         motionEnabled: motionRef.current,
@@ -684,7 +773,9 @@ export function BrainGraph({
     const onActivity = () => {
       const next = pauseController.isPaused()
 
-      if (next === paused) {return}
+      if (next === paused) {
+        return
+      }
       paused = next
 
       if (paused) {
@@ -712,9 +803,16 @@ export function BrainGraph({
 
   const nodeCount = graph.nodes.length
   const edgeCount = graph.edges.length
+  const latestActivity = activities[activities.length - 1]
+  const activityNode = latestActivity
+    ? graph.nodes.find(node => node.vaultId === latestActivity.nodeId || node.id === latestActivity.nodeId)
+    : undefined
 
   return (
-    <div className="relative flex h-full w-full min-h-0 flex-1 overflow-hidden bg-background select-none font-sans" ref={wrapRef}>
+    <div
+      className="relative flex h-full w-full min-h-0 flex-1 overflow-hidden bg-background select-none font-sans"
+      ref={wrapRef}
+    >
       <canvas
         className="block touch-none select-none text-foreground"
         onContextMenu={onContextMenu}
@@ -838,10 +936,38 @@ export function BrainGraph({
             </button>
           </div>
           <div className="flex flex-col gap-2">
-            <Slider label="Center force" max={0.3} min={0} onChange={v => updateParam('center', v)} step={0.01} value={params.center} />
-            <Slider label="Repulsion" max={600} min={20} onChange={v => updateParam('repel', v)} step={10} value={params.repel} />
-            <Slider label="Link strength" max={1} min={0} onChange={v => updateParam('linkStrength', v)} step={0.05} value={params.linkStrength} />
-            <Slider label="Link distance" max={260} min={20} onChange={v => updateParam('linkDistance', v)} step={4} value={params.linkDistance} />
+            <Slider
+              label="Center force"
+              max={0.3}
+              min={0}
+              onChange={v => updateParam('center', v)}
+              step={0.01}
+              value={params.center}
+            />
+            <Slider
+              label="Repulsion"
+              max={600}
+              min={20}
+              onChange={v => updateParam('repel', v)}
+              step={10}
+              value={params.repel}
+            />
+            <Slider
+              label="Link strength"
+              max={1}
+              min={0}
+              onChange={v => updateParam('linkStrength', v)}
+              step={0.05}
+              value={params.linkStrength}
+            />
+            <Slider
+              label="Link distance"
+              max={260}
+              min={20}
+              onChange={v => updateParam('linkDistance', v)}
+              step={4}
+              value={params.linkDistance}
+            />
           </div>
         </div>
       )}
@@ -882,6 +1008,19 @@ export function BrainGraph({
           <span className="text-[0.6rem] text-slate-500">Autonomous</span>
         </div>
 
+        {latestActivity && (
+          <div
+            className="flex max-w-[220px] items-center gap-1.5 border-t border-white/10 pt-2 text-[0.62rem] text-cyan-200"
+            title={`${describeActivity(latestActivity.kind)}${activityNode ? `: ${activityNode.label}` : ''}`}
+          >
+            <Activity className="h-3 w-3 shrink-0" />
+            <span className="truncate">
+              {describeActivity(latestActivity.kind)}
+              {activityNode ? ` · ${activityNode.label}` : ''}
+            </span>
+          </div>
+        )}
+
         <div className="flex flex-wrap gap-1 border-t border-white/10 pt-2">
           {legendCategories.map(cat => {
             const colors = CATEGORY_COLORS[cat] ?? CATEGORY_COLORS.concept
@@ -913,12 +1052,7 @@ export function BrainGraph({
       {/* BOTTOM-RIGHT MINIMAP & CONTROLS */}
       <div className="pointer-events-auto absolute bottom-4 right-4 z-20 flex items-end gap-2.5 [-webkit-app-region:no-drag]">
         <div className="relative h-28 w-40 overflow-hidden rounded-xl border border-white/10 bg-[#0c111e]/85 shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl">
-          <canvas
-            className="h-full w-full"
-            height={112}
-            ref={minimapCanvasRef}
-            width={160}
-          />
+          <canvas className="h-full w-full" height={112} ref={minimapCanvasRef} width={160} />
           <span className="absolute bottom-1 right-2 text-[0.55rem] font-medium text-slate-500 uppercase tracking-wider">
             Minimap
           </span>

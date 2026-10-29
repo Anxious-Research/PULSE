@@ -6,20 +6,25 @@
  * reconciles with authoritative state when the gap is too large (§15).
  */
 import { getStarmapGraph } from '@/pulse'
-import type { StarmapNode } from '@/types/pulse'
+import type { StarmapActivity, StarmapNode } from '@/types/pulse'
 
-import { $starmapGraph } from './starmap'
+import { $starmapActivity, $starmapGraph } from './starmap'
 
 interface BrainEvent {
   seq: number
   kind: string
   node_id: string
   payload?: Record<string, any>
-  timestamp: string
+  timestamp?: number | string
 }
 
+const MAX_ACTIVITY_EVENTS = 64
+const pendingEvents: BrainEvent[] = []
 let ws: WebSocket | null = null
 let lastSeq = 0
+let activityId = 0
+let catchingUp = false
+let bufferedEvents: BrainEvent[] = []
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 let isSubscribed = false
 
@@ -41,8 +46,12 @@ export function subscribeBrainEvents(): () => void {
 }
 
 function connect(): void {
-  if (ws) {return}
+  if (ws) {
+    return
+  }
 
+  catchingUp = true
+  bufferedEvents = []
   const wsUrl = `${API_BASE.replace(/^http/, 'ws')}/api/events?channel=brain`
   ws = new WebSocket(wsUrl)
 
@@ -62,27 +71,39 @@ function connect(): void {
         const { seq, events } = await res.json()
 
         for (const event of events || []) {
-          applyEvent(event)
+          consumeEvent(event)
         }
 
-        lastSeq = seq || lastSeq
+        lastSeq = Math.max(lastSeq, seq || lastSeq)
       }
     } catch (err) {
       console.warn('[brain-events] catch-up failed:', err)
+    } finally {
+      catchingUp = false
+      const pending = bufferedEvents
+      bufferedEvents = []
+
+      for (const event of pending) {
+        consumeEvent(event)
+      }
     }
   }
 
-  ws.onmessage = (msg) => {
+  ws.onmessage = msg => {
     try {
       const event: BrainEvent = JSON.parse(msg.data)
-      lastSeq = event.seq || lastSeq
-      applyEvent(event)
+
+      if (catchingUp) {
+        bufferedEvents.push(event)
+      } else {
+        consumeEvent(event)
+      }
     } catch (err) {
       console.warn('[brain-events] parse error:', err)
     }
   }
 
-  ws.onerror = (err) => {
+  ws.onerror = err => {
     console.error('[brain-events] error:', err)
   }
 
@@ -95,6 +116,15 @@ function connect(): void {
       reconnectTimer = setTimeout(connect, 2000)
     }
   }
+}
+
+function consumeEvent(event: BrainEvent): void {
+  if (event.seq && event.seq <= lastSeq) {
+    return
+  }
+
+  applyBrainEvent(event)
+  lastSeq = event.seq || lastSeq
 }
 
 function unsubscribe(): void {
@@ -111,16 +141,25 @@ function unsubscribe(): void {
   }
 }
 
+/** Apply events received before the initial graph fetch completed. */
+export function replayPendingBrainEvents(): void {
+  const pending = pendingEvents.splice(0)
+
+  for (const event of pending) {
+    applyBrainEvent(event)
+  }
+}
+
 /**
  * Apply a single Brain event to the cached graph atom (§12: every graph mutation must have
- * a real source). If the gap is too large (>256 events missed, the bus ring buffer wrapped),
- * reconcile by refetching the authoritative graph (§15).
+ * a real source). Events arriving before the initial graph fetch are replayed once it loads.
  */
-function applyEvent(event: BrainEvent): void {
+export function applyBrainEvent(event: BrainEvent): void {
   const graph = $starmapGraph.get()
 
   if (!graph) {
-    // Graph not loaded yet; events will replay via catch-up when it does load
+    pendingEvents.push(event)
+
     return
   }
 
@@ -129,12 +168,12 @@ function applyEvent(event: BrainEvent): void {
   switch (kind) {
     case 'MEMORY_CREATED': {
       // Real node creation (§12)
-      if (graph.nodes.some((n) => n.id === node_id || n.vaultId === node_id)) {
+      if (graph.nodes.some(n => n.id === node_id || n.vaultId === node_id)) {
         break // already present (duplicate event or catch-up overlap)
       }
 
       const newNode: StarmapNode = {
-        id: `memory:${graph.nodes.length}`,
+        id: `brain:${node_id}`,
         vaultId: node_id,
         label: payload?.title || node_id.split('/').pop()?.replace(/-/g, ' ') || node_id,
         kind: 'memory',
@@ -143,12 +182,12 @@ function applyEvent(event: BrainEvent): void {
         useCount: 0,
         createdBy: null,
         pinned: false,
-        timestamp: typeof event.timestamp === 'number' ? event.timestamp : null,
+        timestamp: typeof event.timestamp === 'number' ? event.timestamp : null
       }
 
       $starmapGraph.set({
         ...graph,
-        nodes: [...graph.nodes, newNode],
+        nodes: [...graph.nodes, newNode]
       })
 
       break
@@ -156,14 +195,16 @@ function applyEvent(event: BrainEvent): void {
 
     case 'MEMORY_UPDATED': {
       // Real node update (§12)
-      const idx = graph.nodes.findIndex((n) => n.vaultId === node_id)
+      const idx = graph.nodes.findIndex(n => n.vaultId === node_id)
 
-      if (idx === -1) {break}
+      if (idx === -1) {
+        break
+      }
 
       const updated = {
         ...graph.nodes[idx],
         label: payload?.title || graph.nodes[idx].label,
-        category: payload?.category || graph.nodes[idx].category,
+        category: payload?.category || graph.nodes[idx].category
       }
 
       const nodes = [...graph.nodes]
@@ -175,13 +216,15 @@ function applyEvent(event: BrainEvent): void {
 
     case 'MEMORY_REINFORCED': {
       // Real activation state change (§12, §25)
-      const idx = graph.nodes.findIndex((n) => n.vaultId === node_id)
+      const idx = graph.nodes.findIndex(n => n.vaultId === node_id)
 
-      if (idx === -1) {break}
+      if (idx === -1) {
+        break
+      }
 
       const reinforced = {
         ...graph.nodes[idx],
-        useCount: (graph.nodes[idx].useCount || 0) + 1,
+        useCount: (graph.nodes[idx].useCount || 0) + 1
       }
 
       const nodes = [...graph.nodes]
@@ -193,13 +236,15 @@ function applyEvent(event: BrainEvent): void {
 
     case 'MEMORY_SUPERSEDED': {
       // Real status/history update (§12)
-      const idx = graph.nodes.findIndex((n) => n.vaultId === node_id)
+      const idx = graph.nodes.findIndex(n => n.vaultId === node_id)
 
-      if (idx === -1) {break}
+      if (idx === -1) {
+        break
+      }
 
       const superseded = {
         ...graph.nodes[idx],
-        state: 'superseded',
+        state: 'superseded'
       }
 
       const nodes = [...graph.nodes]
@@ -209,17 +254,36 @@ function applyEvent(event: BrainEvent): void {
       break
     }
 
+    case 'MEMORY_ARCHIVED':
+    case 'MEMORY_DECAYED': {
+      const idx = graph.nodes.findIndex(n => n.vaultId === node_id)
+
+      if (idx === -1) {
+        break
+      }
+
+      const archived = {
+        ...graph.nodes[idx],
+        state: kind === 'MEMORY_ARCHIVED' ? 'archived' : 'dormant'
+      }
+      const nodes = [...graph.nodes]
+      nodes[idx] = archived
+      $starmapGraph.set({ ...graph, nodes })
+
+      break
+    }
+
     case 'MEMORY_DELETED': {
       // Real node removal (§12)
       $starmapGraph.set({
         ...graph,
-        nodes: graph.nodes.filter((n) => n.vaultId !== node_id),
-        edges: graph.edges.filter((e) => {
-          const sourceVault = graph.nodes.find((n) => n.id === e.source)?.vaultId
-          const targetVault = graph.nodes.find((n) => n.id === e.target)?.vaultId
+        nodes: graph.nodes.filter(n => n.vaultId !== node_id),
+        edges: graph.edges.filter(e => {
+          const sourceVault = graph.nodes.find(n => n.id === e.source)?.vaultId
+          const targetVault = graph.nodes.find(n => n.id === e.target)?.vaultId
 
           return sourceVault !== node_id && targetVault !== node_id
-        }),
+        })
       })
 
       break
@@ -229,41 +293,98 @@ function applyEvent(event: BrainEvent): void {
       // Real edge appears (§12)
       const targetId = payload?.target
 
-      if (!targetId) {break}
-      const source = graph.nodes.find((n) => n.vaultId === node_id)
-      const target = graph.nodes.find((n) => n.vaultId === targetId)
+      if (!targetId) {
+        break
+      }
+      const source = graph.nodes.find(n => n.vaultId === node_id)
+      const target = graph.nodes.find(n => n.vaultId === targetId)
 
-      if (!source || !target) {break}
+      if (!source || !target) {
+        break
+      }
 
-      if (graph.edges.some((e) => e.source === source.id && e.target === target.id)) {
+      if (
+        graph.edges.some(
+          e => (e.source === source.id && e.target === target.id) || (e.source === target.id && e.target === source.id)
+        )
+      ) {
         break // already present
       }
 
       $starmapGraph.set({
         ...graph,
-        edges: [...graph.edges, { source: source.id, target: target.id }],
+        edges: [
+          ...graph.edges,
+          { source: source.id, target: target.id, kind: payload?.rel || 'related', provenance: 'asserted' }
+        ]
+      })
+
+      break
+    }
+
+    case 'RELATIONSHIP_UPDATED': {
+      const targetId = payload?.target
+      const source = graph.nodes.find(n => n.vaultId === node_id)
+      const target = typeof targetId === 'string' ? graph.nodes.find(n => n.vaultId === targetId) : undefined
+
+      if (!source || !target) {
+        break
+      }
+
+      const edges = graph.edges.map(edge =>
+        (edge.source === source.id && edge.target === target.id) ||
+        (edge.source === target.id && edge.target === source.id)
+          ? { ...edge, kind: payload?.rel || edge.kind }
+          : edge
+      )
+      $starmapGraph.set({ ...graph, edges })
+
+      break
+    }
+
+    case 'RELATIONSHIP_REMOVED': {
+      const targetId = payload?.target
+      const source = graph.nodes.find(n => n.vaultId === node_id)
+      const target = typeof targetId === 'string' ? graph.nodes.find(n => n.vaultId === targetId) : undefined
+
+      if (!source || !target) {
+        break
+      }
+
+      $starmapGraph.set({
+        ...graph,
+        edges: graph.edges.filter(
+          edge =>
+            !(
+              (edge.source === source.id && edge.target === target.id) ||
+              (edge.source === target.id && edge.target === source.id)
+            )
+        )
       })
 
       break
     }
 
     case 'MEMORY_ACTIVATED':
-
     case 'MEMORY_REACTIVATED':
-
-    case 'MEMORY_DECAYED':
-
-    case 'RELATIONSHIP_UPDATED':
-
-    case 'RELATIONSHIP_DELETED':
-      // §87: these event kinds are defined but not yet emitted by the vault
-      console.log(`[brain-events] ${kind} (not yet handled)`)
-
+    case 'CONSOLIDATION_COMPLETED':
       break
 
     default:
       console.warn('[brain-events] unknown event kind:', kind)
+      return
   }
+
+  const activity: StarmapActivity = {
+    id: ++activityId,
+    kind,
+    nodeId: node_id,
+    receivedAt: performance.now(),
+    ...(typeof payload?.target === 'string' ? { targetId: payload.target } : {}),
+    ...(typeof payload?.activation === 'number' ? { activation: payload.activation } : {})
+  }
+
+  $starmapActivity.set([...$starmapActivity.get().slice(-(MAX_ACTIVITY_EVENTS - 1)), activity])
 }
 
 /**
