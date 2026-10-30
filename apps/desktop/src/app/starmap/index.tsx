@@ -2,6 +2,7 @@ import { useStore } from '@nanostores/react'
 import { useEffect } from 'react'
 
 import { PageLoader } from '@/components/page-loader'
+import { Button } from '@/components/ui/button'
 import { useI18n } from '@/i18n'
 import { replayPendingBrainEvents, subscribeBrainEvents } from '@/store/brain-events'
 import { $starmapActivity, $starmapError, $starmapGraph, $starmapLoading, loadStarmapGraph } from '@/store/starmap'
@@ -20,7 +21,7 @@ export function StarmapView({ onClose }: { onClose: () => void }) {
   const error = useStore($starmapError)
 
   useEffect(() => {
-    void loadStarmapGraph()
+    void loadStarmapGraph(true)
   }, [])
 
   // §14: subscribe to real-time Brain events on mount; unsubscribe on unmount.
@@ -43,7 +44,16 @@ export function StarmapView({ onClose }: { onClose: () => void }) {
       ) : !graph && loading ? (
         <PageLoader aria-label={t.starmap.loading} className="min-h-0 flex-1" />
       ) : graph && graph.nodes.length === 0 ? (
-        <PanelEmpty description={t.starmap.emptyDesc} icon="lightbulb" title={t.starmap.emptyTitle} />
+        <PanelEmpty
+          action={
+            <Button onClick={() => void loadStarmapGraph(true)} size="sm" variant="outline">
+              {t.starmap.refresh}
+            </Button>
+          }
+          description={t.starmap.emptyDesc}
+          icon="lightbulb"
+          title={t.starmap.emptyTitle}
+        />
       ) : graph ? (
         <BrainGraph activities={activities} graph={graph} onRefresh={() => void loadStarmapGraph(true)} />
       ) : null}

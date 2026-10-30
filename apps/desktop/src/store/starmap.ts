@@ -18,7 +18,8 @@ export async function loadStarmapGraph(force = false): Promise<void> {
     return inflight
   }
 
-  if ($starmapGraph.get() && !force) {
+  const current = $starmapGraph.get()
+  if (current && current.nodes.length > 0 && !force) {
     return
   }
 
