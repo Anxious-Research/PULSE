@@ -58,12 +58,9 @@ Each guardrail below traces to one of these four.
 
 This is the part that must be real. Each mechanism maps to a concrete, testable function.
 
-### 3.1 Optional native encoding — what can become a memory
-The native deterministic encoder remains available for explicit/internal use and tests, but it
-is **not** the live-turn learning path. Automatic conversation learning is handled by the
-reasoning-led review in §3.1.1; it must not depend on phrase triggers or fixed preference rules.
-When the optional encoder is called, it does not write every turn: candidates are extracted and
-**salience-scored**:
+### 3.1 Native encoding — what becomes a memory
+On every completed turn, asynchronous encoding (`brain_encode_turn_async`) extracts candidate
+memories and **salience-scores** them without holding open or delaying the reply:
 
 ```
 salience = w1·explicit      (user stated a fact/decision/preference directly)
@@ -107,8 +104,8 @@ never holds the delivered response open. The review fork is restricted to guarde
 operations and read-only local inspection; it cannot run shell commands, browse the internet, or
 take external actions.
 
-### 3.2 Optional consolidation — episodic → semantic
-When the optional native encoder schedules consolidation, a background pass does what sleep does:
+### 3.2 Consolidation — episodic → semantic
+Scheduled in the background after turn encoding, consolidation does what sleep does:
 
 - Cluster recent episodic entries by shared entities/links.
 - Promote repeated or important facts into a semantic node (`concept/<slug>.md`) with links.

@@ -52,7 +52,7 @@ class TestSyncExternalMemoryForTurn:
         agent._memory_manager.sync_all.assert_not_called()
         agent._memory_manager.queue_prefetch_all.assert_not_called()
 
-    def test_completed_turn_does_not_use_deterministic_brain_encoder(self):
+    def test_completed_turn_encodes_brain_asynchronously(self):
         agent = _bare_agent()
 
         with patch("agent.brain.session.brain_encode_turn_async") as encode:
@@ -60,6 +60,20 @@ class TestSyncExternalMemoryForTurn:
                 original_user_message="The task is complete.",
                 final_response="I verified the change and its tests.",
                 interrupted=False,
+            )
+
+        encode.assert_called_once_with(
+            agent, "The task is complete.", "I verified the change and its tests.", session_id="test_session_001"
+        )
+
+    def test_interrupted_turn_skips_brain_encoder(self):
+        agent = _bare_agent()
+
+        with patch("agent.brain.session.brain_encode_turn_async") as encode:
+            agent._sync_external_memory_for_turn(
+                original_user_message="The task is complete.",
+                final_response="I verified the change and its tests.",
+                interrupted=True,
             )
 
         encode.assert_not_called()

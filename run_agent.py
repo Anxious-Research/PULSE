@@ -949,6 +949,18 @@ class AIAgent(
         response_text = _summarize_user_message_for_log(final_response, sep="\n")
         if not (user_text and response_text):
             return
+        # Native brain: encode this turn (specs/brain.md §3.1). It owns its own config gate
+        # (``brain.enabled`` / ``brain.encode_enabled``) and does its work on a background
+        # thread, so it runs even when no external provider is configured — the brain is an
+        # organ of PULSE, not a memory provider. Best-effort by construction.
+        try:
+            from agent.brain.session import brain_encode_turn_async
+
+            brain_encode_turn_async(
+                self, user_text, response_text, session_id=getattr(self, "session_id", "") or ""
+            )
+        except Exception:
+            logger.debug("brain encode hook failed", exc_info=True)
         if not self._memory_manager:
             return
         try:
