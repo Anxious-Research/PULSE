@@ -96,6 +96,7 @@ describe('brain event graph updates', () => {
 
   it('resolves brain events WebSocket URL via getGatewayWsUrl', async () => {
     const originalDesktop = window.pulseDesktop
+
     try {
       window.pulseDesktop = {
         ...originalDesktop,
@@ -117,6 +118,7 @@ describe('brain event graph updates', () => {
     })
 
     const originalDesktop = window.pulseDesktop
+
     try {
       window.pulseDesktop = {
         ...originalDesktop,

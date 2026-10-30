@@ -64,8 +64,10 @@ describe('BrainGraph', () => {
 
   it('lets users pause and resume neural motion', () => {
     const { getByRole, queryByRole } = render(<BrainGraph graph={mockGraph} />)
+
     const initialMotion =
       queryByRole('button', { name: 'Pause neural motion' }) ?? getByRole('button', { name: 'Resume neural motion' })
+
     const wasEnabled = initialMotion.getAttribute('aria-pressed') === 'true'
 
     fireEvent.click(initialMotion)

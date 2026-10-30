@@ -197,6 +197,7 @@ export function drawGraph(input: DrawInput): boolean {
     size,
     vp
   } = input
+
   const { h, w } = size
 
   if (w <= 0 || h <= 0) {
@@ -235,19 +236,23 @@ export function drawGraph(input: DrawInput): boolean {
   // light theme paints a light paper (from palette.bg, resolved from the themed `--background`),
   // so dark nodes are not drawn on a near-black canvas. Previously the fill was hardcoded dark.
   const bg = palette.bg ?? { r: 6, g: 8, b: 15 }
+
   const bgCenter = rgba(
     palette.dark
       ? { r: 12, g: 16, b: 32 }
       : { r: Math.min(255, bg.r + 4), g: Math.min(255, bg.g + 4), b: Math.min(255, bg.b + 6) },
     1
   )
+
   const bgMid = rgba(bg, 1)
+
   const bgEdge = rgba(
     palette.dark
       ? { r: 2, g: 3, b: 6 }
       : { r: Math.max(0, bg.r - 10), g: Math.max(0, bg.g - 10), b: Math.max(0, bg.b - 8) },
     1
   )
+
   const bgGrad = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.1, w / 2, h / 2, Math.max(w, h) * 0.75)
   bgGrad.addColorStop(0, bgCenter)
   bgGrad.addColorStop(0.5, bgMid)
@@ -274,6 +279,7 @@ export function drawGraph(input: DrawInput): boolean {
 
       return 1
     }
+
     const t = (now - start) / BIRTH_MS
 
     if (t >= 1) {
@@ -340,6 +346,7 @@ export function drawGraph(input: DrawInput): boolean {
 
     const lit =
       !!focusId && (s.id === focusId || t.id === focusId || (!!focusSet && focusSet.has(s.id) && focusSet.has(t.id)))
+
     const born = Math.min(bornOf(s.id), bornOf(t.id))
 
     if (born < 0.05) {
@@ -396,23 +403,29 @@ export function drawGraph(input: DrawInput): boolean {
 
     const sourceActivity = activityFor(s)
     const targetActivity = activityFor(t)
+
     const pulseActivity =
       sourceActivity && targetActivity
         ? sourceActivity.id > targetActivity.id
           ? sourceActivity
           : targetActivity
         : (sourceActivity ?? targetActivity)
+
     const activityFromSource = pulseActivity ? isActivityEndpoint(pulseActivity.nodeId, s) : false
+
     const activityTargetsEdge =
       !pulseActivity?.targetId ||
       isActivityEndpoint(pulseActivity.targetId, s) ||
       isActivityEndpoint(pulseActivity.targetId, t)
+
     const activityAge = pulseActivity ? now - pulseActivity.receivedAt : Infinity
+
     const eventSignal =
       motionEnabled && pulseActivity && activityAge >= 0 && activityAge < SIGNAL_MS && activityTargetsEdge
 
     if (eventSignal || (motionEnabled && (s.id === focusId || t.id === focusId))) {
       const progress = eventSignal ? activityAge / SIGNAL_MS : (now * 0.00024 + linkIndex * 0.173) % 1
+
       const u = eventSignal
         ? activityFromSource
           ? progress
@@ -420,6 +433,7 @@ export function drawGraph(input: DrawInput): boolean {
         : s.id === focusId
           ? progress
           : 1 - progress
+
       const inverse = 1 - u
       const x = inverse * inverse * sX + 2 * inverse * u * controlX + u * u * tX
       const y = inverse * inverse * sY + 2 * inverse * u * controlY + u * u * tY

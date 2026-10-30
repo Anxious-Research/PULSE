@@ -28,30 +28,43 @@ function describeActivity(kind: string): string {
   switch (kind) {
     case 'MEMORY_CREATED':
       return 'New memory'
+
     case 'MEMORY_UPDATED':
       return 'Memory updated'
+
     case 'MEMORY_ACTIVATED':
       return 'Memory recalled'
+
     case 'MEMORY_REACTIVATED':
       return 'Memory reactivated'
+
     case 'MEMORY_REINFORCED':
       return 'Memory strengthened'
+
     case 'MEMORY_SUPERSEDED':
       return 'Memory superseded'
+
     case 'MEMORY_ARCHIVED':
       return 'Memory archived'
+
     case 'MEMORY_DECAYED':
       return 'Memory faded'
+
     case 'MEMORY_DELETED':
       return 'Memory removed'
+
     case 'RELATIONSHIP_CREATED':
       return 'New connection'
+
     case 'RELATIONSHIP_UPDATED':
       return 'Connection updated'
+
     case 'RELATIONSHIP_REMOVED':
       return 'Connection removed'
+
     case 'CONSOLIDATION_COMPLETED':
       return 'Consolidation complete'
+
     default:
       return 'Brain activity'
   }
@@ -145,6 +158,7 @@ export function BrainGraph({
     if (!selectedId) {
       return null
     }
+
     const node = graph.nodes.find(n => n.id === selectedId)
 
     if (!node || !node.vaultId) {
@@ -171,9 +185,11 @@ export function BrainGraph({
   const [showForcesPanel, setShowForcesPanel] = useState(false)
   const [query, setQuery] = useState('')
   const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set())
+
   const [motionEnabled, setMotionEnabled] = useState(
     () => typeof window === 'undefined' || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches !== true
   )
+
   const motionRef = useRef(motionEnabled)
   motionRef.current = motionEnabled
   const themeEpoch = useThemeEpoch()
@@ -210,6 +226,7 @@ export function BrainGraph({
     if (hiddenCategories.size === 0) {
       return
     }
+
     const present = new Set(legendCategories)
     setHiddenCategories(prev => {
       const stale = [...prev].filter(c => !present.has(c))
@@ -261,6 +278,7 @@ export function BrainGraph({
     if (!el) {
       return
     }
+
     const sync = () => setSize({ h: el.clientHeight, w: el.clientWidth })
     const ro = new ResizeObserver(sync)
     ro.observe(el)
@@ -507,6 +525,7 @@ export function BrainGraph({
     if (e.button !== 0) {
       return
     }
+
     const { x, y } = localXY(e)
     const node = pickNode(x, y)
     const sim = simRef.current
@@ -776,6 +795,7 @@ export function BrainGraph({
       if (next === paused) {
         return
       }
+
       paused = next
 
       if (paused) {
@@ -804,6 +824,7 @@ export function BrainGraph({
   const nodeCount = graph.nodes.length
   const edgeCount = graph.edges.length
   const latestActivity = activities[activities.length - 1]
+
   const activityNode = latestActivity
     ? graph.nodes.find(node => node.vaultId === latestActivity.nodeId || node.id === latestActivity.nodeId)
     : undefined

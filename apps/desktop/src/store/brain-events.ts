@@ -43,23 +43,28 @@ export async function resolveBrainEventsWsUrl(): Promise<string | null> {
       if (typeof window.pulseDesktop.getGatewayWsUrl === 'function') {
         const res = await window.pulseDesktop.getGatewayWsUrl(profile)
         const wsUrl = typeof res === 'string' ? res : res?.ok ? res.wsUrl : null
+
         if (wsUrl) {
           const url = new URL(wsUrl)
           url.pathname = url.pathname.replace(/\/(api\/)?ws$/, '/api/events')
           url.searchParams.set('channel', 'brain')
+
           if (profile && !url.searchParams.has('profile')) {
             url.searchParams.set('profile', profile)
           }
+
           return url.toString()
         }
       }
 
       // Fallback: active connection baseUrl + token
       const conn = await activeConnection().catch(() => null)
+
       if (conn?.baseUrl) {
         const base = conn.baseUrl.replace(/^http/, 'ws')
         const tokenParam = conn.token ? `&token=${encodeURIComponent(conn.token)}` : ''
         const profileParam = profile ? `&profile=${encodeURIComponent(profile)}` : ''
+
         return `${base}/api/events?channel=brain${tokenParam}${profileParam}`
       }
     } catch (err) {
@@ -69,14 +74,17 @@ export async function resolveBrainEventsWsUrl(): Promise<string | null> {
 
   // 2. Web / Dashboard / Vite Dev fallback
   const apiBase = import.meta.env.VITE_API_BASE || ''
+
   if (apiBase) {
     const base = apiBase.replace(/^http/, 'ws')
+
     return `${base}/api/events?channel=brain`
   }
 
   if (typeof window !== 'undefined' && window.location?.origin) {
     const loc = window.location
     const proto = loc.protocol === 'https:' ? 'wss:' : 'ws:'
+
     return `${proto}//${loc.host}/api/events?channel=brain`
   }
 
@@ -92,6 +100,7 @@ export async function fetchRecentEvents(since: number): Promise<{ seq: number; e
       })
     } catch (err) {
       console.warn('[brain-events] pulseApi catch-up failed:', err)
+
       return null
     }
   }
@@ -99,12 +108,14 @@ export async function fetchRecentEvents(since: number): Promise<{ seq: number; e
   try {
     const apiBase = import.meta.env.VITE_API_BASE || ''
     const res = await fetch(`${apiBase}/api/brain/events/recent?since=${since}`)
+
     if (res.ok) {
       return await res.json()
     }
   } catch (err) {
     console.warn('[brain-events] fetch catch-up failed:', err)
   }
+
   return null
 }
 
@@ -134,12 +145,14 @@ async function connect(): Promise<void> {
 
   if (!wsUrl || !isSubscribed) {
     catchingUp = false
+
     if (isSubscribed && !reconnectTimer) {
       reconnectTimer = setTimeout(() => {
         reconnectTimer = null
         void connect()
       }, 2000)
     }
+
     return
   }
 
@@ -150,8 +163,10 @@ async function connect(): Promise<void> {
     socket.onopen = async () => {
       if (ws !== socket) {
         socket.close()
+
         return
       }
+
       console.log('[brain-events] connected')
 
       if (reconnectTimer) {
@@ -162,11 +177,14 @@ async function connect(): Promise<void> {
       // Catch up on missed events (§14: handle reconnect)
       try {
         const recent = await fetchRecentEvents(lastSeq)
+
         if (recent) {
           const { seq, events } = recent
+
           for (const event of events || []) {
             consumeEvent(event)
           }
+
           lastSeq = Math.max(lastSeq, seq || lastSeq)
         }
       } catch (err) {
@@ -202,6 +220,7 @@ async function connect(): Promise<void> {
 
     socket.onclose = () => {
       console.log('[brain-events] closed')
+
       if (ws === socket) {
         ws = null
       }
@@ -218,6 +237,7 @@ async function connect(): Promise<void> {
     console.error('[brain-events] socket init failed:', err)
     ws = null
     catchingUp = false
+
     if (isSubscribed && !reconnectTimer) {
       reconnectTimer = setTimeout(() => {
         reconnectTimer = null
@@ -375,6 +395,7 @@ export function applyBrainEvent(event: BrainEvent): void {
         ...graph.nodes[idx],
         state: kind === 'MEMORY_ARCHIVED' ? 'archived' : 'dormant'
       }
+
       const nodes = [...graph.nodes]
       nodes[idx] = archived
       $starmapGraph.set({ ...graph, nodes })
@@ -405,6 +426,7 @@ export function applyBrainEvent(event: BrainEvent): void {
       if (!targetId) {
         break
       }
+
       const source = graph.nodes.find(n => n.vaultId === node_id)
       const target = graph.nodes.find(n => n.vaultId === targetId)
 
@@ -446,6 +468,7 @@ export function applyBrainEvent(event: BrainEvent): void {
           ? { ...edge, kind: payload?.rel || edge.kind }
           : edge
       )
+
       $starmapGraph.set({ ...graph, edges })
 
       break
@@ -475,12 +498,15 @@ export function applyBrainEvent(event: BrainEvent): void {
     }
 
     case 'MEMORY_ACTIVATED':
+
     case 'MEMORY_REACTIVATED':
+
     case 'CONSOLIDATION_COMPLETED':
       break
 
     default:
       console.warn('[brain-events] unknown event kind:', kind)
+
       return
   }
 

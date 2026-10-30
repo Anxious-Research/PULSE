@@ -19,6 +19,7 @@ export async function loadStarmapGraph(force = false): Promise<void> {
   }
 
   const current = $starmapGraph.get()
+
   if (current && current.nodes.length > 0 && !force) {
     return
   }
