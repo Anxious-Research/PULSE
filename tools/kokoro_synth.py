@@ -41,19 +41,25 @@ def clean_expressive_text(text: str) -> str:
     if not text:
         return ""
 
-    # 1. Strip roleplay/reaction action markers into natural prosody pauses
+    # 1. Hyphenated compound words like kaha-kaha, chhoti-chhoti -> space separation
+    text = re.sub(r"(\w+)-(\w+)", r"\1 \2", str(text))
+
+    # 2. Standalone dashes / hyphens become soft phrase pauses
+    text = re.sub(r"\s*[-—–]+\s*", ", ", text)
+
+    # 3. Strip roleplay/reaction action markers into natural prosody pauses
     # e.g. *smiles*, *laughs*, *chuckles*, *sighs* -> natural pause "..."
     text = re.sub(r"\*[a-zA-Z\s_\-]+\*", "... ", text)
     text = re.sub(r"\([a-zA-Z\s_\-]{3,25}\)", ", ", text)
 
-    # 2. Strip emojis completely
+    # 4. Strip emojis completely
     text = _EMOJI_PATTERN.sub("", text)
 
-    # 3. Strip code blocks and technical noise
+    # 5. Strip code blocks and technical noise
     text = re.sub(r"```[\s\S]*?```", " ", text)
     text = re.sub(r"`([^`]+)`", r"\1", text)
 
-    # 4. Strip markdown formatting syntax
+    # 6. Strip markdown formatting syntax
     text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)
     text = re.sub(r"\*([^*]+)\*", r"\1", text)
     text = re.sub(r"#+\s*", "", text)
@@ -61,10 +67,10 @@ def clean_expressive_text(text: str) -> str:
     text = re.sub(r"^\s*[-*•]\s+", ", ", text, flags=re.MULTILINE)
     text = re.sub(r"\|[^|\n]+\|", " ", text)  # tables
 
-    # 5. Remove disruptive punctuation characters that cause literal word reading
+    # 7. Remove disruptive punctuation characters that cause literal word reading
     text = re.sub(r"[_~|\\/^<>{}=+@#$]", " ", text)
 
-    # 6. Smooth out consecutive punctuation and spaces
+    # 8. Smooth out consecutive punctuation and spaces
     text = re.sub(r"\.{4,}", "...", text)
     text = re.sub(r",\s*,+", ",", text)
     text = re.sub(r"\s+", " ", text).strip()
@@ -181,13 +187,21 @@ def synthesize_kokoro(
     )
 
     resolved_voice = resolve_voice_style(kokoro, voice)
-    selected_lang = "hi" if str(voice).startswith("h") and lang == "hi" else lang
+
+    # Convert text to IPA phonemes using Latin script Hinglish phonemizer
+    phonemes = kokoro.tokenizer.phonemize(clean_text, lang="en-us")
+
+    # Strip any leaked internal language switch markers emitted by espeak-ng:
+    # e.g. (en), (hi), (es) which get read aloud as "nos" or "en"
+    phonemes = re.sub(r"\([a-zA-Z]{2,4}\)", "", phonemes)
+    # Strip any dangling hyphens or raw symbols in phoneme stream
+    phonemes = re.sub(r"\s*[-—–_]+\s*", " ", phonemes).strip()
 
     samples, sample_rate = kokoro.create(
-        text=clean_text,
+        phonemes,
         voice=resolved_voice,
         speed=speed,
-        lang=selected_lang,
+        is_phonemes=True,
     )
 
     out_p = Path(output_path)
