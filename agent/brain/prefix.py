@@ -19,7 +19,7 @@ faded memory must not silently reword the system prompt.
 
 from __future__ import annotations
 
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Set
 
 from .models import NodeStatus
 from .parser import strip_title_overlap, wikilinks_to_text
@@ -128,3 +128,64 @@ def compile_stable_prefix(vault: Any, *, max_chars: int = DEFAULT_MAX_CHARS) -> 
 def has_stable_content(vault: Any, *, max_chars: int = DEFAULT_MAX_CHARS) -> bool:
     """True when a prefix would actually be produced — lets a caller skip the work."""
     return bool(compile_stable_prefix(vault, max_chars=max_chars))
+
+
+def stable_prefix_node_ids(vault: Any, *, max_chars: int = DEFAULT_MAX_CHARS) -> Set[str]:
+    """Return the set of node IDs included in the Layer-1 stable prefix.
+
+    Calculates the exact set of nodes from ``self/`` and ``user/`` that fit within
+    the stable prefix budget, matching the selection of ``compile_stable_prefix``.
+    Never raises.
+    """
+    try:
+        nodes = vault.list_all_nodes()
+    except Exception:
+        return set()
+    if not nodes:
+        return set()
+
+    by_category: dict = {}
+    for node in nodes:
+        try:
+            if node.frontmatter.status in _EXCLUDED_STATUS:
+                continue
+            if node.category not in dict(_SECTIONS):
+                continue
+            body = (node.content or "").strip()
+            if not body:
+                continue
+            by_category.setdefault(node.category, []).append(node)
+        except Exception:
+            continue
+
+    if not by_category:
+        return set()
+
+    budget = max(200, int(max_chars))
+    included_ids: Set[str] = set()
+    used = 0
+    sections_count = 0
+
+    for category, heading in _SECTIONS:
+        entries = sorted(by_category.get(category, []), key=lambda n: n.id)
+        if not entries:
+            continue
+        heading_line = f"## {heading}"
+        reserve = len(heading_line) + 1 + (2 if sections_count > 0 else 0)
+        running = used + reserve
+        cat_added = 0
+        for node in entries:
+            title = _one_line(node.title or node.id, 120)
+            body = strip_title_overlap(_plain(node.content), node.title or "")
+            line = f"- {title}: {_one_line(body, PER_NODE_MAX_CHARS)}"
+            if running + len(line) + 1 > budget:
+                break
+            included_ids.add(node.id)
+            running += len(line) + 1
+            cat_added += 1
+        if cat_added > 0:
+            sections_count += 1
+            used = running
+
+    return included_ids
+

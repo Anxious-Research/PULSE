@@ -19,6 +19,7 @@ import time
 import unittest
 from pathlib import Path
 
+from agent.brain.cache import BrainCache
 from agent.brain.hybrid import bm25_rank, semantic_rank, semantic_available, rrf_fuse
 from agent.brain.recall import recall
 from agent.brain.similarity import LexicalHashEmbedder
@@ -199,6 +200,77 @@ class HybridVsBaselineComparison(unittest.TestCase):
             self.assertEqual(hyb[0], "concept/answer", "hybrid regressed a confident associative hit")
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
+
+
+class BrainCacheRecallTest(unittest.TestCase):
+    """Test BrainCache acceleration and fail-open resilience in production recall."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="pulse-braincache-rec-"))
+        self.vault = BrainVault(vault_dir=self.tmp)
+        self.vault.ensure_vault_structure()
+        T0 = 1_800_000_000
+        self.vault.write_node(
+            "concept/alpha", "Alpha links to [[concept/beta]].", title="Alpha Topic", now=T0
+        )
+        self.vault.write_node(
+            "concept/beta", "Beta is about maritime navigation and shipping.", title="Beta Topic", now=T0
+        )
+        self.vault.write_node(
+            "concept/gamma", "Gamma covers unrelated astronomy topics.", title="Gamma Stars", now=T0
+        )
+        self.cache = BrainCache(self.vault)
+        self.cache.rebuild()
+
+    def tearDown(self):
+        self.cache.close()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_recall_uses_brain_cache_accelerator(self):
+        # Recall with cache passed explicitly
+        res = recall("maritime navigation", vault=self.vault, cache=self.cache)
+        self.assertFalse(res.empty)
+        ids = [h.node_id for h in res.hits]
+        self.assertIn("concept/beta", ids)
+        # 1-hop link should also be surfaced via graph traversal
+        self.assertIn("concept/alpha", ids)
+
+    def test_recall_auto_discovers_cache_on_disk(self):
+        # Recall without passing cache explicitly — should auto-discover .brain-cache.db
+        res = recall("maritime navigation", vault=self.vault)
+        self.assertFalse(res.empty)
+        ids = [h.node_id for h in res.hits]
+        self.assertIn("concept/beta", ids)
+
+    def test_fail_open_on_corrupted_cache(self):
+        # Corrupt the cache DB file on disk
+        self.cache.close()
+        db_path = self.tmp / ".brain-cache.db"
+        db_path.write_bytes(b"corrupted sqlite file header garbage")
+
+        # Recall must NOT fail or throw, must fall back cleanly to in-memory vault scan
+        res = recall("maritime navigation", vault=self.vault)
+        self.assertFalse(res.empty, "recall should fall back to vault scan and succeed")
+        ids = [h.node_id for h in res.hits]
+        self.assertIn("concept/beta", ids)
+
+    def test_multi_channel_with_semantic_and_contextual_gate(self):
+        class MockSemanticEmbedder:
+            semantic = True
+
+            def vector(self, text: str):
+                t = text.lower()
+                # Vector matching astronomy concepts
+                return [1.0 if any(w in t for w in ["astronomy", "cosmic", "stars", "celestial"]) else 0.0]
+
+        # Weak/irrelevant query returns empty (contextual gating preserved)
+        gated = recall("quantum chromodynamics lattice", vault=self.vault, embedder=MockSemanticEmbedder())
+        self.assertTrue(gated.empty, "weak/irrelevant query must be gated out")
+
+        # Query with semantic embedding match clears gate and recalls gamma
+        sem_res = recall("celestial cosmic bodies", vault=self.vault, embedder=MockSemanticEmbedder())
+        self.assertFalse(sem_res.empty)
+        self.assertIn("concept/gamma", [h.node_id for h in sem_res.hits])
 
 
 if __name__ == "__main__":

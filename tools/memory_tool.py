@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""Memory Tool - persistent curated memory (MEMORY.md = agent notes, USER.md = user
-profile). Both enter the system prompt as a FROZEN snapshot at session start;
-mid-session writes hit disk but never change the prompt (prefix cache intact).
+"""Memory Tool - persistent curated memory backed by the BrainVault.
 Single `memory` tool: add/replace/remove or a batch `operations` list."""
 
 import copy
@@ -237,6 +235,18 @@ def _memory_tool(action, target, content, old_text, new_text, operations, store)
     target_error = _memory_target_error(store, target)
     if target_error is not None:
         return "rejected", json.dumps(target_error)
+    try:
+        from tools.skill_provenance import is_background_review
+        if is_background_review():
+            from agent.background_review import check_memory_prompt_leak
+            leak_err = check_memory_prompt_leak({
+                "action": action, "content": content, "old_text": old_text,
+                "new_text": new_text, "operations": operations,
+            })
+            if leak_err:
+                return "rejected", tool_error(leak_err, success=False)
+    except Exception:
+        pass
     if operations:
         if not isinstance(operations, list):
             return "rejected", tool_error("operations must be a list of {action, content?, old_text?} objects.", success=False)
@@ -322,23 +332,20 @@ def apply_memory_pending(payload: Dict[str, Any], store: "MemoryStore") -> Dict[
 MEMORY_SCHEMA = {
     "name": "memory",
     "description": (
-        "Save durable facts to persistent memory that survive across sessions. Memory is "
-        "injected into every future turn, so keep entries compact and high-signal.\n\n"
-        "HOW: make ALL your changes in ONE call via an 'operations' array (each item: "
-        "{action, content?, old_text?}). The batch applies atomically and the char limit is "
-        "checked only on the FINAL result — so a single call can remove/replace stale entries "
-        "to free room AND add new ones, even when an add alone would overflow. The response "
-        "reports current/limit chars and confirms completion; one batch call finishes the "
-        "update, so don't repeat it. Use the bare action/content/old_text fields only for a "
-        "single lone change.\n\n"
+        "Save durable facts to persistent memory that survive across sessions. The vault has "
+        "unlimited capacity with no capacity rejections; automatic associative recall retrieves "
+        "relevant memories into future turns, so keep entries compact and high-signal.\n\n"
+        "HOW: make changes via a single operation or an 'operations' array (each item: "
+        "{action, content?, old_text?}). 'add' creates a new note in the vault. 'replace' "
+        "supersedes the existing entry matching old_text with new content (prior note is retained "
+        "and linked as superseded). 'remove' archives the entry matching old_text (leaves active "
+        "recall while preserving history). The batch applies atomically in one call; use the bare "
+        "action/content/old_text fields for a single lone change.\n\n"
         "WHEN: only for facts that apply to EVERY session regardless of task: who the user "
         "is, stable environment facts, standing conventions with no task home. Anything "
         "learned while doing a task (procedures, pitfalls, and the user's preferences and "
         "corrections for that kind of work) belongs in the task's skill via skill_manage, "
-        "where it loads only when relevant; memory is injected into every turn and must "
-        "stay small.\n\n"
-        "IF FULL: an add is rejected with the current entries shown. Reissue as ONE batch that "
-        "removes or shortens enough stale entries and adds the new one together.\n\n"
+        "where it loads only when relevant.\n\n"
         "TARGETS: 'user' = who the user is (name, role, preferences, style). 'memory' = your "
         "notes (environment, conventions, tool quirks, lessons).\n\n"
         "SKIP: trivial/obvious info, easily re-discovered facts, raw data dumps, task progress, "
@@ -351,31 +358,30 @@ MEMORY_SCHEMA = {
             "action": {
                 "type": "string",
                 "enum": ["add", "replace", "remove"],
-                "description": "The action to perform (single-op shape). Omit when using 'operations'."
+                "description": "The action to perform (single-op shape). Omit when using 'operations'.",
             },
             "target": {
                 "type": "string",
                 "enum": ["memory", "user"],
-                "description": "Which memory store: 'memory' for personal notes, 'user' for user profile."
+                "description": "Which memory store: 'memory' for personal notes, 'user' for user profile.",
             },
             "content": {
                 "type": "string",
-                "description": "The entry content. Required for 'add' and 'replace'. For 'replace' it is the COMPLETE new entry text: the whole matched entry is overwritten, so include everything you want to keep. Alias: 'new_text' is also accepted (same full-entry meaning)."
+                "description": "The entry content. Required for 'add' and 'replace'. For 'replace' it is the COMPLETE new entry text: the whole matched entry is overwritten, so include everything you want to keep. Alias: 'new_text' is also accepted (same full-entry meaning).",
             },
             "old_text": {
                 "type": "string",
-                "description": "REQUIRED for 'replace' and 'remove' (single-op shape): a short unique substring IDENTIFYING the existing entry to modify -- it locates the entry, it is not spliced out. Omit only for 'add'."
+                "description": "REQUIRED for 'replace' and 'remove' (single-op shape): a short unique substring IDENTIFYING the existing entry to modify -- it locates the entry, it is not spliced out. Omit only for 'add'.",
             },
             "new_text": {
                 "type": "string",
-                "description": "Alias for 'content' (single-op shape): the COMPLETE new entry for 'replace', not a patch of old_text. If both are set, 'content' wins."
+                "description": "Alias for 'content' (single-op shape): the COMPLETE new entry for 'replace', not a patch of old_text. If both are set, 'content' wins.",
             },
             "operations": {
                 "type": "array",
                 "description": (
-                    "Batch shape: a list of operations applied atomically in one call "
-                    "against the final char budget. Preferred when making multiple changes "
-                    "or consolidating to make room. Each item is {action, content?, old_text?}."
+                    "Batch shape: a list of operations applied atomically in one call. "
+                    "Preferred when making multiple changes. Each item is {action, content?, old_text?}."
                 ),
                 "items": {
                     "type": "object",

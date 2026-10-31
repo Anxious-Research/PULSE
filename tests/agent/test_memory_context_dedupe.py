@@ -47,3 +47,87 @@ def test_a_bullet_with_continuation_lines_is_never_touched():
 
     assert _body(build_memory_context_block(raw)) == raw
     assert _body(build_memory_context_block(nested)) == nested
+
+
+def test_user_model_guidance_block_ignores_unrelated_query(tmp_path):
+    from agent.brain.vault import BrainVault
+    from agent.brain.session import brain_encode_turn, _user_model_guidance_block
+    from tests.test_brain_integration_v4 import _make_agent
+
+    vault = BrainVault(vault_dir=tmp_path)
+    vault.ensure_vault_structure()
+    agent = _make_agent(tmp_path, vault)
+
+    brain_encode_turn(agent, "I prefer concise answers over long explanations", session_id="s1")
+
+    # Unrelated queries must yield empty block (§9.1 context contamination guard)
+    assert _user_model_guidance_block(vault, "explain merge sort") == ""
+    assert _user_model_guidance_block(vault, "how does binary search work") == ""
+    assert _user_model_guidance_block(vault, "kubernetes ingress tls") == ""
+
+
+def test_user_model_guidance_block_triggers_on_user_signals(tmp_path):
+    from agent.brain.vault import BrainVault
+    from agent.brain.session import brain_encode_turn, _user_model_guidance_block
+    from tests.test_brain_integration_v4 import _make_agent
+
+    vault = BrainVault(vault_dir=tmp_path)
+    vault.ensure_vault_structure()
+    agent = _make_agent(tmp_path, vault)
+
+    brain_encode_turn(agent, "I prefer concise answers over long explanations", session_id="s1")
+
+    # Queries with user-model signal must trigger
+    block = _user_model_guidance_block(vault, "how should I format my replies")
+    assert "User model" in block
+    assert "concise answers" in block
+
+    block2 = _user_model_guidance_block(vault, "what are my preferences")
+    assert "User model" in block2
+    assert "concise answers" in block2
+
+
+def test_user_model_guidance_block_dedupes_against_prefix_node_ids(tmp_path):
+    from agent.brain.vault import BrainVault
+    from agent.brain.session import brain_encode_turn, _user_model_guidance_block
+    from tests.test_brain_integration_v4 import _make_agent
+
+    vault = BrainVault(vault_dir=tmp_path)
+    vault.ensure_vault_structure()
+    agent = _make_agent(tmp_path, vault)
+
+    brain_encode_turn(agent, "I prefer concise answers over long explanations", session_id="s1")
+
+    nodes = [n for n in vault.list_all_nodes() if n.category == "user"]
+    assert len(nodes) >= 1
+    prefix_ids = {nodes[0].id}
+
+    # When node is already in prefix, user model block should suppress it
+    assert _user_model_guidance_block(vault, "how should I format my replies", prefix_node_ids=prefix_ids) == ""
+
+
+def test_brain_turn_context_filters_stable_prefix_from_recall_hits(tmp_path):
+    from agent.brain.vault import BrainVault
+    from agent.brain.session import brain_turn_context, brain_stable_prefix
+    from tests.test_brain_integration_v4 import _make_agent
+
+    vault = BrainVault(vault_dir=tmp_path)
+    vault.ensure_vault_structure()
+    agent = _make_agent(tmp_path, vault)
+
+    # Concept node (should be in Layer 2 recall)
+    vault.write_node("concept/quick-sort", "Quicksort has O(n log n) average time complexity.", title="Quicksort", salience=0.9)
+    # Self identity node (should be in Layer 1 stable prefix and NOT in Layer 2 recall)
+    vault.write_node("self/identity", "PULSE is an autonomous agent framework.", title="Identity", salience=0.9)
+
+    # Stable prefix compiles identity
+    prefix = brain_stable_prefix(agent)
+    assert "Identity" in prefix
+
+    # Turn context recalling both cues
+    ctx = brain_turn_context(agent, "quicksort autonomous agent framework")
+    assert "Quicksort" in ctx
+    # Identity node must be filtered out from Relevant memories
+    assert "self/identity" not in ctx
+    assert "[self] Identity" not in ctx
+

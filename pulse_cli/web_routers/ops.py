@@ -489,7 +489,62 @@ async def get_memory_status(profile: Optional[str] = None):
         for fname, key in _MEMORY_FILES:
             path = mem_dir / fname
             files[key] = path.stat().st_size if path.exists() else 0
-        return {"active": active, "providers": _discover_memory_provider_statuses(), "builtin_files": files}
+
+        from agent.brain.vault import BrainVault
+        from agent.brain.cache import BrainCache
+
+        vault = BrainVault(get_pulse_home() / "brain")
+        nodes = vault.list_all_nodes() if vault.vault_dir.exists() else []
+        total_nodes = len(nodes)
+
+        category_counts = {
+            "user": 0,
+            "self": 0,
+            "concept": 0,
+            "project": 0,
+            "belief": 0,
+            "procedure": 0,
+            "daily": 0,
+        }
+        for node in nodes:
+            cat = getattr(node.frontmatter, "category", None) or (node.id.split("/")[0] if "/" in node.id else "concept")
+            category_counts[cat] = category_counts.get(cat, 0) + 1
+
+        cache_db = vault.vault_dir / ".brain-cache.db"
+        cache_exists = cache_db.exists()
+        cache = BrainCache(vault)
+        try:
+            cache_empty = cache.is_empty() if cache.conn else True
+            cache_stale = cache.is_stale() if cache.conn else True
+        finally:
+            cache.close()
+
+        cache_state = "ready" if (cache_exists and not cache_empty and not cache_stale) else ("empty" if cache_empty else "stale")
+        cache_status = {
+            "exists": cache_exists,
+            "empty": cache_empty,
+            "stale": cache_stale,
+            "status": cache_state,
+        }
+
+        return {
+            "active": active,
+            "providers": _discover_memory_provider_statuses(),
+            "builtin_files": files,
+            "total_nodes": total_nodes,
+            "vault_nodes": total_nodes,
+            "by_category": category_counts,
+            "categories": category_counts,
+            "cache_status": cache_status,
+            "brain": {
+                "total_nodes": total_nodes,
+                "vault_nodes": total_nodes,
+                "by_category": category_counts,
+                "categories": category_counts,
+                "cache_status": cache_status,
+                "vault_dir": str(vault.vault_dir),
+            },
+        }
 
     return await config_scoped_to_thread(profile, _run)
 
@@ -533,7 +588,59 @@ async def reset_memory(body: MemoryReset, profile: Optional[str] = None):
                     deleted.append(fname)
                 except OSError as exc:
                     raise HTTPException(status_code=500, detail=f"Could not delete {fname}: {exc}")
-        return {"ok": True, "deleted": deleted}
+
+        from agent.brain.vault import BrainVault
+        from agent.brain.cache import BrainCache
+        from agent.brain.index import BrainIndex
+        from agent.brain.models import NodeCategory
+
+        vault = BrainVault(get_pulse_home() / "brain")
+        deleted_nodes = []
+        if vault.vault_dir.exists():
+            nodes = vault.list_all_nodes()
+            for node in nodes:
+                cat = getattr(node.frontmatter, "category", None) or (node.id.split("/")[0] if "/" in node.id else "concept")
+                if target == "all" or (target == "user" and cat == "user") or (target == "memory" and cat != "user"):
+                    if vault.delete_node(node.id):
+                        deleted_nodes.append(node.id)
+
+            categories_to_clear = (
+                NodeCategory.all_values() if target == "all"
+                else (["user"] if target == "user"
+                else [c for c in NodeCategory.all_values() if c != "user"])
+            )
+            for cat in categories_to_clear:
+                cat_dir = vault.vault_dir / cat
+                if cat_dir.is_dir():
+                    for md_file in cat_dir.rglob("*.md"):
+                        try:
+                            md_file.unlink(missing_ok=True)
+                        except OSError:
+                            pass
+
+            # Clean .brain-cache.db and index on reset
+            cache_db = vault.vault_dir / ".brain-cache.db"
+            for cache_file in (cache_db, vault.vault_dir / ".brain-cache.db-wal", vault.vault_dir / ".brain-cache.db-shm"):
+                if cache_file.exists():
+                    try:
+                        cache_file.unlink()
+                    except OSError:
+                        pass
+
+            try:
+                cache = BrainCache(vault)
+                cache.rebuild()
+                cache.close()
+            except Exception:
+                pass
+
+            try:
+                BrainIndex(vault).rebuild()
+            except Exception:
+                pass
+
+        deleted.extend(deleted_nodes)
+        return {"ok": True, "deleted": deleted, "deleted_nodes": deleted_nodes}
 
     return await config_scoped_to_thread(profile, _run)
 

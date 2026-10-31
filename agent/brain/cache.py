@@ -16,7 +16,7 @@ import json
 import sqlite3
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 from .vault import BrainVault
 
@@ -38,9 +38,22 @@ class BrainCache:
     caller falls back to the vault. A cache miss is never a hard failure.
     """
 
-    def __init__(self, vault: BrainVault, embeddings_enabled: bool = False):
+    def __init__(
+        self,
+        vault: BrainVault,
+        embeddings_enabled: bool = False,
+        embedder: Any = None,
+    ):
         self.vault = vault
         self.embeddings_enabled = embeddings_enabled
+        self.embedder = embedder
+        if self.embeddings_enabled and self.embedder is None:
+            try:
+                from .similarity import get_embedder
+
+                self.embedder = get_embedder(prefer_semantic=True)
+            except Exception:
+                self.embedder = None
         self.db_path = vault.vault_dir / ".brain-cache.db"
         self.conn: Optional[sqlite3.Connection] = self._connect()
         self._ensure_schema()
@@ -253,13 +266,44 @@ class BrainCache:
         except OSError:
             mtime = time.time()
 
+        embedding_blob: Optional[bytes] = None
+        node_emb = getattr(node, "embedding", None)
+        if node_emb is not None:
+            if isinstance(node_emb, (bytes, bytearray, memoryview)):
+                embedding_blob = bytes(node_emb)
+            elif isinstance(node_emb, (list, tuple)):
+                from .similarity import serialize_vector
+
+                embedding_blob = serialize_vector(node_emb)
+        elif self.embeddings_enabled and self.embedder is not None:
+            text = f"{getattr(node, 'title', '') or ''} {content}".strip()
+            if text:
+                try:
+                    vec = self.embedder.vector(text)
+                    if vec:
+                        from .similarity import serialize_vector
+
+                        embedding_blob = serialize_vector(vec)
+                except Exception:
+                    embedding_blob = None
+        elif self.conn:
+            # Preserve existing embedding if row already exists in database
+            try:
+                row = self.conn.execute(
+                    "SELECT embedding FROM nodes WHERE node_id = ?", (node_id,)
+                ).fetchone()
+                if row and row["embedding"] is not None:
+                    embedding_blob = row["embedding"]
+            except Exception:
+                pass
+
         self.conn.execute(
             """
             INSERT OR REPLACE INTO nodes
             (node_id, category, title, content, hash, mtime, frontmatter, embedding)
-            VALUES (?, ?, ?, ?, ?, ?, ?, NULL)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (node_id, node.category, node.title, content, digest, mtime, json.dumps(fm)),
+            (node_id, node.category, node.title, content, digest, mtime, json.dumps(fm), embedding_blob),
         )
         # FTS5 (external-content): delete the old row, then reinsert.
         self.conn.execute("DELETE FROM nodes_fts WHERE node_id = ?", (node_id,))
@@ -456,19 +500,236 @@ class BrainCache:
             for r in rows
         ]
 
+    def search_fts(self, query: str | Sequence[str], limit: int = 50) -> List[Dict[str, Any]]:
+        """Full-text search over title + content using FTS5.
+
+        Accepts a raw query string or a sequence of cue terms.
+        Uses prefix expansion for words >= 4 chars to handle inflections.
+        """
+        if not self.conn:
+            return []
+
+        terms: List[str] = []
+        if isinstance(query, (list, tuple, set)):
+            cues = [str(c).strip() for c in query if str(c).strip()]
+        else:
+            raw = str(query or "").strip()
+            if not raw:
+                return []
+            import re
+            cues = re.findall(r"[A-Za-z0-9_./\\-]{3,}", raw)
+            words = raw.split()
+            if 1 < len(words) <= 6:
+                clean_phrase = raw.replace('"', "").strip()
+                if clean_phrase:
+                    terms.append(f'"{clean_phrase}"')
+
+        for cue in cues[:12]:
+            t = str(cue).strip().replace('"', "")
+            if not t:
+                continue
+            terms.append(f'"{t}"')
+            if len(t) >= 4:
+                prefix = t[:5]
+                clause = f'"{prefix}"*'
+                if clause not in terms:
+                    terms.append(clause)
+
+        if not terms:
+            return []
+
+        fts_expr = " OR ".join(terms)
+        try:
+            rows = self.conn.execute(
+                """
+                SELECT n.node_id AS id, n.category, n.title, n.content, n.frontmatter,
+                       bm25(nodes_fts) AS bm_score
+                FROM nodes_fts
+                JOIN nodes n ON n.node_id = nodes_fts.node_id
+                WHERE nodes_fts MATCH ?
+                ORDER BY bm25(nodes_fts)
+                LIMIT ?
+                """,
+                (fts_expr, limit),
+            ).fetchall()
+        except sqlite3.Error:
+            return []
+
+        return [
+            {
+                "id": r["id"],
+                "category": r["category"],
+                "title": r["title"],
+                "content": r["content"],
+                "frontmatter": json.loads(r["frontmatter"] or "{}"),
+                "score": float(r["bm_score"] or 0.0),
+            }
+            for r in rows
+        ]
+
+    def traverse_graph(self, seed_ids: Sequence[str], hops: int = 1) -> Set[str]:
+        """Fast graph traversal over wikilink edges in SQLite.
+
+        Given starting seed node IDs, traverses incoming and outgoing wikilink edges
+        up to `hops` distance. Returns all reached node IDs (excluding seeds).
+        """
+        if not self.conn or not seed_ids:
+            return set()
+        current = set(seed_ids)
+        visited = set(seed_ids)
+        for _ in range(max(1, int(hops))):
+            if not current:
+                break
+            ph = ",".join("?" for _ in current)
+            args = tuple(current) + tuple(current)
+            try:
+                rows = self.conn.execute(
+                    f"""
+                    SELECT target FROM edges WHERE source IN ({ph}) AND kind = 'wikilink'
+                    UNION
+                    SELECT source FROM edges WHERE target IN ({ph}) AND kind = 'wikilink'
+                    """,
+                    args,
+                ).fetchall()
+            except sqlite3.Error:
+                break
+            nxt = {r[0] for r in rows} - visited
+            visited |= nxt
+            current = nxt
+        return visited - set(seed_ids)
+
+    def get_nodes(self, node_ids: Sequence[str]) -> List[Dict[str, Any]]:
+        """Fetch specific nodes by IDs from the SQLite cache."""
+        if not self.conn or not node_ids:
+            return []
+        unique_ids = list(dict.fromkeys(node_ids))
+        ph = ",".join("?" for _ in unique_ids)
+        try:
+            rows = self.conn.execute(
+                f"""
+                SELECT node_id, category, title, content, frontmatter
+                FROM nodes
+                WHERE node_id IN ({ph})
+                """,
+                tuple(unique_ids),
+            ).fetchall()
+        except sqlite3.Error:
+            return []
+        return [
+            {
+                "id": r["node_id"],
+                "category": r["category"],
+                "title": r["title"],
+                "content": r["content"],
+                "frontmatter": json.loads(r["frontmatter"] or "{}"),
+            }
+            for r in rows
+        ]
+
     # -- embeddings (opt-in §9.4) -------------------------------------------
 
-    def store_embedding(self, node_id: str, vector: bytes) -> None:
-        if not self.conn or not self.embeddings_enabled:
+    def store_embedding(self, node_id: str, vector: bytes | Sequence[float]) -> None:
+        """Store a serialized embedding vector (e.g. float32 bytes) for a node."""
+        if not self.conn:
             return
-        self.conn.execute("UPDATE nodes SET embedding = ? WHERE node_id = ?", (vector, node_id))
+        self.embeddings_enabled = True
+        if isinstance(vector, (bytes, bytearray, memoryview)):
+            blob = bytes(vector)
+        else:
+            from .similarity import serialize_vector
+
+            blob = serialize_vector(vector)
+        self.conn.execute("UPDATE nodes SET embedding = ? WHERE node_id = ?", (blob, node_id))
         self.conn.commit()
 
     def embedded_nodes(self) -> List[Tuple[str, bytes]]:
         """(node_id, embedding) pairs for a caller-side similarity pass."""
-        if not self.conn or not self.embeddings_enabled:
+        if not self.conn:
             return []
         rows = self.conn.execute(
             "SELECT node_id, embedding FROM nodes WHERE embedding IS NOT NULL"
         ).fetchall()
         return [(r["node_id"], r["embedding"]) for r in rows]
+
+    def search_vector(
+        self,
+        query_vector: Sequence[float] | bytes,
+        top_k: int = 10,
+        *,
+        threshold: Optional[float] = None,
+    ) -> List[Dict[str, Any]]:
+        """Compute cosine similarity / distance against cached node embeddings.
+
+        Returns the top_k most similar nodes sorted by cosine similarity descending
+        (closest cosine distance first). Each result dictionary includes node metadata
+        plus 'score' (cosine similarity in [-1, 1]), 'similarity', and 'distance'
+        (1.0 - similarity).
+        """
+        if not self.conn or top_k <= 0:
+            return []
+        if not query_vector:
+            return []
+
+        from .similarity import cosine
+
+        if isinstance(query_vector, (bytes, bytearray, memoryview)):
+            q_vec: Union[bytes, List[float]] = bytes(query_vector)
+        else:
+            try:
+                q_vec = [float(x) for x in query_vector]
+            except (TypeError, ValueError):
+                return []
+            if not q_vec:
+                return []
+
+        try:
+            rows = self.conn.execute(
+                """
+                SELECT node_id, category, title, content, frontmatter, embedding
+                FROM nodes
+                WHERE embedding IS NOT NULL
+                """
+            ).fetchall()
+        except sqlite3.Error:
+            return []
+
+        if not rows:
+            return []
+
+        scored: List[Tuple[float, sqlite3.Row]] = []
+        for r in rows:
+            blob = r["embedding"]
+            if not blob:
+                continue
+            try:
+                sim = cosine(q_vec, blob)
+            except Exception:
+                continue
+            if threshold is not None and sim < float(threshold):
+                continue
+            scored.append((sim, r))
+
+        scored.sort(key=lambda item: (-item[0], item[1]["node_id"]))
+
+        results: List[Dict[str, Any]] = []
+        for sim, r in scored[:top_k]:
+            results.append({
+                "id": r["node_id"],
+                "category": r["category"],
+                "title": r["title"],
+                "content": r["content"],
+                "frontmatter": json.loads(r["frontmatter"] or "{}"),
+                "score": sim,
+                "similarity": sim,
+                "distance": 1.0 - sim,
+            })
+        return results
+
+    def search_similar(
+        self,
+        query_vector: Sequence[float] | bytes,
+        limit: int = 10,
+        **kwargs: Any,
+    ) -> List[Dict[str, Any]]:
+        """Alias for search_vector for spec compatibility (specs/brain.md §9.4)."""
+        return self.search_vector(query_vector, top_k=limit, **kwargs)

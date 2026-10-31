@@ -191,6 +191,63 @@ class UserModelTestCase(unittest.TestCase):
         self.assertIn("preference", types)
         self.assertIn("goal", types)
 
+    # ── evidence refs deduplication & capping ──────────────────────────────
+
+    def test_record_user_fact_evidence_refs_dedup(self):
+        # Repeated calls with the exact same turn ID (as str or numeric)
+        r1 = um.record_user_fact(self.vault, "User prefers dark mode", evidence_id="20261029195908091780")
+        node_id = r1["node_id"]
+        # Call again with string
+        um.record_user_fact(self.vault, "User prefers dark mode", evidence_id="20261029195908091780")
+        # Call again with numeric / different type representation
+        um.record_user_fact(self.vault, "User prefers dark mode", evidence_id=20261029195908091780)
+        
+        node = self.vault.read_node(node_id)
+        self.assertIsNotNone(node)
+        assert node is not None
+        refs = node.frontmatter.extra.get("evidence_refs", [])
+        self.assertEqual(refs, ["20261029195908091780"])
+
+    def test_record_user_fact_evidence_refs_capped(self):
+        content = "User loves Python"
+        for i in range(30):
+            um.record_user_fact(self.vault, content, evidence_id=f"turn_{i:02d}")
+        
+        facts = um.facts_for_scope(self.vault)
+        fact = next(f for f in facts if f.content == content)
+        node = self.vault.read_node(fact.node_id)
+        self.assertIsNotNone(node)
+        assert node is not None
+        refs = node.frontmatter.extra.get("evidence_refs", [])
+        self.assertEqual(len(refs), 20)
+        self.assertEqual(refs[0], "turn_10")
+        self.assertEqual(refs[-1], "turn_29")
+        self.assertEqual(len(fact.evidence_ids), 20)
+
+    def test_revise_user_fact_evidence_refs_dedup_and_cap(self):
+        r = um.record_user_fact(self.vault, "User uses vim", evidence_id="turn_init")
+        node_id = r["node_id"]
+
+        # Duplicate revise call should not duplicate or increment evidence_count
+        um.revise_user_fact(self.vault, node_id, evidence_id="turn_init")
+        node = self.vault.read_node(node_id)
+        self.assertIsNotNone(node)
+        assert node is not None
+        refs = node.frontmatter.extra.get("evidence_refs", [])
+        self.assertEqual(refs, ["turn_init"])
+        self.assertEqual(node.frontmatter.extra.get("evidence_count"), 1)
+
+        # Add up to 25 unique turn IDs
+        for i in range(25):
+            um.revise_user_fact(self.vault, node_id, evidence_id=f"rev_{i:02d}")
+
+        node = self.vault.read_node(node_id)
+        self.assertIsNotNone(node)
+        assert node is not None
+        refs = node.frontmatter.extra.get("evidence_refs", [])
+        self.assertEqual(len(refs), 20)
+        self.assertEqual(refs[-1], "rev_24")
+
     # ── fail-soft ───────────────────────────────────────────────────────────
 
     def test_no_vault_never_raises(self):

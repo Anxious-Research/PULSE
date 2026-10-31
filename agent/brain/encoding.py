@@ -173,7 +173,7 @@ _DECLARATIVE_VERBS = re.compile(
     r"updates?|update|triggers?|trigger|returns?|return|accepts?|accept|"
     r"emits?|emit|listens?|listen|starts?|start|stops?|stop|checks?|check|"
     r"validates?|validate|process(?:es)?|handles?|handle|manages?|manage|"
-    r"owns?|own|holds?|hold|keeps?|keep|allows?|allow|prevents?|prevent|"
+    r"owns?|own|holds?|hold|keeps?|keep|allows?|allow|prevents?|prevent|ensures?|ensure|guarantees?|guarantee|"
     r"takes?|take|gets?|get|makes?|make|moves?|move|lives?|live|sits?|sit|"
     r"points?|point|maps?|map|routes?|route|renders?|render|parses?|parse|"
     r"loads?|load|saves?|save|stores?|store|cach(?:es|e)|index(?:es)?|tracks?|track|"
@@ -252,8 +252,18 @@ def _has_entity_anchor(statement: str) -> bool:
     return any(re.search(rf"\b{re.escape(noun)}\b", lower) for noun in _DECLARATIVE_DOMAIN_NOUNS)
 
 
+_DIRECTIVE_PATTERNS = re.compile(
+    r"\b(?:banao|karo|dikhao|batao|likho|kar do|chahiye|samjhao|"
+    r"please|make me|build me|create|write me|show me|tell me|"
+    r"can you|could you|would you|let\x27s|lets)\b",
+    re.IGNORECASE,
+)
+
+
 def _declarative_signal(text: str) -> float:
     """``1.0`` for a declarative statement about a recallable entity, else ``0.0``."""
+    if _DIRECTIVE_PATTERNS.search(text):
+        return 0.0
     if not _DECLARATIVE_VERBS.search(text):
         return 0.0
     if not _has_entity_anchor(text):
@@ -269,6 +279,12 @@ _OUTCOME_PATTERNS: Tuple[re.Pattern, ...] = tuple(
         # Resolved / decided.
         r"\bfixed\b", r"\bresolved\b", r"\bdecided\b", r"\bdecision\b", r"\bwe'?re going with\b",
         r"\bapproved\b", r"\bconfirmed\b",
+        # Actions taken / executed in substantive workflows.
+        r"\bpatched\b", r"\binvestigated\b", r"\banalyzed\b", r"\bdebugged\b",
+        r"\bconfigured\b", r"\boptimized\b", r"\bimplemented\b", r"\brefactored\b",
+        r"\bmigrated\b", r"\binstalled\b", r"\brestarted\b",
+        # Decisions reached.
+        r"\bdecided to\b", r"\bagreed to\b", r"\bchose to\b", r"\badopted\b",
         # Broke — equally memorable, and the reason "what went wrong" is recallable.
         r"\bbroke\b", r"\bbroken\b", r"\bregression\b", r"\breverted\b", r"\brolled back\b",
         r"\bfailed\b", r"\bfailure\b", r"\boutage\b",
@@ -320,6 +336,48 @@ _TRIVIA_RE = re.compile(
 _COMMAND_RE = re.compile(r"^/[a-z][a-z0-9_-]*\b", re.IGNORECASE)
 # "remember" alone is a memory instruction even when the message is short ("remember this").
 _REMEMBER_RE = re.compile(r"\bremember\b|\byaad rakh", re.IGNORECASE)
+
+_SYSTEM_NOTICE_PREFIXES: Tuple[str, ...] = (
+    "[ASYNC",
+    "[System note:",
+    "[PRIOR CONTEXT",
+    "[TASK",
+    "[CONTEXT",
+    "[IMPORTANT:",
+    "[Runtime note:",
+    "[SYSTEM]",
+    "<memory-context>",
+    "[Planning state preserved",
+    "[OUT-OF-BAND",
+    "A background fan-out",
+    "A background subagent",
+)
+
+_SYSTEM_NOTICE_PATTERNS: Tuple[re.Pattern, ...] = tuple(
+    re.compile(p, re.IGNORECASE)
+    for p in (
+        r"^\s*\[(?:ASYNC|System note:|PRIOR CONTEXT|TASK|CONTEXT|IMPORTANT:|Runtime note:|SYSTEM|<memory-context>|Planning state preserved|OUT-OF-BAND)",
+        r"^\s*A background (?:fan-out|subagent)",
+        r"\[System note:",
+        r"\[ASYNC",
+        r"\[CONTEXT COMPACTION",
+        r"<memory-context>",
+    )
+)
+
+
+def is_system_notice(text: str) -> bool:
+    """True when text is or contains a system/harness notice that must never become a memory."""
+    if not text:
+        return False
+    stripped = text.strip()
+    if not stripped:
+        return False
+    for prefix in _SYSTEM_NOTICE_PREFIXES:
+        if stripped.startswith(prefix) or prefix in stripped:
+            return True
+    return any(p.search(stripped) for p in _SYSTEM_NOTICE_PATTERNS)
+
 
 _MIN_STATEMENT_WORDS = 3
 _MIN_STATEMENT_CHARS = 10
@@ -379,6 +437,8 @@ def is_trivial(text: str) -> bool:
     """True for a message that cannot contain a memory (greeting, ack, command, fragment)."""
     stripped = " ".join((text or "").split())
     if not stripped:
+        return True
+    if is_system_notice(stripped):
         return True
     if _COMMAND_RE.match(stripped) or _TRIVIA_RE.match(stripped):
         return True
@@ -474,7 +534,7 @@ def _statements(text: str) -> List[str]:
     out: List[str] = []
     for chunk in _BOUNDARY_RE.split(text or ""):
         statement = " ".join(chunk.split()).strip()
-        if not statement:
+        if not statement or is_system_notice(statement):
             continue
         statement = _MARKER_PREFIX_RE.sub("", statement)
         statement = _HINGLISH_PREFIX_RE.sub("", statement)
@@ -570,7 +630,7 @@ def extract_candidates(
     id to its last-updated timestamp, used only to break ties when a deictic correction
     ("it happened yesterday") must pick which recent event it refers to.
     """
-    if is_trivial(text):
+    if is_system_notice(text) or is_trivial(text):
         return []
     # Block spec/documentation prose before statement extraction (fixes junk-encoding defect).
     if _is_specification_prose(text):
@@ -687,6 +747,102 @@ def extract_candidates(
     return candidates
 
 
+_ACTION_VERBS_RE = re.compile(
+    r"\b(?:investigated|analyzed|fixed|patched|debugged|refactored|migrated|"
+    r"configured|deployed|implemented|tested|verified|optimized|installed|"
+    r"created|updated|resolved|built|restarted|executed|checked)\b",
+    re.IGNORECASE,
+)
+
+_TOOL_NAMES_RE = re.compile(
+    r"\b(?:terminal|read_file|write_file|patch|web_search|browser|pytest|"
+    r"unittest|git|docker|python|sqlite)\b",
+    re.IGNORECASE,
+)
+
+_DECISION_PHRASES_RE = re.compile(
+    r"\b(?:decided to|agreed to|chose to|decision:|we decided|going with|adopted|resolved to)\b",
+    re.IGNORECASE,
+)
+
+_OUTCOME_INDICATORS_RE = re.compile(
+    r"\b(?:tests? pass|passing|verified|it works|works now|shipped|deployed|failed|failure|succeeded)\b",
+    re.IGNORECASE,
+)
+
+_CONVERSATIONAL_LEAD_RE = re.compile(
+    r"^(?:(?:i\s+(?:have\s+|did\s+|am\s+)?|we\s+(?:have\s+|did\s+)?|i've\s+|we've\s+|sure,?\s*|here\s+is\s+|okay,?\s*)"
+    r"|(?:can\s+you\s+|please\s+|could\s+you\s+|let's\s+|lets\s+))+",
+    re.IGNORECASE,
+)
+
+
+def synthesize_episodic_turn_event(user_text: str, assistant_text: str = "") -> Optional[str]:
+    """Extract a concise 1-line episodic event from a completed substantive conversation turn.
+
+    Captures key actions taken, tools used, and decisions reached so episodic daily notes
+    actually record what happened in the turn. Returns None for trivial messages, system
+    notices, or interactions lacking concrete technical substance.
+    """
+    if is_system_notice(user_text) or is_system_notice(assistant_text):
+        return None
+    if is_trivial(user_text):
+        return None
+    if _is_specification_prose(user_text):
+        return None
+
+    user_clean = " ".join((user_text or "").split())
+    asst_clean = " ".join((assistant_text or "").split())
+
+    # Check whether the turn has substantive markers
+    has_action = bool(_ACTION_VERBS_RE.search(asst_clean) or _ACTION_VERBS_RE.search(user_clean))
+    has_tool = bool(_TOOL_NAMES_RE.search(asst_clean) or _TOOL_NAMES_RE.search(user_clean))
+    has_decision = bool(_DECISION_PHRASES_RE.search(asst_clean) or _DECISION_PHRASES_RE.search(user_clean))
+    has_outcome = bool(_OUTCOME_INDICATORS_RE.search(asst_clean) or any(p.search(user_clean) for p in _OUTCOME_PATTERNS))
+
+    if not (has_action or has_tool or has_decision or has_outcome):
+        return None
+
+    # Case A: User explicitly describes a decision reached or event
+    if _DECISION_PHRASES_RE.search(user_clean):
+        dec_match = _DECISION_PHRASES_RE.search(user_clean)
+        if dec_match:
+            sub = user_clean[dec_match.start():].strip(" ,;:-—–.")
+            sub = sub[0].upper() + sub[1:] if sub else ""
+            if len(sub.split()) >= 3:
+                return sub[:220].rstrip()
+
+    # Case B: Assistant reports actions taken and/or outcomes
+    if asst_clean:
+        sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+|\n+", assistant_text or "") if s.strip()]
+        candidate_sentences = []
+        for s in sentences:
+            s_clean = " ".join(s.split())
+            if _ACTION_VERBS_RE.search(s_clean) or _TOOL_NAMES_RE.search(s_clean) or _OUTCOME_INDICATORS_RE.search(s_clean):
+                cleaned_sentence = _CONVERSATIONAL_LEAD_RE.sub("", s_clean).strip()
+                cleaned_sentence = re.sub(r"^[a-z]", lambda m: m.group(0).upper(), cleaned_sentence)
+                cleaned_sentence = cleaned_sentence.strip(" -—:;,.")
+                if len(cleaned_sentence.split()) >= 3:
+                    candidate_sentences.append(cleaned_sentence)
+
+        if candidate_sentences:
+            chosen = candidate_sentences[0]
+            user_goal = _CONVERSATIONAL_LEAD_RE.sub("", user_clean).strip()
+            user_goal = re.sub(r"^[a-z]", lambda m: m.group(0).upper(), user_goal).rstrip("?.,;!")
+            if user_goal and len(user_goal.split()) <= 8 and not any(w.lower() in chosen.lower() for w in user_goal.split()[:3]):
+                combined = f"{user_goal}: {chosen[0].lower() + chosen[1:]}"
+                return combined[:220].rstrip()
+            return chosen[:220].rstrip()
+
+    # Case C: Substantive user action statement (e.g. "We fixed SQLite concurrency using WAL mode")
+    user_event = _CONVERSATIONAL_LEAD_RE.sub("", user_clean).strip()
+    user_event = re.sub(r"^[a-z]", lambda m: m.group(0).upper(), user_event).strip(" -—:;,.")
+    if len(user_event.split()) >= 3:
+        return user_event[:220].rstrip()
+
+    return None
+
+
 def daily_node_id(now: Optional[float] = None) -> str:
     """``daily/YYYY-MM-DD`` in the vault's local-date convention."""
     ts = now if now is not None else time.time()
@@ -697,6 +853,7 @@ def encode_turn(
     vault: Any,
     text: str,
     *,
+    assistant_text: str = "",
     turn_id: Optional[str] = None,
     now: Optional[float] = None,
     threshold: float = DEFAULT_THRESHOLD,
@@ -711,6 +868,18 @@ def encode_turn(
     every node it contradicts. Nothing is ever deleted, so re-encoding the same turn is safe:
     the day's note tracks the ``source_turn``\\ s it already holds and skips a repeat.
     """
+    if is_system_notice(text) or is_system_notice(assistant_text):
+        return {
+            "candidates": [],
+            "episodic": [],
+            "semantic": [],
+            "superseded": [],
+            "revised": [],
+            "corroborated": [],
+            "skipped": [{"reason": "system_notice"}],
+            "dry_run": bool(dry_run),
+        }
+
     nodes = vault.list_all_nodes() if vault is not None else []
     existing = [(node.id, node.content or "") for node in nodes if (node.content or "").strip()]
     recency = {
@@ -721,8 +890,9 @@ def encode_turn(
     # ``corpus_extra`` widens the novelty pool without being a statement source: the
     # assistant's own reply goes here, so a fact PULSE merely restated this turn does
     # not look novel enough to encode a second time.
-    if (corpus_extra or "").strip():
-        corpus = [*corpus, corpus_extra.strip()]
+    effective_asst = assistant_text or corpus_extra or ""
+    if (effective_asst).strip():
+        corpus = [*corpus, effective_asst.strip()]
 
     candidates = extract_candidates(
         text, corpus=corpus, existing=existing, recency=recency, threshold=threshold, embedder=embedder
@@ -737,14 +907,36 @@ def encode_turn(
         "skipped": [],
         "dry_run": bool(dry_run),
     }
-    if not candidates or vault is None:
-        return report
 
     ts = now if now is not None else time.time()
 
     episodic = [candidate for candidate in candidates if candidate.kind == "episodic"]
     semantic = [candidate for candidate in candidates if candidate.kind == "semantic"]
     restatements = [candidate for candidate in candidates if candidate.kind == "restatement"]
+
+    # Calibrate episodic capture: completed substantive conversations should append
+    # a concise 1-line episodic event to daily notes so memory records what happened.
+    if not episodic and not restatements:
+        effective_asst = assistant_text or corpus_extra
+        has_asst_actions = bool(_ACTION_VERBS_RE.search(effective_asst) or _TOOL_NAMES_RE.search(effective_asst))
+        # If we already have semantic candidates, only synthesize an episodic event if
+        # concrete work/actions/tools were performed in this conversation turn.
+        if not semantic or has_asst_actions:
+            event_line = synthesize_episodic_turn_event(text, effective_asst)
+            if event_line:
+                cand = MemoryCandidate(
+                    text=event_line,
+                    kind="episodic",
+                    category=NodeCategory.DAILY.value,
+                    title=title_for(event_line),
+                    salience=0.8,
+                    signals=SalienceSignals(outcome=1.0, novelty=1.0),
+                )
+                episodic.append(cand)
+                report["candidates"].append(cand.as_dict())
+
+    if (not episodic and not semantic and not restatements) or vault is None:
+        return report
 
     # A restatement is evidence about an existing memory, not a new one: record the corroboration
     # and write nothing. Keeping the node count flat is what lets a belief accumulate independent

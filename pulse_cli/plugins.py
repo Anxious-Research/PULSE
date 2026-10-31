@@ -2033,6 +2033,17 @@ def set_thread_tool_whitelist(
 
 def clear_thread_tool_whitelist() -> None:
     _thread_tool_whitelist.allowed = None
+    _thread_tool_whitelist.pre_call_hook = None
+
+
+def set_thread_pre_call_hook(hook: Optional[Callable[[str, Any], Optional[str]]]) -> None:
+    """Register a thread-local pre-call hook that can block tool execution."""
+    _thread_tool_whitelist.pre_call_hook = hook
+
+
+def clear_thread_pre_call_hook() -> None:
+    """Clear thread-local pre-call hook."""
+    _thread_tool_whitelist.pre_call_hook = None
 
 
 def _get_pre_tool_call_directive_details(
@@ -2050,6 +2061,11 @@ def _get_pre_tool_call_directive_details(
     if allowed is not None and tool_name not in allowed:
         fmt = getattr(_thread_tool_whitelist, "fmt", "Tool '{tool_name}' denied")
         return _PreToolCallDirective(action="block", message=fmt.format(tool_name=tool_name))
+    hook = getattr(_thread_tool_whitelist, "pre_call_hook", None)
+    if hook is not None:
+        block_msg = hook(tool_name, args)
+        if block_msg:
+            return _PreToolCallDirective(action="block", message=block_msg)
     from pulse_cli.lifecycle import invoke_hook as invoke_lifecycle_hook
     hook_results = invoke_lifecycle_hook(
         "pre_tool_call", tool_name=tool_name, args=args if isinstance(args, dict) else {},

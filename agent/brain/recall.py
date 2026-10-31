@@ -27,7 +27,8 @@ import re
 import threading
 from collections import OrderedDict
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 from . import decay as decay_mod
 from .index import BrainIndex
@@ -313,6 +314,60 @@ def _entries_from_index(index: Any, vault: BrainVault) -> List[tuple]:
     return vault.iter_nodes()
 
 
+def _entries_from_cache(cache: Any, vault: BrainVault, subset: Optional[Sequence[Dict[str, Any]]] = None) -> List[tuple]:
+    """[(node_id, node)] loaded from BrainCache rows without parsing .md files."""
+    from .models import BrainNode, Frontmatter
+
+    nodes = subset if subset is not None else cache.all_nodes()
+    entries: List[tuple] = []
+    vdir = getattr(vault, "vault_dir", None)
+    for item in nodes:
+        nid = item["id"]
+        fm = Frontmatter.from_dict(item.get("frontmatter") or {}, node_id=nid)
+        p = vdir / f"{nid}.md" if vdir else Path(f"{nid}.md")
+        content = item.get("content") or ""
+        entries.append((
+            nid,
+            BrainNode(
+                id=nid,
+                path=p,
+                frontmatter=fm,
+                content=content,
+                raw_markdown=content,
+            ),
+        ))
+    return entries
+
+
+def _index_from_cache(cache: Any, vault: BrainVault, entries: Sequence[tuple]) -> BrainIndex:
+    """In-memory BrainIndex constructed from cached nodes and SQLite edges."""
+    idx = BrainIndex(vault)
+    nodes_map = dict(entries)
+    idx._node_by_id = nodes_map
+    idx._ids = set(nodes_map.keys())
+    for nid, node in entries:
+        idx.titles[nid] = node.title
+        for alias in getattr(node.frontmatter, "aliases", []):
+            if alias:
+                idx.aliases.setdefault(str(alias).lower(), nid)
+        for tag in getattr(node.frontmatter, "tags", []):
+            idx.tags.setdefault(str(tag), []).append(nid)
+    try:
+        edges = cache.all_edges()
+        for src, tgt, kind in edges:
+            if kind == "wikilink":
+                idx.forward.setdefault(src, []).append(tgt)
+                if tgt in idx._ids:
+                    idx.backlinks.setdefault(tgt, []).append(src)
+                else:
+                    idx.unresolved.setdefault(tgt, []).append(src)
+    except Exception:
+        pass
+    idx._build_resolution_maps()
+    idx._built = True
+    return idx
+
+
 def _seed_scores(
     nodes: Sequence[Any],
     query: str,
@@ -426,6 +481,7 @@ def recall(
     *,
     vault: Optional[BrainVault] = None,
     index: Optional[BrainIndex] = None,
+    cache: Optional[Any] = None,
     limit: int = DEFAULT_LIMIT,
     hops: int = DEFAULT_HOPS,
     spread_decay: float = DEFAULT_DECAY,
@@ -447,15 +503,63 @@ def recall(
         return RecallResult()
 
     v = vault or BrainVault()
-    idx = index if index is not None else BrainIndex(v).rebuild()
-    # Reuse the nodes the index already read+parsed. Calling ``v.iter_nodes()`` here re-read and
-    # re-parsed the whole vault on every turn even though the index had just done exactly that.
-    entries = _entries_from_index(idx, v)
+    idx = index
+    entries: List[tuple] = []
+    fts_seed_ids: Set[str] = set()
+
+    # BrainCache integration (§9): fast FTS5 and graph traversal accelerator
+    c = cache
+    if c is None and getattr(v, "vault_dir", None) and v.vault_dir.exists():
+        db_file = v.vault_dir / ".brain-cache.db"
+        if db_file.exists():
+            try:
+                from .cache import BrainCache
+                cand = BrainCache(v)
+                if not cand.is_stale() and not cand.is_empty():
+                    c = cand
+            except Exception:
+                c = None
+
+    if c is not None:
+        try:
+            if c.is_stale():
+                c.sync()
+            if not c.is_stale() and not c.is_empty():
+                fts_results = c.search_fts(query, limit=50)
+                fts_seed_ids = {h["id"] for h in fts_results}
+                traversed_ids = c.traverse_graph(list(fts_seed_ids), hops=max(1, hops)) if fts_seed_ids else set()
+                candidate_ids = fts_seed_ids | traversed_ids
+
+                all_cached = c.all_nodes()
+                if len(all_cached) <= 200 or not candidate_ids:
+                    cached_subset = all_cached
+                else:
+                    cached_subset = c.get_nodes(list(candidate_ids))
+
+                entries = _entries_from_cache(c, v, subset=cached_subset)
+                if idx is None:
+                    idx = _index_from_cache(c, v, entries)
+            else:
+                c = None
+        except Exception:
+            entries = []
+            idx = index
+            fts_seed_ids = set()
+            c = None
+
+    # Fail-open fallback: pure in-memory BrainIndex / vault scan
+    if not entries:
+        idx = idx if idx is not None else BrainIndex(v).rebuild()
+        entries = _entries_from_index(idx, v)
+
     if not entries:
         return RecallResult()
 
+    if idx is None:
+        idx = BrainIndex(v).rebuild()
+
     cues = extract_cues(query, extra=extra_cues)
-    if not cues:
+    if not cues and not fts_seed_ids and not (embedder and getattr(embedder, "semantic", False)):
         return RecallResult()
 
     by_id = {node_id: node for node_id, node in entries}
@@ -465,6 +569,13 @@ def recall(
         if node.frontmatter.status not in _STATUS_EXCLUDED
     ]
     seeds = _seed_scores(eligible, query, cues, embedder=embedder)
+
+    # When cache FTS hits are present, boost/ensure their seed representation
+    if fts_seed_ids:
+        for fid in fts_seed_ids:
+            if fid in by_id and by_id[fid].frontmatter.status not in _STATUS_EXCLUDED:
+                seeds[fid] = max(seeds.get(fid, 0.0), 0.7)
+
     if not seeds:
         return RecallResult(cues=cues, candidates=len(entries))
 
@@ -571,55 +682,56 @@ def _rerank_hybrid(
     *,
     embedder: Any = None,
 ) -> List[RecallHit]:
-    """Tie-aware reranking: associative order is primary; lexical/semantic break its ties.
+    """Standard multi-channel retrieval via Reciprocal Rank Fusion (RRF).
 
-    The associative pipeline is the admission signal and is usually right, so it must stay
-    primary — a blanket RRF that mixes it with BM25 at equal weight was *measured* to regress
-    ranking when associative was already confident (it inherited the other channels' mistakes).
-    But associative has one structural blind spot: its cue-coverage term saturates at 1.0 for any
-    note containing all the query words, so a short focused note and a long term-stuffed note tie.
-    That is exactly where a length-normalised lexical score (BM25) and, when available, semantic
-    cosine add real signal.
+    Channel 1: Associative activation (graph spreading activation over wikilinks).
+    Channel 2: BM25 lexical ranking over title + body.
+    Channel 3: Semantic embedding score (when real embedder available).
 
-    So: hits are grouped into tiers of near-equal associative score, and *within* each tier they
-    are reordered by RRF over BM25 + semantic. Confident associative orderings are untouched (no
-    regression); ambiguous ties are resolved toward the lexically/semantically stronger memory.
-    BM25/semantic are computed over the whole eligible corpus so their statistics are correct.
+    Fuses channels via RRF, preserving temporal decay / retrievability scaling
+    and relative score boundaries.
     """
     from .hybrid import bm25_rank, semantic_rank, rrf_fuse
 
     if len(hits) < 2:
         return hits
 
-    # Lexical + semantic ranks over the FULL eligible corpus (correct IDF / norms), then an
-    # order map restricted to the ids we actually hold.
     all_entries = [(n.id, n) for n in eligible]
     admitted = {h.node_id for h in hits}
-    bm25 = [(nid, s) for nid, s in bm25_rank(all_entries, query, limit=len(all_entries) or 1) if nid in admitted]
-    sem = [(nid, s) for nid, s in semantic_rank(all_entries, query, limit=len(all_entries) or 1, embedder=embedder)
-           if nid in admitted]
-    fused = rrf_fuse([bm25, sem])
+    hits_by_id = {h.node_id: h for h in hits}
+
+    # Channel 1: Associative hits in current decayed score order
+    ch1 = [(h.node_id, h.score) for h in hits]
+
+    # Channel 2: BM25 lexical ranking over eligible corpus, restricted to admitted hits
+    bm25_raw = bm25_rank(all_entries, query, limit=len(all_entries) or 1)
+    ch2 = [(nid, s) for nid, s in bm25_raw if nid in admitted]
+
+    # Channel 3: Semantic cosine over real embedder, restricted to admitted hits
+    sem_raw = semantic_rank(all_entries, query, limit=len(all_entries) or 1, embedder=embedder)
+    ch3 = [(nid, s) for nid, s in sem_raw if nid in admitted]
+
+    channels = [ch for ch in [ch1, ch2, ch3] if ch]
+    fused = rrf_fuse(channels)
     if not fused:
         return hits
-    fused_rank = {nid: i for i, (nid, _) in enumerate(fused)}
 
-    # Tier boundary: hits whose associative scores are within TIE_EPS of each other (relative) are
-    # considered tied and may be reordered. A clearly higher associative score is never demoted.
-    TIE_EPS = 0.02
-    original_pos = {h.node_id: i for i, h in enumerate(hits)}
+    max_rrf = fused[0][1] if fused else 1.0
+    if max_rrf <= 0.0:
+        max_rrf = 1.0
+
     reordered: List[RecallHit] = []
-    i = 0
-    n = len(hits)
-    while i < n:
-        j = i + 1
-        anchor = hits[i].score
-        while j < n and abs(hits[j].score - anchor) <= TIE_EPS * max(anchor, 1e-9):
-            j += 1
-        tier = hits[i:j]
-        # Within the tie group, prefer the lexical/semantic winner; fall back to original order.
-        tier.sort(key=lambda h: (fused_rank.get(h.node_id, len(fused_rank)), original_pos[h.node_id]))
-        reordered.extend(tier)
-        i = j
+    for nid, rrf_score in fused:
+        if nid not in hits_by_id:
+            continue
+        hit = hits_by_id[nid]
+        rrf_ratio = rrf_score / max_rrf
+        # Scale score and activation by RRF ratio, preserving temporal decay and salience
+        hit.score = hit.score * (0.85 + 0.15 * rrf_ratio)
+        hit.activation = hit.activation * (0.85 + 0.15 * rrf_ratio)
+        reordered.append(hit)
+
+    reordered.sort(key=lambda h: (-h.score, h.node_id))
     return reordered
 
 

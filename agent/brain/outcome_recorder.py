@@ -23,29 +23,34 @@ Dependency-free (stdlib + sibling brain modules).
 from __future__ import annotations
 
 import logging
+import re
 import time
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 logger = logging.getLogger(__name__)
 
-#: Tools that mutate state or execute something. A single call to one of these is a real task
-#: attempt (e.g. "run the tests"); a single read-only lookup is not.
-ACTION_TOOLS = frozenset({
-    "terminal", "execute_code", "write_file", "patch", "browser_exec", "computer_use",
-    "delegate_task", "cronjob_manage", "skill_manage", "memory", "drive_preview",
-    "desktop_project", "gui_tour", "annotate_preview", "apply_layout", "focus_pane",
-    "desktop_preview", "read_window_below",
+#: Tools that must never form procedural workflows on their own. Orchestration,
+#: memory management, and meta-agent control are not technical procedures.
+NON_PROCEDURAL_TOOLS = frozenset({
+    "delegate_task", "memory", "skill_manage", "todo_list", "session_search",
 })
 
-#: Goal keywords that mark a user message as a task (vs. a question or chitchat).
-TASK_GOAL_KEYWORDS = (
-    "build", "create", "make", "write", "implement", "add", "fix", "debug", "test", "run",
-    "deploy", "setup", "configure", "install", "update", "refactor", "optimize", "migrate",
-    "generate", "analyze", "review", "validate", "extract", "parse", "clean", "remove",
-    "rename", "move", "convert", "publish", "commit", "push", "send", "download", "upload",
-    "start", "stop", "restart", "check", "read", "list", "find", "search", "show", "fetch",
-    "grep", "view", "open", "explain", "summarize", "translate", "compare", "verify",
-)
+#: Tools that mutate state or execute something concrete. A multi-step workflow
+#: using these may represent a reusable technical procedure.
+ACTION_TOOLS = frozenset({
+    "terminal", "execute_code", "write_file", "patch", "browser_exec", "computer_use",
+    "cronjob_manage", "drive_preview", "desktop_project", "gui_tour", "annotate_preview",
+    "apply_layout", "focus_pane", "desktop_preview", "read_window_below",
+})
+
+#: Goal keywords that mark a user message as an explicit technical task (vs. a question or chitchat).
+#: Observational or chitchat verbs like check, find, list, read, make, review are excluded.
+TASK_GOAL_KEYWORDS = frozenset({
+    "build", "create", "write", "implement", "add", "fix", "debug", "test", "run",
+    "deploy", "setup", "configure", "install", "update", "refactor", "optimize",
+    "migrate", "generate", "validate", "extract", "parse", "clean", "remove",
+    "rename", "move", "convert", "publish", "commit", "push", "restart",
+})
 
 #: Openers that mark a *question*, never a task ("how do I...", "what is...").
 _QUESTION_OPENERS = (
@@ -58,6 +63,39 @@ _ACKNOWLEDGEMENTS = frozenset({
     "ok", "okay", "yes", "yep", "yeah", "no", "nope", "thanks", "thank you", "thx", "got it",
     "cool", "nice", "great", "sure", "continue", "go on", "go ahead", "done", "stop", "wait",
 })
+
+#: Hindi / Hinglish markers that indicate conversational dialogue rather than technical goals.
+_HINDI_HINGLISH_MARKERS = frozenset({
+    "ekdum", "shuru", "pehle", "karenge", "karna", "karo", "karke", "sabse",
+    "sabki", "kuch", "tumne", "mera", "meri", "yeh", "woh", "kyun", "kaise",
+    "kahan", "hai", "thi", "raha", "rahe", "rahi", "accha",
+    "batao", "bataiye", "dekho", "samjhao", "samjhe", "bhai", "yaar", "phir", "toh",
+    "dijiye", "kijiye", "chahiye", "bolo", "suno", "nahi", "nahin", "saath", "baad",
+    "dhyan", "rakho", "rakhna", "samjh", "apna", "apne", "apni", "hogi", "hoge",
+    "shuruaat", "kariye",
+})
+
+#: Conversational openers / meta-prompts that disqualify a message from being a procedure goal.
+_CONVERSATIONAL_PREFIXES = (
+    "perfect", "great", "awesome", "nice", "cool", "alright", "sure", "ok", "okay",
+    "thanks", "thank you", "thx", "well ", "so ", "actually", "by the way", "btw",
+    "listen", "look ", "hey", "hello", "hi ", "can you", "could you", "would you",
+    "will you", "please help", "i want you to", "i need you to", "let's", "lets",
+    "as discussed", "like we said", "as mentioned", "moving on", "now that",
+)
+
+#: Patterns identifying internal gateway, delegation, and harness notifications.
+_DELEGATION_PATTERNS = (
+    r"^\s*\[ASYNC",
+    r"^\s*\[CONTEXT",
+    r"^\s*\[PRIOR CONTEXT",
+    r"^\s*\[Your active task list",
+    r"^\s*\[IMPORTANT: Background process",
+    r"^\s*\[OUT-OF-BAND USER MESSAGE",
+    r"^\s*\[TASK",
+    r"^\s*A background fan-out",
+    r"^\s*A background subagent",
+)
 
 
 def _user_text(original_user_message: Any) -> str:
@@ -85,25 +123,41 @@ def _user_text(original_user_message: Any) -> str:
 
 
 def _is_task_goal(text: str) -> bool:
-    """True when the message reads as an explicit task, not a question or chitchat."""
+    """True when the message reads as an explicit technical task, not a question, chitchat, or delegation."""
     cleaned = (text or "").strip()
     if not cleaned:
         return False
+    # Drop harness notifications / delegations
+    for pat in _DELEGATION_PATTERNS:
+        if re.search(pat, cleaned, re.IGNORECASE):
+            return False
     lower = cleaned.lower()
-    # Strip a leading slash-command / mention so "/fix the build" still reads as a task.
-    bare = lower.lstrip("/@").strip()
-    if bare in _ACKNOWLEDGEMENTS:
+    bare = lower.lstrip("/@#* \t\n").strip()
+    if not bare or bare in _ACKNOWLEDGEMENTS:
         return False
-    if len(bare.split()) < 2 and not any(kw == bare for kw in TASK_GOAL_KEYWORDS):
-        return False  # a single word is not a goal
-    if any(bare.startswith(op) for op in _QUESTION_OPENERS):
+    if any(bare.startswith(op) for op in _QUESTION_OPENERS) or bare.endswith("?"):
         return False
-    if bare.endswith("?"):
+    for prefix in _CONVERSATIONAL_PREFIXES:
+        if bare.startswith(prefix):
+            return False
+    words = re.findall(r"\b[a-z]+\b", lower)
+    if not words or len(words) < 2:
         return False
-    if any(kw in lower for kw in TASK_GOAL_KEYWORDS):
-        return True
-    # Imperative-looking first word (not a question, has substance) is a task.
-    return bool(bare.split()) and bare.split()[0] in TASK_GOAL_KEYWORDS
+    # Conversational Hindi / Hinglish instructions are not technical procedures
+    if any(w in _HINDI_HINGLISH_MARKERS for w in words):
+        return False
+    # Check the first line of bare text
+    first_line = bare.split("\n")[0].strip()
+    for prefix in _CONVERSATIONAL_PREFIXES:
+        if first_line.startswith(prefix):
+            return False
+    line_words = re.findall(r"\b[a-z]+\b", first_line)
+    if not line_words:
+        return False
+    target_idx = 0
+    if line_words[0] in ("please", "safely", "carefully") and len(line_words) > 1:
+        target_idx = 1
+    return line_words[target_idx] in TASK_GOAL_KEYWORDS
 
 
 def _extract_goal(text: str, max_len: int = 120) -> str:
@@ -118,10 +172,8 @@ def _extract_goal(text: str, max_len: int = 120) -> str:
     if not lines:
         return ""
     first = lines[0]
-    # Drop a leading slash-command token so the goal is the human intent.
-    if first.startswith("/"):
-        parts = first.split(None, 1)
-        first = parts[1] if len(parts) > 1 else first
+    # Strip leading formatting / slash-command token so the goal is the human intent.
+    first = first.lstrip("/@#* \t\n").strip()
     if len(first) > max_len:
         first = first[: max_len - 1] + "…"
     return first.strip()
@@ -162,14 +214,26 @@ def _tool_outcomes_from_messages(messages: Any) -> List[Tuple[str, bool]]:
     return outcomes
 
 
-def _is_substantive(tool_outcomes: Sequence[Tuple[str, bool]]) -> bool:
-    """True when the turn did enough to constitute a procedure-forming task attempt."""
-    calls = len(tool_outcomes)
-    if calls >= 2:
+def _is_substantive(
+    tool_outcomes: Sequence[Tuple[str, bool]],
+    verified_steps: Any = None,
+) -> bool:
+    """True when the turn did enough to constitute a procedure-forming task attempt.
+
+    A procedure represents a concrete, multi-step repeatable technical workflow.
+    Single-call actions ('used terminal', 'used delegate_task') or meta-orchestration
+    calls are not procedures.
+    """
+    if isinstance(verified_steps, (list, tuple)) and len(verified_steps) >= 2:
         return True
-    if calls == 1 and tool_outcomes[0][0] in ACTION_TOOLS:
-        return True
-    return False
+    if len(tool_outcomes) < 2:
+        return False
+    concrete = [name for name, _ in tool_outcomes if name and name not in NON_PROCEDURAL_TOOLS]
+    if len(concrete) < 2:
+        return False
+    if not any(name in ACTION_TOOLS for name in concrete):
+        return False
+    return True
 
 
 def _derive_verdict(
@@ -280,6 +344,8 @@ def record_turn_outcome(
     messages: Any = None,
     tool_outcomes: Optional[Sequence[Tuple[str, bool]]] = None,
     verified: Optional[bool] = None,
+    turn_origin: Optional[str] = None,
+    **kwargs: Any,
 ) -> Dict[str, Any]:
     """Record a completed turn's outcome as a procedure when evidence is sufficient.
 
@@ -296,23 +362,69 @@ def record_turn_outcome(
         if not settings.enabled or not settings.encode_enabled:
             return {"recorded": False, "reason": "brain disabled"}
 
+        # Review forks, subagents, and non-interactive agents must never record procedures from harness prompts
+        is_bg = False
+        try:
+            from tools.skill_provenance import is_background_review
+            is_bg = bool(is_background_review())
+        except Exception:
+            pass
+
+        if (
+            is_bg
+            or turn_origin == "background_review"
+            or getattr(agent, "_memory_write_origin", None) == "background_review"
+            or getattr(agent, "_turn_origin", None) == "background_review"
+            or getattr(agent, "_memory_write_context", None) == "background_review"
+            or getattr(agent, "skip_background_review", False)
+        ):
+            return {"recorded": False, "reason": "background review fork"}
+
+        if (
+            turn_origin in ("subagent", "delegation")
+            or getattr(agent, "_memory_write_origin", None) in ("subagent", "delegation")
+            or getattr(agent, "_turn_origin", None) in ("subagent", "delegation")
+            or getattr(agent, "_memory_write_context", None) in ("subagent", "delegation")
+            or getattr(agent, "_parent_session_id", None) is not None
+            or getattr(agent, "_delegate_depth", 0) > 0
+        ):
+            return {"recorded": False, "reason": "delegation fork"}
+
         user_text = _user_text(original_user_message)
         if not user_text.strip():
             return {"recorded": False, "reason": "empty user message"}
+
+        # Internal gateway, delegation completion, or background notifications
+        for pat in _DELEGATION_PATTERNS:
+            if re.search(pat, user_text, re.IGNORECASE):
+                return {"recorded": False, "reason": "delegation or harness notification"}
+
+        if user_text.lstrip().startswith((
+            "Review the full conversation above",
+            "Review the conversation above",
+            "Review the turn above",
+        )):
+            return {"recorded": False, "reason": "background review fork"}
 
         if not _is_task_goal(user_text):
             return {"recorded": False, "reason": "not a task goal"}
 
         outcomes = list(tool_outcomes) if tool_outcomes is not None else _tool_outcomes_from_messages(messages)
-        if not _is_substantive(outcomes):
-            return {"recorded": False, "reason": f"insufficient evidence ({len(outcomes)} tool call(s))"}
-
         verdict = _derive_verdict(
             interrupted=interrupted, failed=failed, turn_exit_reason=turn_exit_reason,
             tool_outcomes=outcomes, final_response=final_response,
         )
         if verdict is None:
             return {"recorded": False, "reason": "outcome indeterminate"}
+
+        verified_steps = kwargs.get("verified_steps")
+        if not _is_substantive(outcomes, verified_steps=verified_steps):
+            return {"recorded": False, "reason": f"insufficient evidence ({len(outcomes)} tool call(s))"}
+
+        concrete = [name for name, _ in outcomes if name and name not in NON_PROCEDURAL_TOOLS]
+        has_verified_steps = isinstance(verified_steps, (list, tuple)) and len(verified_steps) >= 2
+        if len(concrete) < 2 and not has_verified_steps:
+            return {"recorded": False, "reason": f"insufficient concrete steps ({len(concrete)} concrete call(s))"}
 
         goal = _extract_goal(user_text)
         if not goal:
@@ -321,6 +433,13 @@ def record_turn_outcome(
         vault = get_write_vault(agent)
         if vault is None:
             return {"recorded": False, "reason": "no vault"}
+
+        # Never record a procedure if steps only contain a single tool call
+        if len(outcomes) <= 1 and not has_verified_steps:
+            return {"recorded": False, "reason": "single tool call cannot form procedure"}
+        action_summary = _action_summary(outcomes)
+        if action_summary.startswith("used ") and "," not in action_summary and len(outcomes) <= 1:
+            return {"recorded": False, "reason": "single step tool call cannot form procedure"}
 
         # Stable per-turn identity so a retry/replay cannot inflate the success count.
         event_id = f"{session_id or 'session'}:{turn_id}" if (session_id or turn_id) else None

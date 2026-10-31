@@ -21,12 +21,13 @@ Three rules, each from the failure that cost the user their memory:
 from __future__ import annotations
 
 import logging
+import re
 import threading
 import time
 from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Deque, Dict, Optional, Tuple
+from typing import Any, Deque, Dict, Optional, Set, Tuple
 
 from . import consolidate as consolidate_mod
 from . import encoding as encoding_mod
@@ -271,7 +272,7 @@ def reset_agent_cache(agent: Any) -> None:
     Called on the same boundary that reloads the legacy store (after compression, and at
     session start) so a mid-session write is picked up.
     """
-    for attribute in ("_brain_vault", "_brain_index_cache", "_brain_prefix_cache"):
+    for attribute in ("_brain_vault", "_brain_index_cache", "_brain_prefix_cache", "_brain_prefix_node_ids"):
         try:
             delattr(agent, attribute)
         except Exception:
@@ -352,7 +353,48 @@ def _prospective_guidance_block(vault: Any, query: str, now: float) -> str:
         return ""
 
 
-def _user_model_guidance_block(vault: Any, query: str, *, settings: Optional[BrainSettings] = None) -> str:
+_USER_MODEL_SIGNAL_RE = re.compile(
+    r"\b("
+    r"prefer|prefers|preferred|preference|preferences|favorite|favourite|dislike|dislikes|hate|hates|"
+    r"format|formatting|style|styles|tone|voice|concise|verbose|theme|themes|dark\s+mode|light\s+mode|color\s+scheme|"
+    r"identity|profile|who\s+am\s+i|who\s+i\s+am|about\s+me|for\s+me|my\s+name|call\s+me|bio|persona|"
+    r"my\s+goal|my\s+goals|my\s+constraint|my\s+constraints|my\s+limitation|my\s+limitations|"
+    r"my\s+setup|my\s+environment|my\s+stack|my\s+workflow|my\s+machine|my\s+config|my\s+editor|my\s+tooling|my\s+situation|"
+    r"my\s+project|my\s+projects|"
+    r"user\s+model|user_model|"
+    r"remember\s+about\s+me|know\s+about\s+me|do\s+you\s+know\s+me|do\s+you\s+remember\s+me|what\s+do\s+you\s+remember|"
+    r"how\s+should\s+you|how\s+to\s+reply|how\s+to\s+respond|how\s+should\s+i|should\s+you\s+use|"
+    r"meri\s+preference|mera\s+preference|meri\s+pasand|mera\s+naam|mere\s+baare|mere\s+bare|mujhe\s+kya\s+pasand|meri\s+profile"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def _has_user_model_signal(query: str) -> bool:
+    """True when the turn carries a user-model cue (preferences, style, identity, situation)."""
+    text = (query or "").strip()
+    if not text:
+        return False
+    if _USER_MODEL_SIGNAL_RE.search(text):
+        return True
+    try:
+        from . import user_model as user_model_mod
+
+        if user_model_mod.extract_from_text(text):
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def _user_model_guidance_block(
+    vault: Any,
+    query: str,
+    *,
+    settings: Optional[BrainSettings] = None,
+    agent: Any = None,
+    prefix_node_ids: Optional[Set[str]] = None,
+) -> str:
     """Rendered user-model lines for a turn, or ``""`` (§9.1 — the read half of §5).
 
     The write side (`extract_from_text` at encode time) captures facts; without this read
@@ -368,12 +410,50 @@ def _user_model_guidance_block(vault: Any, query: str, *, settings: Optional[Bra
       when the message has no user-model relevance, so unrelated tasks don't get a profile
       dump (§9.1 context contamination guard).
     """
+    if not _has_user_model_signal(query):
+        return ""
+
     try:
         from . import user_model as user_model_mod
 
         snapshot = user_model_mod.current_model(vault)
         if not snapshot.all_facts and not snapshot.projects:
             return ""
+
+        if prefix_node_ids is None and agent is not None:
+            if isinstance(getattr(agent, "_brain_prefix_cache", None), str):
+                prefix_node_ids = getattr(agent, "_brain_prefix_node_ids", None)
+                if prefix_node_ids is None:
+                    try:
+                        prefix_max = (
+                            settings.prefix_max_chars
+                            if settings
+                            else prefix_mod.DEFAULT_MAX_CHARS
+                        )
+                        prefix_node_ids = prefix_mod.stable_prefix_node_ids(
+                            vault, max_chars=prefix_max
+                        )
+                    except Exception:
+                        prefix_node_ids = set()
+
+        if prefix_node_ids:
+
+            def _filter_facts(facts):
+                return [f for f in facts if f.node_id not in prefix_node_ids]
+
+            snapshot = user_model_mod.UserModelSnapshot(
+                preferences=_filter_facts(snapshot.preferences),
+                goals=_filter_facts(snapshot.goals),
+                constraints=_filter_facts(snapshot.constraints),
+                patterns=_filter_facts(snapshot.patterns),
+                identity=_filter_facts(snapshot.identity),
+                context=_filter_facts(snapshot.context),
+                projects=[p for p in snapshot.projects if p.get("node_id") not in prefix_node_ids],
+                generated_at=snapshot.generated_at,
+            )
+            if not snapshot.all_facts and not snapshot.projects:
+                return ""
+
         block = user_model_mod.render_model_block(snapshot, max_chars=900)
         return f"User model (current evidence-backed state):\n{block}" if block else ""
     except Exception:
@@ -416,6 +496,20 @@ def brain_turn_context(
     if index is None:
         return ""
 
+    prefix_node_ids: Set[str] = set()
+    if settings.prefix_enabled:
+        if agent is not None and getattr(agent, "_brain_prefix_node_ids", None) is not None:
+            prefix_node_ids = agent._brain_prefix_node_ids
+        else:
+            try:
+                prefix_node_ids = prefix_mod.stable_prefix_node_ids(
+                    vault, max_chars=settings.prefix_max_chars
+                )
+                if agent is not None:
+                    agent._brain_prefix_node_ids = prefix_node_ids
+            except Exception:
+                prefix_node_ids = set()
+
     try:
         result = recall(
             query,
@@ -430,6 +524,11 @@ def brain_turn_context(
     except Exception:
         logger.debug("brain recall failed", exc_info=True)
         return ""
+
+    # Filter out nodes that are already rendered in Layer 1 stable prefix (brain_stable_prefix)
+    # so they are not duplicated in the Layer 2 <memory-context> block under "Relevant memories:".
+    if prefix_node_ids and not result.empty:
+        result.hits = [h for h in result.hits if h.node_id not in prefix_node_ids]
 
     block = ""
     if not result.empty:
@@ -463,7 +562,18 @@ def brain_turn_context(
         prospect_block = _prospective_guidance_block(vault, query, now=time.time())
     # §9: the current user-model state rides the same per-turn channel. The write side runs
     # at encode time; this is the read side — without it the model would be write-only.
-    um_block = _user_model_guidance_block(vault, query, settings=settings)
+    um_prefix_ids = (
+        prefix_node_ids
+        if (agent is not None and isinstance(getattr(agent, "_brain_prefix_cache", None), str))
+        else None
+    )
+    um_block = _user_model_guidance_block(
+        vault,
+        current_query or query,
+        settings=settings,
+        agent=agent,
+        prefix_node_ids=um_prefix_ids,
+    )
     parts = [p for p in (block, guidance, prospect_block, um_block) if p]
     return "\n".join(parts)
 
@@ -486,15 +596,19 @@ def brain_stable_prefix(agent: Any, *, settings: Optional[BrainSettings] = None)
 
     vault = get_agent_vault(agent)
     text = ""
+    node_ids: Set[str] = set()
     if vault is not None:
         try:
             text = prefix_mod.compile_stable_prefix(vault, max_chars=settings.prefix_max_chars)
+            node_ids = prefix_mod.stable_prefix_node_ids(vault, max_chars=settings.prefix_max_chars)
         except Exception:
             logger.debug("brain prefix compile failed", exc_info=True)
             text = ""
+            node_ids = set()
     if agent is not None:
         try:
             agent._brain_prefix_cache = text
+            agent._brain_prefix_node_ids = node_ids
         except Exception:
             pass
     return text
@@ -601,8 +715,8 @@ def brain_encode_turn(
     if not settings.enabled or not settings.encode_enabled:
         return {"encode": "disabled"}
     text = (user_text or "").strip()
-    if not text:
-        return {"encode": "empty"}
+    if not text or encoding_mod.is_system_notice(text) or text.startswith(("[ASYNC", "[System note:", "[PRIOR CONTEXT", "[TASK", "[CONTEXT", "A background fan-out", "A background subagent")):
+        return {"encode": "skipped_system_harness"}
     vault = get_write_vault(agent)
     if vault is None:
         return {"encode": "no vault"}
@@ -611,6 +725,7 @@ def brain_encode_turn(
         report = encoding_mod.encode_turn(
             vault,
             text,
+            assistant_text=assistant_text or "",
             turn_id=session_id or None,
             corpus_extra=assistant_text or "",
             dry_run=dry_run,
@@ -620,6 +735,16 @@ def brain_encode_turn(
         return {"encode": "failed"}
     if not dry_run:
         restamp_index_cache(agent, vault)
+
+    # Periodic background consolidation when called directly (outside encode worker)
+    if not dry_run and threading.current_thread().name != "brain-encode":
+        with _encode_lock:
+            _encode_state["since_consolidate"] += 1
+            due_consolidate = _encode_state["since_consolidate"] >= max(1, int(settings.consolidate_every))
+            if due_consolidate:
+                _encode_state["since_consolidate"] = 0
+        if due_consolidate:
+            brain_consolidate_async(agent, vault=vault)
 
     # §10: prospective memory — detect and capture explicit commitments from user text.
     # This runs at encode time (not at recall time) because the source is the user statement.
@@ -681,6 +806,52 @@ def brain_consolidate(agent: Any = None, *, vault: Any = None, dry_run: bool = F
     if not dry_run:
         restamp_index_cache(agent, vault)
     return report
+
+
+def brain_consolidate_async(
+    agent: Any = None,
+    *,
+    vault: Any = None,
+) -> bool:
+    """Run consolidation in a background thread without blocking turns."""
+    try:
+        t = threading.Thread(
+            target=brain_consolidate,
+            args=(agent,),
+            kwargs={"vault": vault},
+            name="brain-consolidate",
+            daemon=True,
+        )
+        t.start()
+        return True
+    except Exception:
+        logger.debug("brain consolidate async could not be scheduled", exc_info=True)
+        return False
+
+
+def maybe_consolidate_on_idle(
+    agent: Any = None,
+    *,
+    vault: Any = None,
+) -> bool:
+    """Run consolidation during idle periods if daily notes exist without blocking turns.
+
+    Returns whether a background consolidation pass was scheduled.
+    """
+    settings = resolve_settings(agent)
+    if not settings.enabled or not settings.encode_enabled:
+        return False
+    v = vault if vault is not None else get_write_vault(agent)
+    if v is None:
+        return False
+    from .models import NodeCategory
+    daily_nodes = [
+        n for n in v.list_all_nodes()
+        if n.frontmatter.category == NodeCategory.DAILY.value and (n.content or "").strip()
+    ]
+    if not daily_nodes:
+        return False
+    return brain_consolidate_async(agent, vault=v)
 
 
 def brain_reflect(

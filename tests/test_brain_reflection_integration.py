@@ -237,6 +237,7 @@ class ReflectionBeliefIntegrationTest(TestCase):
             messages=[
                 {"role": "user", "content": "Deploy the service"},
                 {"role": "tool", "tool_name": "terminal", "name": "terminal", "content": '{"exit_code": 0}'},
+                {"role": "tool", "tool_name": "terminal", "name": "terminal", "content": '{"exit_code": 0}'},
             ],
         )
 

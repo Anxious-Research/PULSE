@@ -52,6 +52,7 @@ __all__ = [
     "FACT_SOURCE_EXPLICIT",
     "FACT_SOURCE_INFERRED",
     "FACT_SOURCE_CORRECTED",
+    "MAX_EVIDENCE_REFS",
     "record_user_fact",
     "revise_user_fact",
     "supersede_user_fact",
@@ -81,6 +82,9 @@ CORRECTION_CONFIDENCE = 1.0           # a correction is as strong as an assertio
 
 # Similarity threshold for treating two facts as about the same thing
 SAME_FACT_SIMILARITY = 0.85
+
+# Maximum evidence references stored per node (latest N references)
+MAX_EVIDENCE_REFS = 20
 
 # Fact types (semantic categories within the user model)
 FACT_TYPE_PREFERENCE = "preference"
@@ -207,6 +211,40 @@ def _find_supersede_target(vault: Any, content: str, fact_type: str, scope: str 
     return best
 
 
+def _clean_evidence_refs(
+    existing: Any,
+    new_id: str = "",
+    *,
+    limit: int = MAX_EVIDENCE_REFS,
+) -> List[str]:
+    """Normalize, deduplicate, and cap evidence_refs.
+
+    Ensures all turn IDs are strings, eliminates duplicates while preserving
+    order, and keeps at most `limit` latest references.
+    """
+    raw_list = (
+        list(existing)
+        if isinstance(existing, (list, tuple, set))
+        else ([existing] if existing is not None else [])
+    )
+    items: List[str] = []
+    seen: set = set()
+    for item in raw_list:
+        s = str(item).strip()
+        if s and s not in seen:
+            seen.add(s)
+            items.append(s)
+
+    new_s = str(new_id).strip() if new_id else ""
+    if new_s and new_s not in seen:
+        seen.add(new_s)
+        items.append(new_s)
+
+    if limit > 0 and len(items) > limit:
+        items = items[-limit:]
+    return items
+
+
 def record_user_fact(
     vault: Any,
     content: str,
@@ -214,7 +252,7 @@ def record_user_fact(
     fact_type: str = FACT_TYPE_PREFERENCE,
     source: str = FACT_SOURCE_EXPLICIT,
     scope: str = "",
-    evidence_id: str = "",
+    evidence_id: Any = "",
     now: Optional[int] = None,
     _skip_correction: bool = False,
 ) -> Dict[str, Any]:
@@ -259,11 +297,7 @@ def record_user_fact(
             ev_count = int(extra.get("evidence_count", 1)) + 1
             extra["evidence_count"] = ev_count
             existing_refs = extra.get("evidence_refs", [])
-            if not isinstance(existing_refs, list):
-                existing_refs = [str(existing_refs)] if existing_refs else []
-            if evidence_id and evidence_id not in existing_refs:
-                existing_refs = list(existing_refs) + [evidence_id]
-                extra["evidence_refs"] = existing_refs
+            extra["evidence_refs"] = _clean_evidence_refs(existing_refs, evidence_id)
 
             # If this was inferred, update confidence with more evidence
             new_confidence = None
@@ -301,7 +335,7 @@ def record_user_fact(
     if scope:
         extra["scope"] = scope
     if evidence_id:
-        extra["evidence_refs"] = [evidence_id]
+        extra["evidence_refs"] = _clean_evidence_refs([], evidence_id)
 
     tags = [fact_type, source]
     if scope:
@@ -423,7 +457,7 @@ def revise_user_fact(
     *,
     new_confidence: Optional[float] = None,
     new_scope: Optional[str] = None,
-    evidence_id: str = "",
+    evidence_id: Any = "",
     now: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Update metadata on an existing user fact without changing its content.
@@ -432,7 +466,8 @@ def revise_user_fact(
     """
     now_ts = int(now if now is not None else time.time())
     try:
-        node = vault.get_node(node_id)
+        reader = getattr(vault, "read_node", None) or getattr(vault, "get_node", None)
+        node = reader(node_id) if reader else None
     except Exception:
         return {"action": "skipped", "reason": "node not found"}
     if node is None:
@@ -448,18 +483,28 @@ def revise_user_fact(
         extra["scope"] = new_scope
     if evidence_id:
         existing_refs = extra.get("evidence_refs", [])
-        if not isinstance(existing_refs, list):
-            existing_refs = [str(existing_refs)] if existing_refs else []
-        if evidence_id not in existing_refs:
-            existing_refs = list(existing_refs) + [evidence_id]
-            extra["evidence_refs"] = existing_refs
+        cleaned_existing = _clean_evidence_refs(existing_refs)
+        eid_str = str(evidence_id).strip()
+        if eid_str and eid_str not in cleaned_existing:
+            extra["evidence_refs"] = _clean_evidence_refs(cleaned_existing, eid_str)
             extra["evidence_count"] = int(extra.get("evidence_count", 1)) + 1
+        else:
+            extra["evidence_refs"] = cleaned_existing
+    else:
+        if "evidence_refs" in extra:
+            extra["evidence_refs"] = _clean_evidence_refs(extra.get("evidence_refs", []))
 
     fm.extra.update(extra)
     fm.updated_at = now_ts
 
     try:
-        vault.write_node(node_id, node.content, frontmatter=fm)
+        vault.write_node(
+            node_id,
+            node.content,
+            confidence=float(extra.get("confidence_score", fm.confidence)),
+            extra=extra,
+            now=now_ts,
+        )
     except Exception:
         return {"action": "skipped", "reason": "write failed"}
     return {"action": "revised", "node_id": node_id}
@@ -496,6 +541,7 @@ def facts_for_scope(vault: Any, scope: str = "") -> List[UserFact]:
             valid_from=extra.get("valid_from"),
             valid_until=extra.get("valid_until"),
             evidence_count=int(extra.get("evidence_count", 1)),
+            evidence_ids=_clean_evidence_refs(extra.get("evidence_refs", [])),
             node_id=node.id,
         )
         facts.append(fact)
@@ -654,8 +700,7 @@ _PREFERENCE_PATTERNS = (
         r"(?:prefer|like|love|hate|dislike|favor|favour)\b.{3,}",
         re.IGNORECASE,
     ),
-    re.compile(r"\b(?:always|never) (?:use|respond|reply|answer|write)\b.{3,}", re.IGNORECASE),
-    re.compile(r"\b(?:please )?(?:always|never)\b.{3,}", re.IGNORECASE),
+    re.compile(r"\b(?:please\s+)?(?:always|never)\s+(?:use|do|make|keep|respond|reply|answer|write|format|give|show)\b.{3,}", re.IGNORECASE),
     re.compile(r"\bi (?:no longer|don'?t|do not) (?:like|prefer|want|use|need)\b.{2,}", re.IGNORECASE),
     re.compile(r"\bmy (?:favorite|preferred)\b.{3,}", re.IGNORECASE),
 )

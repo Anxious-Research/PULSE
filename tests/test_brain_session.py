@@ -43,7 +43,7 @@ class BridgeTestCase(unittest.TestCase):
         self.vault.ensure_vault_structure()
         self._orig_vault_cls = session_mod.BrainVault
         session_mod.BrainVault = lambda *a, **kw: self.vault  # hermetic: never the real $PULSE_HOME
-        self.agent = SimpleNamespace()
+        self.agent = SimpleNamespace(_agent_config={})
 
     def tearDown(self):
         session_mod.BrainVault = self._orig_vault_cls

@@ -79,6 +79,39 @@ def parse_daily_entries(content: str) -> List[Tuple[str, Optional[str]]]:
     return entries
 
 
+def _match_theme(text_a: str, text_b: str, embedder: Any = None) -> bool:
+    """True when two episodic statements cluster under the same entity or topic."""
+    if is_near_duplicate(text_a, text_b, embedder=embedder, threshold=0.75):
+        return True
+
+    sim = similarity(text_a, text_b, embedder=embedder)
+    if sim >= 0.60:
+        return True
+
+    # Entity-based clustering: check if both statements share non-generic entities
+    try:
+        from .entities import extract_entity_candidates, is_generic_entity
+        e_a = {e.lower() for e in extract_entity_candidates(text_a) if not is_generic_entity(e)}
+        e_b = {e.lower() for e in extract_entity_candidates(text_b) if not is_generic_entity(e)}
+        if e_a and e_b and (e_a & e_b):
+            tokens_a = set(tokenize(text_a))
+            tokens_b = set(tokenize(text_b))
+            if len(tokens_a & tokens_b) >= 2 or sim >= 0.20:
+                return True
+    except Exception:
+        pass
+
+    # Keyword / topic overlap clustering for technical statements
+    tokens_a = set(tokenize(text_a))
+    tokens_b = set(tokenize(text_b))
+    stopwords = {"a", "an", "the", "and", "or", "is", "are", "was", "were", "to", "in", "on", "for", "with", "by", "at", "from", "of", "it", "its"}
+    content_overlap = (tokens_a & tokens_b) - stopwords
+    if len(content_overlap) >= 3 or (len(content_overlap) >= 2 and sim >= 0.35):
+        return True
+
+    return False
+
+
 def find_promotion_candidates(
     vault: Any,
     *,
@@ -114,13 +147,13 @@ def find_promotion_candidates(
     if not raw_statements:
         return []
 
-    # Cluster statements by text similarity
+    # Cluster statements by entity and topic similarity
     clusters: List[List[Dict[str, Any]]] = []
     for item in raw_statements:
         matched_cluster = None
         for cluster in clusters:
             rep = cluster[0]["text"]
-            if is_near_duplicate(item["text"], rep, embedder=embedder, threshold=0.75):
+            if _match_theme(item["text"], rep, embedder=embedder):
                 matched_cluster = cluster
                 break
         if matched_cluster is not None:
@@ -369,22 +402,61 @@ def consolidate_vault(
         rec = {"node_id": node_id, **cand.as_dict()}
         report["promoted"].append(rec)
         if not dry_run:
+            # Build content with bidirectional [[wikilinks]] to source daily nodes
+            source_links = " ".join(f"[[{d}]]" for d in cand.source_daily_nodes)
+            content_with_links = cand.text
+            if source_links:
+                if "## Related" in content_with_links:
+                    content_with_links = f"{content_with_links}\n- {source_links}"
+                else:
+                    content_with_links = f"{content_with_links}\n\n## Related\n- {source_links}"
+
             # Create the promoted semantic note
             vault.write_node(
                 node_id,
-                cand.text,
+                content_with_links,
                 title=cand.title,
                 category=cand.category,
                 tags=["consolidated", "semantic"],
                 salience=0.85,
                 confidence=0.9,
                 status=NodeStatus.ACTIVE.value,
+                related=list(cand.source_daily_nodes),
                 extra={
                     "source_turns": cand.source_turns,
                     "source_daily_nodes": cand.source_daily_nodes,
                 },
                 now=ts,
             )
+
+            # Bidirectional linking: update each source daily note to link back to the promoted concept
+            for dnode_id in cand.source_daily_nodes:
+                try:
+                    dnode = vault.read_node(dnode_id)
+                    if dnode is not None:
+                        d_content = dnode.content or ""
+                        link_ref = f"[[{node_id}]]"
+                        if link_ref not in d_content:
+                            if "## Related" in d_content:
+                                updated_dcontent = f"{d_content}\n- {link_ref}"
+                            else:
+                                updated_dcontent = f"{d_content}\n\n## Related\n- {link_ref}"
+                            updated_related = sorted(set(dnode.frontmatter.related or []) | {node_id})
+                            vault.write_node(
+                                dnode.id,
+                                updated_dcontent,
+                                title=dnode.title,
+                                category=dnode.frontmatter.category,
+                                tags=dnode.frontmatter.tags,
+                                salience=dnode.frontmatter.salience,
+                                confidence=dnode.frontmatter.confidence,
+                                status=dnode.frontmatter.status,
+                                related=updated_related,
+                                extra=dnode.frontmatter.extra,
+                                now=ts,
+                            )
+                except Exception:
+                    logger.debug(f"Failed to update daily node {dnode_id} with link to {node_id}", exc_info=True)
 
     # 2. Merge near-duplicates
     merges = merge_near_duplicates(

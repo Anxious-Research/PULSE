@@ -122,3 +122,67 @@ def test_cmd_status_memory_tool_gate_enabled(capsys, monkeypatch):
     assert re.search(r"Memory tool:\s+enabled", captured)
     assert re.search(r"Memory injection:\s+enabled", captured)
     assert re.search(r"User profile:\s+disabled", captured)
+
+
+def test_cmd_memory_reset_vault(tmp_path, monkeypatch):
+    from pulse_cli.main_agent_cmds import _cmd_memory_reset
+    from agent.brain.vault import BrainVault
+    from types import SimpleNamespace
+
+    monkeypatch.setattr("pulse_constants.get_pulse_home", lambda: tmp_path)
+
+    vault = BrainVault(tmp_path / "brain")
+    vault.write_node("user/name", "Name is Ankit", category="user")
+    vault.write_node("concept/fastapi", "FastAPI web framework", category="concept")
+    vault.write_node("procedure/build", "How to build", category="procedure")
+
+    # Reset user
+    args = SimpleNamespace(target="user", yes=True)
+    _cmd_memory_reset(args)
+    assert not vault.exists("user/name")
+    assert vault.exists("concept/fastapi")
+    assert vault.exists("procedure/build")
+
+    # Reset memory
+    args = SimpleNamespace(target="memory", yes=True)
+    _cmd_memory_reset(args)
+    assert not vault.exists("concept/fastapi")
+    assert not vault.exists("procedure/build")
+
+    # Re-add and reset all
+    vault.write_node("user/name", "Name is Ankit", category="user")
+    vault.write_node("concept/fastapi", "FastAPI web framework", category="concept")
+    args = SimpleNamespace(target="all", yes=True)
+    _cmd_memory_reset(args)
+    assert len(vault.list_all_nodes()) == 0
+
+
+def test_cmd_memory_reset_empty(tmp_path, monkeypatch, capsys):
+    from pulse_cli.main_agent_cmds import _cmd_memory_reset
+    from types import SimpleNamespace
+
+    monkeypatch.setattr("pulse_constants.get_pulse_home", lambda: tmp_path)
+
+    args = SimpleNamespace(target="all", yes=True)
+    _cmd_memory_reset(args)
+    captured = capsys.readouterr().out
+    assert "Nothing to reset" in captured
+
+
+def test_cmd_memory_reset_prompt_cancel(tmp_path, monkeypatch, capsys):
+    from pulse_cli.main_agent_cmds import _cmd_memory_reset
+    from agent.brain.vault import BrainVault
+    from types import SimpleNamespace
+
+    monkeypatch.setattr("pulse_constants.get_pulse_home", lambda: tmp_path)
+    monkeypatch.setattr("builtins.input", lambda prompt: "no")
+
+    vault = BrainVault(tmp_path / "brain")
+    vault.write_node("user/name", "Name is Ankit", category="user")
+
+    args = SimpleNamespace(target="user", yes=False)
+    _cmd_memory_reset(args)
+    captured = capsys.readouterr().out
+    assert "Cancelled" in captured
+    assert vault.exists("user/name")
+

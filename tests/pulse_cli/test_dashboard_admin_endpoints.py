@@ -244,6 +244,57 @@ class TestMemoryEndpoints:
             "/api/memory/reset", json={"target": "bogus"}
         ).status_code == 400
 
+    def test_memory_api_brain_statistics_and_reset(self):
+        from pulse_constants import get_pulse_home
+        from agent.brain.vault import BrainVault
+
+        vault = BrainVault(get_pulse_home() / "brain")
+        vault.write_node("user/profile", "User prefers dark mode", title="profile", category="user")
+        vault.write_node("concept/arch", "Architecture notes", title="arch", category="concept")
+        vault.write_node("procedure/deploy", "Deploy steps", title="deploy", category="procedure")
+        vault.write_node("daily/2026-10-30", "Daily notes", title="daily", category="daily")
+        vault.write_node("self/identity", "PULSE Identity", title="identity", category="self")
+        vault.write_node("belief/ethics", "Ethics", title="ethics", category="belief")
+        vault.write_node("project/pulse", "Pulse project", title="pulse", category="project")
+
+        data = self.client.get("/api/memory").json()
+        assert data["total_nodes"] == 7
+        assert data["vault_nodes"] == 7
+        assert "cache_status" in data
+        assert data["by_category"]["user"] == 1
+        assert data["by_category"]["concept"] == 1
+        assert data["by_category"]["procedure"] == 1
+        assert data["by_category"]["daily"] == 1
+        assert data["by_category"]["self"] == 1
+        assert data["by_category"]["belief"] == 1
+        assert data["by_category"]["project"] == 1
+        assert "brain" in data and data["brain"]["total_nodes"] == 7
+
+        # Reset user target
+        r_user = self.client.post("/api/memory/reset", json={"target": "user"})
+        assert r_user.status_code == 200
+        assert "user/profile" in r_user.json()["deleted_nodes"]
+        assert not vault.exists("user/profile")
+        assert vault.exists("concept/arch")
+
+        # Reset memory target
+        r_mem = self.client.post("/api/memory/reset", json={"target": "memory"})
+        assert r_mem.status_code == 200
+        assert not vault.exists("concept/arch")
+        assert not vault.exists("procedure/deploy")
+        assert not vault.exists("daily/2026-10-30")
+        assert not vault.exists("self/identity")
+        assert not vault.exists("belief/ethics")
+        assert not vault.exists("project/pulse")
+
+        # Re-add and reset all
+        vault.write_node("user/name", "User name", category="user")
+        vault.write_node("concept/python", "Python", category="concept")
+        r_all = self.client.post("/api/memory/reset", json={"target": "all"})
+        assert r_all.status_code == 200
+        assert len(vault.list_all_nodes()) == 0
+        assert self.client.get("/api/memory").json()["total_nodes"] == 0
+
     _SCOPEDPROV_INIT = """
 from agent.memory_provider import MemoryProvider
 from agent.secret_scope import get_secret

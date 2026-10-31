@@ -746,22 +746,23 @@ def finalize_turn(
     # Brain outcome recording: fold this turn's outcome into a procedure when evidence is
     # sufficient. Reads the committed transcript for the turn's tool results (the observability
     # harness resets its buffer each round, so it only holds the last round here). Fail-open.
-    try:
-        from agent.brain.outcome_recorder import record_turn_outcome
+    if not (getattr(agent, "platform", None) in ("cron", "subagent") or getattr(agent, "_parent_session_id", None) is not None or getattr(agent, "is_subagent", False)):
+        try:
+            from agent.brain.outcome_recorder import record_turn_outcome
 
-        record_turn_outcome(
-            agent,
-            original_user_message=original_user_message,
-            final_response=final_response,
-            interrupted=interrupted,
-            failed=failed,
-            turn_exit_reason=_turn_exit_reason,
-            session_id=agent.session_id or "",
-            turn_id=str(turn_id or ""),
-            messages=messages,
-        )
-    except Exception:
-        logger.debug("brain outcome recording skipped", exc_info=True)
+            record_turn_outcome(
+                agent,
+                original_user_message=original_user_message,
+                final_response=final_response,
+                interrupted=interrupted,
+                failed=failed,
+                turn_exit_reason=_turn_exit_reason,
+                session_id=agent.session_id or "",
+                turn_id=str(turn_id or ""),
+                messages=messages,
+            )
+        except Exception:
+            logger.debug("brain outcome recording skipped", exc_info=True)
 
     # External memory provider: sync the completed turn + queue next prefetch.
     agent._sync_external_memory_for_turn(
@@ -781,10 +782,16 @@ def finalize_turn(
     except Exception:
         logger.warning("background learning scope resolution failed", exc_info=True)
         _learning_memory, _learning_skills = False, False
+    # Don't spawn review if the turn was itself a background review harness prompt
+    _orig_str = original_user_message if isinstance(original_user_message, str) else ""
+    if _orig_str.lstrip().startswith(("Review the full conversation above", "Review the conversation above")):
+        _learning_memory, _learning_skills = False, False
+
     if (
         final_response
         and not interrupted
         and not getattr(agent, "skip_background_review", False)
+        and getattr(agent, "_memory_write_origin", None) != "background_review"
         and (_learning_memory or _learning_skills)
     ):
         try:

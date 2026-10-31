@@ -21,23 +21,54 @@ def _cmd_memory_off():
 
 def _cmd_memory_reset(args):
     from pulse_constants import get_pulse_home, display_pulse_home
-    mem_dir = get_pulse_home() / "memories"
-    target = getattr(args, "target", "all")
-    files_to_reset = []
-    if target in {"all", "memory"}:
-        files_to_reset.append(("MEMORY.md", "agent notes"))
-    if target in {"all", "user"}:
-        files_to_reset.append(("USER.md", "user profile"))
+    from agent.brain.vault import BrainVault
+    from agent.brain.cache import BrainCache
+    from agent.brain.index import BrainIndex
+    from agent.brain.models import NodeCategory
 
-    existing = [(f, desc) for f, desc in files_to_reset if (mem_dir / f).exists()]
-    if not existing:
-        print(f"\n  Nothing to reset — no memory files found in {display_pulse_home()}/memories/\n")
+    target = (getattr(args, "target", None) or "all").strip().lower()
+    if target not in {"all", "memory", "user"}:
+        print(f"\n  Unknown target '{target}'. Target must be 'all', 'memory', or 'user'.\n")
         return
 
-    print("\n  This will permanently erase the following memory files:")
-    for f, desc in existing:
+    mem_dir = get_pulse_home() / "memories"
+    files_to_reset = []
+    if target in {"all", "memory"}:
+        files_to_reset.append(("MEMORY.md", "legacy agent notes"))
+    if target in {"all", "user"}:
+        files_to_reset.append(("USER.md", "legacy user profile"))
+
+    existing_files = [(f, desc) for f, desc in files_to_reset if (mem_dir / f).exists()]
+
+    vault = BrainVault(get_pulse_home() / "brain")
+    vault_nodes = []
+    if vault.vault_dir.exists():
+        try:
+            all_nodes = vault.list_all_nodes()
+            for node in all_nodes:
+                cat = getattr(node.frontmatter, "category", None) or (node.id.split("/")[0] if "/" in node.id else "concept")
+                if target == "all" or (target == "user" and cat == "user") or (target == "memory" and cat != "user"):
+                    vault_nodes.append(node)
+        except Exception:
+            pass
+
+    if not existing_files and not vault_nodes:
+        print(f"\n  Nothing to reset — no memory found in {display_pulse_home()}/brain/ or {display_pulse_home()}/memories/\n")
+        return
+
+    print("\n  This will permanently erase the following memory:")
+    for f, desc in existing_files:
         size = (mem_dir / f).stat().st_size
         print(f"    ◆ {f} ({desc}) — {size:,} bytes")
+
+    if vault_nodes:
+        cat_counts = {}
+        for node in vault_nodes:
+            cat = getattr(node.frontmatter, "category", None) or (node.id.split("/")[0] if "/" in node.id else "concept")
+            cat_counts[cat] = cat_counts.get(cat, 0) + 1
+        for cat, count in sorted(cat_counts.items()):
+            print(f"    ◆ brain/{cat}/ — {count} node(s)")
+        print(f"    Total vault nodes to erase: {len(vault_nodes)}")
 
     if not getattr(args, "yes", False):
         try:
@@ -49,12 +80,57 @@ def _cmd_memory_reset(args):
             print("  Cancelled.\n")
             return
 
-    for f, desc in existing:
-        (mem_dir / f).unlink()
-        print(f"  ✓ Deleted {f} ({desc})")
+    for f, desc in existing_files:
+        try:
+            (mem_dir / f).unlink()
+            print(f"  ✓ Deleted legacy {f} ({desc})")
+        except OSError as exc:
+            print(f"  ✗ Failed to delete {f}: {exc}")
+
+    if vault_nodes:
+        deleted_count = 0
+        for node in vault_nodes:
+            if vault.delete_node(node.id):
+                deleted_count += 1
+
+        categories_to_clear = (
+            NodeCategory.all_values() if target == "all"
+            else (["user"] if target == "user"
+            else [c for c in NodeCategory.all_values() if c != "user"])
+        )
+        for cat in categories_to_clear:
+            cat_dir = vault.vault_dir / cat
+            if cat_dir.is_dir():
+                for md_file in cat_dir.rglob("*.md"):
+                    try:
+                        md_file.unlink(missing_ok=True)
+                    except OSError:
+                        pass
+        print(f"  ✓ Deleted {deleted_count} brain vault node(s)")
+
+    # Clean .brain-cache.db and index on reset
+    cache_db = vault.vault_dir / ".brain-cache.db"
+    for cache_file in (cache_db, vault.vault_dir / ".brain-cache.db-wal", vault.vault_dir / ".brain-cache.db-shm"):
+        if cache_file.exists():
+            try:
+                cache_file.unlink()
+            except OSError:
+                pass
+
+    try:
+        cache = BrainCache(vault)
+        cache.rebuild()
+        cache.close()
+    except Exception:
+        pass
+
+    try:
+        BrainIndex(vault).rebuild()
+    except Exception:
+        pass
 
     print("\n  Memory reset complete. New sessions will start with a blank slate.")
-    print(f"  Files were in: {display_pulse_home()}/memories/\n")
+    print(f"  Brain vault: {display_pulse_home()}/brain/\n")
 
 
 def cmd_memory(args):

@@ -150,11 +150,21 @@ def rrf_fuse(ranked_lists: Sequence[Ranked], *, k: int = RRF_K) -> Ranked:
     """Reciprocal-rank fusion of several ranked lists → one fused ranking.
 
     Each list contributes ``1/(k + rank)`` (rank 0-based) to each node it ranks; contributions
-    sum across channels, so a node ranked well by several channels rises. Empty lists are ignored.
+    sum across channels, so a node ranked well by several channels rises. Tied scores within
+    a channel share the same rank. Empty lists are ignored.
     Deduplicates by node id (summing is per-id). Deterministic: ties break on node id.
     """
     fused: Dict[str, float] = {}
     for lst in ranked_lists:
-        for rank, (nid, _score) in enumerate(lst):
-            fused[nid] = fused.get(nid, 0.0) + 1.0 / (k + rank + 1)
+        last_score: Optional[float] = None
+        current_rank = 0
+        for i, (nid, score) in enumerate(lst):
+            try:
+                s = float(score)
+            except (TypeError, ValueError):
+                s = 0.0
+            if last_score is not None and abs(s - last_score) > 1e-9:
+                current_rank = i
+            last_score = s
+            fused[nid] = fused.get(nid, 0.0) + 1.0 / (k + current_rank + 1)
     return sorted(fused.items(), key=lambda x: (-x[1], x[0]))

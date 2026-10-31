@@ -182,8 +182,8 @@ class OutcomeIntegrationTest(TestCase):
 
     # ── sufficiency gates ──────────────────────────────────────────────────────
 
-    def test_single_action_tool_is_substantive(self):
-        """One terminal call is a real task attempt and is recorded."""
+    def test_single_action_tool_is_not_recorded(self):
+        """A single action tool call (1 step) is not a procedure and is not recorded."""
         goal = "Restart the gateway service"
         result = record_turn_outcome(
             self.agent,
@@ -192,17 +192,59 @@ class OutcomeIntegrationTest(TestCase):
             session_id="s5", turn_id="t1",
             messages=[_user_msg(goal), _tool_msg("terminal")],
         )
+        self.assertFalse(result.get("recorded"))
+        self.assertIn("insufficient", result.get("reason", ""))
+
+    def test_multi_step_action_is_recorded(self):
+        """At least two concrete action tool calls form a procedure."""
+        goal = "Restart the gateway service"
+        result = record_turn_outcome(
+            self.agent,
+            original_user_message=goal, final_response="restarted",
+            interrupted=False, failed=False, turn_exit_reason="text_response(assistant)",
+            session_id="s5-multi", turn_id="t1",
+            messages=[_user_msg(goal), _tool_msg("terminal"), _tool_msg("terminal")],
+        )
         self.assertTrue(result.get("recorded"), result)
+
+    def test_non_procedural_tools_not_recorded(self):
+        """Orchestration/meta tools (delegate_task, memory) do not form procedures."""
+        goal = "Clean all poisoned prompt files and procedures"
+        result = record_turn_outcome(
+            self.agent,
+            original_user_message=goal, final_response="delegated",
+            interrupted=False, failed=False, turn_exit_reason="text_response(assistant)",
+            session_id="s-meta", turn_id="t1",
+            messages=[_user_msg(goal), _tool_msg("delegate_task")],
+        )
+        self.assertFalse(result.get("recorded"))
+
+    def test_conversational_and_hinglish_prompts_not_recorded(self):
+        """Conversational prose and Hindi/Hinglish instructions must not create procedures."""
+        prompts = [
+            "ekdum shuru se ek ek karke sab kuch karenge. sabse pehle ab se tum ek commandar ya fir orchestrator kuch bhi samjh lo",
+            "perfect ab complete issues jo tumne find kiye hai sabki list or detail me sari problem samjhao",
+            "A background fan-out unit you dispatched earlier — 2 subagent(s) — has finished; its consolidated results are below.",
+        ]
+        for p in prompts:
+            result = record_turn_outcome(
+                self.agent,
+                original_user_message=p, final_response="done",
+                interrupted=False, failed=False, turn_exit_reason="text_response(assistant)",
+                session_id="s-conv", turn_id="t1",
+                messages=[_user_msg(p), _tool_msg("terminal"), _tool_msg("terminal")],
+            )
+            self.assertFalse(result.get("recorded"), f"Prompt should not be recorded: {p}")
 
     def test_single_readonly_call_is_not_recorded(self):
         """A single read-only lookup is not a procedure-forming task."""
         result = record_turn_outcome(
             self.agent,
-            original_user_message="Read the config file",
+            original_user_message="Validate the config file",
             final_response="here it is",
             interrupted=False, failed=False, turn_exit_reason="text_response(assistant)",
             session_id="s6", turn_id="t1",
-            messages=[_user_msg("Read the config file"), _tool_msg("read_file")],
+            messages=[_user_msg("Validate the config file"), _tool_msg("read_file")],
         )
         self.assertFalse(result.get("recorded"))
         self.assertIn("insufficient evidence", result.get("reason", ""))

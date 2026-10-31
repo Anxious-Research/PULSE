@@ -608,6 +608,170 @@ _COMBINED_REVIEW_PROMPT = (
 )
 
 
+# Distinctive phrases and clauses from the review prompts. The review fork must never
+# persist its own meta-instructions into memory.
+_EXPLICIT_PROMPT_LEAK_PHRASES: Tuple[str, ...] = (
+    "class-level skills",
+    "a user-preference lesson",
+    "user-preference lesson lives in exactly one place",
+    "either say 'nothing to save'",
+    'either say "nothing to save"',
+    "if a tool failed because of setup state",
+    "always-on rules",
+    "one fact goes to one store",
+    "two distinct stores",
+    "user.md (memory tool",
+    "memory.md (memory tool",
+    "bloats both files until they hit their size limits",
+    "misrouting it puts it where the next session won't look",
+    "what a skill is:",
+    "what a skill is",
+    "procedure first:",
+    "procedure first",
+    "a pitfall is a generalizable rule",
+    "no pr/issue numbers, dates, ticket ids",
+    "the same lesson learned twice is one rule",
+    "not a duplicate of what the environment already teaches",
+    "environment-dependent failures",
+    "negative claims about tools or features",
+    "session-specific transient errors",
+    "one-off task narratives",
+    "unresolved failures",
+    "review the full conversation above",
+    "review the conversation above",
+    "save only durable information that is supported by what the user said",
+    "distinguish explicit facts from tentative inferences",
+    "target shape of the library",
+    "target shape of the skill library",
+    "read-before-write (enforced",
+    "user-preference embedding",
+    "protected skills (do not edit these)",
+)
+
+_LEAK_PHRASES: Tuple[str, ...] = ()
+
+
+def _collect_leak_phrases() -> Tuple[str, ...]:
+    collected = set(_EXPLICIT_PROMPT_LEAK_PHRASES)
+    for block in (
+        _MEMORY_ROUTING_BLOCK,
+        _LESSON_LAYER_BLOCK,
+        _DO_NOT_CAPTURE_BLOCK,
+        _MEMORY_REVIEW_PROMPT,
+        _SKILL_REVIEW_PROMPT,
+        _COMBINED_REVIEW_PROMPT,
+    ):
+        for line in block.splitlines():
+            line_str = line.strip().strip("•-* ").strip()
+            for sep in [". ", "; ", " — ", " -- ", ": "]:
+                parts = line_str.split(sep)
+                for part in parts:
+                    cleaned = part.strip().strip("'\"`").lower()
+                    if len(cleaned) >= 25:
+                        collected.add(cleaned)
+    return tuple(sorted(collected, key=lambda s: -len(s)))
+
+
+def get_leak_phrases() -> Tuple[str, ...]:
+    global _LEAK_PHRASES
+    if not _LEAK_PHRASES:
+        _LEAK_PHRASES = _collect_leak_phrases()
+    return _LEAK_PHRASES
+
+
+def is_review_prompt_leak(content: str) -> bool:
+    """Return True if content matches background review instructions or prompt blocks."""
+    if not isinstance(content, str) or not content.strip():
+        return False
+    norm = content.strip().lower()
+    for phrase in get_leak_phrases():
+        if phrase in norm:
+            return True
+
+    blocks = (
+        _MEMORY_ROUTING_BLOCK.lower(),
+        _LESSON_LAYER_BLOCK.lower(),
+        _DO_NOT_CAPTURE_BLOCK.lower(),
+        _MEMORY_REVIEW_PROMPT.lower(),
+        _SKILL_REVIEW_PROMPT.lower(),
+        _COMBINED_REVIEW_PROMPT.lower(),
+    )
+    if len(norm) >= 20 and any(norm in b for b in blocks):
+        return True
+
+    for part in norm.replace(" — ", ". ").replace(" -- ", ". ").replace("; ", ". ").split("."):
+        clean_part = part.strip()
+        if len(clean_part) >= 25 and any(clean_part in b for b in blocks):
+            return True
+
+    return False
+
+
+def extract_memory_content_strings(args: Any) -> List[str]:
+    """Extract all text payloads (content, new_text) from memory tool arguments."""
+    contents: List[str] = []
+    if isinstance(args, str):
+        try:
+            args = json.loads(args)
+        except Exception:
+            return [args]
+    if not isinstance(args, dict):
+        return contents
+
+    for key in ("content", "new_text"):
+        val = args.get(key)
+        if isinstance(val, str) and val.strip():
+            contents.append(val)
+
+    ops = args.get("operations")
+    if isinstance(ops, list):
+        for op in ops:
+            if isinstance(op, dict):
+                for key in ("content", "new_text"):
+                    val = op.get(key)
+                    if isinstance(val, str) and val.strip():
+                        contents.append(val)
+    return contents
+
+
+def check_memory_prompt_leak(args: Any) -> Optional[str]:
+    """Check memory tool arguments for prompt leakage; return error string if detected."""
+    for text in extract_memory_content_strings(args):
+        if is_review_prompt_leak(text):
+            return "Memory write rejected: content matches background review prompt instructions and cannot be persisted."
+    return None
+
+
+class _GuardedReviewMemoryStore:
+    """Wrapper around a memory store for review forks that rejects review prompt leaks."""
+
+    def __init__(self, real_store: Any) -> None:
+        self._real_store = real_store
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._real_store, name)
+
+    def add(self, target: str, content: str, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        if is_review_prompt_leak(content):
+            logger.warning("Background review fork attempted to add prompt leak into %s: %s", target, content[:80])
+            return {"success": False, "error": "Memory write rejected: content matches review prompt instructions."}
+        return self._real_store.add(target, content, *args, **kwargs)
+
+    def replace(self, target: str, old_text: str, new_content: str, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        if is_review_prompt_leak(new_content):
+            logger.warning("Background review fork attempted to replace prompt leak into %s: %s", target, new_content[:80])
+            return {"success": False, "error": "Memory write rejected: content matches review prompt instructions."}
+        return self._real_store.replace(target, old_text, new_content, *args, **kwargs)
+
+    def batch(self, target: str, operations: List[Dict[str, Any]], *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        for op in operations or []:
+            c = op.get("content") or op.get("new_text") or ""
+            if is_review_prompt_leak(c):
+                logger.warning("Background review fork attempted batch write with prompt leak into %s: %s", target, c[:80])
+                return {"success": False, "error": "Memory write rejected: content matches review prompt instructions."}
+        return self._real_store.batch(target, operations, *args, **kwargs)
+
+
 def _preview(text: str, limit: int) -> str:
     return text[:limit] + ("…" if len(text) > limit else "")
 
@@ -971,6 +1135,7 @@ def _fork_init_kwargs(agent: Any, rt: Dict[str, Any], routed: bool, max_iteratio
         "request_overrides": rt.get("request_overrides") or {}, "parent_session_id": agent.session_id,
         "enabled_toolsets": getattr(agent, "enabled_toolsets", None),
         "disabled_toolsets": getattr(agent, "disabled_toolsets", None), "skip_memory": True,
+        "skip_background_review": True,
     }
     if isinstance(rt.get("max_tokens"), int):
         kwargs["max_tokens"] = rt["max_tokens"]
@@ -1027,7 +1192,11 @@ def build_cache_parity_fork(
     # same-model path), so its turn-start/turn-exit log lines are otherwise
     # indistinguishable from live turns (#118693).
     review_agent._turn_origin = write_origin
-    review_agent._memory_store = agent._memory_store
+    review_agent._memory_store = (
+        _GuardedReviewMemoryStore(agent._memory_store)
+        if getattr(agent, "_memory_store", None) is not None
+        else None
+    )
     review_agent._memory_enabled = agent._memory_enabled
     review_agent._user_profile_enabled = agent._user_profile_enabled
     review_agent._memory_nudge_interval = review_agent._skill_nudge_interval = 0
@@ -1196,7 +1365,33 @@ def _run_review_fork(
         agent, task_cfg, max_iterations=_REVIEW_MAX_ITERATIONS)
     st.review_agent._review_attended = explicit
     _track_review_fork(agent, st.review_agent, register=True)
-    from pulse_cli.plugins import set_thread_tool_whitelist, clear_thread_tool_whitelist
+
+    # Immunize review fork against self-ingestion / prompt leakage:
+    if getattr(st.review_agent, "_memory_store", None) is not None and not isinstance(st.review_agent._memory_store, _GuardedReviewMemoryStore):
+        st.review_agent._memory_store = _GuardedReviewMemoryStore(st.review_agent._memory_store)
+
+    if getattr(st.review_agent, "_tool_guardrails", None) is not None:
+        _orig_before_call = st.review_agent._tool_guardrails.before_call
+
+        def _guarded_before_call(tool_name: str, args: Any) -> Any:
+            if tool_name == "memory":
+                leak_err = check_memory_prompt_leak(args)
+                if leak_err:
+                    from agent.tool_guardrails import ToolGuardrailDecision
+                    return ToolGuardrailDecision(
+                        action="block",
+                        code="memory_prompt_leak",
+                        message=leak_err,
+                        tool_name="memory",
+                    )
+            return _orig_before_call(tool_name, args)
+
+        st.review_agent._tool_guardrails.before_call = _guarded_before_call
+
+    from pulse_cli.plugins import (
+        set_thread_tool_whitelist, clear_thread_tool_whitelist,
+        set_thread_pre_call_hook, clear_thread_pre_call_hook,
+    )
     review_whitelist, configured_extra_tools = _review_tool_whitelist(st.review_agent, task_cfg, review_memory)
     extra_list = ", ".join(sorted(configured_extra_tools))
     deny_extra = f" Configured extra tools also allowed: {extra_list}." if configured_extra_tools else ""
@@ -1214,6 +1409,14 @@ def _run_review_fork(
             + memory_phrase_deny + "." + deny_extra + " Do not retry {tool_name}."
         ),
     )
+
+    def _review_pre_tool_call(tool_name: str, args: Any) -> Optional[str]:
+        if tool_name == "memory":
+            return check_memory_prompt_leak(args)
+        return None
+
+    set_thread_pre_call_hook(_review_pre_tool_call)
+
     with suppress(Exception):
         from tools.skill_manager_guards import _reset_background_review_read_marks
 
@@ -1230,6 +1433,7 @@ def _run_review_fork(
                 conversation_history=_digest_history(messages_snapshot) if _routed else messages_snapshot,
             )
     finally:
+        clear_thread_pre_call_hook()
         clear_thread_tool_whitelist()
         # Attribute usage to the PARENT session. Snapshot BEFORE unregister/close so counters
         # survive teardown, and in this finally so a fork that consumed tokens then raised is
@@ -1379,4 +1583,5 @@ def spawn_background_review_thread(
 __all__ = [
     "_MEMORY_REVIEW_PROMPT", "_SKILL_REVIEW_PROMPT", "_COMBINED_REVIEW_PROMPT", "load_background_review_settings",
     "spawn_background_review_thread", "summarize_background_review_actions", "build_memory_write_metadata",
+    "is_review_prompt_leak", "check_memory_prompt_leak", "_GuardedReviewMemoryStore",
 ]

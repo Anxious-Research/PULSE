@@ -101,6 +101,26 @@ class BrainCacheTest(unittest.TestCase):
         self.assertEqual(self.cache.recall([]), [])
         self.assertEqual(self.cache.recall(["   "]), [])
 
+    def test_search_fts_and_graph_traversal(self):
+        self.cache.rebuild()
+        # Direct FTS search with inflection matching
+        hits = self.cache.search_fts("maritime recall")
+        self.assertTrue(hits)
+        self.assertIn("concept/beta", [h["id"] for h in hits])
+        
+        # Inflection prefix matching
+        pref_hits = self.cache.search_fts("what does the user prefer")
+        self.assertTrue(pref_hits)
+        self.assertIn("user/preferences", [h["id"] for h in pref_hits])
+
+        # Graph traversal
+        neighbors = self.cache.traverse_graph(["concept/alpha"], hops=1)
+        self.assertIn("concept/beta", neighbors)
+
+        # Batch fetch nodes
+        nodes = self.cache.get_nodes(["concept/alpha", "concept/beta"])
+        self.assertEqual({n["id"] for n in nodes}, {"concept/alpha", "concept/beta"})
+
 
 if __name__ == "__main__":
     unittest.main()

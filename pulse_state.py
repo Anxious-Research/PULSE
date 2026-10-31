@@ -294,6 +294,8 @@ def _secure_state_db_files(db_path: Path, *, create_main: bool = False) -> None:
 _REVIEW_HARNESS_PREFIXES = (
     "Review the conversation above and update the skill library",
     "Review the conversation above and consider saving to memory",
+    "Review the full conversation above",
+    "Review the conversation above",
 )
 
 

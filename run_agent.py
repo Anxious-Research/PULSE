@@ -949,6 +949,10 @@ class AIAgent(
         response_text = _summarize_user_message_for_log(final_response, sep="\n")
         if not (user_text and response_text):
             return
+        if getattr(self, "platform", None) in ("cron", "subagent") or getattr(self, "_parent_session_id", None) is not None or getattr(self, "is_subagent", False):
+            return
+        if user_text.startswith(("[ASYNC", "[System note:", "[PRIOR CONTEXT", "[TASK", "[CONTEXT", "[CRON", "A background fan-out", "A background subagent")):
+            return
         # Native brain: encode this turn (specs/brain.md §3.1). It owns its own config gate
         # (``brain.enabled`` / ``brain.encode_enabled``) and does its work on a background
         # thread, so it runs even when no external provider is configured — the brain is an

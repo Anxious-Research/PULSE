@@ -12,6 +12,7 @@ from __future__ import annotations
 import shutil
 import tempfile
 import time
+from typing import Any
 import unittest
 from pathlib import Path
 
@@ -174,8 +175,10 @@ class TurnWiringTests(ProspectTestCase):
 
     def _agent(self):
         class A:
-            pass
+            _brain_vault: Any = None
+            _agent_config: Any = None
         a = A()
+        a._brain_vault = self.vault
         a._agent_config = {"brain": {"enabled": True}}
         return a
 
