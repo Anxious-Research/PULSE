@@ -32,8 +32,8 @@ logger = logging.getLogger("tools.kokoro_synth")
 KOKORO_MODEL_URL = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx"
 KOKORO_VOICES_URL = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin"
 
-# Default Tri-Blend Voice: Deep, Grounded, Articulate Masculine Baritone
-DEFAULT_VOICE = "hf_alpha:0.45,am_onyx:0.40,am_fenrir:0.15"
+# Default Voice: 100% Native Desi Indian Male (Omega + Psi Blend)
+DEFAULT_VOICE = "hm_omega:0.75,hm_psi:0.25"
 
 # Broad emoji cleanup regex
 _EMOJI_PATTERN = re.compile(
@@ -326,15 +326,15 @@ def resolve_voice_style(kokoro: Any, voice_spec: str) -> Any:
 
 
 def apply_studio_mastering(input_wav: str, output_path: str) -> str:
-    """Apply ffmpeg studio mastering filter (warm baritone EQ, de-essing, dynamic loudnorm)."""
+    """Apply studio audio filter (warm baritone bass, subtle de-essing, preserving 24kHz)."""
     try:
-        # Subtle broadcast EQ: +3dB low-end warmth at 140Hz, -2dB treble de-essing at 8kHz, EBU R128 loudness normalization
         cmd = [
             "ffmpeg", "-y", "-i", input_wav,
-            "-af", "bass=g=2.5:f=140,treble=g=-1.5:f=7500,loudnorm=I=-16:TP=-1.5:LRA=11",
+            "-af", "bass=g=2:f=120,treble=g=-1:f=8000",
+            "-ar", "24000",
             output_path,
         ]
-        res = subprocess.run(cmd, capture_output=True, check=True)
+        subprocess.run(cmd, capture_output=True, check=True)
         return output_path
     except Exception as exc:
         logger.debug("ffmpeg mastering skipped (%s), copying raw wav: %s", exc, input_wav)
