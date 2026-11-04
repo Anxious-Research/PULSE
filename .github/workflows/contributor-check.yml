@@ -37,9 +37,9 @@ jobs:
             exit 0
           fi
 
-          # An email is mapped if it has a file in contributors/emails/
-          # (one file per email — conflict-free) or an entry in the frozen
-          # legacy AUTHOR_MAP in scripts/releases/authors_legacy.py.
+          # An email is mapped if it is in contributors/contributors.json,
+          # contributors/emails/, or an entry in the frozen legacy AUTHOR_MAP
+          # in scripts/releases/authors_legacy.py.
           MISSING=""
           while IFS= read -r email; do
             # Skip teknium and bot emails
@@ -50,6 +50,10 @@ jobs:
 
             if echo "$email" | grep -qP '\+.*@users\.noreply\.github\.com'; then
               continue  # GitHub id+login noreply emails auto-resolve
+            fi
+
+            if [ -f "contributors/contributors.json" ] && jq -e --arg email "$email" 'has($email)' contributors/contributors.json >/dev/null 2>&1; then
+              continue  # mapped via contributors.json registry
             fi
 
             if [ -f "contributors/emails/${email}" ]; then
@@ -67,8 +71,8 @@ jobs:
             echo "⚠️  New contributor email(s) without a mapping:"
             echo -e "$MISSING"
             echo ""
-            echo "Add a mapping file (do NOT edit AUTHOR_MAP in scripts/releases/authors_legacy.py):"
-            echo "  python3 scripts/audit_pr_attribution.py --fix   # auto-resolve + create files"
+            echo "Add a mapping to contributors/contributors.json (do NOT edit AUTHOR_MAP in scripts/releases/authors_legacy.py):"
+            echo "  python3 scripts/audit_pr_attribution.py --fix   # auto-resolve + create mapping"
             echo "or manually:"
             echo -e "$MISSING" | while read -r line; do
               email=$(echo "$line" | sed 's/^ *//' | cut -d' ' -f1)
@@ -81,7 +85,7 @@ jobs:
 
             # Emit review_status for unmapped emails
             DETAIL=$(echo -e "$MISSING" | sed '/^$/d; s/^  //')
-            HOW_TO_FIX=$'Run from the PR branch:\n```\npython3 scripts/audit_pr_attribution.py --fix\ngit add contributors && git commit -m "chore: map contributor emails" && git push\n```\nOr map one email manually (do NOT edit AUTHOR_MAP in scripts/releases/authors_legacy.py):\n```\npython3 scripts/add_contributor.py <email> <github-username>\n```\nTo find the GitHub username for an email:\n```\ngh api \'search/users?q=EMAIL+in:email\' --jq \'.items[0].login\'\n```\n'
+            HOW_TO_FIX=$'Run from the PR branch:\n```\npython3 scripts/audit_pr_attribution.py --fix\ngit add contributors .mailmap && git commit -m "chore: map contributor emails" && git push\n```\nOr map one email manually (do NOT edit AUTHOR_MAP in scripts/releases/authors_legacy.py):\n```\npython3 scripts/add_contributor.py <email> <github-username>\n```\nTo find the GitHub username for an email:\n```\ngh api \'search/users?q=EMAIL+in:email\' --jq \'.items[0].login\'\n```\n'
             REVIEW_STATUS=$(jq -nc \
               --arg detail "$DETAIL" \
               --arg how_to_fix "$HOW_TO_FIX" \

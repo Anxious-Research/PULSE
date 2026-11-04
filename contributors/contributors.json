@@ -1,0 +1,5542 @@
+{
+  "0301chris@gmail.com": {
+    "login": "0301chris",
+    "comment": "PR #71555 salvage (desktop: gated /api/health readiness probe)"
+  },
+  "0genlab@users.noreply.github.com": {
+    "login": "0genlab",
+    "comment": "PR #105778 co-fix"
+  },
+  "0x7s0lt1@protonmail.com": {
+    "login": "0x7s0lt1"
+  },
+  "0xarkstar@users.noreply.github.com": {
+    "login": "0xarkstar"
+  },
+  "0xprincess@nuconstruct.xyz": {
+    "login": "0xprincess"
+  },
+  "100132710+Zeus-Deus@users.noreply.github.com": {
+    "login": "Zeus-Deus",
+    "comment": "PR #105139 salvage"
+  },
+  "100821673+IntrepidBytes@users.noreply.github.com": {
+    "login": "IntrepidBytes",
+    "comment": "PR #119501 salvage"
+  },
+  "100yenadmin@users.noreply.github.com": {
+    "login": "100yenadmin"
+  },
+  "101180447+cryptoworlldz@users.noreply.github.com": {
+    "login": "worlldz",
+    "comment": "PR #87810 salvage"
+  },
+  "10288501+helingjun@users.noreply.github.com": {
+    "login": "helingjun",
+    "comment": "PR #118190 salvage"
+  },
+  "1051445024@qq.com": {
+    "login": "x1051445024"
+  },
+  "109447498+Baophan00@users.noreply.github.com": {
+    "login": "Baophan00",
+    "comment": "PR #117812 first submitter for #117802"
+  },
+  "110846601+sy0u1ti@users.noreply.github.com": {
+    "login": "sy0u1ti",
+    "comment": "PR #114024"
+  },
+  "1114149@qq.com": {
+    "login": "mochamgx",
+    "comment": "PR #122114 salvage"
+  },
+  "112681813+PuvaanRaaj@users.noreply.github.com": {
+    "login": "PuvaanRaaj",
+    "comment": "PR #115160 / #116953 salvage"
+  },
+  "11388531+Lei-k@users.noreply.github.com": {
+    "login": "Lei-k",
+    "comment": "PR #109701 salvage (#116323 connection-error classification)"
+  },
+  "114367649+knoal@users.noreply.github.com": {
+    "login": "knoal",
+    "comment": "PR #64067 salvage"
+  },
+  "115599727+schwinguin@users.noreply.github.com": {
+    "login": "schwinguin",
+    "comment": "PR #109497 salvage"
+  },
+  "116476090+JeffStone69@users.noreply.github.com": {
+    "login": "JeffStone69"
+  },
+  "1185614+dalzio@users.noreply.github.com": {
+    "login": "dalzio",
+    "comment": "PR #107137 perf salvage"
+  },
+  "120675713+Neomail2@users.noreply.github.com": {
+    "login": "Neomail2",
+    "comment": "bot-dm live bootstrap follow-up to #123070"
+  },
+  "123063793+FestoneX@users.noreply.github.com": {
+    "login": "FestoneX",
+    "comment": "PR #95860 / #97364 salvage"
+  },
+  "123250512+jmiguellucas@users.noreply.github.com": {
+    "login": "jmiguellucas",
+    "comment": "PR #75528 / #24676 salvage"
+  },
+  "123456hyu@users.noreply.github.com": {
+    "login": "123456hyu",
+    "comment": "PR #122936 salvage base (salvaged from #122290; commits carried verbatim)"
+  },
+  "12357213+Halldrix@users.noreply.github.com": {
+    "login": "Halldrix",
+    "comment": "PR #102118 /heartbeat TUI driver"
+  },
+  "124019182+KoNit-K@users.noreply.github.com": {
+    "login": "KoNit-K",
+    "comment": "PR #106233 co-author"
+  },
+  "124239570+JackLee992@users.noreply.github.com": {
+    "login": "JackLee992",
+    "comment": "PR #82148 superseded by #115851"
+  },
+  "1244224501@qq.com": {
+    "login": "LovePlayCode"
+  },
+  "1244677795@qq.com": {
+    "login": "bluefateludi"
+  },
+  "125409643+vgarlu@users.noreply.github.com": {
+    "login": "vgarlu"
+  },
+  "1265291278@qq.com": {
+    "login": "Inspired-by-Atmosphere"
+  },
+  "127101908+thanhan-a17@users.noreply.github.com": {
+    "login": "thanhan-a17"
+  },
+  "128559392+bounce12340@users.noreply.github.com": {
+    "login": "bounce12340",
+    "comment": "PR #102496 salvage"
+  },
+  "1290231+steveonjava@users.noreply.github.com": {
+    "login": "steveonjava",
+    "comment": "PR #94036/#97292 salvage"
+  },
+  "129692708+huklaa@users.noreply.github.com": {
+    "login": "huklaa",
+    "comment": "PR #108681 salvage"
+  },
+  "12981632+philmossman@users.noreply.github.com": {
+    "login": "philmossman",
+    "comment": "PR #105704 salvage"
+  },
+  "13265384114@163.com": {
+    "login": "MiseHinoha"
+  },
+  "132676556+TheBlueHouse75@users.noreply.github.com": {
+    "login": "TheBlueHouse75",
+    "comment": "PR #108239 salvage"
+  },
+  "1347825413@qq.com": {
+    "login": "baau"
+  },
+  "1373636680@qq.com": {
+    "login": "pittosporum-seu"
+  },
+  "13896935+zyz619963502zyz@users.noreply.github.com": {
+    "login": "zyz619963502zyz",
+    "comment": "PR #110634 salvage (cron cleanup thread keeps caller scope)"
+  },
+  "1393268817@qq.com": {
+    "login": "luckystar2026",
+    "comment": "PR #112031 author email"
+  },
+  "1396641434@qq.com": {
+    "login": "wanglufei-567"
+  },
+  "141555468+salch-cred@users.noreply.github.com": {
+    "login": "Sahilvishnaliya"
+  },
+  "1457368987@qq.com": {
+    "login": "w-up"
+  },
+  "146008217+aglowinthefield@users.noreply.github.com": {
+    "login": "aglowinthefield",
+    "comment": "PR #122936 duplicate-cluster credit (#122719)"
+  },
+  "147827411+AhmetArif0@users.noreply.github.com": {
+    "login": "AhmetArif0"
+  },
+  "150129844+andyst-dev@users.noreply.github.com": {
+    "login": "andyst-dev",
+    "comment": "PR #75541 salvage"
+  },
+  "15167896+2001Y@users.noreply.github.com": {
+    "login": "2001Y"
+  },
+  "153183032+lesterlxt@users.noreply.github.com": {
+    "login": "lesterlxt",
+    "comment": "PR #69069 salvage"
+  },
+  "1542452647@qq.com": {
+    "login": "quqi1599",
+    "comment": "PR #118976 salvage"
+  },
+  "154926636+AdamPlatin123@users.noreply.github.com": {
+    "login": "AdamPlatin123"
+  },
+  "155116265+psam-717@users.noreply.github.com": {
+    "login": "psam-717",
+    "comment": "PR #112834 salvage"
+  },
+  "155588579+spiky02plateau@users.noreply.github.com": {
+    "login": "spiky02plateau"
+  },
+  "158067205+dreamfarer-space@users.noreply.github.com": {
+    "login": "dreamfarer-space",
+    "comment": "PR #126186 salvage (bundle-skew git bound)"
+  },
+  "158643445@qq.com": {
+    "login": "nbxuhk"
+  },
+  "1600332149@qq.com": {
+    "login": "bsdnn"
+  },
+  "163799701+ryrenz@users.noreply.github.com": {
+    "login": "ryrenz",
+    "comment": "PR #75824 salvage"
+  },
+  "164521089+rainbowgits@users.noreply.github.com": {
+    "login": "astraltrekkin",
+    "comment": "PR #91738 salvage; id 164521089 renamed rainbowgits -> astraltrekkin (overrides stale legacy rainbowgore entry)"
+  },
+  "165616139+YuYigeng@users.noreply.github.com": {
+    "login": "YuYigeng"
+  },
+  "165816600+finn763@users.noreply.github.com": {
+    "login": "Finn763"
+  },
+  "16833782+Fatmylin@users.noreply.github.com": {
+    "login": "Fatmylin",
+    "comment": "PR #95964 salvage"
+  },
+  "1704788159@qq.com": {
+    "login": "xiaodu55"
+  },
+  "1759158233@qq.com": {
+    "login": "wanquanY"
+  },
+  "1762459322@qq.com": {
+    "login": "ZachariahChu"
+  },
+  "188540289+SiaoZeng@users.noreply.github.com": {
+    "login": "SiaoZeng",
+    "comment": "PR #107344 re-author credit"
+  },
+  "189606558+GoldenLoaf24h@users.noreply.github.com": {
+    "login": "GoldenLoaf24h"
+  },
+  "1908937833@qq.com": {
+    "login": "EMT5320"
+  },
+  "1940428933@qq.com": {
+    "login": "re-ITRT"
+  },
+  "195337306+0xGr1mm@users.noreply.github.com": {
+    "login": "0xGr1mm"
+  },
+  "19623185@std.stei.itb.ac.id": {
+    "login": "himanusia"
+  },
+  "19729650+djsanchezsuarez@users.noreply.github.com": {
+    "login": "djsanchezsuarez",
+    "comment": "PR #112598 salvage"
+  },
+  "1littlecoder@gmail.com": {
+    "login": "amrrs",
+    "comment": "PR #28253 salvage (Nebius Token Factory provider)"
+  },
+  "2025hcsmile2010@gmail.com": {
+    "login": "2025hcsmile2010-hue"
+  },
+  "203146215+monerostar@users.noreply.github.com": {
+    "login": "monerostar",
+    "comment": "PR #71590 salvage"
+  },
+  "205820855+MrMongstad@users.noreply.github.com": {
+    "login": "MrMongstad",
+    "comment": "PR #112200 co-credit"
+  },
+  "2091538824thx@gmail.com": {
+    "login": "SacrEllfarch",
+    "comment": "PR #69824 superseded by #115851"
+  },
+  "209938808+Danielmuzology@users.noreply.github.com": {
+    "login": "Danielmuzology",
+    "comment": "PR #81957 salvage (#79859)"
+  },
+  "210261288+Christopher-Schulze@users.noreply.github.com": {
+    "login": "Christopher-Schulze",
+    "comment": "PR #85806 salvage"
+  },
+  "21045213+imgali@users.noreply.github.com": {
+    "login": "imgali"
+  },
+  "214786078+gaoanze888@users.noreply.github.com": {
+    "login": "gaoanze888",
+    "comment": "PR #106223 co-author"
+  },
+  "215755014+Stoltemberg@users.noreply.github.com": {
+    "login": "Stoltemberg"
+  },
+  "217837358+Xipong@users.noreply.github.com": {
+    "login": "Xipong",
+    "comment": "PR #92488 / #76370 salvage"
+  },
+  "218190424+keeltrace@users.noreply.github.com": {
+    "login": "keeltrace"
+  },
+  "221849497+PeaceMaker-best@users.noreply.github.com": {
+    "login": "PeaceMaker-best"
+  },
+  "222165401+Sahilvishnaliya@users.noreply.github.com": {
+    "login": "Sahilvishnaliya",
+    "comment": "PR #102332 salvage"
+  },
+  "222331716+CoLaOnline@users.noreply.github.com": {
+    "login": "CoLaOnline",
+    "comment": "PR #88612 / #92765 first submitters of the RFC 9207 iss relay"
+  },
+  "225291640+camaleonidas@users.noreply.github.com": {
+    "login": "camaleonidas",
+    "comment": "PR #68452 salvage"
+  },
+  "225523158+h4ck200711@users.noreply.github.com": {
+    "login": "h4ck200711",
+    "comment": "PR #66995 salvage"
+  },
+  "2319582736@qq.com": {
+    "login": "Liuzikaii",
+    "comment": "PR #97265 salvage"
+  },
+  "232201106@qq.com": {
+    "login": "xenodmc"
+  },
+  "239388517+100yenadmin@users.noreply.github.com": {
+    "login": "100yenadmin",
+    "comment": "PR #126307 salvage"
+  },
+  "2418548+markoub@users.noreply.github.com": {
+    "login": "markoub",
+    "comment": "PR #51097 C16 salvage"
+  },
+  "2436887475@qq.com": {
+    "login": "weisiwu"
+  },
+  "24758295+StanleyStetson@users.noreply.github.com": {
+    "login": "StanleyStetson",
+    "comment": "PR #101678 salvage"
+  },
+  "24831723+anpicasso@users.noreply.github.com": {
+    "login": "anpicasso",
+    "comment": "oc-free-provider catalog submission"
+  },
+  "249166551+wliu-dev@users.noreply.github.com": {
+    "login": "wliu-dev"
+  },
+  "252427329+rodricksz4h5@users.noreply.github.com": {
+    "login": "rodricksz4h5",
+    "comment": "PR #118054 salvage"
+  },
+  "260355617@qq.com": {
+    "login": "loulanyue",
+    "comment": "PR #75732 successor to #71997"
+  },
+  "262373281+vexclawx31@users.noreply.github.com": {
+    "login": "vexclawx31",
+    "comment": "PR #33215 salvage"
+  },
+  "269728612+metamon-p@users.noreply.github.com": {
+    "login": "metamon-p",
+    "comment": "PR #36220 salvage (channel continuity hint)"
+  },
+  "272618364+MaxFreedomPollard@users.noreply.github.com": {
+    "login": "MaxFreedomPollard",
+    "comment": "PR #55643"
+  },
+  "273605138+jahfaliabdulrahman-dev@users.noreply.github.com": {
+    "login": "jahfaliabdulrahman-dev",
+    "comment": "PR attribution fix"
+  },
+  "275831447+maff-t2b@users.noreply.github.com": {
+    "login": "maff-t2b"
+  },
+  "285090322+willfrombr@users.noreply.github.com": {
+    "login": "willfrombr",
+    "comment": "PR #88612 / #92765 first submitters of the RFC 9207 iss relay"
+  },
+  "285329547+xaviersudre@users.noreply.github.com": {
+    "login": "xaviersudre"
+  },
+  "286182457+Da7-Tech@users.noreply.github.com": {
+    "login": "Da7-Tech",
+    "comment": "PR #60420 salvage"
+  },
+  "290877921+pprism13@users.noreply.github.com": {
+    "login": "pprism13",
+    "comment": "PR #41071 salvage"
+  },
+  "29206394@users.noreply.github.com": {
+    "login": "29206394",
+    "comment": "PR #110632 salvage (file-safety: exempt the PULSE root under a named profile)"
+  },
+  "293811298+chenfeijiang95-ui@users.noreply.github.com": {
+    "login": "chenfeijiang95-ui"
+  },
+  "29462570+jordan-thirkle@users.noreply.github.com": {
+    "login": "jordan-thirkle",
+    "comment": "PR #104017 salvage"
+  },
+  "296402666+ciabata-git@users.noreply.github.com": {
+    "login": "ciabata-git",
+    "comment": "PR #96011 author email preserved by PR #97330"
+  },
+  "298902573+pierrenode@users.noreply.github.com": {
+    "login": "pierrenode",
+    "comment": "PR #84168 salvage"
+  },
+  "30048192+mheals@users.noreply.github.com": {
+    "login": "mheals",
+    "comment": "PR #123039 salvage (bundle-skew lazy-fetch test)"
+  },
+  "301893261+sagitario-jpn@users.noreply.github.com": {
+    "login": "sagitario-jpn",
+    "comment": "PR #62023 salvage"
+  },
+  "30426178+Wenfengcheng@users.noreply.github.com": {
+    "login": "Wenfengcheng"
+  },
+  "3115763429@qq.com": {
+    "login": "WeiYusc"
+  },
+  "311904754+yoyodine-industries@users.noreply.github.com": {
+    "login": "yoyodine-industries",
+    "comment": "PR #106110 salvage"
+  },
+  "314574126@qq.com": {
+    "login": "ArcherQAQ"
+  },
+  "320556551+ca-shrimp@users.noreply.github.com": {
+    "login": "ca-shrimp",
+    "comment": "Inspired by PR 104774"
+  },
+  "321112755+misschloedupont@users.noreply.github.com": {
+    "login": "misschloedupont",
+    "comment": "Earlier paused creation #94952"
+  },
+  "325334945+r3x443@users.noreply.github.com": {
+    "login": "r3x443"
+  },
+  "328204342+trnorga@users.noreply.github.com": {
+    "login": "trnorga",
+    "comment": "PR #108747 salvage"
+  },
+  "32961153+gauravsaxena1997@users.noreply.github.com": {
+    "login": "gauravsaxena1997",
+    "comment": "PR #48865 salvage (anthropic: OAuth sanitizer keeps the docs host; #48860)"
+  },
+  "33hodl@users.noreply.github.com": {
+    "login": "33hodl"
+  },
+  "355847+Frozen@users.noreply.github.com": {
+    "login": "frozen"
+  },
+  "3605840+Diaspar4u@users.noreply.github.com": {
+    "login": "Diaspar4u",
+    "comment": "PR #92440 salvage"
+  },
+  "387700378@qq.com": {
+    "login": "OmniaZ1"
+  },
+  "39646042+tarkilhk@users.noreply.github.com": {
+    "login": "tarkilhk",
+    "comment": "PR #123592 salvage (canonical provider URL keeps native discovery)"
+  },
+  "3Nya3@users.noreply.github.com": {
+    "login": "3Nya3"
+  },
+  "4083812+apoapostolov@users.noreply.github.com": {
+    "login": "apoapostolov"
+  },
+  "41980420+d31tcjg@users.noreply.github.com": {
+    "login": "d31tcjg",
+    "comment": "catalog PR #114112"
+  },
+  "42515890+OOOOOAO@users.noreply.github.com": {
+    "login": "OOOOOAO",
+    "comment": "PR #105610 salvage"
+  },
+  "42786356+pmaho@users.noreply.github.com": {
+    "login": "pmaho"
+  },
+  "431013+amitcse@users.noreply.github.com": {
+    "login": "amitcse",
+    "comment": "WhatsApp group-intake / LID salvage (#63416, #73465, #72592)"
+  },
+  "445481611@qq.com": {
+    "login": "kael-odin"
+  },
+  "4469382+etrisnanto@users.noreply.github.com": {
+    "login": "etrisnanto",
+    "comment": "PR #122936 duplicate-cluster credit (#122685; commit email is a localhost placeholder)"
+  },
+  "4496266+trevornk@users.noreply.github.com": {
+    "login": "trevornk",
+    "comment": "PR #117261 salvage"
+  },
+  "4578560@qq.com": {
+    "login": "ColrWei"
+  },
+  "46404230+peetteerr@users.noreply.github.com": {
+    "login": "peetteerr"
+  },
+  "4663659+orcunulutas@users.noreply.github.com": {
+    "login": "orcunulutas",
+    "comment": "PR #96467 salvage"
+  },
+  "4669583+badiyee85@users.noreply.github.com": {
+    "login": "badiyee85",
+    "comment": "catalog PR #113641"
+  },
+  "47825603+kokhlo@users.noreply.github.com": {
+    "login": "kokhlo",
+    "comment": "PR #118504 salvage (co-author)"
+  },
+  "48111293+larrypang@users.noreply.github.com": {
+    "login": "larrypang",
+    "comment": "PR #78958 salvage"
+  },
+  "48635783+ennheng@users.noreply.github.com": {
+    "login": "ennheng"
+  },
+  "48723787+chuenchen309@users.noreply.github.com": {
+    "login": "chuenchen309",
+    "comment": "PR #62915 salvage"
+  },
+  "50810385+tigercraft4@users.noreply.github.com": {
+    "login": "tigercraft4",
+    "comment": "PR #74468 salvage"
+  },
+  "51525286+Synero@users.noreply.github.com": {
+    "login": "Synero"
+  },
+  "51828767+itnkr@users.noreply.github.com": {
+    "login": "itnkr",
+    "comment": "PR #39130 / #83981 salvage"
+  },
+  "5318600+Willhong@users.noreply.github.com": {
+    "login": "Willhong",
+    "comment": "ACP empty-session prevention salvaged from #104726"
+  },
+  "5318happy@users.noreply.github.com": {
+    "login": "happy5318",
+    "comment": "PR #124086 salvage"
+  },
+  "55nx954gn6-debug@users.noreply.github.com": {
+    "login": "55nx954gn6-debug"
+  },
+  "56281588+LevSky22@users.noreply.github.com": {
+    "login": "LevSky22",
+    "comment": "PR #66069 salvage"
+  },
+  "5716896+NoTimeforInfinity@users.noreply.github.com": {
+    "login": "NoTimeforInfinity",
+    "comment": "GitHub account id 5716896; replay/restart contribution credit"
+  },
+  "57474+albert748@users.noreply.github.com": {
+    "login": "albert748",
+    "comment": "PR #104444 salvage"
+  },
+  "582149912@qq.com": {
+    "login": "GarlicGo"
+  },
+  "602028@ky-tech.com.cn": {
+    "login": "baihemax"
+  },
+  "604maestro@protonmail.com": {
+    "login": "xkam7ar"
+  },
+  "60716910+DECRUX9812@users.noreply.github.com": {
+    "login": "DECRUX9812",
+    "comment": "PR #114735 salvage (remove keyless opencode-free provider)"
+  },
+  "6115107+686f6c61@users.noreply.github.com": {
+    "login": "686f6c61",
+    "comment": "PR #120235 salvage"
+  },
+  "61507425+Julientalbot@users.noreply.github.com": {
+    "login": "Julientalbot",
+    "comment": "PR #32777 / #108747 salvage"
+  },
+  "619963502@qq.com": {
+    "login": "zyz619963502zyz",
+    "comment": "PR #73449 salvage → #78815"
+  },
+  "6306739+s905060@users.noreply.github.com": {
+    "login": "s905060",
+    "comment": "PR #103857 salvage (Copilot Astra reasoning effort)"
+  },
+  "65798732+1052326311@users.noreply.github.com": {
+    "login": "1052326311"
+  },
+  "68141859@qq.com": {
+    "login": "lyswty"
+  },
+  "6892567+josephsellers@users.noreply.github.com": {
+    "login": "josephsellers"
+  },
+  "691156824@qq.com": {
+    "login": "dongxu0413"
+  },
+  "7121943+kvnloo@users.noreply.github.com": {
+    "login": "kvnloo",
+    "comment": "PR #110307 salvage (execute_code child PULSE_HOME under multiplex)"
+  },
+  "729922845@qq.com": {
+    "login": "TUARAN",
+    "comment": "PR #79007 salvage"
+  },
+  "805041391@qq.com": {
+    "login": "zhongwater123"
+  },
+  "807847218@qq.com": {
+    "login": "Tommy00748"
+  },
+  "83375058+kama-dev@users.noreply.github.com": {
+    "login": "kama-dev",
+    "comment": "catalog PR #115510"
+  },
+  "834563048@qq.com": {
+    "login": "david-bowiegxw",
+    "comment": "PR #52549 retains discovery test provenance from #53055"
+  },
+  "839141308@qq.com": {
+    "login": "rain610"
+  },
+  "840596168@qq.com": {
+    "login": "Bruce-anle"
+  },
+  "852938468@qq.com": {
+    "login": "SayHell0W0rld"
+  },
+  "8566250+crazyief@users.noreply.github.com": {
+    "login": "crazyief",
+    "comment": "PR #104619 empty credential requirements review"
+  },
+  "87degrees@87ui-Macmini.local": {
+    "login": "87degrees",
+    "comment": "PR #52923 salvage (slack ping/pong staleness)"
+  },
+  "89560945+carlotestor@users.noreply.github.com": {
+    "login": "carlotestor"
+  },
+  "9063726+Kyzcreig@users.noreply.github.com": {
+    "login": "Kyzcreig"
+  },
+  "91088196+MohamadKanso@users.noreply.github.com": {
+    "login": "MohamadKanso",
+    "comment": "PR #118406 salvage"
+  },
+  "91889514+jangomango76@users.noreply.github.com": {
+    "login": "jangomango76",
+    "comment": "PR #103321 salvage"
+  },
+  "92573950+RelaxJonh@users.noreply.github.com": {
+    "login": "RelaxJonh"
+  },
+  "92574114+JonthanaHanh@users.noreply.github.com": {
+    "login": "JonthanaHanh",
+    "comment": "PR #72429 salvage"
+  },
+  "93056348+Markgatcha@users.noreply.github.com": {
+    "login": "Markgatcha",
+    "comment": "catalog PR #113403"
+  },
+  "94931731+kylecap9@users.noreply.github.com": {
+    "login": "kylecap9",
+    "comment": "PR #124604 salvage"
+  },
+  "95100522+Jaiminp007@users.noreply.github.com": {
+    "login": "Jaiminp007",
+    "comment": "PR #109414 salvage"
+  },
+  "97578200+MongLong0214@users.noreply.github.com": {
+    "login": "MongLong0214",
+    "comment": "PR #122638 salvage"
+  },
+  "98612348+jwilson411@users.noreply.github.com": {
+    "login": "jwilson411",
+    "comment": "PR #104339 tests reused in the #91621 salvage"
+  },
+  "98722191+33hodl@users.noreply.github.com": {
+    "login": "33hodl",
+    "comment": "PR #111861 salvage"
+  },
+  "99405975+snipecoder@users.noreply.github.com": {
+    "login": "snipecoder",
+    "comment": "PR #102244 mechanism credit"
+  },
+  "Abdi.moya@gmail.com": {
+    "login": "AxDSan"
+  },
+  "Agi-Asi@users.noreply.github.com": {
+    "login": "Agi-Asi"
+  },
+  "Axmr1@users.noreply.github.com": {
+    "login": "Axmr1"
+  },
+  "B0on@users.noreply.github.com": {
+    "login": "B0on"
+  },
+  "BlackishGreen33@users.noreply.github.com": {
+    "login": "BlackishGreen33"
+  },
+  "BonesGit@local": {
+    "login": "BonesGit"
+  },
+  "BorgWrightpcalac@outlook.com": {
+    "login": "DevEverything01"
+  },
+  "BrokeSkill@users.noreply.github.com": {
+    "login": "BrokeSkill"
+  },
+  "BrunoBza@users.noreply.github.com": {
+    "login": "BrunoBza"
+  },
+  "Cheri8014@163.com": {
+    "login": "CheriWen"
+  },
+  "Christopher-Schulze@users.noreply.github.com": {
+    "login": "Christopher-Schulze"
+  },
+  "Cloeille@users.noreply.github.com": {
+    "login": "Cloeille"
+  },
+  "Collin.Snitchler@pm.me": {
+    "login": "ColDSnit",
+    "comment": "PR #93869 salvage"
+  },
+  "Cosmiclady@yandex.ru": {
+    "login": "Xipong",
+    "comment": "PR #109376 salvage via #126653"
+  },
+  "Cryptodombili@gmail.com": {
+    "login": "CryptoDombili"
+  },
+  "Cyrus@ThreeSixs-Mac-Mini.local": {
+    "login": "maff-t2b"
+  },
+  "DDU1222@users.noreply.github.com": {
+    "login": "0genlab"
+  },
+  "Daniel.lu@bionime.com": {
+    "login": "certaindaniel"
+  },
+  "DavidMetcalfe@users.noreply.github.com": {
+    "login": "DavidMetcalfe"
+  },
+  "E.Mettsler@gmail.com": {
+    "login": "EvgenyMettsler"
+  },
+  "EAbaracus@users.noreply.github.com": {
+    "login": "EAbaracus"
+  },
+  "Enough1122@users.noreply.github.com": {
+    "login": "Enough1122",
+    "comment": "PR #73592 salvage"
+  },
+  "Fernstaedtmarco@gmail.com": {
+    "login": "MarcoFernstaedt"
+  },
+  "Finn763@users.noreply.github.com": {
+    "login": "Finn763",
+    "comment": "PR #94971 (issue #94895) attribution mapping"
+  },
+  "Founder@adecubed.com": {
+    "login": "adecubed",
+    "comment": "PR #122782 catalog intake"
+  },
+  "HaisamAbbas@outlook.com": {
+    "login": "HaisamAbbas"
+  },
+  "HoneyTyagii@users.noreply.github.com": {
+    "login": "HoneyTyagii",
+    "comment": "Linux desktop launcher opt-out, salvage #101453"
+  },
+  "JLHunzicker@gmail.com": {
+    "login": "JackHunzicker",
+    "comment": "PR #98371 salvage"
+  },
+  "JiaDe-Wu@users.noreply.github.com": {
+    "login": "JiaDe-Wu",
+    "comment": "PR #98494 co-author"
+  },
+  "KHALIDagara@users.noreply.github.com": {
+    "login": "KHALIDagara"
+  },
+  "LauraGPT@users.noreply.github.com": {
+    "login": "LauraGPT"
+  },
+  "Lesnak1@users.noreply.github.com": {
+    "login": "Lesnak1"
+  },
+  "MH284934@fi365.ort.edu.uy": {
+    "login": "mathiashuque"
+  },
+  "MaxFreedomPollard@users.noreply.github.com": {
+    "login": "MaxFreedomPollard"
+  },
+  "Nagisa-3000@users.noreply.github.com": {
+    "login": "Nagisa-3000",
+    "comment": "PR #123849 salvage"
+  },
+  "Nikola@PlayForm.Cloud": {
+    "login": "NikolaRHristov"
+  },
+  "Olympus.roots@outlook.com": {
+    "login": "olympusbuildz"
+  },
+  "Paolo@Dylans-Mac-Studio.local": {
+    "login": "dromai"
+  },
+  "PavelTajdus@users.noreply.github.com": {
+    "login": "PavelTajdus"
+  },
+  "PixelAlchemist4@users.noreply.github.com": {
+    "login": "PixelAlchemist4",
+    "comment": "PR #113002"
+  },
+  "RaviTharuma@users.noreply.github.com": {
+    "login": "RaviTharuma"
+  },
+  "Regina@Andreys-Mac-mini.local": {
+    "login": "Rival"
+  },
+  "RichardGuan1@users.noreply.github.com": {
+    "login": "RichardGuan1"
+  },
+  "Rolf_greger@web.de": {
+    "login": "Goitonthefloor"
+  },
+  "RyderFreeman4Logos@gmail.com": {
+    "login": "aider4ryder"
+  },
+  "StanleyStetson@users.noreply.github.com": {
+    "login": "StanleyStetson"
+  },
+  "Steven.Leath@gmail.com": {
+    "login": "Leathal1",
+    "comment": "PR #69711 salvage (deps: pyasn1 0.6.4)"
+  },
+  "Synero@users.noreply.github.com": {
+    "login": "Synero"
+  },
+  "TEDLANHAM@GMAIL.COM": {
+    "login": "Backroads4Me"
+  },
+  "TomAce7@users.noreply.github.com": {
+    "login": "TomAce7"
+  },
+  "Totoro-qaq@users.noreply.github.com": {
+    "login": "Totoro-qaq"
+  },
+  "Treytucker05@users.noreply.github.com": {
+    "login": "Treytucker05"
+  },
+  "Ufonik88@users.noreply.github.com": {
+    "login": "Ufonik88"
+  },
+  "Vocllum@users.noreply.github.com": {
+    "login": "Vocllum",
+    "comment": "PR #117386 (plugin catalog)"
+  },
+  "Wenfengcheng@users.noreply.github.com": {
+    "login": "Wenfengcheng"
+  },
+  "WojtekMR3@users.noreply.github.com": {
+    "login": "WojtekMR3"
+  },
+  "XiaoZAZA@users.noreply.github.com": {
+    "login": "XiaoZAZA"
+  },
+  "YLChen-007@users.noreply.github.com": {
+    "login": "YLChen-007"
+  },
+  "Zioywishing@users.noreply.github.com": {
+    "login": "Zioywishing",
+    "comment": "PR #35705 salvage"
+  },
+  "ZishiW@users.noreply.github.com": {
+    "login": "ZishiW"
+  },
+  "Zoeille@users.noreply.github.com": {
+    "login": "Cloeille"
+  },
+  "ZundamonnoVRChatkaisetu@users.noreply.github.com": {
+    "login": "ZundamonnoVRChatkaisetu",
+    "comment": "PR #62821 salvage"
+  },
+  "[email protected]": {
+    "login": "Ahmett101"
+  },
+  "a.dltorreruiz@gmail.com": {
+    "login": "4dlt",
+    "comment": "PR #98135 attribution repair"
+  },
+  "a.majuskel@gmail.com": {
+    "login": "Sonnenwerk"
+  },
+  "a.neyman17@gmail.com": {
+    "login": "aneym"
+  },
+  "a.weiker@sap.com": {
+    "login": "aweiker"
+  },
+  "a2chitect@users.noreply.github.com": {
+    "login": "A2chitect"
+  },
+  "a9@A9deMac-mini.local": {
+    "login": "75day"
+  },
+  "a@l": {
+    "login": "yingliang-zhang",
+    "comment": "attribution repair: commits authored with misconfigured local identity (a@l) belong to yingliang-zhang"
+  },
+  "a_espinosa@live.com": {
+    "login": "a-espinoza"
+  },
+  "aakash.j.abraham@gmail.com": {
+    "login": "nyx573",
+    "comment": "PR #102639 salvage (OpenRouter OAuth PKCE)"
+  },
+  "aakash@plasticlabs.ai": {
+    "login": "akattelu"
+  },
+  "aameobius@gmail.com": {
+    "login": "francialisomlimoeiro",
+    "comment": "PR #82682 salvage (cron: load .env on no_agent path + delivery error diagnostics)"
+  },
+  "abcdjmm970703@gmail.com": {
+    "login": "JabberELF"
+  },
+  "abdulsalamalotaibi86@gmail.com": {
+    "login": "carbongotfound"
+  },
+  "abhi@adspirer.com": {
+    "login": "amekala"
+  },
+  "abtion@outlook.com": {
+    "login": "gitabtion"
+  },
+  "actualrat1984@users.noreply.github.com": {
+    "login": "actualrat1984"
+  },
+  "ada.a0uew@56.pt": {
+    "login": "Arguably1341"
+  },
+  "adam@adamking.me": {
+    "login": "adamking77"
+  },
+  "adam@exo.ai": {
+    "login": "adurham"
+  },
+  "adamfortuna1324@gmail.com": {
+    "login": "0xAdamFortuna"
+  },
+  "aditya@cybersapien.xyz": {
+    "login": "the-cybersapien",
+    "comment": "PR #122886 catalog intake"
+  },
+  "adleapnet@users.noreply.github.com": {
+    "login": "adleapnet",
+    "comment": "PR #114834"
+  },
+  "admin@diaoan.xyz": {
+    "login": "DI404N"
+  },
+  "admin@hankookdnt.com": {
+    "login": "jslee-gif"
+  },
+  "adria.arrufat@gmail.com": {
+    "login": "arrufat",
+    "comment": "PR #99312 Lightpanda Browser Use engine"
+  },
+  "adrian.soto6@gmail.com": {
+    "login": "adriansotomora",
+    "comment": "PR #58831 salvage"
+  },
+  "adybag14@gmail.com": {
+    "login": "adybag14-cyber",
+    "comment": "PR #85606 (fix(termux): respect APT-managed installs)"
+  },
+  "afgl_mk93@icloud.com": {
+    "login": "TMShiroiko",
+    "comment": "PR #81851 salvage (compression: preserve live tail before snapshot adoption)"
+  },
+  "afournier@nvidia.com": {
+    "login": "afourniernv"
+  },
+  "afu@openclaw.local": {
+    "login": "NealZhouPanda"
+  },
+  "agent@agents-Mac-mini.local": {
+    "login": "momomojo"
+  },
+  "agent@dynamicagency.com": {
+    "login": "agentdynamic",
+    "comment": "PR #92413 salvage"
+  },
+  "agent@openclaw.local": {
+    "login": "liusencomic-cyber"
+  },
+  "agent@pulse.dev": {
+    "login": "webtecnica"
+  },
+  "agent@pulseresearch.com": {
+    "login": "ethernet8023"
+  },
+  "agentai891@gmail.com": {
+    "login": "0xalydev",
+    "comment": "PR #103581 salvage"
+  },
+  "agents@joinsensie.com": {
+    "login": "Sensie-agents",
+    "comment": "PR #65150 salvage (deps: lazy dependency floors)"
+  },
+  "ahamoudhy@gmail.com": {
+    "login": "addelh"
+  },
+  "ahisblessed@users.noreply.github.com": {
+    "login": "ahisblessed",
+    "comment": "PR #121591 salvage (/model picker probes model.base_url)"
+  },
+  "ahmadalfakeh973@gmail.com": {
+    "login": "PLASMA-FR"
+  },
+  "ahmedaboalayoun0016k@gmail.com": {
+    "login": "fotedev"
+  },
+  "ahmedmoro@gmail.com": {
+    "login": "morolab",
+    "comment": "v0.20.0 audit: co-author on #70870 (Arabic locale)"
+  },
+  "ahmetsonersancak@anadolu.edu.tr": {
+    "login": "0xGr1mm"
+  },
+  "ahraz.arifuddin@gmail.com": {
+    "login": "ahrazzle"
+  },
+  "aintworth@users.noreply.github.com": {
+    "login": "Aintworth"
+  },
+  "aj@recursant.ai": {
+    "login": "ajensenwaud"
+  },
+  "ajadvw@icloud.com": {
+    "login": "AVW7"
+  },
+  "ajbmachon2@gmail.com": {
+    "login": "ajbmachon"
+  },
+  "ajfasano@gmail.com": {
+    "login": "eyeonall"
+  },
+  "ajzrva@gmail.com": {
+    "login": "ajzrva-sys"
+  },
+  "akasilvernine@gmail.com": {
+    "login": "SilverNine",
+    "comment": "perf salvage"
+  },
+  "akitani@akitaninoMac-mini.local": {
+    "login": "2001Y"
+  },
+  "akshankrithick305@gmail.com": {
+    "login": "akshan-main",
+    "comment": "v0.20.0 audit: co-author on #72244 (/goal indicator)"
+  },
+  "akulayash1996@gmail.com": {
+    "login": "buffpesos",
+    "comment": "PR #75808"
+  },
+  "alan.harman-box@burningsuit.co.uk": {
+    "login": "AlanBurningsuit",
+    "comment": "PR #95043"
+  },
+  "alanrbox@gmail.com": {
+    "login": "AlanBurningsuit"
+  },
+  "alberto@localhost": {
+    "login": "meviusisback",
+    "comment": "PR #113251"
+  },
+  "alcibiades.eth@protonmail.com": {
+    "login": "0xAlcibiades"
+  },
+  "alcookephilly@gmail.com": {
+    "login": "alcookephilly-lgtm"
+  },
+  "aleks.clark@gmail.com": {
+    "login": "aleksclark"
+  },
+  "alex-secure@tuta.io": {
+    "login": "AlexxRussell"
+  },
+  "alex.gazzillo@gmail.com": {
+    "login": "AlexGabbia"
+  },
+  "alex.moreno161100@gmail.com": {
+    "login": "amoreno16003"
+  },
+  "alex@gunsberg.fi": {
+    "login": "alexgunsberg"
+  },
+  "alex@odbo.co": {
+    "login": "alex107ivanov",
+    "comment": "PR #103889 salvage"
+  },
+  "alexander.prendota@gmail.com": {
+    "login": "AlexanderPrendota"
+  },
+  "alexgong7@outlook.com": {
+    "login": "ag9920"
+  },
+  "alimbaydoun@gmail.com": {
+    "login": "alimbaydoun"
+  },
+  "almurat@Almurats-MacBook-Pro.local": {
+    "login": "Almurat123"
+  },
+  "alvaro.sanchez-mariscal@oracle.com": {
+    "login": "alvarosanchez",
+    "comment": "PR #44797 salvage (dashboard TUI Python environment parity)"
+  },
+  "alzilla22@gmail.com": {
+    "login": "AL-ZiLLA"
+  },
+  "amansk@gmail.com": {
+    "login": "amansk",
+    "comment": "PR #96608 (desktop: failure-atomic gateway downloads, #96597)"
+  },
+  "amdnative@gmail.com": {
+    "login": "adurham"
+  },
+  "anablancovicente@hotmail.es": {
+    "login": "anablancovicente",
+    "comment": "PR #117436 ard-kit catalog"
+  },
+  "anatolij.laptev.1991@gmail.com": {
+    "login": "anatolijlaptev1991-ctrl"
+  },
+  "and@appz.cloud": {
+    "login": "logical-and"
+  },
+  "andreausderhood@gmail.com": {
+    "login": "andreausderhood"
+  },
+  "andrew.lg.ford@gmail.com": {
+    "login": "algf"
+  },
+  "andrewkang.kr@gmail.com": {
+    "login": "andrewkangkr",
+    "comment": "PR #103329 salvage"
+  },
+  "andrewwikel@gmail.com": {
+    "login": "slash1andy",
+    "comment": "PR #88217 salvage"
+  },
+  "andrexibiza@gmail.com": {
+    "login": "andrexibiza"
+  },
+  "andy.loafoe@gmail.com": {
+    "login": "loafoe"
+  },
+  "andy@andydeMac-mini-2.local": {
+    "login": "Hangzian"
+  },
+  "angeon922@gmail.com": {
+    "login": "angeon922-collab"
+  },
+  "aniruddhaadak80@gmail.com": {
+    "login": "aniruddhaadak80"
+  },
+  "ankitsingh@MacBookAir.lan": {
+    "login": "Anxious-Research",
+    "comment": "Brain v4 — local development identity (macOS hostname address)"
+  },
+  "ankitsingh@users.noreply.github.com": {
+    "login": "Anxious-Research",
+    "comment": "Brain v4 prospective memory (PR #11)"
+  },
+  "anmounsi01@gmail.com": {
+    "login": "anuiit"
+  },
+  "anoop.mehendale@gmail.com": {
+    "login": "anoopmehendale-cue",
+    "comment": "PR #69007 salvage"
+  },
+  "anpicasso.r@gmail.com": {
+    "login": "anpicasso",
+    "comment": "catalog PR #115219"
+  },
+  "anpicasso@users.noreply.github.com": {
+    "login": "anpicasso",
+    "comment": "PR #115220"
+  },
+  "anthony.ai.assistant@gmail.com": {
+    "login": "AnthonyFrancis"
+  },
+  "anthony@franciscofrancisco.com": {
+    "login": "Ivyleaguelawyer"
+  },
+  "anton.vykhovanets@icloud.com": {
+    "login": "vykhovanets",
+    "comment": "PR #68621 salvage"
+  },
+  "anuoluwakolapo94@gmail.com": {
+    "login": "Svector-anu"
+  },
+  "anuvrat.rastogi@sap.com": {
+    "login": "anuvratrastogi"
+  },
+  "apoapostolov@users.noreply.github.com": {
+    "login": "apoapostolov",
+    "comment": "PR #117192 cdp-manager"
+  },
+  "arccat114@gmail.com": {
+    "login": "arccat-114"
+  },
+  "ariel@vortexradar.com": {
+    "login": "vortexopenclaw"
+  },
+  "armaandhawan61@gmail.com": {
+    "login": "VIVAAN-DHAWAN",
+    "comment": "PR #66626 salvage"
+  },
+  "armandasvaicikauskas@protonmail.com": {
+    "login": "armandokun"
+  },
+  "artiefisher123@gmail.com": {
+    "login": "Shotflame"
+  },
+  "asaxinw@gmail.com": {
+    "login": "PINKIIILQWQ",
+    "comment": "PR #42858 salvage (#106437, archive terminates worker)"
+  },
+  "asscan@189.cn": {
+    "login": "asscan"
+  },
+  "assiri@gmail.com": {
+    "login": "3ssiri",
+    "comment": "v0.20.0 audit: co-author on #70870 (Arabic locale)"
+  },
+  "at@aisec.co.il": {
+    "login": "toomij99"
+  },
+  "atakan1705@hotmail.com": {
+    "login": "AtakanGs"
+  },
+  "atesabdulkadir@outlook.com.tr": {
+    "login": "kadiratesdev"
+  },
+  "athena@olympus.local": {
+    "login": "Mengchee118"
+  },
+  "aurelien.gek@gmail.com": {
+    "login": "aurel282",
+    "comment": "PR #111886 (telegram: post-send typing re-arm off the event loop)"
+  },
+  "austinpickett@users.noreply.github.com": {
+    "login": "austinpickett",
+    "comment": "PR #67730 salvage of #67643"
+  },
+  "awain7@gmail.com": {
+    "login": "awain7",
+    "comment": "PR #58261 salvage"
+  },
+  "aydinhrrs@gmail.com": {
+    "login": "RibatTRW"
+  },
+  "aydnoktay@users.noreply.github.com": {
+    "login": "aydnOktay",
+    "comment": "catalog PR #119012"
+  },
+  "ayoub@gmail.com": {
+    "login": "Black0Fox0"
+  },
+  "ayushnangia16@gmail.com": {
+    "login": "ayushnangia"
+  },
+  "azureuser@Main.n1l05aasmpie5onxhehb5y5gra.lx.internal.cloudapp.net": {
+    "login": "AgenticSpark"
+  },
+  "b.sencan@equalsmoney.com": {
+    "login": "isair"
+  },
+  "b2089766906@gmail.com": {
+    "login": "b2089766906-droid"
+  },
+  "back1992@users.noreply.github.com": {
+    "login": "back1992",
+    "comment": "PR #111371 salvage"
+  },
+  "badiyee85@users.noreply.github.com": {
+    "login": "badiyee85",
+    "comment": "catalog PR #113641"
+  },
+  "baleian90@gmail.com": {
+    "login": "baleian"
+  },
+  "bash@opencode.itc.local": {
+    "login": "bashrusakh"
+  },
+  "baslam@users.noreply.github.com": {
+    "login": "hkfiberlaser-svg"
+  },
+  "bb@users.noreply.github.com": {
+    "login": "OutThisLife"
+  },
+  "bbasketballer75@gmail.com": {
+    "login": "bbasketballer75",
+    "comment": "PR #69864, #73857 salvage (deps: npm advisories)"
+  },
+  "bca491935@gmail.com": {
+    "login": "xjsns346"
+  },
+  "bear@bearhuddleston.dev": {
+    "login": "BearHuddleston"
+  },
+  "bedirhancode@users.noreply.github.com": {
+    "login": "bedirhancode"
+  },
+  "beingsabundant@gmail.com": {
+    "login": "abundantbeing"
+  },
+  "ben.ross@moov.io": {
+    "login": "bpross",
+    "comment": "PR #29541 salvage"
+  },
+  "ben@ben-phillips.net": {
+    "login": "tavva"
+  },
+  "ben@whetstone.com.au": {
+    "login": "bennybuoy"
+  },
+  "benawad@bens-mbp.attlocal.net": {
+    "login": "benawad",
+    "comment": "PR #103352 salvage (codex thread/resume)"
+  },
+  "benbrumbaugh@gmail.com": {
+    "login": "benjaminbrumbaugh"
+  },
+  "benjamin-liang@outlook.com": {
+    "login": "n1majne3"
+  },
+  "benjamin2026-dot@users.noreply.github.com": {
+    "login": "benjamin2026-dot"
+  },
+  "benjaminperry6@yahoo.fr": {
+    "login": "benperry6",
+    "comment": "PR #97330 author email"
+  },
+  "bennybuoy@users.noreply.github.com": {
+    "login": "bennybuoy"
+  },
+  "benoit.lavenier@e-is.pro": {
+    "login": "benoit.lavenier@e-is.pro"
+  },
+  "bensheridanedwards@gmail.com": {
+    "login": "BenSheridanEdwards",
+    "comment": "PR #68535 (stt: xAI OAuth retry)"
+  },
+  "benyovszky.mate.work@outlook.com": {
+    "login": "matebenyovszky"
+  },
+  "beplee@users.noreply.github.com": {
+    "login": "beplee"
+  },
+  "berkantay.5@gmail.com": {
+    "login": "berkantay"
+  },
+  "bermasunita6@gmail.com": {
+    "login": "cosin2077"
+  },
+  "berseth.j@gmail.com": {
+    "login": "AlphaPerseii3000"
+  },
+  "betodepaola@meta.com": {
+    "login": "albertodepaola"
+  },
+  "bezerra@live.com": {
+    "login": "lipebez",
+    "comment": "PR #104728 salvage"
+  },
+  "bgwillwork@outlook.com": {
+    "login": "BGwill-OUTLOOK",
+    "comment": "PR #102721 fallback slice"
+  },
+  "bheji07@gmail.com": {
+    "login": "bheji07"
+  },
+  "bill3wits@gmail.com": {
+    "login": "bill3wits"
+  },
+  "binshaogg@gmail.com": {
+    "login": "Heybinshao",
+    "comment": "PR #117660 (plugin catalog)"
+  },
+  "biz@topherross.com": {
+    "login": "thebizfixer"
+  },
+  "bkashjee@gmail.com": {
+    "login": "BkashJEE"
+  },
+  "bkashjee@users.noreply.github.com": {
+    "login": "BkashJEE"
+  },
+  "bmtrnavsky@msn.com": {
+    "login": "bmtrnavsky"
+  },
+  "boni.alessandro997@gmail.com": {
+    "login": "sandrohub013",
+    "comment": "buzz durable channel cursors (#90464)"
+  },
+  "borje@dqsverige.se": {
+    "login": "diffen77",
+    "comment": "PR #66547 salvage"
+  },
+  "bot@bkstock.dev": {
+    "login": "BKStock"
+  },
+  "botuser@Farrens-MacBook-Air.local": {
+    "login": "03farren"
+  },
+  "boumagent@gmail.com": {
+    "login": "patp"
+  },
+  "bradmarshall987@users.noreply.github.com": {
+    "login": "bradmarshall987"
+  },
+  "brandan@wrengineers.com": {
+    "login": "dankkush",
+    "comment": "PR #111472 salvage"
+  },
+  "brdpedroo@gmail.com": {
+    "login": "Pebrd",
+    "comment": "v0.20.0 audit: author on #74245 (pinned Telegram sessions)"
+  },
+  "breakout@protonmail.com": {
+    "login": "repfigit"
+  },
+  "brian717fr@gmail.com": {
+    "login": "brian717"
+  },
+  "brian@brianle.xyz": {
+    "login": "0xble",
+    "comment": "Credential-pool CLI operations salvage"
+  },
+  "brian@bsweatt.com": {
+    "login": "brian717"
+  },
+  "brianbaldock@gmail.com": {
+    "login": "brianbaldock"
+  },
+  "briansangapta@gmail.com": {
+    "login": "z0zero"
+  },
+  "brice@brice.net": {
+    "login": "bricelb"
+  },
+  "brin@shadewaterlabs.com": {
+    "login": "BrinShadewater",
+    "comment": "PR #82146"
+  },
+  "brinshadewater@gmail.com": {
+    "login": "BrinShadewater"
+  },
+  "brooklyn@Brooklyns-MacBook-Air.local": {
+    "login": "OutThisLife"
+  },
+  "brooklyn@brooklyn.sh": {
+    "login": "OutThisLife"
+  },
+  "brooklyn@pulseresearch.com": {
+    "login": "OutThisLife"
+  },
+  "brucex2710@gmail.com": {
+    "login": "brucexu-eth"
+  },
+  "brucexu-eth@users.noreply.github.com": {
+    "login": "brucexu-eth"
+  },
+  "brunopira@gmail.com": {
+    "login": "brunopirz"
+  },
+  "bsbofmusic@users.noreply.github.com": {
+    "login": "bsbofmusic"
+  },
+  "builder@phoebie.local": {
+    "login": "phoebsie"
+  },
+  "bwtsafedevstests@proton.me": {
+    "login": "r00tedbrain-backup",
+    "comment": "PR #114932"
+  },
+  "byjaps@users.noreply.github.com": {
+    "login": "byjaps",
+    "comment": "PR #116425 fix(cli) plugin toolsets must not be flagged as unknown at startup"
+  },
+  "cad@arcabot.ai": {
+    "login": "arcabotai"
+  },
+  "caleb.deleeuw@gmail.com": {
+    "login": "SolshineCode",
+    "comment": "salvaged test authored by Caleb DeLeeuw (GitHub: SolshineCode), from fork PR #1 / upstream #73811"
+  },
+  "calvinnwq@gmail.com": {
+    "login": "calvinnwq",
+    "comment": "PR #119100 salvage"
+  },
+  "camil@edka.io": {
+    "login": "camilb",
+    "comment": "PR #89996 salvage"
+  },
+  "carl@carltaylor.com.au": {
+    "login": "ctaylor86"
+  },
+  "carl@sempervirens.no": {
+    "login": "carljborg"
+  },
+  "carlotestor@users.noreply.github.com": {
+    "login": "carlotestor"
+  },
+  "carnie-bot@openclaw.local": {
+    "login": "menhguin",
+    "comment": "agent bot from PR #82038"
+  },
+  "carrion256@proton.me": {
+    "login": "carrion256",
+    "comment": "v0.20.0 audit: co-author on #75888 (hindsight env 0600)"
+  },
+  "carstens.d@ajax.systems": {
+    "login": "Ufonik88"
+  },
+  "caseyrussell1976@gmail.com": {
+    "login": "SmelterLabs"
+  },
+  "cassie@omg.lol": {
+    "login": "acgh213"
+  },
+  "cation98@yahoo.com": {
+    "login": "cation98"
+  },
+  "cbabbmanage@gmail.com": {
+    "login": "Codyinked"
+  },
+  "ccowan190@icloud.com": {
+    "login": "ccowan93"
+  },
+  "cdepuy@users.noreply.github.com": {
+    "login": "cdepuy",
+    "comment": "PR #100072 salvage"
+  },
+  "centerid@naver.com": {
+    "login": "lidises",
+    "comment": "PR salvage of #47544"
+  },
+  "chancelu@users.noreply.github.com": {
+    "login": "chancelu"
+  },
+  "chaosxinglong@gmail.com": {
+    "login": "chaos-xxl"
+  },
+  "charan-rathore@users.noreply.github.com": {
+    "login": "charan-rathore",
+    "comment": "PR #124770 salvage"
+  },
+  "charleszhupc@126.com": {
+    "login": "Charlesmpc"
+  },
+  "chawit.pond@gmail.com": {
+    "login": "cswrld-net",
+    "comment": "PR #112791"
+  },
+  "checo520@outlook.com": {
+    "login": "sergioperezcheco"
+  },
+  "chelsealong@126.com": {
+    "login": "chelsealong"
+  },
+  "chengxizhou6@gmail.com": {
+    "login": "silence-de"
+  },
+  "chenjin@pulse.local": {
+    "login": "Enough1122",
+    "comment": "PR #66906 salvage"
+  },
+  "chenyang.yl@alibaba-inc.com": {
+    "login": "LiangYang666"
+  },
+  "chenzeyan54-commits@users.noreply.github.com": {
+    "login": "chenzeyan54-commits"
+  },
+  "cherrera73@gmail.com": {
+    "login": "kleros109"
+  },
+  "chikeokonta@gmail.com": {
+    "login": "see-k"
+  },
+  "chinmayrawat15@gmail.com": {
+    "login": "Chinmayrawat15"
+  },
+  "chris.bartholomew@vectorize.io": {
+    "login": "cdbartholomew",
+    "comment": "PR #75528 / #24676 salvage"
+  },
+  "chris@cuuush.com": {
+    "login": "cuuush"
+  },
+  "chris@scalelean.com": {
+    "login": "ScaleLeanChris"
+  },
+  "chrism@promethean-dynamic.com": {
+    "login": "cygnostik",
+    "comment": "catalog PR #114274"
+  },
+  "chrispompaemail@gmail.com": {
+    "login": "c-pompa"
+  },
+  "christos@despotak.is": {
+    "login": "despotak"
+  },
+  "chrisyoung2005@gmail.com": {
+    "login": "chrisyoung2005"
+  },
+  "chuenlye.leo@gmail.com": {
+    "login": "chuenlye"
+  },
+  "chugiacan@users.noreply.github.com": {
+    "login": "chugiacan",
+    "comment": "PR #111370 salvage"
+  },
+  "cicav@users.noreply.github.com": {
+    "login": "cicav"
+  },
+  "citizendev9c@users.noreply.github.com": {
+    "login": "citizendev9c"
+  },
+  "cjenkins@scacpa.org": {
+    "login": "cj52973"
+  },
+  "cjwang@sowork.tw": {
+    "login": "sowork-skills",
+    "comment": "PR #33224 salvage (slack: truncate edit_message to prevent msg_too_long)"
+  },
+  "ckorhonen@gmail.com": {
+    "login": "ckorhonen",
+    "comment": "PR #58981 OpenViking batching salvage"
+  },
+  "claude@hanamizuki.tw": {
+    "login": "hanamizuki"
+  },
+  "claudio@integra.com": {
+    "login": "claudiumio"
+  },
+  "claudioorjunior@gmail.com": {
+    "login": "claudioorjunior",
+    "comment": "catalog PR #115488"
+  },
+  "claw.8op8q@8alias.com": {
+    "login": "Zeus-Deus"
+  },
+  "cloimism@gmail.com": {
+    "login": "cloim"
+  },
+  "cluster2@Cluster2s-Mac-Studio.local": {
+    "login": "robgfl45"
+  },
+  "clyu168@126.com": {
+    "login": "clyu168"
+  },
+  "cmoiccool@users.noreply.github.com": {
+    "login": "cmoiccool",
+    "comment": "PR #84363 salvage (kanban: fix closed-DB crash in show)"
+  },
+  "codemastermilos@gmail.com": {
+    "login": "mmilutinovic371"
+  },
+  "coder@trevhome.local": {
+    "login": "trevornk"
+  },
+  "codexbt1@gmail.com": {
+    "login": "codexbt"
+  },
+  "coe0718+tuck@gmail.com": {
+    "login": "coe0718"
+  },
+  "coe0718@icloud.com": {
+    "login": "coe0718"
+  },
+  "coffee@coffeebot.dev": {
+    "login": "coffee-the-dev"
+  },
+  "colin@colingreig.com": {
+    "login": "colingreig"
+  },
+  "connorjosephblack@gmail.com": {
+    "login": "connorblack"
+  },
+  "contact@danteschrauwen.be": {
+    "login": "deinte",
+    "comment": "PR #101090 salvage (cron timezone-migration catch-up)"
+  },
+  "contact@eliebruno.com": {
+    "login": "eliemada"
+  },
+  "contact@grahfmusic.com": {
+    "login": "grahfmusic"
+  },
+  "contact@jonathanfeller.com": {
+    "login": "JonathanFeller",
+    "comment": "plugin-catalog: pulse-impossibl"
+  },
+  "contact@kavyro.com": {
+    "login": "Kavyrocom"
+  },
+  "contact@nytemode.com": {
+    "login": "NYTEMODEONLY"
+  },
+  "contato@webtecnica.com.br": {
+    "login": "webtecnica"
+  },
+  "content@tyfpro.com": {
+    "login": "tyfcontent"
+  },
+  "copii.list@gmail.com": {
+    "login": "stremtec"
+  },
+  "core@lfdm.co": {
+    "login": "LFDMcore"
+  },
+  "cot.ghw@gmail.com": {
+    "login": "cotghw",
+    "comment": "catalog PR #119019"
+  },
+  "crabbemaxim@gmail.com": {
+    "login": "MaximCrabbe"
+  },
+  "craig@shotflame.local": {
+    "login": "Shotflame"
+  },
+  "craigrichardson@Craigs-Mac-mini.local": {
+    "login": "CraigRichardsonRMPM",
+    "comment": "Inspired by PR 103735"
+  },
+  "crdesign8@hotmail.com": {
+    "login": "crdesign8"
+  },
+  "croycrabtree@gmail.com": {
+    "login": "PIR8-Software"
+  },
+  "cruzlxyz@gmail.com": {
+    "login": "cruzlxyz",
+    "comment": "catalog PR #111998"
+  },
+  "csreyes92@gmail.com": {
+    "login": "csreyes"
+  },
+  "cto@phrase.local": {
+    "login": "georgell-ceo"
+  },
+  "cursoragent@cursor.com": {
+    "login": "cursoragent"
+  },
+  "cwt@users.noreply.github.com": {
+    "login": "Wintle",
+    "comment": "PR #80293 salvage"
+  },
+  "cxxCoolStar@users.noreply.github.com": {
+    "login": "cxxCoolStar"
+  },
+  "cycorld.com@gmail.com": {
+    "login": "cycorld"
+  },
+  "d.araujo@tjrs.jus.br": {
+    "login": "DenisAraujo68",
+    "comment": "PR #111194 salvage into #116552"
+  },
+  "d.hermsmeier@mittwald.de": {
+    "login": "Hermsi1337"
+  },
+  "d@rko.rs": {
+    "login": "darko-mesaros"
+  },
+  "d@yiapanis.co": {
+    "login": "dyiapanis"
+  },
+  "daedalus@ang.ventures": {
+    "login": "daedalus-opus"
+  },
+  "dagardner@nvidia.com": {
+    "login": "dagardner-nv"
+  },
+  "dai.suzuki.829@gmail.com": {
+    "login": "hariNEzuMI928"
+  },
+  "damian.kluk.92@gmail.com": {
+    "login": "damiankluk"
+  },
+  "dan.brunsdon@gmail.com": {
+    "login": "brunz-me"
+  },
+  "dan@danbennett.me": {
+    "login": "DanBennettUK"
+  },
+  "daniel.blank@reportsolution.de": {
+    "login": "danielblankhh"
+  },
+  "daniel21436@hotmail.com": {
+    "login": "strzhao",
+    "comment": "PR #81214 adoption"
+  },
+  "daniel@9to5mac.com": {
+    "login": "journeydan"
+  },
+  "daniel@dasg.ltd": {
+    "login": "dasgltd",
+    "comment": "PR #91655 salvage"
+  },
+  "danielrpike9@gmail.com": {
+    "login": "Bartok9",
+    "comment": "PR #62757 adoption"
+  },
+  "dante32683@users.noreply.github.com": {
+    "login": "dante32683"
+  },
+  "darkneron@gmx.net": {
+    "login": "neron82"
+  },
+  "darrahman@users.noreply.github.com": {
+    "login": "DarRahman",
+    "comment": "catalog PR #118466"
+  },
+  "das7514@gmail.com": {
+    "login": "misterdas"
+  },
+  "dasilva.daniel6@gmail.com": {
+    "login": "Dannou"
+  },
+  "david@convergentdesign.dev": {
+    "login": "Triquetra",
+    "comment": "PR #122232 salvage"
+  },
+  "david@davidkarban.cz": {
+    "login": "davidkarban",
+    "comment": "PR #100256 salvage"
+  },
+  "david@davidtyler.rocks": {
+    "login": "curator8888"
+  },
+  "david@lexgenius.ai": {
+    "login": "lexgenius",
+    "comment": "v0.20.0 audit: co-author on #65798 (FTS schema v23)"
+  },
+  "dazhang@Davids-Mac-mini.local": {
+    "login": "ryrenz"
+  },
+  "dborodchuk@gmail.com": {
+    "login": "dborodchuk"
+  },
+  "dcdexhome@gmail.com": {
+    "login": "dcdexhome"
+  },
+  "deadczarvc@users.noreply.github.com": {
+    "login": "deadczarvc",
+    "comment": "PR #110470 salvage"
+  },
+  "deathxdefeat@users.noreply.github.com": {
+    "login": "deathxdefeat"
+  },
+  "deepujain@gmail.com": {
+    "login": "deepujain"
+  },
+  "degensmoke@gmail.com": {
+    "login": "TheSmokeDev",
+    "comment": "PR #66496 salvage"
+  },
+  "delacaola@users.noreply.github.com": {
+    "login": "delacaola",
+    "comment": "PR #114838 salvage"
+  },
+  "deltrak@icloud.com": {
+    "login": "delltrak",
+    "comment": "PR #121003 salvage"
+  },
+  "demerzel@pulse.local": {
+    "login": "aerbaser"
+  },
+  "denis.dresvyanskiy@liebherr.com": {
+    "login": "DresvyanskiyDenis",
+    "comment": "PR #115085 salvage (batch0919 L19)"
+  },
+  "denis.redozubov@gmail.com": {
+    "login": "dredozubov",
+    "comment": "PR #44753 salvage"
+  },
+  "deniska299@gmail.com": {
+    "login": "devarticle"
+  },
+  "derek.p.moore@gmail.com": {
+    "login": "derekm"
+  },
+  "deusyu@users.noreply.github.com": {
+    "login": "deusyu",
+    "comment": "PR #29923 salvage"
+  },
+  "dev@mikesoft.it": {
+    "login": "TheStreamCode"
+  },
+  "dev@pulseresearch.com": {
+    "login": "anxious-research"
+  },
+  "dev@redeyesolutions.dev": {
+    "login": "redsol-llc"
+  },
+  "dev@solovision.local": {
+    "login": "solovision24"
+  },
+  "developer.kj@gmail.com": {
+    "login": "DevKJ"
+  },
+  "developer@pranab.co.in": {
+    "login": "spranab",
+    "comment": "PR #122707 catalog intake"
+  },
+  "devin@cognition.ai": {
+    "login": "fatwang2"
+  },
+  "devops@77hub.com": {
+    "login": "TaoMasterCoder",
+    "comment": "PR #102808 salvage (header-damaged state.db in lost_and_found lane; #106667)"
+  },
+  "devops@sycamore.group": {
+    "login": "sycamoregroupltd"
+  },
+  "dhanesh@users.noreply.github.com": {
+    "login": "dhanesh",
+    "comment": "PR #90747 salvage (state.db repair durability) via #91852"
+  },
+  "dhravya@supermemory.com": {
+    "login": "Dhravya"
+  },
+  "dhruv.modi2345@gmail.com": {
+    "login": "Dhruv7201",
+    "comment": "PR #89923 salvage (vLLM output-cap convergence)"
+  },
+  "dhruv.raajjeev@gmail.com": {
+    "login": "dhruvraajeev"
+  },
+  "dhruvkejri9@gmail.com": {
+    "login": "dhruvkej9"
+  },
+  "diamantejc87@gmail.com": {
+    "login": "Zeraphim"
+  },
+  "diatche@gmail.com": {
+    "login": "diatche"
+  },
+  "dickson.neoh@gmail.com": {
+    "login": "dnth"
+  },
+  "dido.dim@gmail.com": {
+    "login": "didodim",
+    "comment": "PR #119444 salvage"
+  },
+  "diegomarino@users.noreply.github.com": {
+    "login": "diegomarino",
+    "comment": "PR #117522 (plugin catalog)"
+  },
+  "dillontownsel@gmail.com": {
+    "login": "dtownsel",
+    "comment": "PR #82130 adoption"
+  },
+  "dimar@wiseconnex.com": {
+    "login": "wiseconnex"
+  },
+  "dinmail@gmail.com": {
+    "login": "sahlbergalfred4-lgtm",
+    "comment": "PR #70003 salvage (deps: security-sensitive packages)"
+  },
+  "dixit.tanmay1995@gmail.com": {
+    "login": "tandixit95"
+  },
+  "djbclark@gmail.com": {
+    "login": "djbclark",
+    "comment": "PR #83843 salvage (#83714)"
+  },
+  "dmelkk-secondbrain@users.noreply.github.com": {
+    "login": "dmelkk-secondbrain"
+  },
+  "dnethusahan.h05@gmail.com": {
+    "login": "deaneeth"
+  },
+  "dombejar@users.noreply.github.com": {
+    "login": "dombejar"
+  },
+  "dominicbejar@gmail.com": {
+    "login": "dombejar"
+  },
+  "dominique.vidja@gmail.com": {
+    "login": "dominiquevidja"
+  },
+  "donald.superhub@gmail.com": {
+    "login": "doniocode",
+    "comment": "PR #25590 salvage (apiserver-stream)"
+  },
+  "dongjiang1989@126.com": {
+    "login": "dongjiang1989"
+  },
+  "doug.jennewein@gmail.com": {
+    "login": "djennewe",
+    "comment": "PR #89633 salvage"
+  },
+  "doug@buck.co": {
+    "login": "dougatbuck"
+  },
+  "dqdung205@gmail.com": {
+    "login": "QDung210"
+  },
+  "dresvyanskiydenis@gmail.com": {
+    "login": "DresvyanskiyDenis",
+    "comment": "PR #112192 salvage (co-author of #111709)"
+  },
+  "drew.tuzson@uqual.com": {
+    "login": "drewTuzson"
+  },
+  "drew@kainotomic.com": {
+    "login": "appletechie",
+    "comment": "PR #75298 salvage (#79491)"
+  },
+  "drichar@gmail.com": {
+    "login": "drichar"
+  },
+  "drissman@gmail.com": {
+    "login": "drissman",
+    "comment": "PR #82061 salvage (terminal: systemd scope session isolation fix)"
+  },
+  "drkpxl@users.noreply.github.com": {
+    "login": "drkpxl"
+  },
+  "dskwelmcy@163.com": {
+    "login": "dskwe",
+    "comment": "PR #123014 salvage (max-iteration summary prefix parity)"
+  },
+  "dstkwll@users.noreply.github.com": {
+    "login": "dstkwll"
+  },
+  "durgun.ismail@gmail.com": {
+    "login": "babatorik"
+  },
+  "dustin.persek@protonmail.com": {
+    "login": "dpersek"
+  },
+  "dzhen7454@gmail.com": {
+    "login": "GoldenLoaf24h"
+  },
+  "e-macgregor@users.noreply.github.com": {
+    "login": "e-macgregor"
+  },
+  "e2e@ikbi.test": {
+    "login": "RootZ3n"
+  },
+  "eagleyouxiang@gmail.com": {
+    "login": "eagle-nyp"
+  },
+  "eapwrk@gmail.com": {
+    "login": "Eapwrk"
+  },
+  "eazye19@users.noreply.github.com": {
+    "login": "eazye19"
+  },
+  "ebablick@hpc-gridware.com": {
+    "login": "ernst-bablick"
+  },
+  "ebulamicheal@gmail.com": {
+    "login": "Chukwuebuka-2003",
+    "comment": "PR #114410 salvage"
+  },
+  "eburlison@me.com": {
+    "login": "eliasburlison",
+    "comment": "PR #92060 salvage"
+  },
+  "eddie@eddiewang.me": {
+    "login": "eddiewang"
+  },
+  "edosulai@icloud.com": {
+    "login": "edosulai"
+  },
+  "edward@you.com": {
+    "login": "EdwardIrby"
+  },
+  "eeisenst@gmail.com": {
+    "login": "eisene",
+    "comment": "PR #103889 salvage"
+  },
+  "efe@arvendigital.com": {
+    "login": "efe-arv",
+    "comment": "PR #98340 perf salvage"
+  },
+  "egilewski@egilewski.com": {
+    "login": "egilewski"
+  },
+  "ekzhang1@gmail.com": {
+    "login": "ekzhang"
+  },
+  "elco@thedaoist.gg": {
+    "login": "elcocoel"
+  },
+  "eleanor@intellectronica.net": {
+    "login": "intellectronica"
+  },
+  "elisam@nvidia.com": {
+    "login": "elisam0"
+  },
+  "ella@cincin.mesh": {
+    "login": "dsitmilis"
+  },
+  "elmar@conradie.co.za": {
+    "login": "conrelma"
+  },
+  "eloktev@users.noreply.github.com": {
+    "login": "eloktev"
+  },
+  "emad.alsaba@gmail.com": {
+    "login": "emadalsaba"
+  },
+  "email = 615759+mkoistinen@users.noreply.github.com": {
+    "login": "mkoistinen"
+  },
+  "eman1369a@gmail.com": {
+    "login": "thelonewander3r"
+  },
+  "emanuele.cornaggia@gmail.com": {
+    "login": "EmanueleCornaggia",
+    "comment": "PR #101778 salvage"
+  },
+  "emilio.jesus.lasheras.romero@nttdata.com": {
+    "login": "elashera",
+    "comment": "PR #42745 salvage -> #67759"
+  },
+  "emir.ibrahimbegovic@gmail.com": {
+    "login": "c0mrade"
+  },
+  "emir.saffar@uropenn.se": {
+    "login": "emirsaffar-collab",
+    "comment": "PR #115977"
+  },
+  "emodoteth@gmail.com": {
+    "login": "emo-eth"
+  },
+  "emopilot@163.com": {
+    "login": "ljsdut"
+  },
+  "emrekamay0256@gmail.com": {
+    "login": "EloquentBrush0x"
+  },
+  "enchanted0911@users.noreply.github.com": {
+    "login": "Enchanted0911",
+    "comment": "catalog PR #114728"
+  },
+  "engineer@gray-knight-m1.local": {
+    "login": "dzianisv",
+    "comment": "PR #123987 salvage"
+  },
+  "epeterpanz@gmail.com": {
+    "login": "epeterpanz"
+  },
+  "epicstorage0@gmail.com": {
+    "login": "EpicIsTheOne",
+    "comment": "PR #71103 salvage (discord: model picker >25-option partitioning)"
+  },
+  "ergorburak33@gmail.com": {
+    "login": "burak33bb"
+  },
+  "eri@plasticlabs.ai": {
+    "login": "erosika",
+    "comment": "PR author"
+  },
+  "eric.maddox@outlook.com": {
+    "login": "ericmaddox"
+  },
+  "eric@erickornacki.com": {
+    "login": "k0rnacki"
+  },
+  "erick@kinnee.net": {
+    "login": "ekinnee",
+    "comment": "PR #72283 salvage (maximum output tokens parsing)"
+  },
+  "erikgieske@gmail.com": {
+    "login": "mrmixx-max"
+  },
+  "esther@feedmob.com": {
+    "login": "Esther-Zhu023"
+  },
+  "etzelvon@users.noreply.github.com": {
+    "login": "etzelvon"
+  },
+  "evan@users.noreply.github.com": {
+    "login": "evan",
+    "comment": "PR #127247 lightbox zoom"
+  },
+  "evangonggyf@gmail.com": {
+    "login": "EvanProgramming"
+  },
+  "evanlee99@qq.com": {
+    "login": "Leegenux"
+  },
+  "everest.kill1@gmail.com": {
+    "login": "anhtahaylove"
+  },
+  "everm1nd.mail@gmail.com": {
+    "login": "everm1nd"
+  },
+  "eversonx100@gmail.com": {
+    "login": "Everson-s8",
+    "comment": "PR #114351"
+  },
+  "executus.ahli@gmail.com": {
+    "login": "TheophilusChinomona"
+  },
+  "extreme0728@gmail.com": {
+    "login": "byungsker"
+  },
+  "ezell.matt@gmail.com": {
+    "login": "mattezell"
+  },
+  "f1aggo_macair@f1aggo-macairdeMacBook-Air.local": {
+    "login": "flag0x369"
+  },
+  "f20212766@pilani.bits-pilani.ac.in": {
+    "login": "charan-rathore",
+    "comment": "PR #124116 salvage"
+  },
+  "f4lko@pm.me": {
+    "login": "thacid22",
+    "comment": "PR #89969 salvage"
+  },
+  "fabiantax@hotmail.com": {
+    "login": "fabiantax"
+  },
+  "fabiomotta@gmail.com": {
+    "login": "fabiomotta0311"
+  },
+  "falcon.ortiz11@gmail.com": {
+    "login": "FalconOrtiz",
+    "comment": "PR #101564 live-owner ingress salvage"
+  },
+  "fangliquan@oppo.com": {
+    "login": "fangliquanflq"
+  },
+  "fangliquan@qq.com": {
+    "login": "fangliquanflq",
+    "comment": "PR #73031 author email"
+  },
+  "fangliquanflq@users.noreply.github.com": {
+    "login": "fangliquanflq"
+  },
+  "fanyu@moonshot.cn": {
+    "login": "FuryMartin"
+  },
+  "fatbigpig979@gmail.com": {
+    "login": "ddy4633"
+  },
+  "fattchris@users.noreply.github.com": {
+    "login": "fattchris"
+  },
+  "fazerluga@gmail.com": {
+    "login": "fazerluga-creator",
+    "comment": "PR #66981 salvage"
+  },
+  "fboutboul@free.fr": {
+    "login": "zakhounet"
+  },
+  "fedeb703@gmail.com": {
+    "login": "fedebyes"
+  },
+  "felipe.cavalcanti.rj@gmail.com": {
+    "login": "fcavalcantirj",
+    "comment": "PR #72002 salvage"
+  },
+  "felix@opper.ai": {
+    "login": "Felixkw12"
+  },
+  "felixmelon@gmail.com": {
+    "login": "zxdvd"
+  },
+  "fengtianyu_danny@163.com": {
+    "login": "DannyFengTianYu"
+  },
+  "feralmode@gmail.com": {
+    "login": "keppy"
+  },
+  "fernandrewm@gmail.com": {
+    "login": "Fernandrewm"
+  },
+  "fidiasfeliciano@MacBook-Pro.local": {
+    "login": "fifeli"
+  },
+  "finance@fasttvltd.com": {
+    "login": "eranbes"
+  },
+  "fkdls112@users.noreply.github.com": {
+    "login": "fkdls112"
+  },
+  "floatingrain@yeah.net": {
+    "login": "floatingrain"
+  },
+  "florianvalade@Florians-Mac-mini.local": {
+    "login": "FlorianVal",
+    "comment": "PR #66326 salvage"
+  },
+  "fmy3@qq.com": {
+    "login": "superafun",
+    "comment": "PR #60201 salvage (sec: npm allowScripts allowlist)"
+  },
+  "forkbert@users.noreply.github.com": {
+    "login": "tylerbrevard",
+    "comment": "PR #117479 author login; commit authored under an unlinked noreply identity"
+  },
+  "francesco@carucci.org": {
+    "login": "fcarucci"
+  },
+  "francip@kortexa.ai": {
+    "login": "francip"
+  },
+  "franciscombautista2015@gmail.com": {
+    "login": "webdevfrancisco",
+    "comment": "PR #80023 credit"
+  },
+  "fraser.humphries@gmail.com": {
+    "login": "FraserHum"
+  },
+  "fred.vanwagenen@gmail.com": {
+    "login": "FvanW"
+  },
+  "fred0m@users.noreply.github.com": {
+    "login": "fred0m"
+  },
+  "frendo.wu@gmail.com": {
+    "login": "frendo"
+  },
+  "fukutake@convi.ne.jp": {
+    "login": "fukutake1207"
+  },
+  "funky@hera.local": {
+    "login": "funkyotc"
+  },
+  "funkyotc@gmail.com": {
+    "login": "funkyotc"
+  },
+  "g.atkinson112@gmail.com": {
+    "login": "bananawalnut"
+  },
+  "g3org3yo@gmail.com": {
+    "login": "g3org3yo"
+  },
+  "gabbo@gengar.tech": {
+    "login": "GabboAlarcon",
+    "comment": "PR #122936 duplicate-cluster credit (#122738)"
+  },
+  "gabbyong@google.com": {
+    "login": "gabbyong"
+  },
+  "gabriel@gabotronics.com": {
+    "login": "ganzziani"
+  },
+  "gameoverhf12@gmail.com": {
+    "login": "BrierAinz",
+    "comment": "PR #73088 salvage"
+  },
+  "gaoanze888@gmail.com": {
+    "login": "gaoanze888",
+    "comment": "PR #106089 salvage"
+  },
+  "gaoanze@meituan.com": {
+    "login": "gaoanze888"
+  },
+  "gas@users.noreply.github.com": {
+    "login": "gas",
+    "comment": "PR attribution fix"
+  },
+  "gc@erek.ai": {
+    "login": "goodchang77"
+  },
+  "geoffreybutler94@gmail.com": {
+    "login": "geoffreybutler94"
+  },
+  "george@parallel.ai": {
+    "login": "georgeatparallel"
+  },
+  "gercamjr.dev@gmail.com": {
+    "login": "gercamjr",
+    "comment": "PR #68945 salvage (update: recover the web UI build when npm leaves no tsc/vite)"
+  },
+  "getkolt@gmail.com": {
+    "login": "aryaxo"
+  },
+  "gh.chiller@pm.me": {
+    "login": "chillerno1"
+  },
+  "ghislain.lemeur@gmail.com": {
+    "login": "gigi206"
+  },
+  "gigakun@agentmail.to": {
+    "login": "gigakun3030"
+  },
+  "gijs@digitalbase.eu": {
+    "login": "digitalbase"
+  },
+  "git.commits@tancou.me": {
+    "login": "tancou",
+    "comment": "PR #119129 (pin process home for routed-profile detection)"
+  },
+  "git@gottz.de": {
+    "login": "GottZ"
+  },
+  "git@hode.co.uk": {
+    "login": "okisdev"
+  },
+  "git@lunarnexus.com": {
+    "login": "LunarNexus"
+  },
+  "gitea@stelter.it": {
+    "login": "Sakujakira",
+    "comment": "PR #122936 duplicate-cluster credit (#122382)"
+  },
+  "github.commits@widow.cc": {
+    "login": "Zeus-Deus"
+  },
+  "github@00b.tech": {
+    "login": "686f6c61"
+  },
+  "github@doryani.cloud": {
+    "login": "doryani-ai",
+    "comment": "Salvaged unit-budget fix from #104745"
+  },
+  "github@eric-n.com": {
+    "login": "c0debyeric",
+    "comment": "PR #107472 salvage (bedrock: key streamed blocks by contentBlockIndex; #108200)"
+  },
+  "github@lemieux.vip": {
+    "login": "jflemieux",
+    "comment": "PR #98553 salvage"
+  },
+  "githubespresso407@users.noreply.github.com": {
+    "login": "githubespresso407"
+  },
+  "gitong@gmail.com": {
+    "login": "gitong"
+  },
+  "gkd2323c@users.noreply.github.com": {
+    "login": "gkd2323c"
+  },
+  "gkgibeau@gmail.com": {
+    "login": "gigabyte22"
+  },
+  "gkhn.yldrmlr@gmail.com": {
+    "login": "gokhanyildirimlar"
+  },
+  "glass.garrett15@protonmail.com": {
+    "login": "SLC-BTC"
+  },
+  "glitchbunny0@proton.me": {
+    "login": "glitchbunny0",
+    "comment": "PR #58957 salvage"
+  },
+  "globalveterinary@gmail.com": {
+    "login": "globalvet2025"
+  },
+  "gnani.nutakki@gmail.com": {
+    "login": "gnanirahulnutakki"
+  },
+  "gobeumsu@gmail.com": {
+    "login": "GoBeromsu"
+  },
+  "gokhansarapevi@gmail.com": {
+    "login": "UltraInstinct0x",
+    "comment": "v0.20.0 audit: co-author on #75565 (TUI paste tokens)"
+  },
+  "goktugvatandas@gmail.com": {
+    "login": "goktugvatandas"
+  },
+  "gonzalofrancoceballos@Gonzalos-Mac-mini.local": {
+    "login": "gonzalofrancoceballos"
+  },
+  "googio@serply.io": {
+    "login": "googio"
+  },
+  "gopal@pulse.agent": {
+    "login": "misterdas",
+    "comment": "catalog PR #119237"
+  },
+  "greg@border0.com": {
+    "login": "th3wingman"
+  },
+  "grkt@ppmz.com": {
+    "login": "pju-hoge"
+  },
+  "gshall@pm.me": {
+    "login": "gshall"
+  },
+  "guanquill@gmail.com": {
+    "login": "YuhGuan"
+  },
+  "guilherme@artiles.com.br": {
+    "login": "guilhermeartileshubsai"
+  },
+  "guilherme@guilhermeaguiar.com": {
+    "login": "guilhermeraiuga"
+  },
+  "guillaumepeypin@hotmail.fr": {
+    "login": "Bounty13"
+  },
+  "gunwoo@wustl.edu": {
+    "login": "leegunwoo98",
+    "comment": "PR #91413 salvage (skip destination-rejected rows in partial recovery; #102240)"
+  },
+  "guoyu.li@lcfuturecenter.com": {
+    "login": "lgy1027"
+  },
+  "gus@Mac.lan": {
+    "login": "lightcloud00"
+  },
+  "guy@wyrdrune.com": {
+    "login": "ggascoigne"
+  },
+  "h-chenbin@voyah.com.cn": {
+    "login": "ms-alan"
+  },
+  "haakamsingh21@gmail.com": {
+    "login": "Haakam21"
+  },
+  "haidong.jiang@qq.com": {
+    "login": "harrylabsj"
+  },
+  "haiyimei@gmail.com": {
+    "login": "HaiyiMei"
+  },
+  "hakan.baysal@trmix.com": {
+    "login": "hakanbaysal"
+  },
+  "halaprix@users.noreply.github.com": {
+    "login": "halaprix"
+  },
+  "halldrix@users.noreply.github.com": {
+    "login": "Halldrix"
+  },
+  "handnew@hotmail.com": {
+    "login": "handnewb"
+  },
+  "handnewb@users.noreply.github.com": {
+    "login": "handnewb"
+  },
+  "hang.li@tcredit.com": {
+    "login": "airclear"
+  },
+  "hanqshih@gmail.com": {
+    "login": "M1racleShih"
+  },
+  "hans@groupg.org": {
+    "login": "hansai-art"
+  },
+  "haowang@HaodeMac-mini.lan": {
+    "login": "HAOWANG116"
+  },
+  "harp@hermz580.dev": {
+    "login": "hermz580"
+  },
+  "harrison@medmetricsrx.com": {
+    "login": "harrisonmedmedmetrics",
+    "comment": "C17 Slack reaction events salvage (#33111/#44508/#45265)"
+  },
+  "harrison@succession.bio": {
+    "login": "successionbio"
+  },
+  "harrylabsj@gmail.com": {
+    "login": "harrylabsj"
+  },
+  "harrylabsj@users.noreply.github.com": {
+    "login": "harrylabsj"
+  },
+  "harsha@usethread.io": {
+    "login": "harshmoney123",
+    "comment": "PR #100805 salvage"
+  },
+  "harshkamdar67@gmail.com": {
+    "login": "Harshkamdar67",
+    "comment": "v0.20.0 audit: co-author on #72240 (/diff)"
+  },
+  "hass.khalife@gmail.com": {
+    "login": "fluxkapacitor",
+    "comment": "PR #95833 salvage (#80670)"
+  },
+  "hassanraza.work@gmail.com": {
+    "login": "hassanhaidry"
+  },
+  "hayden.moulds@rollerdigital.com": {
+    "login": "haydster7",
+    "comment": "PR #99893 salvage"
+  },
+  "hbasheer@student.42abudhabi.ae": {
+    "login": "hxwvaa"
+  },
+  "hcnimi@gmail.com": {
+    "login": "hcnimi"
+  },
+  "heavenlyren@gmail.com": {
+    "login": "benjamin-rousseau-shift"
+  },
+  "hectorsuzanne@gmail.com": {
+    "login": "Polybulle",
+    "comment": "PR #103889 salvage"
+  },
+  "hej@romell.se": {
+    "login": "daxro"
+  },
+  "hello@augustinbrun.com": {
+    "login": "gustbr"
+  },
+  "hello@ianks.com": {
+    "login": "ianks"
+  },
+  "hello@jeromeiveson.com": {
+    "login": "Trantor-develops"
+  },
+  "hello@jpanganiban.com": {
+    "login": "thejpanganiban"
+  },
+  "hello@martinleclercq.fr": {
+    "login": "akugone"
+  },
+  "hello@naterichardson.com": {
+    "login": "naterchrdsn"
+  },
+  "hello@shehjad.dev": {
+    "login": "shehjaddev",
+    "comment": "redact: file-read half of #110228 (#110567)"
+  },
+  "hello@zaar.me": {
+    "login": "haizaar"
+  },
+  "hellofrommorgan@users.noreply.github.com": {
+    "login": "hellofrommorgan"
+  },
+  "henrino3@gmail.com": {
+    "login": "h-mascot"
+  },
+  "hereicq@users.noreply.github.com": {
+    "login": "hereicq"
+  },
+  "hfsearcy@gmail.com": {
+    "login": "hsearcy"
+  },
+  "hgwangyongli@gmail.com": {
+    "login": "kiwiwyl",
+    "comment": "PR #81490 salvage"
+  },
+  "hi@retropixel.app": {
+    "login": "Synero"
+  },
+  "hi@tairasim.com": {
+    "login": "assimovt"
+  },
+  "hill.chitsanupong@gmail.com": {
+    "login": "hillimited"
+  },
+  "hiltner.andreas@gmail.com": {
+    "login": "AndreasHiltner",
+    "comment": "catalog PR #114037"
+  },
+  "hinablue@gmail.com": {
+    "login": "hinablue",
+    "comment": "v0.20.0 audit: direct email match; co-author on #77022"
+  },
+  "hjharris1@gmail.com": {
+    "login": "Hjharris1",
+    "comment": "PR #96290 salvage"
+  },
+  "holny@foxmail.com": {
+    "login": "holny",
+    "comment": "Issue #104790 and occurrence guard #104323"
+  },
+  "holny@users.noreply.github.com": {
+    "login": "holny",
+    "comment": "first submitter on #113618, #113643"
+  },
+  "hongzhennan@outlook.com": {
+    "login": "Decent9967"
+  },
+  "hotragn.pettugani_2024@woxsen.edu.in": {
+    "login": "Hotragn"
+  },
+  "hteo1337@gmail.com": {
+    "login": "hteo1337"
+  },
+  "htkt82ephone@gmail.com": {
+    "login": "ten82e",
+    "comment": "PR #106290 salvage"
+  },
+  "hubin-ll@foxmail.com": {
+    "login": "LLQWQ"
+  },
+  "hugomoreiradecarvalho@gmail.com": {
+    "login": "Atroci"
+  },
+  "hukla25@gmail.com": {
+    "login": "huklaa"
+  },
+  "humdrum00001010@gmail.com": {
+    "login": "humdrum00001010"
+  },
+  "hunter.c.yeagley@outlook.com": {
+    "login": "huntsyea",
+    "comment": "PR #54646 salvage"
+  },
+  "hunter@mail.com": {
+    "login": "zoidypuh"
+  },
+  "hustwkr@users.noreply.github.com": {
+    "login": "hustwkr"
+  },
+  "hyperion@bathaeedunne.com": {
+    "login": "yavarb",
+    "comment": "PR #96099 salvage"
+  },
+  "hzyangming1@corp.netease.com": {
+    "login": "29206394"
+  },
+  "iain@orangesquash.org.uk": {
+    "login": "iainlane"
+  },
+  "iammotivated@gmail.com": {
+    "login": "tomatau"
+  },
+  "iamontheinternet@yahoo.com": {
+    "login": "MrSimonC"
+  },
+  "iamostadev@icloud.com": {
+    "login": "0xmosta"
+  },
+  "ibmcloudvps@protonmail.com": {
+    "login": "ibm2024"
+  },
+  "icocode@users.noreply.github.com": {
+    "login": "icocode"
+  },
+  "idrisalmalki@Idriss-MacBook-Air.local": {
+    "login": "quantumbyte1617"
+  },
+  "ignaciogabrielchiappero@gmail.com": {
+    "login": "ignaciochiappero"
+  },
+  "ijnotion@pm.me": {
+    "login": "james47kjv",
+    "comment": "PR #98008 salvage"
+  },
+  "ileocorp@gmail.com": {
+    "login": "ComicBit",
+    "comment": "PR #90889 cherry-pick in #94248 salvage"
+  },
+  "ilovethevikings@yahoo.com": {
+    "login": "insane66613"
+  },
+  "info.rhodiz@gmail.com": {
+    "login": "RHODIZSECURITY",
+    "comment": "PR #102454 salvage"
+  },
+  "info@bergmann89.de": {
+    "login": "Bergmann89"
+  },
+  "info@datachainsystems.com": {
+    "login": "datachainsystems"
+  },
+  "info@moodtune.fr": {
+    "login": "Moodtuner997"
+  },
+  "iniak@iniakdeMac-mini.local": {
+    "login": "iniak"
+  },
+  "ipkharitonov@gmail.com": {
+    "login": "kharitonov-ivan"
+  },
+  "ipriyaaanshu@users.noreply.github.com": {
+    "login": "ipriyaaanshu"
+  },
+  "isak@ialogics.com": {
+    "login": "isak-ialogics"
+  },
+  "ishan@supreme-god.dev": {
+    "login": "ishanparihar"
+  },
+  "ishangodawatta@gmail.com": {
+    "login": "ishangodawatta"
+  },
+  "isheng-eqi@users.noreply.github.com": {
+    "login": "isheng-eqi"
+  },
+  "iskysun96@gmail.com": {
+    "login": "iskysun96"
+  },
+  "israel.lot@gmail.com": {
+    "login": "israellot"
+  },
+  "italo.feernandes@gmail.com": {
+    "login": "italodsfernandes",
+    "comment": "PR #106019 salvage"
+  },
+  "itkingtao@126.com": {
+    "login": "walker83"
+  },
+  "itsflownium@users.noreply.github.com": {
+    "login": "itsflownium"
+  },
+  "itskaism@users.noreply.github.com": {
+    "login": "itskaism"
+  },
+  "itzhak.pan@gmail.com": {
+    "login": "yaozhen"
+  },
+  "jaap20035@outlook.com": {
+    "login": "Yiipu"
+  },
+  "jack@powries.com": {
+    "login": "powriej"
+  },
+  "jackal991@users.noreply.github.com": {
+    "login": "Jackal991"
+  },
+  "jackijianxa@users.noreply.github.com": {
+    "login": "jackijianxa"
+  },
+  "jackoconner55@icloud.com": {
+    "login": "jackoconner45"
+  },
+  "jackulau@users.noreply.github.com": {
+    "login": "jackulau"
+  },
+  "jaimemarques93@icloud.com": {
+    "login": "MrTheSoulz"
+  },
+  "jake.tracey@noice.net.au": {
+    "login": "jaketracey"
+  },
+  "jakobbjelver@gmail.com": {
+    "login": "jakobbjelver"
+  },
+  "jakobdylanc@gmail.com": {
+    "login": "jakobdylanc"
+  },
+  "jakub.wolniewicz@gmail.com": {
+    "login": "frizikk"
+  },
+  "james@keppylab.com": {
+    "login": "keppy",
+    "comment": "PR #121845 catalog intake"
+  },
+  "james@terminaloutcomes.com": {
+    "login": "yaleman",
+    "comment": "PR #49608 salvage (JWKS Accept + User-Agent headers)"
+  },
+  "jamesmatheson35@gmail.com": {
+    "login": "mottledMantis"
+  },
+  "jan.hranicky@seznam.cz": {
+    "login": "JanHranicky",
+    "comment": "catalog PR #114254 (org fork consolidation)"
+  },
+  "janig88@gmail.com": {
+    "login": "Janig88",
+    "comment": "PR #58402 salvage"
+  },
+  "jaretbottoms@gmail.com": {
+    "login": "jbbottoms",
+    "comment": "PR #65178 salvage (gateway: --replace platform-lock takeover)"
+  },
+  "jasmine@smfworks.com": {
+    "login": "smfworks"
+  },
+  "jason.mow@gmail.com": {
+    "login": "cargo8"
+  },
+  "jason@runninwithitmarketing.com": {
+    "login": "runninwithitmarketing"
+  },
+  "jason@webdevtoday.com": {
+    "login": "webdevtodayjason",
+    "comment": "PR #58538 salvage for #64230"
+  },
+  "jasoncornell76@gmail.com": {
+    "login": "kingpin44"
+  },
+  "jasonfang1993@users.noreply.github.com": {
+    "login": "JasonFang1993"
+  },
+  "jazzwu@163.com": {
+    "login": "rayjerrywoo",
+    "comment": "PR #50014 salvage"
+  },
+  "jdgg777@users.noreply.github.com": {
+    "login": "jdgg777"
+  },
+  "jdkabattles@gmail.com": {
+    "login": "TheNeuralVault"
+  },
+  "jean.v1803@gmail.com": {
+    "login": "JE4NVRG"
+  },
+  "jeff.mettel@gmail.com": {
+    "login": "jeff-mettel"
+  },
+  "jeffrey.ying86@live.com": {
+    "login": "Jefftree"
+  },
+  "jeffreyjaguimit@gmail.com": {
+    "login": "jefuriiij"
+  },
+  "jeremy.randria@gmail.com": {
+    "login": "jeremyrandria-debug"
+  },
+  "jerry.ytp@gmail.com": {
+    "login": "Jreevo"
+  },
+  "jerry@jerrygooch.com": {
+    "login": "jerrygooch",
+    "comment": "PR #103166 salvage"
+  },
+  "jerry@pulse.local": {
+    "login": "zhangyang-crazy-one"
+  },
+  "jesse.casco@gmail.com": {
+    "login": "FixItFoundry"
+  },
+  "jesse@sageware.io": {
+    "login": "thejpanganiban"
+  },
+  "jethachan@gmail.com": {
+    "login": "jethac"
+  },
+  "jevin@jevin.org": {
+    "login": "ijevin"
+  },
+  "jexbow@foxmail.com": {
+    "login": "jexbow"
+  },
+  "jfduarte09@gmail.com": {
+    "login": "F4TB0Yz"
+  },
+  "jfm@laposte.net": {
+    "login": "rudrakshchahal"
+  },
+  "jfmusa2024@gmail.com": {
+    "login": "jfmusa2024-cyber",
+    "comment": "v0.20.0 audit: author on #72388 salvage (desktop perf)"
+  },
+  "jiancheng@gmail.com": {
+    "login": "zjc-enigma",
+    "comment": "PR #12522 salvage"
+  },
+  "jibinv@nvidia.com": {
+    "login": "codeJRV"
+  },
+  "jinglun010@gmail.com": {
+    "login": "jinglun010-cpu"
+  },
+  "jinli.yl@alibaba-inc.com": {
+    "login": "jinliyl"
+  },
+  "jinshi.zjs@antgroup.com": {
+    "login": "InphinitiZ"
+  },
+  "jinultimate@JinUltimates-MacBook-Air.local": {
+    "login": "JinUltimate1995"
+  },
+  "jiqing.liu@whu.edu.cn": {
+    "login": "Cr4ckMe"
+  },
+  "jj@duckboat.ai": {
+    "login": "jerryhjones",
+    "comment": "PR #84656 salvage"
+  },
+  "jkobject@gmail.com": {
+    "login": "jkobject",
+    "comment": "PR #69228: first fix for the Codex TTFB cap default (#91621), landed via #115291"
+  },
+  "joaomarcosdias444@gmail.com": {
+    "login": "JoaoMarcos44"
+  },
+  "joby@ellingtonlife.com": {
+    "login": "gijoby",
+    "comment": "PR #91354 salvage"
+  },
+  "jodybagdonas@gmail.com": {
+    "login": "jbagdonas"
+  },
+  "joel.taylor@ccmschools.edu.au": {
+    "login": "JoelMTaylor"
+  },
+  "joeljigo3@gmail.com": {
+    "login": "aspire488"
+  },
+  "joey.wirz@proton.me": {
+    "login": "Joeywrz",
+    "comment": "PR salvage"
+  },
+  "joezhang@outlook.com": {
+    "login": "JacketPants"
+  },
+  "johann@Mac.lan": {
+    "login": "ousiaresearch"
+  },
+  "john.kattenhorn.personal@gmail.com": {
+    "login": "johnkattenhorn",
+    "comment": "C17 Slack reaction events salvage (#33111/#44508/#45265)"
+  },
+  "johnsonafuye@gmail.com": {
+    "login": "johnsonAyo",
+    "comment": "PR for #89484 (desktop: group room preview uses botHandle)"
+  },
+  "jollyroger1480@gmail.com": {
+    "login": "jollyroger1480",
+    "comment": "PR #115280"
+  },
+  "jon@cromulent.dk": {
+    "login": "jon-nielsen"
+  },
+  "jonathan@wolftacdigital.com": {
+    "login": "WolftacDigital"
+  },
+  "jordan.mymail@gmail.com": {
+    "login": "lxman",
+    "comment": "PR #74522 salvage (per-turn micro-compaction)"
+  },
+  "jordan@boredsexy.com": {
+    "login": "BoredSexyJordan"
+  },
+  "jordanh@nvidia.com": {
+    "login": "jordanhubbard"
+  },
+  "jordyelfferich15@gmail.com": {
+    "login": "JElfferich"
+  },
+  "jorkeyliu@gmail.com": {
+    "login": "JorkeyLiu",
+    "comment": "PR #11875 salvage"
+  },
+  "joseleos@gmail.com": {
+    "login": "xozai"
+  },
+  "josh@withvariable.com": {
+    "login": "JoshSnider"
+  },
+  "joshua@amokk.net": {
+    "login": "faikwo"
+  },
+  "joshuadavidfairbank@gmail.com": {
+    "login": "2ndNatureAI"
+  },
+  "jquesnelle@gmail.com": {
+    "login": "jquesnelle",
+    "comment": "v0.20.0 audit: NeMo Relay revert/reapply cycle"
+  },
+  "jr.razmus@gmail.com": {
+    "login": "johnrazmus"
+  },
+  "jr@trustcyber.ca": {
+    "login": "jwtor7"
+  },
+  "jrcrittenden@gmail.com": {
+    "login": "jrcrittenden",
+    "comment": "PR #28749 salvage (sec: release-age gate on pulse update)"
+  },
+  "jrfbch@gmail.com": {
+    "login": "jrfbch"
+  },
+  "jskang@lablup.com": {
+    "login": "rapsealk"
+  },
+  "juliancruzet@users.noreply.github.com": {
+    "login": "JulianCruzet",
+    "comment": "PR #107930 salvage"
+  },
+  "jun@junho.co": {
+    "login": "junhohong"
+  },
+  "junhaowanggg@gmail.com": {
+    "login": "forkercat"
+  },
+  "junie@jetbrains.com": {
+    "login": "AlexanderPrendota"
+  },
+  "justin.t.adkins@gmail.com": {
+    "login": "Clarion1631"
+  },
+  "justin@actual.computer": {
+    "login": "somewheresy"
+  },
+  "justin@actual.inc": {
+    "login": "somewheresy",
+    "comment": "PR #83554 (Actual authenticated model discovery)"
+  },
+  "justin@bowes.org": {
+    "login": "justinbowes",
+    "comment": "PR #84982 salvage"
+  },
+  "justinjohnson25600@users.noreply.github.com": {
+    "login": "justinjohnson25600"
+  },
+  "kaiyisg@yahoo.com.sg": {
+    "login": "kaiyisg",
+    "comment": "PR #24848 salvage"
+  },
+  "kalice-vi@users.noreply.github.com": {
+    "login": "kalice-vi",
+    "comment": "catalog PR #114585"
+  },
+  "kalice@users.noreply.github.com": {
+    "login": "kalice-vi",
+    "comment": "catalog PR #114585"
+  },
+  "kaloyan.chernev@aifnet.com": {
+    "login": "kchernev",
+    "comment": "PR #93681 salvage"
+  },
+  "kamon@gao-ai.com": {
+    "login": "kamonspecial",
+    "comment": "PR #59621 salvage (slack: empty rich_text content guards)"
+  },
+  "kaneko@pxls.co.jp": {
+    "login": "pxls-kaneko",
+    "comment": "PR #95647 salvage"
+  },
+  "kanso1245@gmail.com": {
+    "login": "MohamadKanso",
+    "comment": "PR #110966 salvage ; PR #110933 salvage"
+  },
+  "kascorp@gmail.com": {
+    "login": "kas-cor"
+  },
+  "katie@lightpanda.io": {
+    "login": "katie-lpd"
+  },
+  "kaziel@gmail.com": {
+    "login": "justcarlosm"
+  },
+  "kbaicai@qq.com": {
+    "login": "ifastcc",
+    "comment": "PR #34308 co-author"
+  },
+  "kboxstar@gmail.com": {
+    "login": "kilhyeonjun"
+  },
+  "kelsia014@gmail.com": {
+    "login": "kelsia14"
+  },
+  "kendrick.kester@gmail.com": {
+    "login": "kendrickkester",
+    "comment": "PR #114912 co-author"
+  },
+  "kerrz202020@gmail.com": {
+    "login": "kerrz2020"
+  },
+  "keviea@gmail.com": {
+    "login": "bka9"
+  },
+  "kevin@fleetsmarts.net": {
+    "login": "Kev-fs",
+    "comment": "C17 Slack reaction events salvage (#33111/#44508/#45265)"
+  },
+  "kevin@meinon.de": {
+    "login": "KevinMeinon"
+  },
+  "kevin@vlzholdings.com": {
+    "login": "GuardianZ71"
+  },
+  "kevinbanjo@gmail.com": {
+    "login": "vigilancetech-com"
+  },
+  "kevinfizu@gmail.com": {
+    "login": "andthexi"
+  },
+  "kgparadzayi@gmail.com": {
+    "login": "kudapara"
+  },
+  "khanhngoo3116@gmail.com": {
+    "login": "khanhngoo"
+  },
+  "kingdomwarrior23@gmail.com": {
+    "login": "Kingdomwarrior23",
+    "comment": "v0.20.0 audit: co-author on #69884 (provider onboarding fix)"
+  },
+  "kinsonnee@gmail.com": {
+    "login": "WOLIKIMCHENG"
+  },
+  "klaus@suppan-design.ch": {
+    "login": "klaus765"
+  },
+  "kokhlo@users.noreply.github.com": {
+    "login": "kokhlo"
+  },
+  "koltyj@users.noreply.github.com": {
+    "login": "koltyj"
+  },
+  "komzpa@gmail.com": {
+    "login": "Komzpa"
+  },
+  "konit.block@protonmail.com": {
+    "login": "KoNit-K",
+    "comment": "PR #114675"
+  },
+  "konit@users.noreply.github.com": {
+    "login": "KoNit-K",
+    "comment": "PR #114001 salvage (bot-mode credential isolation docs)"
+  },
+  "konrad.stawiski@umed.lodz.pl": {
+    "login": "kstawiski",
+    "comment": "PR #88323 salvage (cron: warn agent when scheduler is unavailable)"
+  },
+  "konsisumer@users.noreply.github.com": {
+    "login": "konsisumer"
+  },
+  "konstantin.khlopkov93@gmail.com": {
+    "login": "kokhlo"
+  },
+  "kosta963@gmail.com": {
+    "login": "ildunari"
+  },
+  "kouyichi@users.noreply.github.com": {
+    "login": "kouyichi"
+  },
+  "krapwoo@gmail.com": {
+    "login": "krapwoo"
+  },
+  "kray@block.xyz": {
+    "login": "LordMelkor",
+    "comment": "key_cmd credential source"
+  },
+  "kritcha.b+github@dgtpsn.com": {
+    "login": "KBANTH"
+  },
+  "krjhawks@gmail.com": {
+    "login": "koltyj",
+    "comment": "PR #96187"
+  },
+  "krzysztof.radzikowski@gmail.com": {
+    "login": "damadorPL"
+  },
+  "ksatha113@gmail.com": {
+    "login": "negroni334"
+  },
+  "kshitij@k4poor.dev": {
+    "login": "kshitijk4poor"
+  },
+  "kshitij@users.noreply.github.com": {
+    "login": "kshitijk4poor"
+  },
+  "kshitijkapoor0611@gmail.com": {
+    "login": "kshitijk4poor"
+  },
+  "kshitijkapoorr@gmail.com": {
+    "login": "kshitijk4poor"
+  },
+  "kuangmi@deeparchi.com": {
+    "login": "kuangmi-bit"
+  },
+  "kuangmi@nudge.com.cn": {
+    "login": "kuangmi-bit"
+  },
+  "kubolko@users.noreply.github.com": {
+    "login": "kubolko"
+  },
+  "kudi3699@gmail.com": {
+    "login": "kudi88"
+  },
+  "kun.tao2011@gmail.com": {
+    "login": "kuntao2011",
+    "comment": "catalog PR #118340"
+  },
+  "kwang@Kangs-Mac-mini.local": {
+    "login": "acewong7"
+  },
+  "laithweinberger@gmail.com": {
+    "login": "laithrw"
+  },
+  "lakshya.agarwal@tavily.com": {
+    "login": "lakshyaag-tavily"
+  },
+  "lamjj622009225@gmail.com": {
+    "login": "lost9999"
+  },
+  "lancaster.xuan@gmail.com": {
+    "login": "ShonnQ"
+  },
+  "landaun@gmail.com": {
+    "login": "landaun"
+  },
+  "lanyusea@gmail.com": {
+    "login": "lanyusea"
+  },
+  "laroberts@hchb.com": {
+    "login": "lukeroberts"
+  },
+  "latdani@gmail.com": {
+    "login": "danspicytaco"
+  },
+  "laura@localhost": {
+    "login": "infocentr"
+  },
+  "lavie@local": {
+    "login": "laviesony"
+  },
+  "lavinia.beghini@genialcare.com.br": {
+    "login": "LBeghini"
+  },
+  "lawrence@hydra-flow.co.uk": {
+    "login": "Jackal991"
+  },
+  "lawrenncecharlotte@gmail.com": {
+    "login": "deadczarvc"
+  },
+  "lazy-idler@users.noreply.github.com": {
+    "login": "lazy-idler"
+  },
+  "leggettsteven@gmail.com": {
+    "login": "cdnsteve",
+    "comment": "PR #113215"
+  },
+  "leo@gtmcore.ai": {
+    "login": "leoprodz",
+    "comment": "PR #71602 salvage (desktop: gated /api/health readiness probe)"
+  },
+  "leocamilo@me.com": {
+    "login": "leomcamilo"
+  },
+  "lepetitprince716-prog@users.noreply.github.com": {
+    "login": "lepetitprince716-prog"
+  },
+  "lepetitprince716@gmail.com": {
+    "login": "lepetitprince716-prog"
+  },
+  "lepton233@proton.me": {
+    "login": "PixelAlchemist4"
+  },
+  "lesbetes28@gmail.com": {
+    "login": "dolphin-creator"
+  },
+  "lexharddrive69@gmail.com": {
+    "login": "hdd69"
+  },
+  "lexuandinhct@gmail.com": {
+    "login": "bixycler"
+  },
+  "lg_329@163.com": {
+    "login": "cifangyiquan"
+  },
+  "li-lizhe@noreply.github.com": {
+    "login": "li-lizhe"
+  },
+  "lidangjiang@gmail.com": {
+    "login": "Lidang-Jiang"
+  },
+  "lilShawtty@qq.com": {
+    "login": "lilShawtty-byte"
+  },
+  "limu.mzm@bytedance.com": {
+    "login": "leemove"
+  },
+  "ling.hongwei@outlook.com": {
+    "login": "Tsuki-hash"
+  },
+  "linhk8@mail2.sysu.edu.cn": {
+    "login": "lin-hongkuan"
+  },
+  "linux2011@qq.com": {
+    "login": "Linux2010"
+  },
+  "liqiping@msh.team": {
+    "login": "chouqin"
+  },
+  "liruixinch@outlook.com": {
+    "login": "HexLab98",
+    "comment": "PR #71205 salvage (desktop: gated /api/health readiness probe)"
+  },
+  "liyunlong@nemo.video": {
+    "login": "leeclouddragon"
+  },
+  "llibeel1@gmail.com": {
+    "login": "lll"
+  },
+  "loahnisk@gmail.com": {
+    "login": "n-leezy"
+  },
+  "lofibrainwav@users.noreply.github.com": {
+    "login": "lofibrainwav",
+    "comment": "PR #114865 salvage"
+  },
+  "lorencato23@gmail.com": {
+    "login": "lorencato23"
+  },
+  "louis.anson.s@gmail.com": {
+    "login": "Louis-Anson"
+  },
+  "luc@provencher.family": {
+    "login": "Rroven",
+    "comment": "PR #107701 test co-author"
+  },
+  "lucas.fernandes.df@gmail.com": {
+    "login": "isfttr"
+  },
+  "lucas@policastromd.com": {
+    "login": "enzo2"
+  },
+  "lucaskvasir@duck.com": {
+    "login": "lucaskvasirr",
+    "comment": "PR #56672 salvage (fix(cli): try bundled TUI before requiring ui-tui workspace; #56665)"
+  },
+  "lucasxavier926@gmail.com": {
+    "login": "69k4xmdfm2-blip",
+    "comment": "multiplex adapter key namespace"
+  },
+  "lucasyee999@gmail.com": {
+    "login": "tobenwarrior"
+  },
+  "lucvan@gmail.com": {
+    "login": "lucvan"
+  },
+  "luiz@lermf.org": {
+    "login": "ankinow"
+  },
+  "lukas.buck@e-mail.de": {
+    "login": "L4XB"
+  },
+  "luke@claw3d.ai": {
+    "login": "iamlukethedev"
+  },
+  "lumina@douno.it": {
+    "login": "chefboyrdave21"
+  },
+  "luna@codeforce.cl": {
+    "login": "Synero"
+  },
+  "luna@pulse.local": {
+    "login": "seamusmore",
+    "comment": "PR #40592 salvage"
+  },
+  "luoxiao6645@gmail.com": {
+    "login": "luoxiao6645"
+  },
+  "lvabarajithan@gmail.com": {
+    "login": "lvabarajithan",
+    "comment": "Plugin catalog submission PR — ai-usage-tracker"
+  },
+  "ly-wang19@users.noreply.github.com": {
+    "login": "ly-wang19"
+  },
+  "lyonrt@gmail.com": {
+    "login": "tylerbrevard"
+  },
+  "lyonrt@icloud.com": {
+    "login": "tylerbrevard"
+  },
+  "m.hernanda95@gmail.com": {
+    "login": "hernanda-git",
+    "comment": "PR attribution fix"
+  },
+  "m.varnskuehler@gmail.com": {
+    "login": "matsvarn",
+    "comment": "remote-primary Bot Mode roster regression"
+  },
+  "m296064@rohpccpu21.mayo.edu": {
+    "login": "OfficialDelta"
+  },
+  "maartendormenatteysen@hotmail.com": {
+    "login": "MaartenDMT"
+  },
+  "macd@google.com": {
+    "login": "markmcd"
+  },
+  "maciej.lisiewski@gmail.com": {
+    "login": "c2h5oh"
+  },
+  "madpower2000@gmail.com": {
+    "login": "madpower2000",
+    "comment": "PR #122816 catalog intake"
+  },
+  "magnus.lundstedt@infidyne.com": {
+    "login": "magnuslundstedt"
+  },
+  "magnus919@pm.me": {
+    "login": "magnus919"
+  },
+  "mahgoubs@gmail.com": {
+    "login": "mahgoub",
+    "comment": "PR attribution fix"
+  },
+  "mail.liangyang@gmail.com": {
+    "login": "LiangYang666"
+  },
+  "mail@cedric-ziel.com": {
+    "login": "cedricziel"
+  },
+  "maly.dan@gmail.com": {
+    "login": "DanielMaly"
+  },
+  "mamagnus00@gmail.com": {
+    "login": "MagMueller"
+  },
+  "manis@aivelho.local": {
+    "login": "marko-niskala",
+    "comment": "PR #117437 salvage"
+  },
+  "mannnrachman@users.noreply.github.com": {
+    "login": "mannnrachman"
+  },
+  "marcolivier@gmail.com": {
+    "login": "marcolivierlavoie"
+  },
+  "marcoscarlomagno1@gmail.com": {
+    "login": "MCarlomagno"
+  },
+  "mariano.nicolini@lambdaclass.com": {
+    "login": "entropidelic"
+  },
+  "mariobgsp@gmail.com": {
+    "login": "mariobgsp"
+  },
+  "mariobgsp@users.noreply.github.com": {
+    "login": "mariobgsp"
+  },
+  "mark@svavnc.com": {
+    "login": "MarkTro1969",
+    "comment": "PR #120557 salvage"
+  },
+  "marketing@cflow.co.kr": {
+    "login": "marketing2981"
+  },
+  "markgatcha@users.noreply.github.com": {
+    "login": "Markgatcha",
+    "comment": "catalog PR #113403"
+  },
+  "markmnl@fmsg.io": {
+    "login": "markmnl"
+  },
+  "markrockminster@M1-U-48-128.local": {
+    "login": "rockminster"
+  },
+  "markus@amhomenet.de": {
+    "login": "ydmw74"
+  },
+  "markvlcek@gmail.com": {
+    "login": "MarkVLK"
+  },
+  "martin.mogis@gmail.com": {
+    "login": "garadice"
+  },
+  "martin@tinetwork.com": {
+    "login": "tinetwork"
+  },
+  "marynych.ivan@icloud.com": {
+    "login": "loqimean"
+  },
+  "marzukia@users.noreply.github.com": {
+    "login": "marzukia"
+  },
+  "mason@masontanguay.com": {
+    "login": "DictatorBacon",
+    "comment": "PR #66036 salvage (delegation child-authority fix for mixed platform bundles)"
+  },
+  "massafra.domenico@hotmail.com": {
+    "login": "domenicomassafra"
+  },
+  "materemias@gmail.com": {
+    "login": "materemias"
+  },
+  "mathias@gorf.de": {
+    "login": "frischeDaten"
+  },
+  "mathieurossignol73@gmail.com": {
+    "login": "Pinutss",
+    "comment": "catalog PR #115012"
+  },
+  "matt.strawbridge@lotuscollective.ai": {
+    "login": "matt-strawbridge"
+  },
+  "mattieu.jerome@gmail.com": {
+    "login": "3L0935"
+  },
+  "mattlutz4@gmail.com": {
+    "login": "mattlutzz"
+  },
+  "mattmiller@comfy.org": {
+    "login": "mattmillerai"
+  },
+  "mattshapsss@gmail.com": {
+    "login": "mattshapsss"
+  },
+  "matvey.sakhnenko03@icloud.com": {
+    "login": "sakhnenkoff",
+    "comment": "PR #69775 salvage of #54328"
+  },
+  "maximal04040404@gmail.com": {
+    "login": "maximalang"
+  },
+  "maximusttt@gmail.com": {
+    "login": "lawcheck"
+  },
+  "mbrooks@slack-corp.com": {
+    "login": "mwbrooks"
+  },
+  "mcjoys@users.noreply.github.com": {
+    "login": "mmchuangyt-ai"
+  },
+  "mcpulse@edu.dreamcatcher.ai": {
+    "login": "McPULSE"
+  },
+  "me@alvin.tech": {
+    "login": "alvinveroy"
+  },
+  "me@charlesji.com": {
+    "login": "szcharlesji",
+    "comment": "Verified author of original PR #104584 commit 5e89544f915acc94ee6b2c2b17726f593b039f67"
+  },
+  "me@eminboydak.com": {
+    "login": "eminboydak"
+  },
+  "me@kitsonkelly.com": {
+    "login": "kitsonk",
+    "comment": "PR #96284 salvage"
+  },
+  "me@spencermcguire.com": {
+    "login": "angel12"
+  },
+  "med.hamman9@gmail.com": {
+    "login": "zavrenn"
+  },
+  "megusta52@proton.me": {
+    "login": "DonutsDelivery",
+    "comment": "PR #64141 salvage (lsp: reap idle language servers, #25016)"
+  },
+  "mehmet.kar@std.yildiz.edu.tr": {
+    "login": "mehmetkr-31"
+  },
+  "mehrzad.karami@gmail.com": {
+    "login": "mzkarami",
+    "comment": "PR #66204 contributor identity"
+  },
+  "menglipeng@gmail.com": {
+    "login": "icemeng"
+  },
+  "mengtanx@gmail.com": {
+    "login": "mengtanx",
+    "comment": "PR #103680 salvage"
+  },
+  "mengyuyuan@users.noreply.github.com": {
+    "login": "mengyuyuan",
+    "comment": "PR #76158 salvage"
+  },
+  "menhguin@users.noreply.github.com": {
+    "login": "menhguin"
+  },
+  "metamind@kakao.com": {
+    "login": "metamindedu"
+  },
+  "mfurkanakinci@gmail.com": {
+    "login": "mfurkanakinci"
+  },
+  "mia@jgwill.com": {
+    "login": "miadisabelle"
+  },
+  "michael@empowerlo.com": {
+    "login": "mmcallister8"
+  },
+  "michael@example.com": {
+    "login": "a0000001"
+  },
+  "michael@smfworks.com": {
+    "login": "smfworks"
+  },
+  "michael@wve.nl": {
+    "login": "michaelversluis",
+    "comment": "perf salvage"
+  },
+  "michaelalexanderknaap@gmail.com": {
+    "login": "fortun8te"
+  },
+  "michaelsam00@yahoo.com": {
+    "login": "michaelsam94"
+  },
+  "michaelweisman@Michaels-Mac-Studio.local": {
+    "login": "weismanfamily"
+  },
+  "michaelzelbel@users.noreply.github.com": {
+    "login": "michaelzelbel"
+  },
+  "michel.alexander@gmail.com": {
+    "login": "SelfParody",
+    "comment": "PR #19000 salvage"
+  },
+  "mihaly.schroth@gmail.com": {
+    "login": "mihalyschroth"
+  },
+  "mike@mlsmith.net": {
+    "login": "m1k3s0"
+  },
+  "mike@vorburger.ch": {
+    "login": "vorburger"
+  },
+  "mikedemott@Mikes-Mac-mini.local": {
+    "login": "mrkillbob"
+  },
+  "mikeest1972@gmail.com": {
+    "login": "mikeest1972"
+  },
+  "milicevicandrej@yahoo.com": {
+    "login": "siillee"
+  },
+  "minh@alpon.xyz": {
+    "login": "minh-alpon"
+  },
+  "miniadmin@skshim-mini.local": {
+    "login": "plainOldCode"
+  },
+  "misterdas@gmail.com": {
+    "login": "misterdas",
+    "comment": "catalog PR #119237"
+  },
+  "mjolley9@gmail.com": {
+    "login": "mjolley9"
+  },
+  "mkoduri73@gmail.com": {
+    "login": "MaheshBhushan",
+    "comment": "PR #66492 salvage (#66377)"
+  },
+  "mmcclean@amazon.com": {
+    "login": "mmcclean-aws"
+  },
+  "moeadham@gmail.com": {
+    "login": "moeadham"
+  },
+  "mohamed.origami@gmail.com": {
+    "login": "Morad37",
+    "comment": "PR #37671 adoption"
+  },
+  "moisesvs84@gmail.com": {
+    "login": "moisesvalero"
+  },
+  "mojomast@users.noreply.github.com": {
+    "login": "mojomast"
+  },
+  "moken627-hub@users.noreply.github.com": {
+    "login": "moken627-hub",
+    "comment": "PR #102676 salvage"
+  },
+  "mollusk@users.noreply.github.com": {
+    "login": "mollusk"
+  },
+  "moonlight-lupin@users.noreply.github.com": {
+    "login": "moonlight-lupin",
+    "comment": "PR #121806 catalog intake"
+  },
+  "mooserini@users.noreply.github.com": {
+    "login": "mooserini"
+  },
+  "motoblurr@users.noreply.github.com": {
+    "login": "motoblurr",
+    "comment": "PR #63532 salvage"
+  },
+  "mozi@askaconsult.com": {
+    "login": "ahrazzle"
+  },
+  "mpetrelli@gmail.com": {
+    "login": "Ne0teric"
+  },
+  "mrabsaroka@gmail.com": {
+    "login": "MrAbsaroka",
+    "comment": "PR #40064 salvage (slack dedup TTL)"
+  },
+  "mrgraphitem@gmail.com": {
+    "login": "myk0la-b"
+  },
+  "mromano3@ad.engr.wisc.edu": {
+    "login": "tank321"
+  },
+  "mrwanstudio@gmail.com": {
+    "login": "mrwanstudio"
+  },
+  "mrz@mrzlab630.pw": {
+    "login": "mrzlab630"
+  },
+  "mschwab@nvidia.com": {
+    "login": "marcusds"
+  },
+  "mudreac@gmail.com": {
+    "login": "mudrii",
+    "comment": "PR #66871, #63099 salvage (deps: vulnerable floors)"
+  },
+  "muhammad.gcs@gmail.com": {
+    "login": "muhifni"
+  },
+  "muhammadfurqan0100@gmail.com": {
+    "login": "immuhammadfurqan"
+  },
+  "muhammadnizamuddinaulia@gmail.com": {
+    "login": "schrodienieur",
+    "comment": "PR #103078 salvage"
+  },
+  "muhammedeminkamay92@gmail.com": {
+    "login": "pierrenode"
+  },
+  "mvalentin@valensys.net": {
+    "login": "0xr00tf3rr3t"
+  },
+  "mx.indigo.karasu@gmail.com": {
+    "login": "indigokarasu"
+  },
+  "mxd383@student.bham.ac.uk": {
+    "login": "Maero47"
+  },
+  "mycodeisbad@gmail.com": {
+    "login": "peterw"
+  },
+  "mykeura@hotmail.com": {
+    "login": "mykeura",
+    "comment": "catalog PR #118423"
+  },
+  "n931@qq.com": {
+    "login": "VictorTran1023"
+  },
+  "nabil@techilaservices.com": {
+    "login": "nabilaameena"
+  },
+  "nagornyy.o@gmail.com": {
+    "login": "i-Hun"
+  },
+  "namredips@gmail.com": {
+    "login": "namredips"
+  },
+  "nanakoice@NanakoIces-Mac-mini.local": {
+    "login": "nanakoice"
+  },
+  "naqerl@users.noreply.github.com": {
+    "login": "naqerl"
+  },
+  "nate@atxlakescapes.com": {
+    "login": "Lakescape"
+  },
+  "nate@vulcan-tech.com": {
+    "login": "natebransc"
+  },
+  "nathanielcrush51@gmail.com": {
+    "login": "nateEc"
+  },
+  "nawfal.fardana@dana.id": {
+    "login": "arimu1"
+  },
+  "nealzhou@me.com": {
+    "login": "NealZhouPanda"
+  },
+  "necipaksahin056@gmail.com": {
+    "login": "xd-Neji"
+  },
+  "neel.patel@ramp.com": {
+    "login": "Neel49",
+    "comment": "PR #93548 salvage (Ramp Router provider)"
+  },
+  "neel49@users.noreply.github.com": {
+    "login": "Neel49",
+    "comment": "PR #93548 salvage (Ramp Router provider)"
+  },
+  "neil@lannscapital.com": {
+    "login": "neil771"
+  },
+  "neocode24@gmail.com": {
+    "login": "neocode24"
+  },
+  "netease@pricegov.local": {
+    "login": "29206394"
+  },
+  "newton@agent.local": {
+    "login": "McClean"
+  },
+  "nformenton@Nicolass-MacBook-Air.local": {
+    "login": "Nicolas-Formenton",
+    "comment": "PR #84137 / #84021 (desktop fixes from a second machine)"
+  },
+  "nformenton@gmail.com": {
+    "login": "Nicolas-Formenton",
+    "comment": "PR #84984 (desktop: drag to reorder profile groups in the All-profiles sidebar)"
+  },
+  "nguyenngoctinh011258@gmail.com": {
+    "login": "twotnguyen"
+  },
+  "nguyentien01634@gmail.com": {
+    "login": "nductien"
+  },
+  "nicecuprani@gmail.com": {
+    "login": "nicecuprani"
+  },
+  "nicholas.mariani@hotmail.it": {
+    "login": "null-runner"
+  },
+  "nickkarhan@users.noreply.github.com": {
+    "login": "nickkarhan",
+    "comment": "PR #53283 salvage"
+  },
+  "nicochase@users.noreply.github.com": {
+    "login": "nicochase"
+  },
+  "nicolaj.bjerregaard1996@gmail.com": {
+    "login": "nicbj96",
+    "comment": "PR #120945 salvage"
+  },
+  "nicolasdmolina76@gmail.com": {
+    "login": "nicolasdmolina"
+  },
+  "nikita.barkov@jetbrains.com": {
+    "login": "nikitaBarkov"
+  },
+  "nikkoxgonzales@users.noreply.github.com": {
+    "login": "nikkoxgonzales"
+  },
+  "nitishagar@users.noreply.github.com": {
+    "login": "nitishagar"
+  },
+  "niudakok@users.noreply.github.com": {
+    "login": "niudakok"
+  },
+  "nkreadly@gmail.com": {
+    "login": "nkreadly07"
+  },
+  "nmediaie@gmail.com": {
+    "login": "nmediaie",
+    "comment": "PR #96370 salvage"
+  },
+  "nmurray@gmail.com": {
+    "login": "keenvc"
+  },
+  "nnqbao@gmail.com": {
+    "login": "kingrubic",
+    "comment": "PR #65988 salvage — model wizard pool-credential resolution (#65977)"
+  },
+  "nntruonghan@gmail.com": {
+    "login": "tieubao"
+  },
+  "noequal666@gmail.com": {
+    "login": "ymybxx",
+    "comment": "PR #104758 salvage (delegation: rejected async units keep parent cancellation)"
+  },
+  "nolanchic@gmail.com": {
+    "login": "nolanchic"
+  },
+  "noname666666666@ya.ru": {
+    "login": "DreamyMoonMouse"
+  },
+  "noreply@anthropic.com": {
+    "login": "claude"
+  },
+  "noreply@codebuff.com": {
+    "login": "codebuff-team"
+  },
+  "noreply@pacificcloudsolutions.example": {
+    "login": "kingpin44"
+  },
+  "normanking@me.com": {
+    "login": "RedClaus"
+  },
+  "notwitcheer@users.noreply.github.com": {
+    "login": "notwitcheer"
+  },
+  "nsovipgl@gmail.com": {
+    "login": "hanhvs"
+  },
+  "nwadwa@gmail.com": {
+    "login": "tw0316",
+    "comment": "PR #56618 salvage (slack: table column_settings + blocks rejection fallback)"
+  },
+  "nyaruko@pulse": {
+    "login": "tsuk1nose"
+  },
+  "nypyouxiang@163.com": {
+    "login": "eagle-nyp"
+  },
+  "obtitus@gmail.com": {
+    "login": "obtitus",
+    "comment": "PR #116011 salvage: browser.backend as a configured provider signal"
+  },
+  "octaviomagaia@hotmail.com": {
+    "login": "mr-magaia"
+  },
+  "octopustank@foxmail.com": {
+    "login": "Octopustank"
+  },
+  "octy@octys.local": {
+    "login": "superlowburn",
+    "comment": "PR #122860 catalog intake"
+  },
+  "ofer@openclaw.ai": {
+    "login": "oferlaor"
+  },
+  "officialasishkumar@gmail.com": {
+    "login": "officialasishkumar"
+  },
+  "ohs2251@naver.com": {
+    "login": "5Hyeons"
+  },
+  "ojassharma16@gmail.com": {
+    "login": "ojassharma7"
+  },
+  "okalentiev@gmail.com": {
+    "login": "okalentiev"
+  },
+  "omarlopz1985@gmail.com": {
+    "login": "olopez25"
+  },
+  "omid3098@gmail.com": {
+    "login": "omid3098"
+  },
+  "omidzaferi@gmail.com": {
+    "login": "omid-io"
+  },
+  "onur.m.aycicek@gmail.com": {
+    "login": "onuraycicek",
+    "comment": "Group room ordering, PULSE-Bot-Mode#105"
+  },
+  "openclaw@Jonas-Mac-Studio.local": {
+    "login": "jonameijers"
+  },
+  "openclaww@gmail.com": {
+    "login": "openclaww-xz"
+  },
+  "opsdownn@gmail.com": {
+    "login": "noahingh"
+  },
+  "orangercc@gmail.com": {
+    "login": "orangercat"
+  },
+  "osgeek90@gmail.com": {
+    "login": "osgeek90"
+  },
+  "otstructures@gmail.com": {
+    "login": "Lokee86"
+  },
+  "ourines@icloud.com": {
+    "login": "ourines"
+  },
+  "p.kirkbride@me.com": {
+    "login": "kirkins",
+    "comment": "PR #116289"
+  },
+  "p.minervini@gmail.com": {
+    "login": "pminervini",
+    "comment": "PR #104222 salvage"
+  },
+  "pa.sen@outlook.com": {
+    "login": "pasmud"
+  },
+  "pablopazosp3@gmail.com": {
+    "login": "ppazosp"
+  },
+  "pan.luo@ubc.ca": {
+    "login": "xcompass",
+    "comment": "PR #61261 salvage"
+  },
+  "panding99@outlook.com": {
+    "login": "panDing19"
+  },
+  "pantinor@redhat.com": {
+    "login": "paoloantinori",
+    "comment": "PR #68431 gateway_platform_event observer salvage"
+  },
+  "panyaozhen@360.cn": {
+    "login": "yaozhen",
+    "comment": "salvage #95975"
+  },
+  "parkchan0302@gmail.com": {
+    "login": "ChanPark03"
+  },
+  "pasmud@users.noreply.github.com": {
+    "login": "pasmud"
+  },
+  "patrickeliasrs@gmail.com": {
+    "login": "DoGMaTiiC",
+    "comment": "PR #114136 salvage (namespace-prefixed tool-call XML stripped from visible text, #103483)"
+  },
+  "patrickg21212@gmail.com": {
+    "login": "mcpeezy",
+    "comment": "PR #96622 salvage"
+  },
+  "patrickmuller@outlook.com": {
+    "login": "patrick-muller"
+  },
+  "patryk.kopycinski@elastic.co": {
+    "login": "patrykkopycinski"
+  },
+  "paul.lesyuk@gmail.com": {
+    "login": "lesyuk"
+  },
+  "paul@21million.ad": {
+    "login": "PaulBlackSwan"
+  },
+  "paula@smfworks.com": {
+    "login": "smfworks",
+    "comment": "SMF Works contributor"
+  },
+  "paulapsp157@gmail.com": {
+    "login": "Aoshi-Dev"
+  },
+  "paularobertson@gmail.com": {
+    "login": "kiwipaulrob",
+    "comment": "PR #102431 rework (cron scope graceful degrade)"
+  },
+  "paultaki@gmail.com": {
+    "login": "paultaki"
+  },
+  "pbaker@cteh.com": {
+    "login": "chigreen"
+  },
+  "peace@trippyogi.com": {
+    "login": "trippyogi"
+  },
+  "pengcube@gmail.com": {
+    "login": "bighamx"
+  },
+  "penginman@users.noreply.github.com": {
+    "login": "penginman",
+    "comment": "PR #31593 salvage"
+  },
+  "perqin@moego.pet": {
+    "login": "perqin"
+  },
+  "perqinxie@gmail.com": {
+    "login": "perqin"
+  },
+  "phantomthedog@users.noreply.github.com": {
+    "login": "phantomthedog"
+  },
+  "phixxation@gmail.com": {
+    "login": "VerbalChainsaw"
+  },
+  "phm543@gmail.com": {
+    "login": "keepConcentration"
+  },
+  "phull@phullcutz.de": {
+    "login": "leonphull"
+  },
+  "pink@macmini-pulse.local": {
+    "login": "PINKIIILQWQ"
+  },
+  "piyushbag4@gmail.com": {
+    "login": "piyushbag"
+  },
+  "plntrprotocol@gmail.com": {
+    "login": "ousiaresearch",
+    "comment": "PR #121931 catalog intake"
+  },
+  "pooyan6@gmail.com": {
+    "login": "pooyan6"
+  },
+  "poponline63@gmail.com": {
+    "login": "poponline63"
+  },
+  "portavales@gmail.com": {
+    "login": "portavales",
+    "comment": "PR #105694 salvage"
+  },
+  "potatosaladx@gmail.com": {
+    "login": "potatosalad"
+  },
+  "pouya.ataei.7@gmail.com": {
+    "login": "Polyhistor"
+  },
+  "ppoppo2051@gmail.com": {
+    "login": "lesterppo"
+  },
+  "praneshnikhar@gmail.com": {
+    "login": "praneshnikhar"
+  },
+  "praxis1244@gmail.com": {
+    "login": "praxis1244-consulting"
+  },
+  "prodrifterdk@pop-os.tailc64d14.ts.net": {
+    "login": "ProDrifterDK"
+  },
+  "professorpalmer9@gmail.com": {
+    "login": "professorpalmer",
+    "comment": "PR #87330 running is not busy"
+  },
+  "projetsjsl@gmail.com": {
+    "login": "projetsjsl"
+  },
+  "prontsevich@gmail.com": {
+    "login": "Prontsevich",
+    "comment": "PR #32811 salvage (ACP background MCP discovery)"
+  },
+  "protas.box@icloud.com": {
+    "login": "protas-box"
+  },
+  "pry@privacydied.net": {
+    "login": "privacydied"
+  },
+  "pulse-agent@anxious-research.com": {
+    "login": "teknium1"
+  },
+  "pulse-agent@localhost": {
+    "login": "whyyagswhy",
+    "comment": "PR #115591 salvage"
+  },
+  "pulse-agent@pulse.local": {
+    "login": "C-EXCITE-STUDIO"
+  },
+  "pulse-agent@users.noreply.local": {
+    "login": "verybigdog"
+  },
+  "pulse-fleet-fix@localhost": {
+    "login": "rohitsabu"
+  },
+  "pulse-patch-audit@example.invalid": {
+    "login": "Madkyotiger",
+    "comment": "PR #104781 salvage (commit author email as recorded on the PR head)"
+  },
+  "pulse-pr@pulseresearch.com": {
+    "login": "kyssta-exe"
+  },
+  "pulse@dasg.ltd": {
+    "login": "dasgltd"
+  },
+  "pulse@ecl.400iso.net": {
+    "login": "echo931"
+  },
+  "pulse@kortify.local": {
+    "login": "arnoldfrancisca",
+    "comment": "PR #43665/#43718 salvage"
+  },
+  "pulse@lift-off.co.uk": {
+    "login": "A-Snegin"
+  },
+  "pulse@local": {
+    "login": "Finn763"
+  },
+  "pulse@mingjing.dev": {
+    "login": "eaglezzz0522-cloud"
+  },
+  "pulse@server.local": {
+    "login": "kas-cor"
+  },
+  "pulse@turpaud.com": {
+    "login": "remi-td",
+    "comment": "PR #105357 salvage"
+  },
+  "pulseagent424@gmail.com": {
+    "login": "DatTheMaster"
+  },
+  "punyko8@users.noreply.github.com": {
+    "login": "Punyko8"
+  },
+  "pushand@foxmail.com": {
+    "login": "UniversePeak"
+  },
+  "pwblais@gmail.com": {
+    "login": "Potrock"
+  },
+  "qazasdsdqaza@users.noreply.github.com": {
+    "login": "qazasdsdqaza"
+  },
+  "qhs19950124@outlook.com": {
+    "login": "huanshan5195"
+  },
+  "qixuancao36@gmail.com": {
+    "login": "qixuancao"
+  },
+  "qlskssk@gmail.com": {
+    "login": "Soju06"
+  },
+  "qlyf@QLYFdeMacBook-Air.local": {
+    "login": "allin2"
+  },
+  "quangphucqp@gmail.com": {
+    "login": "quangphucqp"
+  },
+  "quexl1@chinatelecom.cn": {
+    "login": "ShonnQ"
+  },
+  "qwertyuiop97@users.noreply.github.com": {
+    "login": "qwertyuiop97",
+    "comment": "catalog PR #112742"
+  },
+  "r.vecchi92@gmail.com": {
+    "login": "Riccardo-Vecchi",
+    "comment": "PR #83839 perf salvage"
+  },
+  "raajkumars@users.noreply.github.com": {
+    "login": "raajkumars"
+  },
+  "rafael.zendron22@gmail.com": {
+    "login": "rafaumeu"
+  },
+  "rafael@amora.com.br": {
+    "login": "rtcopenclawgh"
+  },
+  "ragingbullniu@gmail.com": {
+    "login": "ragingbulld"
+  },
+  "rahlquist@users.noreply.github.com": {
+    "login": "rahlquist"
+  },
+  "rain@synth.kitchen": {
+    "login": "matarbot",
+    "comment": "PR #60391 salvage"
+  },
+  "rajitskhanna@gmail.com": {
+    "login": "rajitkhanna"
+  },
+  "ramarivera@gmail.com": {
+    "login": "ramarivera"
+  },
+  "randy@heroictek.com": {
+    "login": "beardedeagle"
+  },
+  "razsoc.01@gmail.com": {
+    "login": "Cossackx",
+    "comment": "PR #88051 attribution fix"
+  },
+  "razultull@gmail.com": {
+    "login": "razultull"
+  },
+  "rborkows@gmail.com": {
+    "login": "rborkow"
+  },
+  "rcarratalasanchez@gmail.com": {
+    "login": "rcarrata"
+  },
+  "redpiggy-cyber@users.noreply.github.com": {
+    "login": "redpiggy-cyber"
+  },
+  "regardv4life@gmail.com": {
+    "login": "RegardV",
+    "comment": "PR #75432 salvage"
+  },
+  "reinbeumer@gmail.com": {
+    "login": "reinbeumer"
+  },
+  "reinelt@rt-experts.de": {
+    "login": "Tomenatore"
+  },
+  "reneisaipa@gmail.com": {
+    "login": "IvanMiao"
+  },
+  "rg@replygirl.club": {
+    "login": "replygirl"
+  },
+  "rgerrish@outlook.com": {
+    "login": "RGerrish"
+  },
+  "riandra@mrscraper.com": {
+    "login": "riandradiva18"
+  },
+  "ricardo.mendes@maiolabs.ai": {
+    "login": "rikkarth"
+  },
+  "ricardpons@me.com": {
+    "login": "ricki-io"
+  },
+  "richard.ham@live.com": {
+    "login": "zebadee2kk",
+    "comment": "PR #50052 salvage (sec: bump deps for 25 CVEs)"
+  },
+  "richard@venturi.systems": {
+    "login": "richardcmckinney",
+    "comment": "PR #122441 salvage"
+  },
+  "richard@workflowgroup.com": {
+    "login": "richardhowes"
+  },
+  "richardhojunjang@gmail.com": {
+    "login": "RichardHojunJang"
+  },
+  "rickard@kumobits.com": {
+    "login": "rille111"
+  },
+  "rik.sedd@gmail.com": {
+    "login": "RikETS"
+  },
+  "ritvik1392@gmail.com": {
+    "login": "ritvikgautam"
+  },
+  "riyaazd29@users.noreply.github.com": {
+    "login": "riyaazd29"
+  },
+  "rjhilgefort@gmail.com": {
+    "login": "rjhilgefort"
+  },
+  "rjshrjndrn@gmail.com": {
+    "login": "rjshrjndrn"
+  },
+  "rkfshakti@gmail.com": {
+    "login": "rkfshakti"
+  },
+  "rkt.2@hotmail.com": {
+    "login": "sparkeros"
+  },
+  "rmk799@outlook.com": {
+    "login": "MustafaK99"
+  },
+  "rmohid@gmail.com": {
+    "login": "Rmohid"
+  },
+  "rmohid@rmohid.dev": {
+    "login": "Rmohid"
+  },
+  "rob@cocodelivery.com": {
+    "login": "rob-coco"
+  },
+  "rob@zolkos.com": {
+    "login": "robzolkos"
+  },
+  "robbert_camps@hotmail.com": {
+    "login": "RobbertC5"
+  },
+  "robbyczgw@gmail.com": {
+    "login": "robbyczgw-cla"
+  },
+  "robchristiansen13@users.noreply.github.com": {
+    "login": "robchristiansen13"
+  },
+  "robert.l.mosher@gmail.com": {
+    "login": "RobbyMo81"
+  },
+  "robertlisowski57@gmail.com": {
+    "login": "Roblmvp"
+  },
+  "robertsryan_21@icloud.com": {
+    "login": "rhylryan21"
+  },
+  "rod.boev@gmail.com": {
+    "login": "rodboev"
+  },
+  "rod@nxtlevel.dev": {
+    "login": "rod-nxtlevel",
+    "comment": "v0.20.0 audit: co-author on #72835 (remote backend)"
+  },
+  "rodricksz2005@gmail.com": {
+    "login": "rodricksz4h5"
+  },
+  "rodrigo.smscom@gmail.com": {
+    "login": "rodrigogs"
+  },
+  "rodrigo@nxtlevelsaas.com": {
+    "login": "rod-nxtlevel",
+    "comment": "v0.20.0 audit: direct email match on profile"
+  },
+  "roger.hanhong@gmail.com": {
+    "login": "Roger--Han",
+    "comment": "PR #62990 salvage (issue #63078)"
+  },
+  "rohithpariki@gmail.com": {
+    "login": "RohithPariki",
+    "comment": "Issue #104350: preserved updater-fix author"
+  },
+  "roli@pulse-labs.ai": {
+    "login": "roli-lpci"
+  },
+  "ronny@kesuek.de": {
+    "login": "Kesuek"
+  },
+  "royzhrxy-glitch@users.noreply.github.com": {
+    "login": "royzhrxy-glitch"
+  },
+  "rroveri@nvidia.com": {
+    "login": "rroverin"
+  },
+  "rsayar@uvic.ca": {
+    "login": "rsayar",
+    "comment": "v0.20.0 audit: co-author on #71184 (terminal error frames)"
+  },
+  "rsherman@velocityinteractive.com": {
+    "login": "cfdude",
+    "comment": "PR #43803 adoption"
+  },
+  "rsk-731@users.noreply.github.com": {
+    "login": "rsk-731"
+  },
+  "rt.cms012@gmail.com": {
+    "login": "trac3r00"
+  },
+  "rudimar@outlook.com": {
+    "login": "rudironsoni",
+    "comment": "PR #67630 author attribution"
+  },
+  "rudra@telnyx.com": {
+    "login": "dynamite-bud",
+    "comment": "catalog PR #119094"
+  },
+  "ruichenzhou@outlook.com": {
+    "login": "Zhou-Ruichen",
+    "comment": "PR #77933 salvage (ssh: probe-only prompt backend probe)"
+  },
+  "ruizanthony@users.noreply.github.com": {
+    "login": "ruizanthony"
+  },
+  "ruochu88s@users.noreply.github.com": {
+    "login": "ruochu88s",
+    "comment": "PR #111449 salvage"
+  },
+  "ruslan.vasylev.vfx@gmail.com": {
+    "login": "ruslanvasylev"
+  },
+  "ryan.kelln@gmail.com": {
+    "login": "RKelln"
+  },
+  "ryancurrah@gmail.com": {
+    "login": "TurboAnbeli"
+  },
+  "ryanrtrout@gmail.com": {
+    "login": "Trounaldo"
+  },
+  "ryantuc@users.noreply.github.com": {
+    "login": "ryantuc"
+  },
+  "s0xn1ck@proton.me": {
+    "login": "s0xn1ck"
+  },
+  "s@Ss-MacBook-Pro.local": {
+    "login": "sashmatash"
+  },
+  "saforem2@gmail.com": {
+    "login": "saforem2",
+    "comment": "PR #97385 vim mode salvage"
+  },
+  "sahabatheri@gmail.com": {
+    "login": "greyvito"
+  },
+  "saitama@saitamas-MacBook-Pro.local": {
+    "login": "sebaorrego-koronet"
+  },
+  "salahxd99@gmail.com": {
+    "login": "notkisk"
+  },
+  "salch-cred@users.noreply.github.com": {
+    "login": "salch-cred"
+  },
+  "saleh.fekry@gmail.com": {
+    "login": "salehelsayed",
+    "comment": "PR #97445 salvage"
+  },
+  "sam@odio.email": {
+    "login": "srosro"
+  },
+  "samalone@users.noreply.github.com": {
+    "login": "samalone"
+  },
+  "samfp@amazon.com": {
+    "login": "samfoy"
+  },
+  "samtcam@gmail.com": {
+    "login": "samclams"
+  },
+  "sara@lilyb.org": {
+    "login": "saralilyb"
+  },
+  "sasan1200@gmail.com": {
+    "login": "sasan1200",
+    "comment": "PR #72932 salvage"
+  },
+  "sascha.haase@textiletsg.com": {
+    "login": "shaase-ctrl",
+    "comment": "PR #85679 salvage (Windows desktop update shim self-lock)"
+  },
+  "satoshi@local": {
+    "login": "ramseshk",
+    "comment": "#107754 salvage"
+  },
+  "schattenan@kagaku.eu": {
+    "login": "schattenan"
+  },
+  "scottgl@gmail.com": {
+    "login": "scottgl9",
+    "comment": "#65842 salvage"
+  },
+  "scross01@gmail.com": {
+    "login": "scross01"
+  },
+  "sdevinarayanan@asymbl.com": {
+    "login": "shivasymbl"
+  },
+  "seashore.shi@gmail.com": {
+    "login": "SeashoreShi"
+  },
+  "sebastian@mause.online": {
+    "login": "smause"
+  },
+  "seluvia1@gmail.com": {
+    "login": "seluvia"
+  },
+  "semabelou@gmail.com": {
+    "login": "semao0"
+  },
+  "semirkabir@users.noreply.github.com": {
+    "login": "semirkabir"
+  },
+  "sergey.veys@gmail.com": {
+    "login": "Haik-G"
+  },
+  "sergey0515@users.noreply.github.com": {
+    "login": "Sergey0515"
+  },
+  "sergey@3dacademysoftware.com": {
+    "login": "spro-work",
+    "comment": "PR #32811 salvage (ACP background MCP discovery) — same person as Prontsevich"
+  },
+  "seth@rapchat.com": {
+    "login": "sethmills21"
+  },
+  "seze@andrew.cmu.edu": {
+    "login": "Shedrackeze002"
+  },
+  "sgarrand@gmail.com": {
+    "login": "sgarrand",
+    "comment": "PR #102587 (earliest NixOS systemd probe fix; co-author credit on #105436 salvage)"
+  },
+  "shafik8011@gmail.com": {
+    "login": "shafdev",
+    "comment": "PR #12685 salvage"
+  },
+  "shag@agentmail.to": {
+    "login": "sg-shag"
+  },
+  "shamrock@cypherpunks.to": {
+    "login": "luckygreen"
+  },
+  "shanthan@oneam.ai": {
+    "login": "shanthans-es"
+  },
+  "shauneccles@gmail.com": {
+    "login": "shauneccles",
+    "comment": "PR #95433 salvage (compression stall-fallback retry; #78981)"
+  },
+  "shellybotmoyer@users.noreply.github.com": {
+    "login": "shellybotmoyer"
+  },
+  "shikanga-pulse@shikanga.co.uk": {
+    "login": "phantom-instruction-set",
+    "comment": "PR #59076 salvage"
+  },
+  "shimakaze001@outlook.com": {
+    "login": "Shimakaze514",
+    "comment": "PR: detach stdin in Git Bash probe (#78820)"
+  },
+  "shiqiming.sqm@taobao.com": {
+    "login": "KhanCold"
+  },
+  "shreyanshjain646@gmail.com": {
+    "login": "shreyanshj10"
+  },
+  "shtorm@fedosis.ru": {
+    "login": "fedosis",
+    "comment": "PR #94996 salvage (compression rotation dedupe)"
+  },
+  "shubhambc09@gmail.com": {
+    "login": "navahc09"
+  },
+  "shuohw@gmail.com": {
+    "login": "wang2",
+    "comment": "PR #56155 salvage"
+  },
+  "shuwen.wu@bytedance.com": {
+    "login": "dajiaohuang"
+  },
+  "siage@139.com": {
+    "login": "sjiangtao2024"
+  },
+  "siddhartha.joy@gmail.com": {
+    "login": "chntllh"
+  },
+  "silviomanuel297@gmail.com": {
+    "login": "th3sull1van"
+  },
+  "simon@everythingmma.com.au": {
+    "login": "simonmmafs"
+  },
+  "simonmmafs@users.noreply.github.com": {
+    "login": "simonmmafs"
+  },
+  "simonvanlaak@users.noreply.github.com": {
+    "login": "simonvanlaak"
+  },
+  "sirotkin_me@transset.ru": {
+    "login": "maksir"
+  },
+  "sjq15251852316@gmail.com": {
+    "login": "oppenheimor"
+  },
+  "sjungwon03@gmail.com": {
+    "login": "sjungwon03"
+  },
+  "skool@doctablade.com": {
+    "login": "drleadflow"
+  },
+  "skywind5487@gmail.com": {
+    "login": "Skywind5487"
+  },
+  "sofianekal95@gmail.com": {
+    "login": "sxuff"
+  },
+  "soheil.fakour@gmail.com": {
+    "login": "thatssoheil"
+  },
+  "soliva.johnpaul@icloud.com": {
+    "login": "jonpol01",
+    "comment": "PR #123884 salvage"
+  },
+  "solivajp@gmail.com": {
+    "login": "jonpol01",
+    "comment": "PR #116287 salvage (batch0919 L19)"
+  },
+  "songotenukraine@gmail.com": {
+    "login": "SongotenU"
+  },
+  "sophia@pulse.local": {
+    "login": "knoal"
+  },
+  "sora.bluesky.dev@gmail.com": {
+    "login": "Sora-bluesky"
+  },
+  "sorenisanerd@gmail.com": {
+    "login": "sorenisanerd"
+  },
+  "sosxradar@gmail.com": {
+    "login": "GTHell"
+  },
+  "soundbrokaz@kakao.com": {
+    "login": "JeremyDev87"
+  },
+  "southpawinmusic@gmail.com": {
+    "login": "SouthpawIN"
+  },
+  "spark@channel.inc": {
+    "login": "tom-channel",
+    "comment": "PR #72475 salvage"
+  },
+  "spfcraze@users.noreply.github.com": {
+    "login": "spfcraze"
+  },
+  "sri.atmakur@gmail.com": {
+    "login": "atmaksri"
+  },
+  "ssahaun19@gmail.com": {
+    "login": "sohomsahaun"
+  },
+  "ssep4u@gmail.com": {
+    "login": "ssep4u"
+  },
+  "sswdarius@gmail.com": {
+    "login": "necoweb3"
+  },
+  "stanislav@local": {
+    "login": "sl4m3"
+  },
+  "stef.anastasiou@protonmail.ch": {
+    "login": "sanastasiou",
+    "comment": "PR #114828 Co-authored-by"
+  },
+  "stefan@noble-pro.com": {
+    "login": "stefanpieter"
+  },
+  "stephenlopez2030@gmail.com": {
+    "login": "Slopez2023",
+    "comment": "PR #71668 salvage (desktop: gated /api/health readiness probe)"
+  },
+  "steve.darlow@gmail.com": {
+    "login": "kerpopule"
+  },
+  "steve@cuppett.com": {
+    "login": "cuppett"
+  },
+  "steveahlstrom@gmail.com": {
+    "login": "sjahlstrom"
+  },
+  "stevehsu0524.ttlc@gmail.com": {
+    "login": "stevehsu0524"
+  },
+  "stocki.lukasz@gmail.com": {
+    "login": "sloik"
+  },
+  "stoltemberg@users.noreply.github.com": {
+    "login": "Stoltemberg"
+  },
+  "strnadchristopher@gmail.com": {
+    "login": "strnadchristopher"
+  },
+  "subhoya@gmail.com": {
+    "login": "subhoya",
+    "comment": "v0.20.0 audit: author on #72388 salvage (terminal overlay)"
+  },
+  "sudhirpatil@users.noreply.github.com": {
+    "login": "sudhirpatil",
+    "comment": "PR #102557 salvage (discord: clear fatal status on reconnect, #102554)"
+  },
+  "sun.guoen0@gmail.com": {
+    "login": "Guoen0"
+  },
+  "sungwook0115.kim@gmail.com": {
+    "login": "RoySRose"
+  },
+  "sunsky.lau@gmail.com": {
+    "login": "liuhao1024",
+    "comment": "PR #123004 salvage (max-iteration summary surrogate pass)"
+  },
+  "suntech-wang@users.noreply.github.com": {
+    "login": "suntech-wang"
+  },
+  "suparious@users.noreply.github.com": {
+    "login": "suparious"
+  },
+  "suphi@mutatismutandis.co": {
+    "login": "jervaise"
+  },
+  "supotato-ipj@users.noreply.github.com": {
+    "login": "supotato-ipj"
+  },
+  "support@captureclient.net": {
+    "login": "eazye19",
+    "comment": "PR #43299 salvage"
+  },
+  "suroy@qq.com": {
+    "login": "zsuroy"
+  },
+  "switchstatement@gmail.com": {
+    "login": "krunkosaurus"
+  },
+  "sy0u1ti@users.noreply.github.com": {
+    "login": "sy0u1ti"
+  },
+  "sylbae@users.noreply.github.com": {
+    "login": "sylbae",
+    "comment": "PR #79571 salvage via #79705"
+  },
+  "szsyyk@163.com": {
+    "login": "KeaneYan"
+  },
+  "szzhoujiarui@users.noreply.github.com": {
+    "login": "szzhoujiarui"
+  },
+  "tadeksasnal@gmail.com": {
+    "login": "Sasni"
+  },
+  "takealook97@naver.com": {
+    "login": "deepeet-git"
+  },
+  "takumisatojpn@gmail.com": {
+    "login": "satotakumi"
+  },
+  "talmoredder@gmail.com": {
+    "login": "EdderTalmor",
+    "comment": "PR #10110 salvage"
+  },
+  "taneli.mielikainen@iki.fi": {
+    "login": "tmielika"
+  },
+  "tangyi@DESKTOP-2U4MD8Q": {
+    "login": "yitang"
+  },
+  "tantella@gmail.com": {
+    "login": "BigKelLearns"
+  },
+  "tarek.belkahia@gmail.com": {
+    "login": "tokou",
+    "comment": "PR #68506 salvage"
+  },
+  "tarkil@gmail.com": {
+    "login": "tarkilhk"
+  },
+  "tars@users.noreply.github.com": {
+    "login": "MLcogTech"
+  },
+  "tartakovsky.steven@gmail.com": {
+    "login": "startakovsky"
+  },
+  "taxbax@gmail.com": {
+    "login": "taxbax"
+  },
+  "tbsonline@protonmail.com": {
+    "login": "jasoisjaso"
+  },
+  "teakesmail@yahoo.com": {
+    "login": "teakesdev"
+  },
+  "team@williepeacock.com": {
+    "login": "peacockesq"
+  },
+  "teamster22@users.noreply.github.com": {
+    "login": "teamster22"
+  },
+  "teddychenfeiyang@gmail.com": {
+    "login": "teddychenfeiyang-png"
+  },
+  "teknium1@users.noreply.github.com": {
+    "login": "teknium1"
+  },
+  "teonexcore@gmail.com": {
+    "login": "teo-nex"
+  },
+  "texasich@users.noreply.github.com": {
+    "login": "texasich",
+    "comment": "PR #80376 salvage (gateway: fail-closed turn-lease timeout)"
+  },
+  "the3asic@users.noreply.github.com": {
+    "login": "the3asic"
+  },
+  "theapoapostolov@gmail.com": {
+    "login": "apoapostolov"
+  },
+  "themadsilversurfer@gmail.com": {
+    "login": "themadsilversurfer-blip"
+  },
+  "thenabbu@users.noreply.github.com": {
+    "login": "thenabbu"
+  },
+  "theone139344@users.noreply.github.com": {
+    "login": "theone139344"
+  },
+  "theunathi@gmail.com": {
+    "login": "UnathiCodex",
+    "comment": "PR contribution (tui_gateway: keep busy submits resume-safe) ; PR #66234 (Desktop reconnect and transcript reconciliation)"
+  },
+  "thiago@zhu.dev": {
+    "login": "anotherchu"
+  },
+  "thinkboutme@protonmail.com": {
+    "login": "soyelmismo",
+    "comment": "catalog PR #118462"
+  },
+  "thomasbekkers@Thomass-Mac-mini-2.local": {
+    "login": "thomasbek3"
+  },
+  "tiberiud99@gmail.com": {
+    "login": "TiberiuD"
+  },
+  "tikkanadityajyothi@gmail.com": {
+    "login": "Vissirexa"
+  },
+  "tim@growthpath.com.au": {
+    "login": "timrichardson",
+    "comment": "PR #47533 co-author"
+  },
+  "tim@timkaufmann.de": {
+    "login": "tkaufmann",
+    "comment": "PR #105463 salvage"
+  },
+  "tky.juani@gmail.com": {
+    "login": "JuaniLezcano"
+  },
+  "tl2493@columbia.edu": {
+    "login": "MonkeyLeeT"
+  },
+  "toannhu.dev@gmail.com": {
+    "login": "toannhu96"
+  },
+  "tobenwarrior@users.noreply.github.com": {
+    "login": "tobenwarrior"
+  },
+  "tobiassafaie@MacBook-Air-von-Tobias-3.local": {
+    "login": "muctobi"
+  },
+  "tom.mulkins@gmail.com": {
+    "login": "tommulkins",
+    "comment": "catalog PR #111993"
+  },
+  "tom@clientspike.com": {
+    "login": "tomwattsca"
+  },
+  "tom@spoct.com": {
+    "login": "TomSpoct"
+  },
+  "tomatosimple1104@gmail.com": {
+    "login": "hardwork9047"
+  },
+  "tomoya161008@icloud.com": {
+    "login": "higgs1729"
+  },
+  "tong.xd@outlook.com": {
+    "login": "jinlingzi-cmd",
+    "comment": "WhatsApp group-intake / LID salvage (#63416, #73465, #72592)"
+  },
+  "tony@aiowa.dev": {
+    "login": "tony-simons-aiowa"
+  },
+  "topazd2@gmail.com": {
+    "login": "AndrewMoryakov"
+  },
+  "toprakeker@users.noreply.github.com": {
+    "login": "toprakeker"
+  },
+  "trading-monitoring@localhost": {
+    "login": "ckomma"
+  },
+  "tranquil-flow@users.noreply.github.com": {
+    "login": "Tranquil-Flow",
+    "comment": "PR #107045 salvage (tests for #80646)"
+  },
+  "travisjstockton@gmail.com": {
+    "login": "RayCharlizard"
+  },
+  "trayhartred@gmail.com": {
+    "login": "arcimun"
+  },
+  "trkim@vms-solutions.com": {
+    "login": "ddifa86"
+  },
+  "tron@chriswykel.com": {
+    "login": "Wpnx330",
+    "comment": "PR #68334 salvage (compression: pre-LLM feasibility check, from #60451). ; TRON <tron@chriswykel.com> is @Wpnx330's coding-agent commit identity."
+  },
+  "troy.rowe@re-source.au": {
+    "login": "troyrowe-resource",
+    "comment": "PR #90261 salvage"
+  },
+  "tsungyuan.hung@gmail.com": {
+    "login": "S-Claw"
+  },
+  "tudor.pastor@glencore.com": {
+    "login": "tudorpastorglencore"
+  },
+  "tugrulgunr@gmail.com": {
+    "login": "tugrulguner"
+  },
+  "turgut.kural@gmail.com": {
+    "login": "TurgutKural"
+  },
+  "turingcat@gmail.com": {
+    "login": "turingcat"
+  },
+  "tusharanshu18@gmail.com": {
+    "login": "tusharui"
+  },
+  "tutan0558@users.noreply.github.com": {
+    "login": "tutan0558"
+  },
+  "tutors1997@outlook.com": {
+    "login": "Stoltemberg",
+    "comment": "PR #56081 salvage (pre-compute sorted reasoning timeout floors)"
+  },
+  "tymrabchuk@gmail.com": {
+    "login": "5uck1ess"
+  },
+  "udjin79@gmail.com": {
+    "login": "Udjin79",
+    "comment": "catalog PR #118335"
+  },
+  "ugo.enyioha@outlook.com": {
+    "login": "ugoenyioha"
+  },
+  "ulises.millanguerrero@gmail.com": {
+    "login": "umi008"
+  },
+  "ulysse.trin@hotmail.fr": {
+    "login": "hermias1"
+  },
+  "umit.ediz@hotmail.com": {
+    "login": "Edizzier"
+  },
+  "unashamed366@gmail.com": {
+    "login": "Angriff36"
+  },
+  "universeszym@mail.ustc.edu.cn": {
+    "login": "Johnny-xuan"
+  },
+  "unixwzrd.register@mac.com": {
+    "login": "unixwzrd"
+  },
+  "uperLu@users.noreply.github.com": {
+    "login": "uperLu",
+    "comment": "PR #85276"
+  },
+  "upicat@users.noreply.github.com": {
+    "login": "upicat"
+  },
+  "uplink.punks-1k@icloud.com": {
+    "login": "Dudeman456"
+  },
+  "user55596@protonmail.com": {
+    "login": "overtoneblue"
+  },
+  "uttkarsh26@gmail.com": {
+    "login": "uttkarsh-26"
+  },
+  "vadelma-agent@users.noreply.github.com": {
+    "login": "vadelma-agent"
+  },
+  "vadelma@agenttiklubi.org": {
+    "login": "vadelma-agent"
+  },
+  "vadim984@gmail.com": {
+    "login": "vadimcomanescu"
+  },
+  "vaibhavdahiya28@gmail.com": {
+    "login": "vsd2807"
+  },
+  "vaibhavs362@gmail.com": {
+    "login": "vaibhavjnf",
+    "comment": "PR #48194 salvage"
+  },
+  "valda68k@gmail.com": {
+    "login": "valda",
+    "comment": "PR #61713 salvage"
+  },
+  "valerdoskin@users.noreply.github.com": {
+    "login": "valerdoskin"
+  },
+  "vanni.axel@gmail.com": {
+    "login": "vanniaxel06"
+  },
+  "vanshgilhotra8885@gmail.com": {
+    "login": "Vansh5632"
+  },
+  "varora1406@gmail.com": {
+    "login": "vaibhavarora14",
+    "comment": "salvage #114251"
+  },
+  "vatevstoil@gmail.com": {
+    "login": "vatevstoil"
+  },
+  "vectorcontext@outlook.com": {
+    "login": "vectorcontext",
+    "comment": "PR #104650 profile home salvage"
+  },
+  "veeman961@gmail.com": {
+    "login": "kvnloo"
+  },
+  "venkatbalaji2004@gmail.com": {
+    "login": "VBS2004"
+  },
+  "veryverybigdog@gmail.com": {
+    "login": "verybigdog"
+  },
+  "vibecoder@example.com": {
+    "login": "zoser69"
+  },
+  "victor@pulseresearch.com": {
+    "login": "victor-kyriazakos",
+    "comment": "PR #64536 Gateway Health OTLP production hardening"
+  },
+  "victornogu80@gmail.com": {
+    "login": "victorftrdba"
+  },
+  "victoronwuanaku@gmail.com": {
+    "login": "victoronwuanaku"
+  },
+  "vignesh@openai.com": {
+    "login": "vignesh-oai"
+  },
+  "vikyw89@gmail.com": {
+    "login": "vikyw89",
+    "comment": "PR #50902 salvage (sec: npm/uv dependency cooldown)"
+  },
+  "vinayshah2006@gmail.com": {
+    "login": "vinayshah1998"
+  },
+  "vinoth12940@users.noreply.github.com": {
+    "login": "vinoth12940"
+  },
+  "virat.dot@gmail.com": {
+    "login": "virattt",
+    "comment": "catalog PR #115287"
+  },
+  "viteballoons@gmail.com": {
+    "login": "paralegalia"
+  },
+  "vitor@vitorcepedalopes.com": {
+    "login": "TheAngryPit",
+    "comment": "v0.20.0 audit: direct email match on profile (OAuth sidebar fix)"
+  },
+  "vittoria3103.123@gmail.com": {
+    "login": "VittoriaLanzo"
+  },
+  "vjpixel@users.noreply.github.com": {
+    "login": "vjpixel"
+  },
+  "volleyballlive@googlemail.com": {
+    "login": "Moep90",
+    "comment": "PR #109735 salvage"
+  },
+  "voodoo-pixels@Mac.localdomain": {
+    "login": "Raven26-VooDoo"
+  },
+  "vovik-assistant@proton.me": {
+    "login": "V0v1kkkAssistant"
+  },
+  "vyr.agent@vyrgs.com": {
+    "login": "davidneyravyr"
+  },
+  "vyre@ishanparihar.com": {
+    "login": "ishanparihar"
+  },
+  "waldo@minicat.local": {
+    "login": "eduardo",
+    "comment": "WhatsApp group-intake / LID salvage (#63416, #73465, #72592)"
+  },
+  "wangs.coder@gmail.com": {
+    "login": "wangs1203"
+  },
+  "wangtao@wangtaodeMacBook-Pro.local": {
+    "login": "wangtaotaotao95"
+  },
+  "wangtaotaotao95@gmail.com": {
+    "login": "wangtaotaotao95"
+  },
+  "wangxac8@vip.qq.com": {
+    "login": "web-wyf"
+  },
+  "wangyunyou@leoao.com": {
+    "login": "wangyunyou"
+  },
+  "wansui@bilibili.com": {
+    "login": "crazyhulk"
+  },
+  "wayne1992127@gmail.com": {
+    "login": "wayne1992127"
+  },
+  "webtecnica@gmail.com": {
+    "login": "webtecnica"
+  },
+  "webtecnica@users.noreply.github.com": {
+    "login": "webtecnica",
+    "comment": "PR #69500 salvage"
+  },
+  "weddle@gmail.com": {
+    "login": "rweddle"
+  },
+  "weishao0524@gmail.com": {
+    "login": "DaxLee9988"
+  },
+  "wen0531@gmail.com": {
+    "login": "wen0531"
+  },
+  "wenzel.james.r@gmail.com": {
+    "login": "emo-eth"
+  },
+  "wernerhp@users.noreply.github.com": {
+    "login": "wernerhp"
+  },
+  "whisky0809@users.noreply.github.com": {
+    "login": "whisky0809"
+  },
+  "whyyagswhy@users.noreply.github.com": {
+    "login": "whyyagswhy"
+  },
+  "wilgefortz@gmail.com": {
+    "login": "elphamale"
+  },
+  "will@startupbros.com": {
+    "login": "StartupBros-com"
+  },
+  "willfrombr@Willians-MacBook-Pro.local": {
+    "login": "willfrombr"
+  },
+  "william.reed@acquia.com": {
+    "login": "wreed4"
+  },
+  "williamchastain2005@gmail.com": {
+    "login": "CrazyWillBear"
+  },
+  "wingkwong.code@gmail.com": {
+    "login": "wingkwong"
+  },
+  "wjsrjsdn12@gmail.com": {
+    "login": "Momentum96"
+  },
+  "wrjie@msn.cn": {
+    "login": "jeeaay"
+  },
+  "wubu.bounty.hunter@users.noreply.github.com": {
+    "login": "waefrebeorn"
+  },
+  "wyf9661@hotmail.com": {
+    "login": "wyf9661",
+    "comment": "PR #125948 salvage"
+  },
+  "wykim777@naver.com": {
+    "login": "iamwongeeeee",
+    "comment": "v0.20.0 audit: co-author on #65798 (FTS schema v23)"
+  },
+  "wyz0707@proton.me": {
+    "login": "lorenzozanee"
+  },
+  "xaydinoktay@gmail.com": {
+    "login": "aydnOktay"
+  },
+  "xiajiahang@weyland-x.com": {
+    "login": "xiajiahang"
+  },
+  "xiaoyaner0201@users.noreply.github.com": {
+    "login": "xiaoyaner0201"
+  },
+  "xiehong@xinjikang.cn": {
+    "login": "seamusmore",
+    "comment": "PR #64339 salvage"
+  },
+  "xingkai98@126.com": {
+    "login": "Xingkai98"
+  },
+  "xinyixu26@gmail.com": {
+    "login": "Xuxyyy"
+  },
+  "xinyu@starfie1d.top": {
+    "login": "Starfie1d1272"
+  },
+  "xiongyue_hnu@163.com": {
+    "login": "yuexiongHNU"
+  },
+  "xqdwww@qq.com": {
+    "login": "xqdwww"
+  },
+  "xrwang8@gmail.com": {
+    "login": "xrwang8"
+  },
+  "xuezhao@gmail.com": {
+    "login": "xuezhaolan",
+    "comment": "PR #68556 contributor attribution"
+  },
+  "xunjin.zheng@outlook.com": {
+    "login": "FunJim",
+    "comment": "PR #18455 salvage (free_response_auto_thread opt-in)"
+  },
+  "xwlyy1991@163.com": {
+    "login": "drafish"
+  },
+  "xy952666680@users.noreply.github.com": {
+    "login": "xy952666680"
+  },
+  "xys159753@gmail.com": {
+    "login": "a1398394385"
+  },
+  "xz-dev@users.noreply.github.com": {
+    "login": "xz-dev"
+  },
+  "yaandere200@gmail.com": {
+    "login": "caya8205-2"
+  },
+  "yagna@pulseresearch.com": {
+    "login": "whyyagswhy"
+  },
+  "yagnavudathu@gmail.com": {
+    "login": "whyyagswhy",
+    "comment": "PR #113725 co-author ; PR #114478 co-author"
+  },
+  "yahuoking@gmail.com": {
+    "login": "yahuo"
+  },
+  "yangjin80@gmail.com": {
+    "login": "thinkingsheep",
+    "comment": "PR #102948 salvage"
+  },
+  "yangjin@yangjindeMacBook-Pro.local": {
+    "login": "thinkingsheep",
+    "comment": "PR #102948 salvage"
+  },
+  "yapache@gmail.com": {
+    "login": "Caelier"
+  },
+  "ycl_pj@163.com": {
+    "login": "yuanchenglu",
+    "comment": "PR #47026 salvage"
+  },
+  "ycy1990@gmail.com": {
+    "login": "metricano"
+  },
+  "yemi@lagosinternationalmarket.com": {
+    "login": "yemi-lagosinternationalmarket"
+  },
+  "yflmq001@users.noreply.github.com": {
+    "login": "yflmq001"
+  },
+  "yigongsyl@gmail.com": {
+    "login": "gongyi"
+  },
+  "yingwaizhiying@gmail.com": {
+    "login": "tianma-if",
+    "comment": "PR #57254 salvage — supersedes stale msh01 AUTHOR_MAP entry (account 404s; GitHub email search + PR #57254 commits attribute this email to tianma-if)"
+  },
+  "yinz7032@gmail.com": {
+    "login": "AYin-Z"
+  },
+  "yiyangchaishu@gmail.com": {
+    "login": "vinsew"
+  },
+  "yj2761@nyu.edu": {
+    "login": "yaojiejia",
+    "comment": "PR #95160 salvage"
+  },
+  "yl.tilly.everhome@gmail.com": {
+    "login": "Tilly-YL"
+  },
+  "yongliabc888@gmail.com": {
+    "login": "yongli-abc",
+    "comment": "PR #87629 salvage"
+  },
+  "yozamono@gmail.com": {
+    "login": "sambai-dev"
+  },
+  "yu_zhengbo@foxmail.com": {
+    "login": "AideYu",
+    "comment": "PR #98094 salvage of #68983"
+  },
+  "yubingz@users.noreply.github.com": {
+    "login": "yubingz"
+  },
+  "yukinomon@users.noreply.github.com": {
+    "login": "yukinomon"
+  },
+  "yunke98888@gmail.com": {
+    "login": "yunke98888-gif"
+  },
+  "yuntianqing@yahoo.com": {
+    "login": "zengzheqing",
+    "comment": "PR #55631 salvage"
+  },
+  "yunze7373@users.noreply.github.com": {
+    "login": "yunze7373"
+  },
+  "yuri@sparkroad.com": {
+    "login": "yuric"
+  },
+  "yuvalfis@users.noreply.github.com": {
+    "login": "yuvalfis"
+  },
+  "yuyigeng97@gmail.com": {
+    "login": "YuYigeng"
+  },
+  "yuzilong.leif@gmail.com": {
+    "login": "yuzilongleif-collab"
+  },
+  "ywatanabe@scitex.ai": {
+    "login": "ywatanabe1989",
+    "comment": "PR #110480 salvage (agent: max-iterations summary keeps tool cache lineage)"
+  },
+  "yy28@vip.sina.com": {
+    "login": "yy28"
+  },
+  "z23@users.noreply.github.com": {
+    "login": "z23"
+  },
+  "zabih.mosafer@gmail.com": {
+    "login": "zabih-sudo"
+  },
+  "zane.chee.2023@scis.smu.edu.sg": {
+    "login": "injaneity"
+  },
+  "zanzipanzi@gmail.com": {
+    "login": "zanzipanzi"
+  },
+  "zaze-oO@users.noreply.github.com": {
+    "login": "zaze-oO",
+    "comment": "PR attribution fix"
+  },
+  "zcj1122@example.com": {
+    "login": "zcj1122-rgb"
+  },
+  "zehuaw@mit.edu": {
+    "login": "zehuaw1"
+  },
+  "zengzheqing@users.noreply.github.com": {
+    "login": "zengzheqing",
+    "comment": "PR #96647 salvage of #95605 (macOS TCC anchor re-land)"
+  },
+  "zgpeng2002@163.com": {
+    "login": "original4422"
+  },
+  "zgqjava@gmail.com": {
+    "login": "zgqq"
+  },
+  "zgzczzw@users.noreply.github.com": {
+    "login": "zgzczzw",
+    "comment": "PR #65022 salvage"
+  },
+  "zhangcw1989@gmail.com": {
+    "login": "Owen-narcissus"
+  },
+  "zhangk1985@gmail.com": {
+    "login": "kylezh"
+  },
+  "zhangyingliang@outlook.com": {
+    "login": "yingliang-zhang"
+  },
+  "zhangyswx@163.com": {
+    "login": "YusenZhang0601",
+    "comment": "PR #94531 salvage (#94448)"
+  },
+  "zhaomengfan44@sina.com": {
+    "login": "zhaomengfan"
+  },
+  "zhjay@stu.xjtu.edu.cn": {
+    "login": "ZHJay"
+  },
+  "zhongshengyuan@tju.edu.cn": {
+    "login": "NMTZ-z"
+  },
+  "zhou.he3@xydigit.com": {
+    "login": "zhouhe-xydt"
+  },
+  "zhouou6@gmail.com": {
+    "login": "shali10",
+    "comment": "PR #123725 salvage"
+  },
+  "zhouou6@users.noreply.github.com": {
+    "login": "shali10"
+  },
+  "zhu2mu@qq.com": {
+    "login": "zhuermu"
+  },
+  "zhunyunjiang@gmail.com": {
+    "login": "akb4q"
+  },
+  "zihaofeng2001@gmail.com": {
+    "login": "zihaofeng2001",
+    "comment": "PR #101768 salvage into #116553"
+  },
+  "zkgit.substance129@passmail.com": {
+    "login": "richkapp"
+  },
+  "zohuyhieuzo03@gmail.com": {
+    "login": "zohuyhieuzo03"
+  },
+  "zombopanda@gmail.com": {
+    "login": "zombopanda"
+  },
+  "zqw3719222@163.com": {
+    "login": "cadezhou"
+  },
+  "zsoltfehervari@gmx.com": {
+    "login": "0x7s0lt1"
+  },
+  "zsulthan9@gmail.com": {
+    "login": "SulthanZahran1",
+    "comment": "PR #97843 salvage"
+  },
+  "zzragida@gmail.com": {
+    "login": "zzragida"
+  },
+  "{ID}+{username}@users.noreply.github.com": {
+    "login": "alexdev03"
+  }
+}

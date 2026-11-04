@@ -1,11 +1,11 @@
-"""Tests for the conflict-free contributor mapping system.
+"""Tests for the contributor mapping system (.mailmap and contributors.json).
 
-New contributor email → GitHub login mappings live as one file per email
-under contributors/emails/ (additions never merge-conflict). The legacy
-AUTHOR_MAP dict in scripts/releases/authors_legacy.py is frozen; authors.py
-merges both at import time with the directory winning on duplicates.
+Contributor email → GitHub login mappings live in contributors/contributors.json
+and the root .mailmap. The legacy AUTHOR_MAP dict in scripts/releases/authors_legacy.py
+is frozen; authors.py merges both at import time with contributors.json winning on duplicates.
 """
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -19,13 +19,29 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 from scripts.releases import authors, authors_legacy  # noqa: E402
-from add_contributor import add_contributor, read_mapping_file  # noqa: E402
+from add_contributor import add_contributor, get_contributor, read_mapping_file  # noqa: E402
 
 
-# ── directory loader behavior ─────────────────────────────────────────
+# ── loader behavior ───────────────────────────────────────────────────
 
 
-def test_loader_reads_login_from_first_noncomment_line(tmp_path):
+def test_loader_reads_login_from_contributors_json(tmp_path):
+    json_path = tmp_path / "contributors.json"
+    json_path.write_text(
+        json.dumps({
+            "jane@example.com": {"login": "janedoe", "comment": "PR #1"},
+            "bob@example.com": "@bobuser",
+        }),
+        encoding="utf-8",
+    )
+    mapping = authors._load_contributors_json(json_path)
+    assert mapping == {
+        "jane@example.com": "janedoe",
+        "bob@example.com": "bobuser",
+    }
+
+
+def test_loader_reads_legacy_directory(tmp_path):
     d = tmp_path / "emails"
     d.mkdir()
     (d / "jane@example.com").write_text("# salvage PR #1\njanedoe\n# trailing note\n")
@@ -33,13 +49,13 @@ def test_loader_reads_login_from_first_noncomment_line(tmp_path):
     assert mapping == {"jane@example.com": "janedoe"}
 
 
-def test_effective_map_merges_legacy_and_directory():
+def test_effective_map_merges_legacy_and_registry():
     # Invariant: every legacy entry survives into the effective map unless
-    # shadowed by a directory entry, and the directory contributes on top.
+    # shadowed by a registry entry, and the registry contributes on top.
     assert set(authors_legacy.LEGACY_AUTHOR_MAP) <= (
-        set(authors.AUTHOR_MAP) | set(authors._load_contributor_dir())
+        set(authors.AUTHOR_MAP) | set(authors._load_contributors_json())
     )
-    for email, login in authors._load_contributor_dir().items():
+    for email, login in authors._load_contributors_json().items():
         assert authors.AUTHOR_MAP[email] == login
 
 
@@ -47,41 +63,57 @@ def test_effective_map_merges_legacy_and_directory():
 
 
 @pytest.fixture()
-def emails_dir(tmp_path, monkeypatch):
+def contrib_env(tmp_path, monkeypatch):
     import add_contributor
 
-    d = tmp_path / "contributors" / "emails"
-    monkeypatch.setattr(add_contributor, "EMAILS_DIR", d)
-    return d
+    d = tmp_path / "contributors"
+    d.mkdir(parents=True, exist_ok=True)
+    json_file = d / "contributors.json"
+    mailmap_file = tmp_path / ".mailmap"
+    mailmap_file.write_text("# .mailmap\n", encoding="utf-8")
+
+    monkeypatch.setattr(add_contributor, "CONTRIBUTORS_DIR", d)
+    monkeypatch.setattr(add_contributor, "CONTRIBUTORS_JSON", json_file)
+    monkeypatch.setattr(add_contributor, "EMAILS_DIR", d / "emails")
+    monkeypatch.setattr(add_contributor, "MAILMAP_FILE", mailmap_file)
+    return d, json_file, mailmap_file
 
 
-def test_add_creates_mapping_file(emails_dir):
+def test_add_creates_mapping_in_json_and_mailmap(contrib_env):
+    d, json_file, mailmap_file = contrib_env
     rc = add_contributor("new@example.com", "newperson", "PR #999 salvage")
     assert rc == 0
-    path = emails_dir / "new@example.com"
-    assert path.is_file()
-    assert read_mapping_file(path) == "newperson"
-    assert "# PR #999 salvage" in path.read_text()
+    assert json_file.is_file()
+    assert get_contributor("new@example.com", json_file) == "newperson"
+    assert read_mapping_file(d / "emails" / "new@example.com") == "newperson"
+
+    data = json.loads(json_file.read_text(encoding="utf-8"))
+    assert data["new@example.com"]["login"] == "newperson"
+    assert data["new@example.com"]["comment"] == "PR #999 salvage"
+
+    mailmap_text = mailmap_file.read_text(encoding="utf-8")
+    assert "newperson <new@example.com> <new@example.com>" in mailmap_text
 
 
-def test_add_refuses_login_conflicting_with_legacy_map(emails_dir):
+def test_add_refuses_login_conflicting_with_legacy_map(contrib_env):
+    d, json_file, _ = contrib_env
     email, login = next(iter(authors_legacy.LEGACY_AUTHOR_MAP.items()))
     assert add_contributor(email, login + "x") == 1
-    assert not (emails_dir / email).exists()
+    assert not json_file.exists() or email not in json.loads(json_file.read_text(encoding="utf-8"))
 
 
-def test_add_accepts_legacy_consecutive_hyphen_login(emails_dir):
+def test_add_accepts_legacy_consecutive_hyphen_login(contrib_env):
     # Legacy GitHub accounts with consecutive hyphens are real (Roger--Han);
     # current signup rules forbid them but existing logins remain valid.
+    d, json_file, _ = contrib_env
     assert add_contributor("roger.hanhong@gmail.com", "Roger--Han") == 0
-    assert (emails_dir / "roger.hanhong@gmail.com").read_text(
-        encoding="utf-8"
-    ).strip().endswith("Roger--Han")
+    assert get_contributor("roger.hanhong@gmail.com", json_file) == "Roger--Han"
 
 
-def test_add_strips_at_prefix(emails_dir):
+def test_add_strips_at_prefix(contrib_env):
+    d, json_file, _ = contrib_env
     assert add_contributor("z@z.com", "@zeta") == 0
-    assert read_mapping_file(emails_dir / "z@z.com") == "zeta"
+    assert get_contributor("z@z.com", json_file) == "zeta"
 
 
 def test_cli_entrypoint_end_to_end(tmp_path):
@@ -104,33 +136,33 @@ def test_cli_entrypoint_end_to_end(tmp_path):
         cwd=tmp_path, capture_output=True, text=True,
     )
     assert proc.returncode == 0, proc.stderr
-    out = (tmp_path / "contributors" / "emails" / "cli@example.com").read_text(encoding="utf-8")
-    assert out.splitlines()[0] == "cliperson"
+    json_path = tmp_path / "contributors" / "contributors.json"
+    assert json_path.is_file()
+    data = json.loads(json_path.read_text(encoding="utf-8"))
+    assert data["cli@example.com"]["login"] == "cliperson"
+    assert data["cli@example.com"]["comment"] == "via subprocess"
 
 
-# ── case-insensitive filename collisions ──────────────────────────────
-#
-# The mapping key IS the filename, so two emails differing only in case are the
-# same file on Windows and default macOS; add_contributor must refuse them.
-# scripts/check-case-collisions.py enforces the repo-wide invariant in CI.
+# ── case-insensitive collisions ───────────────────────────────────────
 
 
-def test_add_contributor_refuses_case_collision_even_for_same_login(emails_dir, capsys):
+def test_add_contributor_refuses_case_collision_even_for_same_login(contrib_env, capsys):
     # Same login, different spelling: still refused — the problem is the
-    # filename pair, not the login. The exact spelling is what's "present".
-    emails_dir.mkdir(parents=True)
-    (emails_dir / "Foo@Example.com").write_text("foouser\n")
+    # key pair, not the login. The exact spelling is what's "present".
+    d, json_file, _ = contrib_env
+    json_file.write_text(json.dumps({"Foo@Example.com": {"login": "foouser"}}), encoding="utf-8")
 
     assert add_contributor("foo@example.com", "foouser") == 1
     assert "Foo@Example.com" in capsys.readouterr().err
-    assert sorted(p.name for p in emails_dir.iterdir()) == ["Foo@Example.com"]
+    data = json.loads(json_file.read_text(encoding="utf-8"))
+    assert list(data.keys()) == ["Foo@Example.com"]
     # Exact-case re-add is the ordinary idempotent path.
     assert add_contributor("Foo@Example.com", "foouser") == 0
 
 
-def test_case_collision_uses_casefold(emails_dir):
+def test_case_collision_uses_casefold(contrib_env):
     # casefold, not lower: matches how macOS/Windows fold non-ASCII (ß ~ ss).
-    emails_dir.mkdir(parents=True)
-    (emails_dir / "strasse@example.com").write_text("someone\n")
+    d, json_file, _ = contrib_env
+    json_file.write_text(json.dumps({"strasse@example.com": {"login": "someone"}}), encoding="utf-8")
     assert add_contributor("STRASSE@example.com", "someone") == 1
     assert add_contributor("straße@example.com", "someone") == 1

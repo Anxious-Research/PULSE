@@ -89,6 +89,14 @@ class AutonomousEnterpriseLoop:
         except Exception as exc:
             tick_results["errors"].append(f"Channel dialogue initiator failed: {exc}")
 
+        # 2.7 Periodic Executive Reporting Cadence (Every 4 hours)
+        try:
+            cadence_status = self._check_and_run_reporting_cadence()
+            if cadence_status:
+                tick_results["reporting_cadence"] = cadence_status
+        except Exception as exc:
+            tick_results["errors"].append(f"Reporting cadence check failed: {exc}")
+
         # 3. Channel Watcher Pass (Autonomous Bot-to-Bot Debate)
         try:
             debates = self.watcher.check_and_dispatch_debates(max_dispatches_per_pass=2)
@@ -155,6 +163,27 @@ class AutonomousEnterpriseLoop:
                     ),
                 )
             logger.info("CTO initiated engineering sync in #eng-architecture.")
+
+    def _check_and_run_reporting_cadence(self) -> Optional[str]:
+        """Automatically trigger the full 22-leader upward reporting cycle every 4 hours."""
+        reports_dir = get_pulse_home() / "enterprise" / "reports"
+        reports_dir.mkdir(parents=True, exist_ok=True)
+        rollups = sorted(reports_dir.glob("company_rollup_*.json"))
+        now = time.time()
+        last_rollup_time = 0
+        if rollups:
+            try:
+                last_rollup_time = int(rollups[-1].stem.split("_")[-1])
+            except Exception:
+                pass
+
+        if now - last_rollup_time > 14400:
+            logger.info("Triggering scheduled 4-hour enterprise reporting cadence across all 22 leaders...")
+            from .reporting_cadence import EnterpriseReportingCadence
+            cadence = EnterpriseReportingCadence(self.watcher.dir)
+            rollup = cadence.run_full_company_reporting_cycle()
+            return f"Completed rollup: {rollup['verified_operational']}/{rollup['total_leaders']} leaders verified."
+        return None
 
     def _sync_approved_rfcs_to_brain(self) -> List[str]:
         """Archive approved enterprise RFCs into Brain Vault project nodes to prevent context amnesia."""

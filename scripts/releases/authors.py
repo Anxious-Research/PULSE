@@ -1,11 +1,12 @@
 """Map commit authors to GitHub logins for release notes and attribution checks.
 
 ``AUTHOR_MAP`` merges the frozen ``LEGACY_AUTHOR_MAP`` (authors_legacy.py) with
-the one-file-per-email entries under ``contributors/emails/``; the directory
-wins on duplicates.
+entries from ``contributors/contributors.json`` (and any legacy entries under
+``contributors/emails/`` if present); contributors.json wins on duplicates.
 """
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -13,18 +14,34 @@ from scripts.releases.authors_legacy import LEGACY_AUTHOR_MAP
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
-# ──────────────────────────────────────────────────────────────────────
-# Directory-based mappings: contributors/emails/<email> → login
-# ──────────────────────────────────────────────────────────────────────
+CONTRIBUTORS_JSON = REPO_ROOT / "contributors" / "contributors.json"
 CONTRIBUTORS_EMAILS_DIR = REPO_ROOT / "contributors" / "emails"
 
 
-def _load_contributor_dir(directory: "Path | None" = None) -> dict:
-    """Load one-file-per-email mappings from contributors/emails/.
+def _load_contributors_json(path: Path | None = None) -> dict[str, str]:
+    """Load contributor email → GitHub login mappings from contributors/contributors.json."""
+    path = path or CONTRIBUTORS_JSON
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
+        mapping = {}
+        for email, entry in data.items():
+            if isinstance(entry, dict):
+                login = entry.get("login")
+            else:
+                login = entry
+            if login:
+                mapping[email] = str(login).lstrip("@")
+        return mapping
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _load_contributor_dir(directory: Path | None = None) -> dict[str, str]:
+    """Load one-file-per-email mappings from contributors/emails/ (legacy compatibility).
 
     Filename = commit-author email, first non-comment line = GitHub login.
-    Additions never merge-conflict (each mapping is a distinct file), which
-    is why new entries go here instead of the frozen LEGACY_AUTHOR_MAP.
     """
     directory = directory or CONTRIBUTORS_EMAILS_DIR
     mapping = {}
@@ -44,8 +61,8 @@ def _load_contributor_dir(directory: "Path | None" = None) -> dict:
     return mapping
 
 
-# Effective map: frozen legacy dict + directory entries (directory wins).
-AUTHOR_MAP = {**LEGACY_AUTHOR_MAP, **_load_contributor_dir()}
+# Effective map: frozen legacy dict + legacy directory entries + contributors.json (contributors.json wins).
+AUTHOR_MAP = {**LEGACY_AUTHOR_MAP, **_load_contributor_dir(), **_load_contributors_json()}
 
 
 def resolve_author(name: str, email: str) -> str:

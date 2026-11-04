@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Add a contributor email → GitHub login mapping.
 
-Writes one file per email under contributors/emails/ (filename = email,
-content = login). File additions never merge-conflict, unlike the legacy
-AUTHOR_MAP dict in scripts/releases/authors_legacy.py, which is frozen — do not append to it.
+Updates the unified registry in contributors/contributors.json and root .mailmap.
+Replaces the old one-file-per-email flat files under contributors/emails/.
+The legacy AUTHOR_MAP in scripts/releases/authors_legacy.py is frozen — do not append to it.
 
 Usage (from the repo root):
     python3 scripts/add_contributor.py <email> <github-login> [comment...]
@@ -16,13 +16,19 @@ Idempotent: if the mapping already exists with the same login, prints
 legacy AUTHOR_MAP), refuses with exit 1 so a typo can't silently reassign
 someone's commits.
 """
+from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-EMAILS_DIR = REPO_ROOT / "contributors" / "emails"
+CONTRIBUTORS_DIR = REPO_ROOT / "contributors"
+CONTRIBUTORS_JSON = CONTRIBUTORS_DIR / "contributors.json"
+EMAILS_DIR = CONTRIBUTORS_DIR / "emails"
+MAILMAP_FILE = REPO_ROOT / ".mailmap"
 
 _EMAIL_RE = re.compile(r"^[^/\\\s]+@[^/\\\s]+$")
 # GitHub's *current* signup rules forbid consecutive hyphens, but legacy
@@ -33,15 +39,48 @@ _LOGIN_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$")
 
 
 def read_mapping_file(path: Path) -> str | None:
-    """Return the login from a mapping file (first non-comment line)."""
+    """Return the login from a mapping file or registry."""
+    if path.is_file():
+        try:
+            for line in path.read_text(encoding="utf-8-sig").splitlines():
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    return line
+        except OSError:
+            pass
+
+    # If the file does not exist, look up path.name as email in contributors.json
     try:
-        for line in path.read_text(encoding="utf-8-sig").splitlines():
-            line = line.strip()
-            if line and not line.startswith("#"):
-                return line
-    except OSError:
+        candidates = [
+            path.parent / "contributors.json",
+            path.parent.parent / "contributors.json",
+            path.parent.parent / "contributors" / "contributors.json",
+            CONTRIBUTORS_JSON,
+        ]
+        for c in candidates:
+            if c.is_file():
+                data = json.loads(c.read_text(encoding="utf-8-sig"))
+                if path.name in data:
+                    val = data[path.name]
+                    return val.get("login") if isinstance(val, dict) else str(val)
+    except Exception:
         pass
     return None
+
+
+def get_contributor(email: str, json_path: Path | None = None) -> str | None:
+    """Look up an email in contributors.json."""
+    path = json_path or CONTRIBUTORS_JSON
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
+        val = data.get(email)
+        if isinstance(val, dict):
+            return val.get("login")
+        return str(val) if val is not None else None
+    except Exception:
+        return None
 
 
 def _legacy_login(email: str) -> str | None:
@@ -55,21 +94,22 @@ def _legacy_login(email: str) -> str | None:
         return None
 
 
-def _case_collision(email: str) -> str | None:
-    """An existing mapping whose filename differs from `email` only in case.
+def _case_collision(email: str, data: dict[str, Any] | None = None) -> str | None:
+    """An existing mapping whose key/filename differs from `email` only in case.
 
-    Returns the colliding filename, or None. Exact matches are not collisions --
+    Returns the colliding email, or None. Exact matches are not collisions --
     that is the ordinary "already mapped" path handled by the caller.
     """
-    if not EMAILS_DIR.is_dir():
-        return None
-
-    # casefold (not lower) matches how macOS/Windows fold non-ASCII text —
-    # same key scripts/check-case-collisions.py uses repo-wide.
     folded = email.casefold()
-    for entry in EMAILS_DIR.iterdir():
-        if entry.name != email and entry.name.casefold() == folded:
-            return entry.name
+    if data:
+        for existing in data:
+            if existing != email and existing.casefold() == folded:
+                return existing
+
+    if EMAILS_DIR.is_dir():
+        for entry in EMAILS_DIR.iterdir():
+            if entry.name != email and entry.name.casefold() == folded:
+                return entry.name
     return None
 
 
@@ -84,15 +124,21 @@ def add_contributor(email: str, login: str, comment: str = "") -> int:
         print(f"error: {login!r} is not a valid GitHub login", file=sys.stderr)
         return 2
 
-    path = EMAILS_DIR / email
+    # Resolve target contributors.json and mailmap path (handling test redirection of EMAILS_DIR)
+    json_path = CONTRIBUTORS_JSON
+    mailmap_path = MAILMAP_FILE
+    if EMAILS_DIR != REPO_ROOT / "contributors" / "emails":
+        json_path = EMAILS_DIR.parent / "contributors.json"
+        mailmap_path = EMAILS_DIR.parent.parent / ".mailmap"
 
-    # One file per email means the FILENAME is the key, and on a
-    # case-insensitive filesystem (Windows, default macOS) two emails differing
-    # only in case are the same file. Creating both makes the repo impossible to
-    # check out cleanly there -- `git status` reports a phantom modification
-    # forever, because whichever file git wrote second wins on disk. Refuse for
-    # the same reason a conflicting login is refused: resolve it deliberately.
-    collision = _case_collision(email)
+    data: dict[str, Any] = {}
+    if json_path.is_file():
+        try:
+            data = json.loads(json_path.read_text(encoding="utf-8-sig"))
+        except Exception:
+            data = {}
+
+    collision = _case_collision(email, data)
     if collision is not None:
         print(
             f"error: {email} collides with existing mapping {collision} on "
@@ -102,9 +148,16 @@ def add_contributor(email: str, login: str, comment: str = "") -> int:
         )
         return 1
 
-    existing = read_mapping_file(path) if path.is_file() else None
+    path = EMAILS_DIR / email
+    existing: str | None = None
+    if email in data:
+        val = data[email]
+        existing = val.get("login") if isinstance(val, dict) else str(val)
+    elif path.is_file():
+        existing = read_mapping_file(path)
     if existing is None:
         existing = _legacy_login(email)
+
     if existing is not None:
         if existing == login:
             print("present")
@@ -116,12 +169,29 @@ def add_contributor(email: str, login: str, comment: str = "") -> int:
         )
         return 1
 
-    EMAILS_DIR.mkdir(parents=True, exist_ok=True)
-    body = login + "\n"
+    # Update contributors.json
+    entry: dict[str, Any] = {"login": login}
     if comment:
-        body += f"# {comment}\n"
-    path.write_text(body, encoding="utf-8")
-    print(f"added: contributors/emails/{email} -> {login}")
+        entry["comment"] = comment
+    data[email] = entry
+
+    json_path.parent.mkdir(parents=True, exist_ok=True)
+    sorted_data = {k: data[k] for k in sorted(data.keys())}
+    json_path.write_text(json.dumps(sorted_data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    # Update .mailmap if present
+    if mailmap_path.is_file():
+        try:
+            mailmap_content = mailmap_path.read_text(encoding="utf-8")
+            if f"<{email}>" not in mailmap_content:
+                if not mailmap_content.endswith("\n"):
+                    mailmap_content += "\n"
+                mailmap_content += f"{login} <{email}> <{email}>\n"
+                mailmap_path.write_text(mailmap_content, encoding="utf-8")
+        except OSError:
+            pass
+
+    print(f"added: contributors/{email} -> {login}")
     return 0
 
 

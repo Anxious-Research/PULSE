@@ -1,38 +1,35 @@
 # Contributor email → GitHub login mappings
 
-This directory replaces appending entries to `AUTHOR_MAP` in
-`scripts/releases/authors_legacy.py`. The old dict caused constant merge conflicts when
-several salvage PRs landed at once — every PR edited the same lines of the
-same file. Here, **each mapping is its own file**, and file additions never
-conflict.
+This directory contains `contributors.json`, which consolidates contributor mappings into a single structured registry alongside the root `.mailmap` file.
 
 ## Adding a mapping
 
-One file per commit-author email, under `emails/`:
+Run `scripts/add_contributor.py` from the repository root:
 
 ```bash
-python3 scripts/add_contributor.py <email> <github-login>
-# or by hand:
-echo "<github-login>" > contributors/emails/<email>
+python3 scripts/add_contributor.py <email> <github-login> [comment...]
+
+# e.g.
+python3 scripts/add_contributor.py jane.doe@example.com janedoe "PR #12345 salvage (gateway: fix session key routing)"
 ```
 
-- File **name** = the exact commit-author email (as shown by `git log --format='%ae'`).
-- File **content** = the GitHub login on the first non-comment line.
-  Lines starting with `#` are comments (use them for the PR reference).
+This updates both `contributors/contributors.json` and the root `.mailmap` file.
 
-Example — `contributors/emails/jane.doe@example.com`:
+## Structure of `contributors.json`
 
-```
-janedoe
-# PR #12345 salvage (gateway: fix session key routing)
+Mappings are keyed by commit-author email:
+
+```json
+{
+  "jane.doe@example.com": {
+    "login": "janedoe",
+    "comment": "PR #12345 salvage (gateway: fix session key routing)"
+  }
+}
 ```
 
 ## Rules
 
-- Do NOT add new entries to `AUTHOR_MAP` in `scripts/releases/authors_legacy.py`. That dict
-  is frozen legacy data; the release tooling merges it with this directory
-  (directory entries win on duplicates).
-- GitHub noreply emails (`<id>+<login>@users.noreply.github.com` and
-  `<login>@users.noreply.github.com`) auto-resolve — no file needed.
-- The `Contributor Attribution Check` CI job fails a PR whose commits carry
-  an unmapped email; the failure message prints the exact command to run.
+- Do NOT add new entries to `AUTHOR_MAP` in `scripts/releases/authors_legacy.py`. That dict is frozen legacy data.
+- GitHub noreply emails (`<id>+<login>@users.noreply.github.com` and `<login>@users.noreply.github.com`) auto-resolve — no entry needed.
+- The `Contributor Attribution Check` CI job fails a PR whose commits carry an unmapped email; running `python3 scripts/audit_pr_attribution.py --fix` or `scripts/add_contributor.py` registers the mapping.
