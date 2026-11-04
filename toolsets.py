@@ -35,6 +35,7 @@ _PULSE_CORE_TOOLS = [
     "kanban_comment", "kanban_create", "kanban_link",
     "kanban_unblock",
     "kanban_attach", "kanban_attach_url", "kanban_attachments",
+    "enterprise_manage",
     "computer_use",
     # Service-gated connector account status and authorization links.
     "manage_connections",
@@ -169,6 +170,10 @@ TOOLSETS = {
         "block for human input, heartbeat during long ops, comment on threads, attach "
         "files, and (for orchestrators) list, unblock, and fan out tasks.",
         [t for t in _PULSE_CORE_TOOLS if t.startswith("kanban_")],
+    ),
+    "enterprise": _ts(
+        "Autonomous Enterprise Corporation Governance — cross-functional channels, RFC lifecycle, incident management, squad provisioning, CFO token budgets, talent ledger, QA sentinel, and CISO security ledger",
+        ["enterprise_manage"],
     ),
     "discord": _ts("Discord read and participate tools (fetch messages, search members, create threads)", ["discord"]),
     "discord_admin": _ts("Discord server management (list channels/roles, pin messages, assign roles)", ["discord_admin"]),

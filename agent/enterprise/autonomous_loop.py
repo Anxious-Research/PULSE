@@ -83,6 +83,12 @@ class AutonomousEnterpriseLoop:
         except Exception as exc:
             tick_results["errors"].append(f"Kanban dispatch failed: {exc}")
 
+        # 2.5 Proactive Channel Dialogue Activity
+        try:
+            self._ensure_channel_dialogue_activity()
+        except Exception as exc:
+            tick_results["errors"].append(f"Channel dialogue initiator failed: {exc}")
+
         # 3. Channel Watcher Pass (Autonomous Bot-to-Bot Debate)
         try:
             debates = self.watcher.check_and_dispatch_debates(max_dispatches_per_pass=2)
@@ -106,6 +112,49 @@ class AutonomousEnterpriseLoop:
             tick_results["errors"].append(f"Brain memory sync failed: {exc}")
 
         return tick_results
+
+    def _ensure_channel_dialogue_activity(self) -> None:
+        """Ensure channels have active discussions rather than standing in total silence."""
+        now = time.time()
+        # 1. C-Suite Boardroom Check
+        csuite_msgs = self.watcher.channels.get_messages("c-suite-boardroom", limit=5)
+        last_time = csuite_msgs[-1].timestamp if csuite_msgs else 0
+        if now - last_time > 1800:  # 30 minutes of silence
+            self.watcher.channels.post_message(
+                channel="c-suite-boardroom",
+                sender_profile="pulse-ceo",
+                content=(
+                    "🏛️ **[EXECUTIVE STANDUP]** @pulse-cto please report on engineering sprint velocity "
+                    "and core architecture health. @pulse-cfo are our token consumption budgets within Q4 limits?"
+                ),
+            )
+            logger.info("CEO initiated executive standup debate in #c-suite-boardroom.")
+
+        # 2. Engineering Architecture Check
+        eng_msgs = self.watcher.channels.get_messages("eng-architecture", limit=5)
+        last_eng_time = eng_msgs[-1].timestamp if eng_msgs else 0
+        if now - last_eng_time > 1800:
+            under_review = [d for d in self.rfc.rfcs.values() if d.status == "under_review"]
+            if under_review:
+                target_rfc = under_review[0]
+                self.watcher.channels.post_message(
+                    channel="eng-architecture",
+                    sender_profile="pulse-cto",
+                    content=(
+                        f"⚙️ **[ARCHITECTURE SYNC]** {target_rfc.rfc_id} ({target_rfc.title}) is UNDER_REVIEW. "
+                        f"@vp-core-systems and @vp-cognitive-memory please submit your architectural reviews."
+                    ),
+                )
+            else:
+                self.watcher.channels.post_message(
+                    channel="eng-architecture",
+                    sender_profile="pulse-cto",
+                    content=(
+                        "⚙️ **[ENGINEERING SYNC]** @vp-core-systems what is our current test coverage and build pipeline status? "
+                        "@vp-cloud-sre any latency spikes on persistent memory recall?"
+                    ),
+                )
+            logger.info("CTO initiated engineering sync in #eng-architecture.")
 
     def _sync_approved_rfcs_to_brain(self) -> List[str]:
         """Archive approved enterprise RFCs into Brain Vault project nodes to prevent context amnesia."""

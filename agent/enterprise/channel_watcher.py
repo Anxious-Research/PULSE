@@ -1,9 +1,10 @@
 """Autonomous Cross-Bot Channel Watcher & Debate Engine.
 
 Enables continuous, autonomous collaboration between AI bots without human presence:
-- Monitors departmental channels (#c-suite-boardroom, #eng-architecture, etc.).
+- Monitors departmental channels (#c-suite-boardroom, #eng-architecture, #product-design, #operations-incident-war-room).
 - When a message contains @mentions, it wakes the target bot profile, runs an autonomous turn,
   and posts the response back into the channel.
+- If a message in a channel has no mentions and is from a non-lead member, the channel lead is notified.
 - Supports multi-turn peer discussions with loop budgets and thread tracking.
 """
 
@@ -11,6 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import subprocess
 import time
 from dataclasses import asdict, dataclass, field
@@ -24,6 +26,13 @@ logger = logging.getLogger("enterprise.channel_watcher")
 WATERMARKS_FILENAME = "channel_watermarks.json"
 MAX_THREAD_DEPTH = 6  # Maximum back-and-forth turns per thread to prevent runaway loops
 
+CHANNEL_LEADS = {
+    "c-suite-boardroom": "pulse-ceo",
+    "eng-architecture": "pulse-cto",
+    "product-design": "pulse-cpo",
+    "operations-incident-war-room": "pulse-coo",
+}
+
 
 class ChannelWatcher:
     """Autonomous dispatcher that turns passive channel messages into live inter-bot debates."""
@@ -31,11 +40,13 @@ class ChannelWatcher:
     def __init__(self, root_dir: Optional[Path] = None):
         if root_dir is None:
             self.dir = get_pulse_home() / "enterprise"
+            self.channels = EnterpriseChannels()
         else:
             self.dir = Path(root_dir)
+            self.channels = EnterpriseChannels(self.dir)
+
         self.dir.mkdir(parents=True, exist_ok=True)
         self.watermarks_file = self.dir / WATERMARKS_FILENAME
-        self.channels = EnterpriseChannels(self.dir.parent)
         self.processed_ids: Set[str] = set()
         self.thread_depths: Dict[str, int] = {}
         self.load_watermarks()
@@ -59,7 +70,7 @@ class ChannelWatcher:
         except Exception as exc:
             logger.error("Could not save channel watermarks: %s", exc)
 
-    def check_and_dispatch_debates(self, max_dispatches_per_pass: int = 3) -> List[Dict[str, Any]]:
+    def check_and_dispatch_debates(self, max_dispatches_per_pass: int = 2) -> List[Dict[str, Any]]:
         """Inspect all channels for unhandled @mentions and execute autonomous bot turns."""
         all_channels = self.channels.list_channels()
         dispatched_events = []
@@ -69,35 +80,41 @@ class ChannelWatcher:
             if count >= max_dispatches_per_pass:
                 break
 
-            messages = self.channels.get_messages(ch_name, limit=20)
+            messages = self.channels.get_messages(ch_name, limit=25)
             for msg in messages:
                 if msg.id in self.processed_ids:
                     continue
 
-                self.processed_ids.add(msg.id)
-                self.save_watermarks()
+                # Determine target bots to notify
+                target_bots: List[str] = []
+                if msg.mentions:
+                    for m in msg.mentions:
+                        bot = m.lstrip("@").strip()
+                        if bot and bot != msg.sender_profile:
+                            target_bots.append(bot)
+                else:
+                    # If no mentions, route to channel lead if message wasn't from the lead
+                    lead = CHANNEL_LEADS.get(ch_name)
+                    if lead and msg.sender_profile != lead:
+                        target_bots.append(lead)
 
-                # Find mentions
-                if not msg.mentions:
+                if not target_bots:
+                    self.processed_ids.add(msg.id)
                     continue
 
-                for mention in msg.mentions:
-                    target_bot = mention.lstrip("@").strip()
-                    # Skip if bot is messaging itself
-                    if target_bot == msg.sender_profile:
-                        continue
-
+                for target_bot in target_bots:
                     # Verify bot is member of channel
                     members = meta.get("members", [])
                     if members and target_bot not in members:
                         logger.debug("Bot @%s is not a member of #%s, skipping dispatch.", target_bot, ch_name)
                         continue
 
-                    # Thread depth guard to prevent infinite runaway loops
-                    thread_key = f"{ch_name}:{msg.sender_profile}:{target_bot}"
+                    # Symmetrical thread depth guard (A-B and B-A count toward the same budget)
+                    pair = "-".join(sorted([msg.sender_profile, target_bot]))
+                    thread_key = f"{ch_name}:{pair}"
                     depth = self.thread_depths.get(thread_key, 0)
                     if depth >= MAX_THREAD_DEPTH:
-                        logger.info("Thread %s reached max turn budget (%d). Pausing debate.", thread_key, MAX_THREAD_DEPTH)
+                        logger.info("Thread %s reached max turn budget (%d). Debate concluding.", thread_key, MAX_THREAD_DEPTH)
                         continue
 
                     # Execute autonomous bot response
@@ -106,7 +123,7 @@ class ChannelWatcher:
                     if reply_text:
                         # Post reply back to channel
                         reply_msg = self.channels.post_message(ch_name, target_bot, reply_text)
-                        self.processed_ids.add(reply_msg.id)
+                        # NOTE: We do not add reply_msg.id to self.processed_ids so its mentions can trigger follow-ups
                         self.thread_depths[thread_key] = depth + 1
                         self.save_watermarks()
 
@@ -118,7 +135,12 @@ class ChannelWatcher:
                         })
                         count += 1
                         if count >= max_dispatches_per_pass:
-                            return dispatched_events
+                            break
+
+                self.processed_ids.add(msg.id)
+                self.save_watermarks()
+                if count >= max_dispatches_per_pass:
+                    return dispatched_events
 
         return dispatched_events
 
@@ -130,7 +152,6 @@ class ChannelWatcher:
         recent_messages: List[ChannelMessage],
     ) -> Optional[str]:
         """Run an autonomous headless agent turn for the target bot with channel context."""
-        # Compile recent conversation context (last 5 messages)
         context_lines = []
         for m in recent_messages[-6:]:
             context_lines.append(f"[@{m.sender_profile} in #{channel}]: {m.content}")
@@ -138,22 +159,23 @@ class ChannelWatcher:
         context_str = "\n".join(context_lines)
 
         prompt = (
-            f"You received an official communication in channel #{channel}.\n\n"
-            f"--- RECENT CHANNEL HISTORY ---\n{context_str}\n\n"
-            f"--- YOUR TASK ---\n"
-            f"You were directly mentioned by @{trigger_msg.sender_profile}: \"{trigger_msg.content}\"\n\n"
-            f"Respond directly and professionally as your corporate role. "
-            f"If you need another executive or VP to take action, @mention them. "
-            f"Keep your response concise, actionable, and zero-filler."
+            f"You are collaborating in an official corporate channel #{channel}.\n\n"
+            f"--- RECENT CHANNEL CONVERSATION ---\n{context_str}\n\n"
+            f"--- YOUR MESSAGE TO RESPOND TO ---\n"
+            f"@{trigger_msg.sender_profile} stated: \"{trigger_msg.content}\"\n\n"
+            f"--- INSTRUCTIONS ---\n"
+            f"Respond as your corporate persona @{target_bot}.\n"
+            f"Provide a direct, conversational response to @{trigger_msg.sender_profile} in 1-3 sentences.\n"
+            f"If delegating, reviewing, or asking a question, explicitly @mention the next person (e.g. @pulse-ceo, @pulse-cto, @vp-core-systems).\n"
+            f"Do NOT execute multi-step code refactors or long file searches in this channel turn; give your executive/technical directive or feedback directly."
         )
 
         cmd = ["pulse", "-p", target_bot, "chat", "-q", prompt]
         try:
-            res = subprocess.run(cmd, capture_output=True, text=True, timeout=90)
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
             output = res.stdout.strip()
-            # Clean ANSI and CLI banner headers from output if present
             cleaned_reply = self._extract_clean_reply(output)
-            return cleaned_reply or f"Acknowledged by @{target_bot}. Proceeding with action."
+            return cleaned_reply or f"Acknowledged by @{target_bot}. Action item logged."
         except subprocess.TimeoutExpired:
             logger.error("Bot @%s timed out while responding in #%s", target_bot, channel)
             return None
@@ -162,8 +184,9 @@ class ChannelWatcher:
             return None
 
     def _extract_clean_reply(self, raw_output: str) -> str:
-        """Extract the agent's actual prose reply from CLI output boxes."""
-        lines = raw_output.splitlines()
+        """Extract the agent's actual prose reply from CLI output boxes and strip ANSI."""
+        clean_text = re.sub(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])", "", raw_output)
+        lines = clean_text.splitlines()
         content_lines = []
         in_content = False
 
@@ -177,4 +200,4 @@ class ChannelWatcher:
                 content_lines.append(line)
 
         text = "\n".join(content_lines).strip()
-        return text if text else raw_output[-500:].strip()
+        return text if text else clean_text[-500:].strip()

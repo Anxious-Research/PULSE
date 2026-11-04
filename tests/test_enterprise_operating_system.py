@@ -422,13 +422,13 @@ class TestArtifactVerifier(unittest.TestCase):
         bad_py = self.dir / "bad.py"
         bad_py.write_text("def broken(: syntax error\n", encoding="utf-8")
 
-        valid_good, errors_good = ArtifactVerifier.verify_syntax([good_py])
+        valid_good, evidence_good = ArtifactVerifier.verify_syntax([good_py])
         self.assertTrue(valid_good)
-        self.assertEqual(len(errors_good), 0)
+        self.assertEqual(len(evidence_good[0].syntax_errors), 0)
 
-        valid_bad, errors_bad = ArtifactVerifier.verify_syntax([bad_py])
+        valid_bad, evidence_bad = ArtifactVerifier.verify_syntax([bad_py])
         self.assertFalse(valid_bad)
-        self.assertEqual(len(errors_bad), 1)
+        self.assertEqual(len(evidence_bad[0].syntax_errors), 1)
 
 
 class TestSLAWatchdog(unittest.TestCase):
