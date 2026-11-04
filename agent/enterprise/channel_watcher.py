@@ -118,7 +118,7 @@ class ChannelWatcher:
                         })
                         count += 1
                         if count >= max_dispatches_per_pass:
-                            break
+                            return dispatched_events
 
         return dispatched_events
 

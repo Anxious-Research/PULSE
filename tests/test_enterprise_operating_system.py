@@ -375,5 +375,70 @@ class TestAutonomousLoop(unittest.TestCase):
         self.assertIn("gates_verified", res)
 
 
+class TestCostGuard(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        from agent.enterprise.cost_guard import CostGuard
+        self.guard = CostGuard(Path(self.tmp.name))
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_circuit_breaker_trip_and_reset(self):
+        allowed, _ = self.guard.check_allow_execution()
+        self.assertTrue(allowed)
+
+        # Exceed hourly limit (500k tokens)
+        self.guard.record_spend(tokens=600_000)
+        allowed_after, reason = self.guard.check_allow_execution()
+        self.assertFalse(allowed_after)
+        self.assertIn("CIRCUIT BREAKER TRIPPED", reason)
+
+        # Unauthorized reset fails
+        unauth = self.guard.reset(authorized_by="intern-bot")
+        self.assertFalse(unauth)
+
+        # CFO authorized reset succeeds
+        auth = self.guard.reset(authorized_by="pulse-cfo", increase_hourly_tokens=200_000)
+        self.assertTrue(auth)
+        self.assertFalse(self.guard.state.tripped)
+
+
+class TestArtifactVerifier(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self.tmp.name)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_syntax_verification(self):
+        from agent.enterprise.verifier import ArtifactVerifier
+        # Valid python file
+        good_py = self.dir / "good.py"
+        good_py.write_text("def hello(): return 42\n", encoding="utf-8")
+
+        # Invalid python file
+        bad_py = self.dir / "bad.py"
+        bad_py.write_text("def broken(: syntax error\n", encoding="utf-8")
+
+        valid_good, errors_good = ArtifactVerifier.verify_syntax([good_py])
+        self.assertTrue(valid_good)
+        self.assertEqual(len(errors_good), 0)
+
+        valid_bad, errors_bad = ArtifactVerifier.verify_syntax([bad_py])
+        self.assertFalse(valid_bad)
+        self.assertEqual(len(errors_bad), 1)
+
+
+class TestSLAWatchdog(unittest.TestCase):
+    def test_succession_map(self):
+        from agent.enterprise.sla_watchdog import SUCCESSION_MAP
+        self.assertEqual(SUCCESSION_MAP["vp-core-systems"], "pulse-cto")
+        self.assertEqual(SUCCESSION_MAP["vp-ai-research"], "pulse-cto")
+        self.assertEqual(SUCCESSION_MAP["pulse-cto"], "pulse-ceo")
+        self.assertEqual(SUCCESSION_MAP["pulse-cfo"], "pulse-ceo")
+
+
 if __name__ == "__main__":
     unittest.main()

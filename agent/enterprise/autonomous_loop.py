@@ -1,11 +1,14 @@
 """Master Autonomous Continuous Collaboration & Governance Loop.
 
 Orchestrates full enterprise self-management when human is not present:
-1. Kanban Dispatcher: Continuously claims and executes ready tasks on enterprise-main.
-2. Channel Watcher: Facilitates autonomous cross-bot debates and @mention replies.
-3. Automated Gatekeeper: Drives multi-phase QA, Security, and CTO review cycles.
-4. Talent Performance: Live PIP calibration and stack ranking.
-5. Anti-Amnesia Memory: Persists architectural milestones and ADRs into Brain Vault.
+1. Cost Guard Circuit Breaker: Prevents runaway token burn / wallet drain.
+2. Kanban Dispatcher: Continuously claims and executes ready tasks on enterprise-main.
+3. Channel Watcher: Facilitates autonomous cross-bot debates and @mention replies.
+4. Automated Gatekeeper & Git Merger: Runs QA tests, CISO security scan, CTO sign-off,
+   and physically executes the git merge into main and pushes to GitHub.
+5. Talent Performance: Live PIP calibration and stack ranking.
+6. SLA Watchdog: Deadlock breaker and automatic task succession for quarantined bots.
+7. Anti-Amnesia Memory: Persists architectural milestones and ADRs into Brain Vault.
 """
 
 from __future__ import annotations
@@ -18,6 +21,10 @@ from typing import Any, Dict, List, Optional
 from pulse_constants import get_pulse_home
 from .channel_watcher import ChannelWatcher
 from .gatekeeper import EnterpriseGatekeeper, ReviewVerdict
+from .git_merger import GitMerger
+from .cost_guard import CostGuard
+from .verifier import ArtifactVerifier
+from .sla_watchdog import SLAWatchdog
 from .talent_ops import TalentLedger
 from .rfc_system import RFCEngine
 from .cfo_budget import CFOBudgetEngine
@@ -32,6 +39,9 @@ class AutonomousEnterpriseLoop:
         self.board = board_slug
         self.watcher = ChannelWatcher()
         self.gatekeeper = EnterpriseGatekeeper()
+        self.merger = GitMerger()
+        self.cost_guard = CostGuard()
+        self.sla = SLAWatchdog(board_slug=board_slug)
         self.talent = TalentLedger()
         self.rfc = RFCEngine()
         self.cfo = CFOBudgetEngine()
@@ -40,13 +50,32 @@ class AutonomousEnterpriseLoop:
         """Execute one complete enterprise orchestration tick."""
         tick_results = {
             "timestamp": time.time(),
+            "cost_guard_allowed": True,
             "kanban_dispatch": None,
             "debates_dispatched": [],
             "gates_verified": [],
+            "merges_executed": [],
+            "sla_escalations": [],
+            "rfcs_synced_to_brain": [],
             "errors": [],
         }
 
-        # 1. Kanban Auto-Dispatch Pass
+        # 0. Check Cost Guard Circuit Breaker
+        allowed, reason = self.cost_guard.check_allow_execution()
+        tick_results["cost_guard_allowed"] = allowed
+        if not allowed:
+            tick_results["errors"].append(reason)
+            logger.warning("[AUTONOMOUS LOOP] %s", reason)
+            return tick_results
+
+        # 1. SLA Watchdog Pass (Reclaim stalled tasks & succession)
+        try:
+            escalated = self.sla.check_stalled_tasks(max_stalled_seconds=1800)
+            tick_results["sla_escalations"] = escalated
+        except Exception as exc:
+            tick_results["errors"].append(f"SLA watchdog check failed: {exc}")
+
+        # 2. Kanban Auto-Dispatch Pass
         try:
             cmd = ["pulse", "kanban", "--board", self.board, "dispatch", "--max", "2", "--json"]
             res = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
@@ -54,21 +83,22 @@ class AutonomousEnterpriseLoop:
         except Exception as exc:
             tick_results["errors"].append(f"Kanban dispatch failed: {exc}")
 
-        # 2. Channel Watcher Pass (Autonomous Bot-to-Bot Debate)
+        # 3. Channel Watcher Pass (Autonomous Bot-to-Bot Debate)
         try:
             debates = self.watcher.check_and_dispatch_debates(max_dispatches_per_pass=2)
             tick_results["debates_dispatched"] = debates
         except Exception as exc:
             tick_results["errors"].append(f"Channel watcher failed: {exc}")
 
-        # 3. Automated Gatekeeper Review Pass
+        # 4. Automated Gatekeeper & Real Git Merge Pass
         try:
-            verified_gates = self._process_pending_review_gates()
+            verified_gates, merges = self._process_pending_review_gates_and_merges()
             tick_results["gates_verified"] = verified_gates
+            tick_results["merges_executed"] = merges
         except Exception as exc:
-            tick_results["errors"].append(f"Gatekeeper pass failed: {exc}")
+            tick_results["errors"].append(f"Gatekeeper/Merge pass failed: {exc}")
 
-        # 4. Anti-Amnesia Memory Sync (Persist Approved RFCs & Milestones into Brain Vault)
+        # 5. Anti-Amnesia Memory Sync (Persist Approved RFCs & Milestones into Brain Vault)
         try:
             synced_rfcs = self._sync_approved_rfcs_to_brain()
             tick_results["rfcs_synced_to_brain"] = synced_rfcs
@@ -101,9 +131,11 @@ class AutonomousEnterpriseLoop:
                     logger.info("Archived %s into permanent Brain Vault project node %s", rfc_id, node_file.name)
         return synced
 
-    def _process_pending_review_gates(self) -> List[Dict[str, Any]]:
-        """Process any tasks waiting for automated QA, Security, or Architectural sign-offs."""
+    def _process_pending_review_gates_and_merges(self) -> tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        """Process tasks waiting for automated QA, Security, or Architectural sign-offs, and merge verified code."""
         verified = []
+        merges = []
+
         for task_id, gate in list(self.gatekeeper.gates.items()):
             if gate.merged:
                 continue
@@ -128,7 +160,25 @@ class AutonomousEnterpriseLoop:
                 )
                 verified.append(sign_res)
 
-        return verified
+                # Phase 4: Physical Git Merge & Remote Push
+                if sign_res.get("can_merge"):
+                    merge_res = self.merger.merge_task_branch(
+                        task_id=task_id,
+                        commit_message=f"feat({task_id}): certified merge by @pulse-cto",
+                        push_to_remote=False,  # Set False in local worker loop; manual push on milestone
+                    )
+                    merges.append(merge_res)
+                    logger.info("Task %s physically merged into main: %s", task_id, merge_res.get("success"))
+
+                    # Phase 5: Update Talent Ledger for Author
+                    self.talent.record_task_outcome(
+                        profile=gate.author_profile,
+                        task_id=task_id,
+                        success=merge_res.get("success", False),
+                        reason="Task certified and merged into main.",
+                    )
+
+        return verified, merges
 
     def run_forever(self, interval_seconds: int = 15, max_ticks: Optional[int] = None) -> None:
         """Run the enterprise autonomous loop indefinitely in background."""
@@ -139,8 +189,9 @@ class AutonomousEnterpriseLoop:
                 res = self.tick()
                 debates_count = len(res["debates_dispatched"])
                 gates_count = len(res["gates_verified"])
-                if debates_count > 0 or gates_count > 0:
-                    logger.info("Tick %d complete: %d debates dispatched, %d gates verified.", ticks + 1, debates_count, gates_count)
+                merges_count = len(res["merges_executed"])
+                if debates_count > 0 or gates_count > 0 or merges_count > 0:
+                    logger.info("Tick %d complete: %d debates, %d gates, %d merges.", ticks + 1, debates_count, gates_count, merges_count)
             except Exception as exc:
                 logger.error("Error during enterprise tick: %s", exc)
 

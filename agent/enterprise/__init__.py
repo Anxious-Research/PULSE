@@ -3,6 +3,11 @@
 Provides enterprise-grade governance, accountability, and operational mechanisms:
 - talent_ops: Performance tracking, stack ranking, automated PIP, and layoffs.
 - gatekeeper: Multi-phase zero-defect code review pipeline (QA, CISO, CTO).
+- git_merger: Real physical Git rebase, fast-forward merge into main, and push.
+- workspace_isolator: Isolated Git worktrees per task to eliminate file collisions.
+- cost_guard: Hardware-level token circuit breaker protecting against wallet drain.
+- verifier: Deterministic proof-of-work verifier rejecting hallucinated completions.
+- sla_watchdog: Deadlock detection and automated task succession for fired bots.
 - orchestrator: Enterprise OKR cascade, Kanban dispatching, and executive briefing.
 - squad_spawner: Dynamic workforce provisioning (IC-3 to IC-6 worker squads).
 - channels: Cross-functional departmental messaging channels (#c-suite, #eng-architecture, etc.).
@@ -16,6 +21,11 @@ Provides enterprise-grade governance, accountability, and operational mechanisms
 
 from .talent_ops import TalentLedger, evaluate_bot_performance, BotPerformanceRecord
 from .gatekeeper import EnterpriseGatekeeper, ReviewVerdict
+from .git_merger import GitMerger
+from .workspace_isolator import WorkspaceIsolator
+from .cost_guard import CostGuard
+from .verifier import ArtifactVerifier
+from .sla_watchdog import SLAWatchdog
 from .orchestrator import EnterpriseOrchestrator
 from .squad_spawner import SquadManager, AutonomousSquad, SquadWorker
 from .channels import EnterpriseChannels, ChannelMessage
@@ -34,6 +44,11 @@ __all__ = [
     "BotPerformanceRecord",
     "EnterpriseGatekeeper",
     "ReviewVerdict",
+    "GitMerger",
+    "WorkspaceIsolator",
+    "CostGuard",
+    "ArtifactVerifier",
+    "SLAWatchdog",
     "EnterpriseOrchestrator",
     "SquadManager",
     "AutonomousSquad",

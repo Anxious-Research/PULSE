@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+from dataclasses import asdict
 from typing import Any, Dict, Optional
 from tools.registry import registry
 from agent.enterprise.talent_ops import TalentLedger
@@ -23,6 +24,8 @@ from agent.enterprise.channels import EnterpriseChannels
 from agent.enterprise.rfc_system import RFCEngine, RFCStatus
 from agent.enterprise.incident_manager import IncidentManager, Severity, IncidentStatus
 from agent.enterprise.cfo_budget import CFOBudgetEngine
+from agent.enterprise.qa_ledger import QALedger
+from agent.enterprise.security_ledger import SecurityLedger
 
 logger = logging.getLogger("tools.enterprise")
 
@@ -47,6 +50,13 @@ ENTERPRISE_SCHEMA: Dict[str, Any] = {
                 "check_budget",
                 "record_token_usage",
                 "executive_briefing",
+                "qa_report",
+                "qa_ledger",
+                "security_report",
+                "security_ledger",
+                "cost_status",
+                "reset_circuit_breaker",
+                "reassign_succession",
             ],
             "description": "The enterprise governance action to execute.",
         },
@@ -206,6 +216,43 @@ def _handle_enterprise_manage(params: Dict[str, Any]) -> str:
         elif action == "executive_briefing":
             orch = EnterpriseOrchestrator()
             return orch.generate_executive_briefing()
+
+        elif action == "qa_report":
+            ledger = QALedger()
+            return ledger.generate_summary()
+
+        elif action == "qa_ledger":
+            ledger = QALedger()
+            limit = params.get("limit", 10)
+            history = ledger.get_history(limit)
+            return json.dumps([asdict(h) for h in history], indent=2, ensure_ascii=False)
+
+        elif action == "security_report":
+            sec_ledger = SecurityLedger()
+            return sec_ledger.generate_summary()
+
+        elif action == "security_ledger":
+            sec_ledger = SecurityLedger()
+            limit = params.get("limit", 10)
+            history = sec_ledger.get_history(limit)
+            return json.dumps([asdict(h) for h in history], indent=2, ensure_ascii=False)
+
+        elif action == "cost_status":
+            from agent.enterprise.cost_guard import CostGuard
+            guard = CostGuard()
+            return json.dumps(asdict(guard.state), indent=2)
+
+        elif action == "reset_circuit_breaker":
+            from agent.enterprise.cost_guard import CostGuard
+            guard = CostGuard()
+            ok = guard.reset(authorized_by=params.get("sender", "pulse-cfo"))
+            return json.dumps({"reset_success": ok, "tripped": guard.state.tripped})
+
+        elif action == "reassign_succession":
+            from agent.enterprise.sla_watchdog import SLAWatchdog
+            dog = SLAWatchdog()
+            reassigned = dog.reassign_tasks_for_quarantined_bot(params["profile"])
+            return json.dumps({"reassigned": reassigned}, indent=2)
 
         else:
             return json.dumps({"error": f"Unknown action '{action}'"})
