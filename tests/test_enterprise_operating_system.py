@@ -11,6 +11,8 @@ from agent.enterprise.channels import EnterpriseChannels
 from agent.enterprise.rfc_system import RFCEngine, RFCStatus
 from agent.enterprise.incident_manager import IncidentManager, Severity, IncidentStatus
 from agent.enterprise.cfo_budget import CFOBudgetEngine
+from agent.enterprise.channel_watcher import ChannelWatcher
+from agent.enterprise.autonomous_loop import AutonomousEnterpriseLoop
 
 
 class TestTalentLedger(unittest.TestCase):
@@ -263,6 +265,114 @@ class TestEnterpriseToolHandler(unittest.TestCase):
         # Executive briefing
         briefing = _handle_enterprise_manage({"action": "executive_briefing"})
         self.assertIn("SOVEREIGN ENTERPRISE EXECUTIVE BRIEFING", briefing)
+
+        # QA Report (empty initially in isolated test home)
+        qa_rep_empty = _handle_enterprise_manage({"action": "qa_report"})
+        self.assertIn("No QA verification runs recorded.", qa_rep_empty)
+
+        # Record a test run in the isolated test home
+        from agent.enterprise.qa_ledger import QALedger, QAHealthRecord, TestSuiteMetrics, BenchmarkMetrics
+        ledger = QALedger()
+        ledger.record_run(QAHealthRecord(
+            run_id="QA-TEST-001",
+            operator_profile="vp-qa-verification",
+            brain_suite=TestSuiteMetrics("tests/test_brain*.py", total_tests=740, passed=738),
+            agent_suite=TestSuiteMetrics("tests/agent/test_*.py", total_tests=9872, passed=9768),
+            benchmarks=BenchmarkMetrics(mean_p3=0.65, mean_mrr=1.0, mean_r5=0.93, warm_latency_ms=2.8),
+        ))
+
+        # QA Report with recorded run
+        qa_rep = _handle_enterprise_manage({"action": "qa_report"})
+        self.assertIn("QA TEST SENTINEL HEALTH REPORT", qa_rep)
+
+        # QA Ledger history
+        qa_led = _handle_enterprise_manage({"action": "qa_ledger", "limit": 5})
+        qa_history = json.loads(qa_led)
+        self.assertTrue(len(qa_history) >= 1)
+        self.assertEqual(qa_history[-1]["operator_profile"], "vp-qa-verification")
+
+        # Security Report (empty initially)
+        sec_rep_empty = _handle_enterprise_manage({"action": "security_report"})
+        self.assertIn("No Zero-Trust security audits recorded.", sec_rep_empty)
+
+        # Record a security audit in the isolated test home
+        from agent.enterprise.security_ledger import SecurityLedger, SecurityAuditRecord, ThreatScanMetrics
+        sec_ledger = SecurityLedger()
+        sec_ledger.record_audit(SecurityAuditRecord(
+            audit_id="SEC-TEST-001",
+            auditor_profile="pulse-ciso",
+            threat_metrics=ThreatScanMetrics(total_nodes_scanned=23),
+        ))
+
+        # Security Report with recorded audit
+        sec_rep = _handle_enterprise_manage({"action": "security_report"})
+        self.assertIn("ZERO-TRUST SECURITY AUDIT & CERTIFICATION", sec_rep)
+
+        # Security Ledger history
+        sec_led = _handle_enterprise_manage({"action": "security_ledger", "limit": 5})
+        sec_history = json.loads(sec_led)
+        self.assertTrue(len(sec_history) >= 1)
+        self.assertEqual(sec_history[-1]["auditor_profile"], "pulse-ciso")
+
+
+class TestEnterpriseRBAC(unittest.TestCase):
+    def test_rbac_policies(self):
+        from agent.enterprise.rbac import PROFILE_TOOLSET_POLICIES, PROFILE_MODEL_POLICIES
+        # CFO must not have terminal or code execution
+        cfo_tools = PROFILE_TOOLSET_POLICIES["pulse-cfo"]
+        self.assertNotIn("terminal", cfo_tools)
+        self.assertNotIn("code_execution", cfo_tools)
+        self.assertIn("enterprise", cfo_tools)
+
+        # CTO must have full developer tooling
+        cto_tools = PROFILE_TOOLSET_POLICIES["pulse-cto"]
+        self.assertIn("terminal", cto_tools)
+        self.assertIn("file", cto_tools)
+        self.assertIn("code_execution", cto_tools)
+
+        # Strategic roles must have high reasoning
+        self.assertEqual(PROFILE_MODEL_POLICIES["pulse-ceo"]["reasoning_effort"], "high")
+        self.assertEqual(PROFILE_MODEL_POLICIES["pulse-cto"]["reasoning_effort"], "high")
+
+
+class TestChannelWatcher(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.watcher = ChannelWatcher(Path(self.tmp.name))
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_mention_detection_and_thread_budget(self):
+        # Post message with @mention
+        msg = self.watcher.channels.post_message(
+            channel="c-suite-boardroom",
+            sender_profile="pulse-ceo",
+            content="Hello @pulse-cto what is the Q4 plan?",
+        )
+        self.assertIn("@pulse-cto", msg.mentions)
+
+        # Mock bot execution so we don't spawn full CLI in unit test
+        self.watcher._execute_bot_turn = lambda ch, target, t_msg, rec: f"Plan is ready from @{target}"
+
+        dispatched = self.watcher.check_and_dispatch_debates(max_dispatches_per_pass=1)
+        self.assertEqual(len(dispatched), 1)
+        self.assertEqual(dispatched[0]["target_bot"], "pulse-cto")
+
+        # Verify reply was posted to channel
+        messages = self.watcher.channels.get_messages("c-suite-boardroom")
+        self.assertTrue(any(m.sender_profile == "pulse-cto" for m in messages))
+
+
+class TestAutonomousLoop(unittest.TestCase):
+    def test_loop_tick_structure(self):
+        loop = AutonomousEnterpriseLoop(board_slug="enterprise-main")
+        # Run single tick
+        res = loop.tick()
+        self.assertIn("timestamp", res)
+        self.assertIn("kanban_dispatch", res)
+        self.assertIn("debates_dispatched", res)
+        self.assertIn("gates_verified", res)
 
 
 if __name__ == "__main__":
